@@ -1,0 +1,1103 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792582680524-ox15vn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T11:44:44.007Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 403462,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1792406752203-whj6zi",
+    "hldEffectiveHash": "aea12dd762927abf6afe318a2bc2d336c6790ef686f86304c0f3d95944aa3cf0",
+    "hldAmendmentsApplied": [
+      "AMD-2f27754d4ad00b8e-5",
+      "AMD-2f27754d4ad00b8e-6",
+      "AMD-2f27754d4ad00b8e-7",
+      "AMD-2f27754d4ad00b8e-8"
+    ],
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "prose": "Story s5 lets a person add feedback or a reply on any artifact, a Task included, and see what is still open. Every entry is one immutable line with a namespaced author, the time and the artifact revision it was made against; a reply is its own line that names its parent, and a revision of the artifact addresses all open feedback unless its author lists only some. A per-user identity file links a person's several accounts for display, while the gates keep deciding on the tracker's own identity.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework (a1): a shared artifact envelope with typed payloads, stored as a head file plus two append-only sidecar files whose lines carry the owning artifact id, behind a single identity module, with one upfront conversion and no compatibility code. The envelope carries identity, description, parent, references, a typed lifecycle (revision, approval, review, signoffs, staleness, status) and a tracker binding or attachments; the change log and feedback are separate append-only line files; each existing artifact type shrinks to a payload codec and a renderer. Tracker comment reading and attaching are added to the port and implemented for the GitHub adapter only.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ArtifactIdScheme",
+          "purpose": "The single place artifact ids are made and recognised: the existing hierarchical typed ids extended for Epic, Story, Task, the Tasks file and diagrams, one story and task form, the folder-name date source, and the functional-requirement id helpers that live in id.ts today.",
+          "interfaceSketch": "type ArtifactKind = 'DEF'|'HLD'|'LLD'|'PLAN'|'BUILD'|'CR'|'TESTS'|'EXT'|'AMD'|'SPEC'|'ISSUE'|'EPIC'|'STORY'|'TASK'|'TASKS'|'DIAG';\ninterface ArtifactKey { kind: ArtifactKind; epicHash: string; story?: string; task?: string; seq?: number }\ninterface ArtifactIds { make(key: ArtifactKey): string; parse(id: string): ArtifactKey | undefined; parentOf(key: ArtifactKey): ArtifactKey | undefined }\ninterface RequirementIds { mint(epicHash: string, createdAt: string, ordinal: number, storyId?: string): string; parse(id: string): { epicHash: string; ordinal: number; storyId?: string } | undefined; isRequirementId(s: string): boolean }\n  // + RequirementIds.parse result: { date: string; hash8: string; story?: number | undefined; fr: number } | undefined;  // SUPERSEDES the return type of RequirementIds.parse declared in this sketch ({ epicHash; ordinal; storyId? }): a stored requirement id carries only the date and the first 8 hash characters, so parse returns these parts, story and fr as numbers (amend:AMD-2f27754d4ad00b8e-5)",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "ArtifactEnvelope",
+          "purpose": "The common shape of every stored entity and the one reader and writer for it, with References and namespaced Actors.",
+          "interfaceSketch": "interface Actor { id: string; kind: 'person'|'agent'|'system'; name?: string; properties: Record<string, unknown> }\ninterface Reference { entityId: string; type: string; relation: 'derived-from'|'depends-on'|'tracked-by'|'supersedes'|'documents'|'implements'|'cites'|'reviews'; fragment?: string; quote?: string }\ninterface Artifact<P> { id: string; description: string; parent?: Reference; references: Reference[]; lifecycle: Lifecycle; binding?: TrackerBinding; attachments: Attachment[]; payload: P }\ninterface ArtifactStore { read(id: string): Promise<Artifact<unknown>>; write(a: Artifact<unknown>, by: Actor): Promise<void>; childrenOf(id: string): Promise<string[]> }\n  // + readWithHistory(id: string): Promise<Artifact<unknown> & { changeLog: ChangeLogEntry[]; feedback: Feedback[] }>;  // A read that exposes the artifact together with its change log and feedback in one shape, as DEF ac4 requires; read stays the cheap head-only read. (amend:AMD-2f27754d4ad00b8e-7)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "HistoryRecords",
+          "purpose": "The change log entry and the Feedback entry shapes, the persisted sidecar record that carries the owning artifact id, and the append and read API, including how an update says which feedback it addressed.",
+          "interfaceSketch": "type Operation = 'create'|'update'|'delete'|'reparent'|'request-review'|'review'|'approve'|'reject'|'open-signoff'|'signoff-changes'|'signed-off'|'complete'|'reopen'|'withdraw'|'supersede'|'mark-stale'|'ack-stale';\ninterface ChangeLogEntry { id: string; actor: Actor; timestamp: string; operation: Operation; revision?: { number: number; contentHash: string }; status?: { from: string; to: string }; outcome?: { result: string; summary: string; data?: unknown }; references?: Reference[]; addresses?: 'all' | string[] }\ninterface Feedback { id: string; text: string; actor: Actor; timestamp: string; feedback: Feedback[]; kind: 'comment'|'suggestion'|'revision-request'; anchor?: { quote?: string; section?: string; lines?: [number, number] }; revision?: number; source?: { system: string; externalId: string; url?: string }; batchId?: string }\ninterface SidecarRecord<E> { artifactId: string; entry: E }\ninterface History { appendLog(id: string, e: ChangeLogEntry): Promise<void>; appendFeedback(id: string, f: Feedback): Promise<void>; log(id: string): Promise<ChangeLogEntry[]>; logTail(id: string): Promise<ChangeLogEntry | undefined>; feedback(id: string): Promise<Feedback[]>; openFeedback(id: string): Promise<Feedback[]> }",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "SidecarStorage",
+          "purpose": "How an artifact is stored: the head file and the two append-only line files shared by a Tasks file, their location, the merge rule, the per-artifact filtering and the read-time ordering and de-duplication.",
+          "interfaceSketch": "interface ArtifactFiles { head: string; log: string; feedback: string }\ninterface SidecarStore { filesOf(id: string): ArtifactFiles; appendRecord<E>(file: string, record: SidecarRecord<E>): Promise<void>; readRecords<E>(file: string, artifactId: string): Promise<E[]>; mergeAttributes(): string[] }",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc5"
+        ],
+        "internal": "People-facing feedback: adding feedback and replies from a client, listing open feedback, the addresses rule at revision time, and the per-user identity declaration with alias linking. Private to this Story are the identity file format and the display of linked identities."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The id module and its removal of the second scheme: the folder-name formatter moved into the path scheme, the date source fixed to the epic's creation time, the functional-requirement id helpers and their callers moved with stored FR ids staying valid, issue titles switched to the artifact id, and the delivery module's ordinals. The old issue-body marker is not read. Private to this Story are the exact text of the issue title and the relocation of the helpers."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2",
+            "sc3",
+            "sc8"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The envelope model, the one reader and writer, the History API and the sidecar record shape as a contract, and the repository version marker. Private to this Story are the head-file schema, the per-type payload codec registry and how the old per-type read functions delegate to the reader."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The lifecycle rules: status transitions, the revision and content-hash computation, the staleness record, the completion roll-up and the integrity check against the log tail on approve, review and complete. Private to this Story are the hash canonicalisation and how a roll-up is cached or recomputed."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The physical sidecar storage: file layout, the merge attributes for the line files, per-artifact filtering, read-time ordering and de-duplication, and the write order of log entry before head with the repair of a log that is ahead of its head. Private to this Story are the line format and the file naming beside a head."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The typed binding and attachments, the tracker port additions implemented for GitHub, the retry of pending links and posts, and the switch of unit-issue bookkeeping to the binding. Private to this Story are the permalink construction and the retry bookkeeping."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6"
+          ],
+          "internal": "Task artifacts: creation of the Tasks file and the Task issues at plan approval, direct edits of a Task's own content with local re-approval, refusal of structural edits, and the re-plan reconciliation. Private to this Story are the diff of a Task against the new plan and the build-round recording in a Task's history."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Comment sync: reading human comments into feedback at implement, validate or on request, classifying a revision request or a suggestion from the first line, and posting feedback once. Private to this Story are the first-line commands, the derived since point and the filter for the framework's own posts."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7",
+            "sc8"
+          ],
+          "internal": "The conversion command: previews, repeats, back-fills history, renames standalone S001 to s1 rewriting the references it can with no alias, creates Epic, Story and Task artifacts for what exists, verifies through the delivery reader, and sets the repository version. Private to this Story are the per-type conversion mappings and the verification report."
+        }
+      ],
+      "rolloutPhase": "Phase C — feedback and tracker binding",
+      "nonFunctional": {
+        "performance": "Reading an artifact reads its head; the log tail is read only on approve, review and complete, and counts, open feedback and status are computed on read. The delivery loader still reads each artifact once. Loading a repository of about a thousand artifacts must stay within twice today's load time on the same machine.",
+        "security": "Gates use the live tracker identity only; declared aliases are never trusted for a decision. The identity file is local and read for attribution. Tracker comments are read through the existing gh path of the GitHub adapter, with no new credential and no direct REST call.",
+        "observability": "Every state change appends a change log entry with actor, operation and, where relevant, revision and status; a conflict, a log-ahead-of-head repair, a failed attach and a pending link are logged and surfaced in the unit's result, not hidden.",
+        "durability": "Heads are replaced atomically as today; sidecar lines are append-only and de-duplicated by (artifactId, entry id) so a repeated append is harmless; a write appends its log entry before it replaces the head so a failure between the two leaves a detectable, repairable gap; the conversion is one commit, repeatable, and reverts with one git revert."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "FeedbackService.add",
+          "signature": "add(artifactId: string, input: FeedbackInput, actor: Actor): Promise<Feedback>",
+          "parameters": [
+            {
+              "name": "artifactId",
+              "type": "string",
+              "purpose": "The artifact the feedback is about; a TASK id is stored in its Story's Tasks feedback file.",
+              "optional": false
+            },
+            {
+              "name": "input",
+              "type": "{ text: string; kind?: 'comment'|'suggestion'|'revision-request'; anchor?: Feedback['anchor']; inReplyTo?: string; batchId?: string; id?: string }",
+              "purpose": "The entry's content. kind defaults to comment. id is an optional caller-chosen key that makes a retried add harmless.",
+              "optional": false
+            },
+            {
+              "name": "actor",
+              "type": "Actor",
+              "purpose": "Who wrote it: a person, agent or system with a namespaced lower-case id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Feedback>",
+            "meaning": "The entry as stored: id, timestamp and the artifact's current revision filled in, feedback an empty list."
+          },
+          "errors": [
+            {
+              "type": "ArtifactNotFoundError",
+              "condition": "the artifact has no head (a Task before its artifact exists)"
+            },
+            {
+              "type": "HistoryEntryError",
+              "condition": "blank text, unknown kind, a malformed anchor or id, an actor that is not namespaced, an inReplyTo that names no entry of this artifact or an entry that is itself a reply, or a repeated id with different content"
+            }
+          ],
+          "preconditions": [
+            "the repository has a registry entry (lifecycleFor)"
+          ],
+          "postconditions": [
+            "exactly one framed line is appended to the artifact's feedback file, or none when the same id and content were already stored",
+            "the entry is never changed or removed afterwards; the service has no edit or delete call",
+            "timestamp is minted by the service and revision is the head's revision number at that moment"
+          ]
+        },
+        {
+          "name": "FeedbackService.threads",
+          "signature": "threads(artifactId: string, scope?: { open?: boolean }): Promise<FeedbackThread[]>",
+          "parameters": [
+            {
+              "name": "artifactId",
+              "type": "string",
+              "purpose": "The artifact whose feedback is wanted.",
+              "optional": false
+            },
+            {
+              "name": "scope",
+              "type": "{ open?: boolean }",
+              "purpose": "With open true, only threads whose root no later update has addressed.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<FeedbackThread[]>",
+            "meaning": "Root entries in reader order (timestamp, then id), each with its replies in the same order, an addressed flag and the id of the log entry that addressed it."
+          },
+          "errors": [
+            {
+              "type": "HistoryReadError",
+              "condition": "the feedback or log file holds a complete frame that is not valid"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "a reply whose parent is missing (a merged or hand-edited file) is returned as an orphan root with orphan true and is never dropped",
+            "replies are never listed on their own as open items; a thread is open when its root is open"
+          ]
+        },
+        {
+          "name": "History.openFeedback",
+          "signature": "openFeedback(id: string): Promise<Feedback[]>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Feedback[]>",
+            "meaning": "The feedback no later log entry addresses, in reader order."
+          },
+          "errors": [
+            {
+              "type": "HistoryReadError",
+              "condition": "an unreadable file"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "consumed unchanged by FeedbackService.threads; FeedbackService filters out replies"
+          ]
+        },
+        {
+          "name": "History.appendFeedback",
+          "signature": "appendFeedback(id: string, f: Feedback): Promise<void>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            },
+            {
+              "name": "f",
+              "type": "Feedback",
+              "purpose": "The entry; validated before it is appended.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves once the line is appended."
+          },
+          "errors": [
+            {
+              "type": "HistoryEntryError",
+              "condition": "validateFeedback fails, which now also checks that inReplyTo is a non-empty string different from the entry's own id and that a reply carries no nested replies"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "unchanged otherwise: the one append path for feedback"
+          ]
+        },
+        {
+          "name": "LifecycleService.updateContent",
+          "signature": "updateContent(id: string, by: Actor, payload: HeadPayload, opts?: ContentWriteOptions): Promise<boolean>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact.",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The author of the revision.",
+              "optional": false
+            },
+            {
+              "name": "payload",
+              "type": "HeadPayload",
+              "purpose": "The new content.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "ContentWriteOptions",
+              "purpose": "Gains addresses: 'all' | string[], the feedback root ids this revision addresses.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<boolean>",
+            "meaning": "True when a write was made."
+          },
+          "errors": [
+            {
+              "type": "HistoryEntryError",
+              "condition": "addresses names an id that is not a root feedback entry of this artifact, or an entry an earlier revision already addressed"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "when the revision number moves and no addresses is given, the logged update entry carries addresses 'all'",
+            "a list leaves every other root open",
+            "an update that changes no content (the revision does not move) addresses nothing"
+          ]
+        },
+        {
+          "name": "ArtifactStore.update",
+          "signature": "update(id: string, by: Actor, mutate: (current) => Promise<UpdateResult | undefined> | UpdateResult | undefined, options?: WriteOptions): Promise<boolean>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact.",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The author.",
+              "optional": false
+            },
+            {
+              "name": "mutate",
+              "type": "function",
+              "purpose": "Builds the next artifact from the current one.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "WriteOptions",
+              "purpose": "Carries addresses, already a field of WriteOptions.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<boolean>",
+            "meaning": "True when a write was made."
+          },
+          "errors": [
+            {
+              "type": "HistoryEntryError",
+              "condition": "as for LifecycleService.updateContent"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "the addresses rule (default 'all' on a revision, validation of listed ids) is applied in ArtifactStore.write, so every writer of a revision gets it"
+          ]
+        },
+        {
+          "name": "IdentityService.currentActor",
+          "signature": "currentActor(repoPath: string): Promise<Actor>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository, for the tracker and git configuration.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Actor>",
+            "meaning": "The person acting: github:<login> from the tracker's whoAmI when it answers, else git:<email>, else os:<user>@<host>; kind person; the declared aliases of the identity file copied into properties.aliases when this id is the declared primary or one of the aliases."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "never throws: a tracker that does not answer falls through to the next source",
+            "the id is lower-case and namespaced",
+            "the result is for attribution; no gate reads it"
+          ]
+        },
+        {
+          "name": "IdentityService.declare",
+          "signature": "declare(decl: { primary: string; aliases: string[] }): Promise<IdentityFile>",
+          "parameters": [
+            {
+              "name": "decl",
+              "type": "{ primary: string; aliases: string[] }",
+              "purpose": "The person's own ids. Every id is namespaced and lower-case; the primary is not repeated in aliases.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<IdentityFile>",
+            "meaning": "The file as written."
+          },
+          "errors": [
+            {
+              "type": "IdentityError",
+              "condition": "an id that is not namespaced and lower-case, a duplicate, or more than 20 aliases"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "the file ~/.insrc/identity.json is replaced atomically",
+            "nothing outside attribution and display reads it"
+          ]
+        },
+        {
+          "name": "IdentityService.show",
+          "signature": "show(): Promise<IdentityFile | undefined>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<IdentityFile | undefined>",
+            "meaning": "The declared identity, or undefined when none was declared."
+          },
+          "errors": [
+            {
+              "type": "IdentityError",
+              "condition": "the file exists and is not valid; it is reported, not treated as empty"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "read-only"
+          ]
+        },
+        {
+          "name": "TrackerPort.whoAmI",
+          "signature": "whoAmI(): PortResult<string>",
+          "parameters": [],
+          "returns": {
+            "type": "PortResult<string>",
+            "meaning": "The signed-in tracker login."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "unchanged; the gates in src/workflow/team/gate.ts keep calling it directly and never call IdentityService"
+          ]
+        },
+        {
+          "name": "handleReviewDecision",
+          "signature": "handleReviewDecision(params: ReviewDecisionRequest | undefined, repoEnv: string | undefined, deps?: ReviewDecisionDeps): Promise<ReviewDecisionResult | ReviewDecisionError>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "ReviewDecisionRequest | undefined",
+              "purpose": "The decision and its comments.",
+              "optional": false
+            },
+            {
+              "name": "repoEnv",
+              "type": "string | undefined",
+              "purpose": "The environment's repository.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "ReviewDecisionDeps",
+              "purpose": "Gains feedbackFor, the repository's FeedbackService.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<ReviewDecisionResult | ReviewDecisionError>",
+            "meaning": "As today, with entryIds now the ids of the stored Feedback entries."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "with a FeedbackService the decision's comments are stored as Feedback entries by the request's actor (else currentActor), kind revision-request for send-feedback and comment for approve and reject, all with one batchId; without one the legacy body.feedback writer runs as before (tests only)"
+          ]
+        },
+        {
+          "name": "appendFeedback",
+          "signature": "appendFeedback(req: AppendFeedbackRequest): AppendFeedbackResult",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "AppendFeedbackRequest",
+              "purpose": "The legacy body.feedback request; the daemon's artifact.feedback.append handler stops calling it and calls FeedbackService.add.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "AppendFeedbackResult",
+            "meaning": "Unchanged."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "still exists for the callers outside the daemon and for tests until s9 retires body.feedback"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Feedback",
+        "change": "field-add",
+        "details": "Adds optional inReplyTo: string (a root entry's id). A reply is a separate line with feedback: []. Ids are minted as 32 hex characters (a uuid without dashes), or taken from the caller's id; validateFeedback rejects an inReplyTo equal to the entry's own id. Everything else is the s2 shape.",
+        "schemaDiff": "interface Feedback { ...; readonly inReplyTo?: string | undefined }",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts",
+          "src/workflow/artifact-core/history.ts"
+        ]
+      },
+      {
+        "entity": "ChangeLogEntry.addresses",
+        "change": "invariant-change",
+        "details": "An update entry whose revision number is higher than the previous entry's carries addresses 'all' unless the writer gave a list; a lifecycle operation or an update with no revision change carries none and addresses nothing. This is the Gap 5 rule that open feedback is whatever no later update addressed.",
+        "callSites": [
+          "src/workflow/artifact-core/store.ts",
+          "src/workflow/artifact-core/history.ts"
+        ]
+      },
+      {
+        "entity": "FeedbackThread",
+        "change": "new",
+        "details": "A read-time view, never stored: { root: Feedback; replies: Feedback[]; addressed: boolean; addressedBy?: string; orphan?: boolean }.",
+        "callSites": [
+          "src/workflow/artifact-core/history.ts"
+        ]
+      },
+      {
+        "entity": "IdentityFile",
+        "change": "new",
+        "details": "~/.insrc/identity.json, { primary: string; aliases: string[] }, every id namespaced and lower-case. Self-declared, local to the machine, used for attribution and display only. Private to this Story.",
+        "callSites": [
+          "docs/plans/core-data-model.md#gap-9-actor-identity-settled"
+        ]
+      },
+      {
+        "entity": "Actor.properties.aliases",
+        "change": "invariant-change",
+        "details": "When an actor is recorded, the declared aliases are copied into properties.aliases only when the actor's id is the declared primary or one of the aliases; a linked id never makes one actor stand for another in any decision.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts",
+          "src/workflow/team/gate.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Uses History.appendFeedback, feedback and openFeedback and the ChangeLogEntry.addresses field; asks for one additive field (inReplyTo) through the amendment above."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Reads and appends feedback through the SidecarStore (filesOf, appendRecord, readRecords) as built by s4; a Task's feedback lands in its Story's Tasks file and is filtered by artifact id."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Reads the head through ArtifactStore.read (existence and current revision) and uses readWithHistory for the combined view; Actor is the sc2 shape."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Validates and classifies artifact ids with ArtifactIds.parse (a TASK id maps to its Tasks file)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Feedback is added to a Task whose artifact does not exist yet",
+          "detection": "ArtifactStore.read(artifactId) raises ArtifactNotFoundError before any line is appended",
+          "response": "FeedbackService.add rethrows it; nothing is written",
+          "userImpact": "A person gets 'no such artifact'; a Task takes feedback once the plan approval creates its artifact (s7)",
+          "recoverable": true
+        },
+        {
+          "scenario": "A reply names a parent that is missing, belongs to another artifact, or is itself a reply",
+          "detection": "add reads the artifact's feedback and looks the inReplyTo id up among root entries",
+          "response": "HistoryEntryError naming the id; nothing is appended",
+          "userImpact": "The reply is refused with the reason; the person re-sends it against the thread's root",
+          "recoverable": true
+        },
+        {
+          "scenario": "A retried add with the same caller id but different text",
+          "detection": "the sidecar reader sees one (artifactId, id) with two contents and raises HistoryReadError; add checks the stored entry for the id before appending",
+          "response": "HistoryEntryError 'id already used with different content'; the first entry stays as stored",
+          "userImpact": "The client learns its key was reused; the original entry is intact",
+          "recoverable": true
+        },
+        {
+          "scenario": "A process dies after the line is appended but before the caller sees the result, and the client retries with the same id",
+          "detection": "add finds an identical stored entry for the id",
+          "response": "returns the stored entry and appends nothing",
+          "userImpact": "No duplicate; the retry returns the first result",
+          "recoverable": true
+        },
+        {
+          "scenario": "A revision lists feedback ids in addresses that are not roots of this artifact, or were addressed by an earlier revision",
+          "detection": "ArtifactStore.write reads the artifact's feedback and its earlier update entries before staging",
+          "response": "HistoryEntryError listing the unknown ids; nothing is staged and the head is unchanged",
+          "userImpact": "The revision is refused and says which ids are wrong",
+          "recoverable": true
+        },
+        {
+          "scenario": "The identity file is present but is not valid JSON, or holds an id that is not namespaced and lower-case",
+          "detection": "IdentityService.show parses and validates the file",
+          "response": "IdentityError naming the file and the problem; currentActor logs it and records the actor without aliases, so feedback is never blocked by the file",
+          "userImpact": "Attribution continues with no links; show and declare report the problem",
+          "recoverable": true
+        },
+        {
+          "scenario": "The tracker does not answer whoAmI (not signed in, offline, no tracker)",
+          "detection": "PortResult is not ok, or the tracker cannot be loaded",
+          "response": "currentActor falls back to git:<email>, then os:<user>@<host>; the fallback and the reason are logged",
+          "userImpact": "The entry is recorded under a git or OS identity; gates are unaffected because they never read this",
+          "recoverable": true
+        },
+        {
+          "scenario": "A request names an actor that is not a namespaced lower-case id",
+          "detection": "approvalActorOf and the add path's actor check",
+          "response": "the request is refused with the id it received; nothing is recorded",
+          "userImpact": "The client fixes the id; no entry is attributed to a guessed identity",
+          "recoverable": true
+        },
+        {
+          "scenario": "The review decision stored the approval but saving its comments through the service fails",
+          "detection": "handleReviewDecision catches the add error after the decision took effect",
+          "response": "the result reports commentsError exactly as it does now; the decision stays",
+          "userImpact": "The approval stands and the person is told the comments were not saved",
+          "recoverable": true
+        },
+        {
+          "scenario": "Two clones add feedback to one artifact and are merged",
+          "detection": "the feedback file is merge=union; the reader dedupes by (artifactId, id)",
+          "response": "both sets of lines are read once each, ordered by time then id; two different entries that picked the same caller id are a HistoryReadError on read",
+          "userImpact": "Both people's feedback appears; a true id clash is reported, not hidden",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A reply to a reply",
+          "expected": "refused: threads are one level deep, so the reply is made against the root (the nested feedback[] of the s2 shape stays for tracker-ingested entries)"
+        },
+        {
+          "input": "Feedback added with no kind",
+          "expected": "stored as comment"
+        },
+        {
+          "input": "A revision that changes no content (an identical rewrite)",
+          "expected": "writes nothing, so nothing is addressed and all feedback stays open"
+        },
+        {
+          "input": "A revision with addresses as an empty list",
+          "expected": "valid: it addresses nothing, every root stays open"
+        },
+        {
+          "input": "A lifecycle operation such as approve or review",
+          "expected": "its log entry has no addresses; approval does not resolve feedback"
+        },
+        {
+          "input": "A reply added after its root was addressed",
+          "expected": "stored; the thread stays addressed because the reply carries no state, and a later revision does not need to address it"
+        },
+        {
+          "input": "A person whose github id is the declared primary and whose jira id is an alias adds feedback",
+          "expected": "recorded as github:<login> with properties.aliases [jira:<id>]; a different person's actor never receives these aliases"
+        },
+        {
+          "input": "Feedback with the same timestamp as the update that addresses it",
+          "expected": "ordered by the shared (timestamp, id) rule: the update addresses it only when its id sorts after the feedback's"
+        },
+        {
+          "input": "A Task id",
+          "expected": "the line goes to the Story's TASKS feedback file with the TASK id as artifactId, and is read back for that Task only"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A stored feedback line is never edited or removed: the service has no edit or delete call and appendRecord is the only writer of the file",
+          "source": "c1"
+        },
+        {
+          "text": "A repeated append of the same (artifactId, id) with the same content is harmless, and with different content is corruption the reader reports (s4's rule is not weakened)",
+          "source": "c2"
+        },
+        {
+          "text": "Gates decide on TrackerPort.whoAmI only; nothing under src/workflow/team imports the identity module or reads the identity file",
+          "source": "c4"
+        },
+        {
+          "text": "A revision moves only when content changes (k3); addressing feedback and adding feedback never move it",
+          "source": "c5"
+        },
+        {
+          "text": "Open feedback is derived from the log, never stored on an entry, and uses the shared (timestamp, id) order so the feedback and log files agree whichever is read first",
+          "source": "c1"
+        },
+        {
+          "text": "The legacy body.feedback writers and readers keep working until s9 retires them; s5 adds no compatibility code for them",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test run through tsx (npx tsx --test), with node:assert/strict; tests live in __tests__ beside the code; the registry and the line files run over a temporary repository directory, the identity file over a temporary HOME",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The single-module behaviour of the feedback service, the thread builder, the addresses rule and the identity module.",
+          "subjects": [
+            "FeedbackService.add stores one root entry with the author, a minted id and time and the head's revision, defaults the kind to comment, and refuses blank text, a non-namespaced actor and a malformed anchor",
+            "FeedbackService.add stores a reply as its own line with inReplyTo, refuses a missing parent, a parent on another artifact and a reply to a reply, and a repeated caller id returns the stored entry or is refused when the content differs",
+            "FeedbackService.threads nests replies under their root in time-then-id order, returns an orphan reply as an orphan root, never lists a reply on its own as open, and filters to open threads",
+            "ArtifactStore.write stamps addresses 'all' on a revision that moves the revision number, honours a list, refuses ids that are not roots or are already addressed, and addresses nothing on an identical rewrite or a lifecycle operation",
+            "History.validateFeedback accepts inReplyTo as a non-empty string other than its own id and refuses a reply that carries nested replies",
+            "IdentityService.currentActor builds github:<login> from the tracker's whoAmI, falls back to git then os when the tracker does not answer, and copies the declared aliases only onto the declared primary or an alias",
+            "IdentityService.declare validates namespaced lower-case ids, rejects duplicates and more than twenty aliases, and replaces the file atomically; show reports an invalid file instead of treating it as empty"
+          ],
+          "fixturesNeeded": [
+            "a temporary repository with the durable store (durable-kit.ts)",
+            "a fake whoAmI returning a login, an error, or nothing",
+            "a temporary HOME for the identity file"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The acceptance criteria over the real storage, the daemon wiring and the gates.",
+          "subjects": [
+            "feedback on a design, a plan and a single Task is recorded once as a framed line in the right file, survives a restart, and a Task's line lands in its Story's Tasks file and reads back for that Task only",
+            "a revision of an artifact addresses all its open feedback by default and only the listed roots when a list is given, in the shared (timestamp, id) order with the feedback file read first or last",
+            "two clones that add feedback and replies to one artifact merge with no conflict and the threads read back once each in order",
+            "handleReviewDecision stores its comments as Feedback entries by the request's actor or the current actor, with kind revision-request for send-feedback and one batchId, and still reports commentsError when saving fails after the decision",
+            "the daemon's artifact.feedback.add, artifact.feedback.list, artifact.feedback.append, identity.show and identity.declare handlers use the repository's FeedbackService and the identity service",
+            "the team gate decides on the tracker's whoAmI only: declaring the claimant's login as an alias of another person does not change the gate's outcome, and nothing under src/workflow/team imports the identity module"
+          ],
+          "fixturesNeeded": [
+            "git available on the path, with a skip when it is not",
+            "a temporary repository registered in the lifecycle registry",
+            "a fake tracker for the gate test"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac14",
+          "provingTests": [
+            "src/workflow/feedback/__tests__/feedback-service.test.ts: FeedbackService.add stores one root entry with the author, a minted id and time and the head's revision, defaults the kind to comment, and refuses blank text, a non-namespaced actor and a malformed anchor",
+            "src/workflow/feedback/__tests__/feedback-service.test.ts: FeedbackService.add stores a reply as its own line with inReplyTo, refuses a missing parent, a parent on another artifact and a reply to a reply, and a repeated caller id returns the stored entry or is refused when the content differs",
+            "src/workflow/feedback/__tests__/feedback-storage.test.ts: feedback on a design, a plan and a single Task is recorded once as a framed line in the right file, survives a restart, and a Task's line lands in its Story's Tasks file and reads back for that Task only",
+            "src/workflow/feedback/__tests__/feedback-merge.test.ts: two clones that add feedback and replies to one artifact merge with no conflict and the threads read back once each in order",
+            "src/workflow/__tests__/review-decision.test.ts: handleReviewDecision stores its comments as Feedback entries by the request's actor or the current actor, with kind revision-request for send-feedback and one batchId, and still reports commentsError when saving fails after the decision"
+          ]
+        },
+        {
+          "criterionId": "ac15",
+          "provingTests": [
+            "src/workflow/artifact-core/__tests__/addresses-rule.test.ts: ArtifactStore.write stamps addresses 'all' on a revision that moves the revision number, honours a list, refuses ids that are not roots or are already addressed, and addresses nothing on an identical rewrite or a lifecycle operation",
+            "src/workflow/feedback/__tests__/feedback-threads.test.ts: FeedbackService.threads nests replies under their root in time-then-id order, returns an orphan reply as an orphan root, never lists a reply on its own as open, and filters to open threads",
+            "src/workflow/feedback/__tests__/feedback-storage.test.ts: a revision of an artifact addresses all its open feedback by default and only the listed roots when a list is given, in the shared (timestamp, id) order with the feedback file read first or last"
+          ]
+        },
+        {
+          "criterionId": "ac16",
+          "provingTests": [
+            "src/workflow/identity/__tests__/identity-service.test.ts: IdentityService.currentActor builds github:<login> from the tracker's whoAmI, falls back to git then os when the tracker does not answer, and copies the declared aliases only onto the declared primary or an alias",
+            "src/workflow/identity/__tests__/identity-service.test.ts: IdentityService.declare validates namespaced lower-case ids, rejects duplicates and more than twenty aliases, and replaces the file atomically; show reports an invalid file instead of treating it as empty",
+            "src/workflow/identity/__tests__/gate-identity.test.ts: the team gate decides on the tracker's whoAmI only: declaring the claimant's login as an alias of another person does not change the gate's outcome, and nothing under src/workflow/team imports the identity module",
+            "src/daemon/__tests__/feedback-wiring.test.ts: the daemon's artifact.feedback.add, artifact.feedback.list, artifact.feedback.append, identity.show and identity.declare handlers use the repository's FeedbackService and the identity service"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Feedback reaches an artifact only as body.feedback in its head JSON, written by appendFeedback and appendFeedbackBatch (the daemon's artifact.feedback.append and the review decision), with a plain-name author, no replies, no revision-request kind and no addresses. The sidecar History.appendFeedback exists (s2) over the durable line files (s4) but nothing in production calls it; no namespaced actor is built for a person and no identity file exists. Gates decide on TrackerPort.whoAmI.",
+      "stateAfter": "A FeedbackService over History records feedback and replies on any artifact, a Task included, as immutable framed lines with a namespaced actor; every revision addresses open feedback by default or by list; an identity service builds the person's actor and reads the local identity file for display only; the daemon's feedback add and list, identity show and declare, the artifact.feedback.append handler and the review decision's comments all go through the service. Gates are unchanged. Entries already in body.feedback stay where they are until s9 converts them.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional inReplyTo field to the Feedback shape and its validation in History, and file the sc3 amendment; no stored line changes",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Apply the addresses rule in the store: stamp 'all' on an update that moves the revision, validate listed ids; existing update entries without addresses are read as addressing nothing, as before",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the feedback module (service, thread view) and the identity module with its local file, unused by any caller yet",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Give the registry entry a FeedbackService and add the daemon methods for feedback add and list and for identity show and declare",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Point artifact.feedback.append and the review decision's comments at the service for every artifact the registry can read; the legacy body.feedback writers stay in place for callers outside the daemon and for tests",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 4 shipped"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "Record in the plans document what s9 must do with body.feedback entries (convert them into feedback lines with a synthesised actor and kind) and that the readers of body.feedback show only old entries until then",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No compatibility code is added, by the owner's ruling for this branch. The only existing public surfaces are the daemon's artifact.feedback.append request, which keeps its request shape and now stores a Feedback line (its author string becomes the actor name when no actor id is given, its kind 'feedback' is stored as revision-request), and the review decision's request and result, whose entryIds are now Feedback ids. Callers of the legacy writers outside the daemon keep working unchanged. Entries already written to body.feedback are not read by the new service and not rewritten until the s9 conversion.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Feedback service, flat lines with inReplyTo, one identity module",
+        "oneLineSummary": "A FeedbackService over History records entries and replies as flat immutable lines (a reply names its parent in a new inReplyTo field), a thread view nests them at read, and an identity module builds namespaced actors; the production feedback writers move onto it.",
+        "approach": "A new feedback module (service plus pure thread builder) sits on History and the s4 registry. add(artifactId, input, actor) checks the artifact exists, the actor is namespaced, a reply's parent exists on the same artifact and is not itself a reply, mints the id and the time, validates through History.appendFeedback and returns the stored entry; there is no edit or delete call. Because a stored line can never be rewritten, a reply is its own line carrying inReplyTo (the parent's id); this needs one added optional field on the sc3 Feedback shape, filed as an amendment to the HLD and validated by History.validateFeedback, and threads(artifactId) nests replies under parents at read (the stored feedback[] stays empty for new lines, so the s2 shape and its recursion still hold for tracker-ingested entries s8 may write). open(artifactId) is History.openFeedback, ordered by the shared (timestamp, id) rule; the addresses of a revision are chosen by the author when the content update is recorded (LifecycleService.updateContent and ArtifactStore.update take an addresses option, default 'all'; a list leaves the rest open, and a list naming an unknown id is refused). An identity module reads ~/.insrc/identity.json ({ primary, aliases[] }, self-declared, attribution only), builds Actors (github:<login> from the tracker's whoAmI, git:<email>, os:<user>@<host> as fallbacks) with the declared aliases copied into properties.aliases, and exposes declare/show; gates keep calling the tracker's whoAmI directly and never read the file. The daemon gets IPC methods to add, list and declare, and artifact.feedback.append and the review decision's comments are re-pointed at the service for every artifact the registry can store, the legacy body.feedback reader staying until s9.",
+        "pros": [
+          "One feedback path for every artifact kind, a Task included, with replies, kinds and revision requests as ac14 asks",
+          "Immutability is structural: the only write is an append and the API has no edit",
+          "Identity and gates are separated by construction, so a declared alias cannot spoof a claim (ac16)",
+          "Moving the production writers now means the board and the review pane see one history instead of two"
+        ],
+        "cons": [
+          "Needs a sc3 amendment (inReplyTo) to a shape s2 owns, and an approved HLD amendment before the plan",
+          "The re-pointed writers change the review decision's feedback path and its tests",
+          "Legacy readers of body.feedback show only old entries until s9 back-fills, so a mixed view exists for a while"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "New path only, legacy writers untouched until s9",
+        "oneLineSummary": "The same service, thread view and identity module, but artifact.feedback.append and the review decision keep writing body.feedback, so new feedback calls are the only users of the sidecar.",
+        "approach": "Build the FeedbackService, the thread builder and the identity module as in a1 (same inReplyTo amendment, same addresses option, same identity file), expose them through new IPC methods, and leave the legacy appendFeedback and appendFeedbackBatch writers, their IPC and the review pane's comment saving exactly as they are; s9's conversion later moves old entries into the line files and retires body.feedback and its writers together.",
+        "pros": [
+          "Smallest change to running behaviour: no existing caller or test of the legacy writers moves",
+          "The conversion in s9 already has to rewrite those entries, so nothing is migrated twice",
+          "Easy to ship and to revert"
+        ],
+        "cons": [
+          "Two feedback stores live side by side, so 'see what is still open' on one artifact needs both and an artifact can show comments in only one of them",
+          "Review-pane comments, the most used feedback today, still carry a bare name and no identity or replies, so ac14 and ac16 hold only for callers of the new path",
+          "A person's new feedback and the review pane's feedback on the same artifact are ordered by no common rule"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Cheapest and safest to ship, but it leaves the most used feedback path outside ac14 to ac16 and leaves two stores for s9 to reconcile, which the acceptance criteria say should be one."
+      },
+      {
+        "id": "a3",
+        "name": "Replies stored inside the parent, merged at read",
+        "oneLineSummary": "A reply is appended as a new line with the parent's id and the reply in feedback[], and the reader merges lines that share an id into one thread, so no new Feedback field is needed.",
+        "approach": "Keep the sc3 Feedback shape exactly as s2 shipped it. add() of a top-level entry appends one line; a reply appends a second line with the SAME id and text as the parent and a feedback[] holding the reply, and the sidecar reader (s4's sc5) merges lines with the same (artifactId, entry id) by concatenating their feedback[] instead of treating different content as a conflict; the thread view is then the merged list. The identity module and the addresses option are as in a1.",
+        "pros": [
+          "No amendment to the Feedback shape",
+          "Replies literally nest under the parent as the settled Gap 5 wording says"
+        ],
+        "cons": [
+          "Reverses s4's rule that a repeated id with different content is corruption, so a real conflict (a hand-edited or merged line) can no longer be told from a reply",
+          "The stored parent line is no longer the immutable entry ac14 describes: its meaning changes as lines are added",
+          "Reaches into sc5, which s4 owns, so it needs a second amendment and a change to the framed reader and its tests",
+          "A union merge of two clones adding replies to one parent depends on the merge of identical parent text"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Avoids a new field by weakening the integrity rule of the storage s4 built; it violates ac14, k4 and the ownership of sc5."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "ep3: the invariants name the capability ids c1 to c5 whose citations point at the s1 bundles, but they do not quote the bundle text",
+      "A legacy review comment can target a companion file (target.file other than the artifact's own document, for example a diagram or mock) while the Feedback shape has an anchor but no file: should such a comment be stored on the companion's own DIAG artifact when one exists, kept on the parent artifact with the file path in anchor.section, or have its file dropped?",
+      "The legacy kind 'feedback' (a request to change the artifact) has no direct match: should it be stored as revision-request, as comment, or by the decision it came with (send-feedback to revision-request, approve and reject to comment)?",
+      "The readers of body.feedback (companion headers, delivery) will show only entries written before s5 until the s9 conversion, while new feedback is in the line files: should s5 add the line-file entries to those readers, or leave the mixed view until s9?"
+    ],
+    "erDefinition": {
+      "id": "s5-feedback",
+      "narrative": "A thread is a root feedback line with the reply lines that name it; an update log entry addresses roots; an identity file links a person's accounts to the actors that are recorded.",
+      "classes": {
+        "Feedback": {
+          "description": "One immutable feedback line on an artifact.",
+          "attributes": {
+            "id": {
+              "description": "Unique within the artifact.",
+              "identifier": true,
+              "required": true,
+              "range": "string"
+            },
+            "inReplyTo": {
+              "description": "The root entry this replies to; absent on a root.",
+              "range": "Feedback"
+            },
+            "kind": {
+              "description": "comment, suggestion or revision-request.",
+              "range": "string",
+              "required": true
+            },
+            "actor": {
+              "description": "Who wrote it, with a namespaced id.",
+              "range": "Actor",
+              "required": true
+            },
+            "revision": {
+              "description": "The artifact revision it was made against.",
+              "range": "integer"
+            }
+          }
+        },
+        "ChangeLogEntry": {
+          "description": "A log line; an update names the feedback roots it addresses.",
+          "attributes": {
+            "id": {
+              "description": "Entry id.",
+              "identifier": true,
+              "required": true,
+              "range": "string"
+            },
+            "addresses": {
+              "description": "'all' or the root ids this revision addresses.",
+              "range": "Feedback",
+              "multivalued": true
+            }
+          }
+        },
+        "Actor": {
+          "description": "A person, agent or system with a namespaced id.",
+          "attributes": {
+            "id": {
+              "description": "For example github:alice.",
+              "identifier": true,
+              "required": true,
+              "range": "string"
+            },
+            "aliases": {
+              "description": "Declared ids of the same person, for display only.",
+              "range": "string",
+              "multivalued": true
+            }
+          }
+        },
+        "IdentityFile": {
+          "description": "The per-user local declaration of a person's ids.",
+          "attributes": {
+            "primary": {
+              "description": "The person's main id.",
+              "range": "string",
+              "required": true
+            },
+            "aliases": {
+              "description": "Their other ids.",
+              "range": "string",
+              "multivalued": true
+            }
+          }
+        }
+      }
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S005/er-model.html",
+        "title": "ER model"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-core/history.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-core/sidecar-store.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifacts/provenance/writer.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/team/gate.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/plans/core-data-model.md#gap-9-actor-identity-settled"
+    }
+  ]
+}

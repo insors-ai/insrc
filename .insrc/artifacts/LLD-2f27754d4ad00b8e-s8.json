@@ -206,6 +206,13 @@
         "choice": "Accept as additive, no amendment",
         "rationale": "Approved with the LLD (option A).",
         "resolvedAt": "2026-10-21T20:16:41.194Z"
+      },
+      "q737c78be": {
+        "question": "The attach comment gets a marker line so the framework's own comments are told by a marker. This changes the text s6's attach posts, though not its link. Resolve: accept (recommended), or keep the attach comment as it is and recognise it only by its shape.",
+        "status": "resolved",
+        "choice": "Accept the marker line",
+        "rationale": "Approved with the LLD (option A).",
+        "resolvedAt": "2026-10-21T20:17:20.218Z"
       }
     }
   },

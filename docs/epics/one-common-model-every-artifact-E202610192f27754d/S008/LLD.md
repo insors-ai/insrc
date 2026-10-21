@@ -351,6 +351,8 @@ tracker.syncComments is the single entry; the build phases are left alone.
   - **resolved**: Accept it as an additive s8-owned change (recommended) — Approved with the LLD (option A, recommended answers). _(2026-10-21T20:15:57.505Z)_
 - `qbbfede3b` — TrackerPort gains postComment so a post answers its comment id, an additive method on the sc6 port s6 owns. Resolve: accept it as additive with no HLD amendment (recommended), or file a sharedContract.methodAdd amendment on sc6 first.
   - **resolved**: Accept as additive, no amendment — Approved with the LLD (option A). _(2026-10-21T20:16:41.194Z)_
+- `q737c78be` — The attach comment gets a marker line so the framework's own comments are told by a marker. This changes the text s6's attach posts, though not its link. Resolve: accept (recommended), or keep the attach comment as it is and recognise it only by its shape.
+  - **resolved**: Accept the marker line — Approved with the LLD (option A). _(2026-10-21T20:17:20.218Z)_
 
 ## Citations
 

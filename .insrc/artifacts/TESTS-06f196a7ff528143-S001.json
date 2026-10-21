@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "06f196a7ff528143",
+    "storyId": "S001",
+    "createdAt": "2026-10-21T05:47:38.616Z",
+    "updatedAt": "2026-10-21T05:47:38.616Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-21T05:02:26.565Z",
+    "epicSlug": "scope-story-s-code-review-what"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "873c4c3e",
+        "ranAt": "2026-10-21T05:47:38.616Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'when the diff body command succeeds and the numstat command fails, git_diff returns success: false naming the stat failure'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/diff.test.ts",
+                "title": "when the diff body command succeeds and the numstat command fails, git_diff returns success: false naming the stat failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/diff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1129,
+            "titles": [
+              {
+                "title": "T22: exclude removes a file from BOTH the diff body and the file list; a kept file stays in both",
+                "result": "pass"
+              },
+              {
+                "title": "T22: an excluded file does not count against maxBytes",
+                "result": "pass"
+              },
+              {
+                "title": "T23: with no exclude, and with an empty one, both argument vectors are exactly today's",
+                "result": "pass"
+              },
+              {
+                "title": "T23: the body and the numstat command receive the SAME pathspecs",
+                "result": "pass"
+              },
+              {
+                "title": "T24: path stays the positive pathspec when exclude is given, and the exclusions narrow it",
+                "result": "pass"
+              },
+              {
+                "title": "T25: a malformed exclude is invalid-input and git is not run",
+                "result": "pass"
+              },
+              {
+                "title": "T25: the closed input schema declares exclude as an array of non-empty strings",
+                "result": "pass"
+              },
+              {
+                "title": "when the diff body command succeeds and the numstat command fails, git_diff returns success: false naming the stat failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

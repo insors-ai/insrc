@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "06f196a7ff528143",
+    "storyId": "S001",
+    "createdAt": "2026-10-21T05:47:38.616Z",
+    "updatedAt": "2026-10-21T05:47:38.616Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-21T05:02:26.565Z",
+    "epicSlug": "scope-story-s-code-review-what"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "git_diff returns success: false when its numstat command fails, instead of an empty file list; a test seam (setGitDiffShellForTests) injects the failure.",
+    "testRecord": {
+      "md": "docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/mocks/ontology-editor.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T05:47:38.616Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-source/ontology.template.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T05:47:38.616Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-source/render.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T05:47:38.616Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-viewer.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T05:47:38.616Z"
+      },
+      {
+        "target": {
+          "file": "docs/ontology-builder-prd.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T05:47:38.616Z"
+      },
+      {
+        "target": {
+          "file": "docs/ontology-builder-prd.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T05:47:38.616Z"
+      }
+    ],
+    "commit": "873c4c3e"
+  }
+}

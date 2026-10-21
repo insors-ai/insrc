@@ -19,7 +19,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -30,7 +30,7 @@ import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bi
 import type { FileChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
 
 import { readTestRecord } from './test-record.js';
-import { storeRound, withStoredModel } from './round-writer.js';
+import { hasReadableHead, storeRound, withStoredModel } from './round-writer.js';
 import type { RoundWriter } from './round-writer.js';
 import { resolveStoryRangeBase } from './range-base.js';
 import { newestStoryCommit } from './story-commits.js';
@@ -360,8 +360,10 @@ export async function persistBuildRecord(repoPath: string, rec: BuildRecord, thr
 	let prepared = prepareBuildRecord(repoPath, rec);
 	if (through !== undefined) {
 		const first = prepared;
-		const isFirst = !existsSync(first.jsonPath);
-		await storeRound(through, buildArtifactId(first.merged.meta.epicHash, first.merged.meta.storyId), first.jsonPath, first.merged.body, buildRoundOutcome(first.merged.body));
+		const id = buildArtifactId(first.merged.meta.epicHash, first.merged.meta.storyId);
+		// no head, or one the store cannot read (it is replaced): the store creates the head on its own clock
+		const isFirst = !hasReadableHead(id, first.jsonPath);
+		await storeRound(through, id, first.jsonPath, first.merged.body, buildRoundOutcome(first.merged.body));
 		// The store changed the head's lifecycle, so the record the raw write refreshes is merged on the head as it is now.
 		prepared = prepareBuildRecord(repoPath, rec);
 		if (isFirst) {

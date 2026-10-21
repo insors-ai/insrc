@@ -131,3 +131,22 @@ test('a read-intent MissingAnchorError returns the missing-anchor error and an o
 		assert.match((out['verdict'] as { evidence: { testRecordNote?: string } }).evidence.testRecordNote ?? '', /disk full/);
 	} finally { rmSync(anchored, { recursive: true, force: true }); }
 });
+
+test('a BUILD record that cannot be stored through the service is named in the verdict\'s evidence, and the verdict stands', async () => {
+	const repo = mkRepo();
+	try {
+		const first = await turn(repo, DAY1);
+		assert.equal(first['next'], 'done');
+		assert.equal((first['verdict'] as { evidence: { buildRecordNote?: string } }).evidence.buildRecordNote, undefined, 'a stored round carries no note');
+		// the BUILD head is edited behind the store: its stored hash no longer matches its content, and the store refuses to write over it
+		const path = join(artifacts(repo), `BUILD-${HASH}-s1.json`);
+		const head = JSON.parse(readFileSync(path, 'utf8')) as { body: Record<string, unknown> };
+		head.body['summary'] = 'edited by hand';
+		writeFileSync(path, JSON.stringify(head, null, 2) + '\n');
+		const second = await turn(repo, DAY2);
+		assert.equal(second['next'], 'done');
+		assert.equal(second['passed'], true, 'the verdict is unchanged');
+		const note = (second['verdict'] as { evidence: { buildRecordNote?: string } }).evidence.buildRecordNote;
+		assert.match(note ?? '', /the BUILD record was not written \(.*hash-mismatch/);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

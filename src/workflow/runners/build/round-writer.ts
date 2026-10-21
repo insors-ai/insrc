@@ -35,6 +35,12 @@ const log = getLogger('workflow:build:round-writer');
  * A round record is regenerable, so a head the store cannot read (not JSON, not an envelope) is replaced by the round, as the
  * raw writers did: it is removed here, and the store then creates the head anew. Returns true when one was removed.
  */
+/** True when `jsonPath` holds a head the store can read. */
+export function hasReadableHead(id: string, jsonPath: string): boolean {
+	if (!existsSync(jsonPath)) return false;
+	try { decodeArtifactHead(id, readFileSync(jsonPath, 'utf8')); return true; } catch { return false; }
+}
+
 function discardUnreadableHead(id: string, jsonPath: string): boolean {
 	if (!existsSync(jsonPath)) return false;
 	try { decodeArtifactHead(id, readFileSync(jsonPath, 'utf8')); return false; }

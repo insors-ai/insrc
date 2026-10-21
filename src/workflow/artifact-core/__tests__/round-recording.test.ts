@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { IpcStreamMessage, LLMProvider } from '../../../shared/types.js';
@@ -210,6 +210,21 @@ describe('round-recording', () => {
 			assert.equal(head.meta.standalone, true);
 			assert.ok(readFileSync(created.md, 'utf8').includes('BUILD'), 'the markdown is rendered');
 			assert.equal((await lifecycleFor(repo).service.inspect(BUILD))?.integrity.ok, true);
+		} finally { resetLifecycleRegistry(); rmSync(repo, { recursive: true, force: true }); }
+	});
+
+	it('an unreadable BUILD head is replaced by a round that keeps the time the build gave it, not the store\'s clock', async () => {
+		const repo = mkdtempSync(join(tmpdir(), 'round-unreadable-'));
+		try {
+			mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+			writeFileSync(join(repo, '.insrc', 'artifacts', `${BUILD}.json`), '{ not json');
+			const created = await persistStandaloneBuildRecord(repo, {
+				meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: H, storyId: 's1', createdAt: T1, authoredBy: 'controller' },
+				body: { focus: 'rename a flag', producesLld: false },
+			}, roundWriterFor(repo));
+			const head = JSON.parse(readFileSync(created.json, 'utf8')) as { meta: { createdAt: string } };
+			assert.equal(head.meta.createdAt, T1);
+			assert.deepEqual((await lifecycleFor(repo).store.readWithHistory(BUILD)).changeLog.map(e => e.operation), ['create']);
 		} finally { resetLifecycleRegistry(); rmSync(repo, { recursive: true, force: true }); }
 	});
 });

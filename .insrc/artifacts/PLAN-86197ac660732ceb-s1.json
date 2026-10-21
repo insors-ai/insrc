@@ -1,0 +1,538 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792593557178-xo85b7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-21T14:42:20.089Z",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 182858,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "86197ac660732ceb",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing",
+    "storyId": "s1",
+    "lldRunId": "wf-1792590061522-lkzz0a",
+    "lldEffectiveHash": "b93e76739a2568e89e10c3b7c0838bb594c961729bbda83caa38633c196f8c4f",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-21T15:01:27.808Z",
+    "rangeBase": "25e7df19940c24c0af2684526701565520cbd802"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building s1 lays the shared groundwork for a multi-threaded daemon without moving any request off the main thread yet. It first pins, as a test, that a worker thread can open LMDB without dropping the daemon's lock, then adds the shared-memory store guard, the main-thread hub with its registry and status board, process-wide store health, and strong cross-thread reads for Lance with DuckDB behind one permit. Finally the four MCP step-state stores move onto the hub, which turns about 48 call sites async, and cross-thread tests prove the Story's acceptance criteria.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Gating test: a worker thread's LMDB open, use and release keeps the daemon's lock",
+        "summary": "Turn the 2026-10-21 simulation into a committed integration test on a temporary store with the production open options: the main thread opens; a real worker_thread opens, reads, writes, closes and exits; another process opens and closes; a lock probe reports the lock held at each step and the main thread's next write succeeds. A positive control (closing a stray descriptor on the lock file) proves the probe can see a dropped lock. This is the Story's gate: if it fails, the Story stops and the question goes back to the HLD before any later task.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The test passes with the lock held after every step, including worker exit and another process's open/close.",
+          "The positive control reports the lock dropped, so a probe that always says held would fail the test."
+        ],
+        "derivedFrom": [
+          "c6",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a worker thread's LMDB open, read, write, close and exit keep the daemon's lock, and the main thread writes after another process opens and closes the store"
+          },
+          {
+            "level": "integration",
+            "name": "the lock probe reports a dropped lock after a stray descriptor on the lock file is closed"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Store guard: shared-memory permits, async-chain nesting, per-acquisition holders, reclaim",
+        "summary": "Add the process-wide StoreGuardBlock (permit counters, per-acquisition holder records, the store health word) and withStore, policy, holders, reclaim and quiescence with the initial policy table (graph and lance direct, duckdb guarded with one permit). Waiting is asynchronous with a time limit and abort signal; release runs in a finally; nesting is refused per async call chain with an async-context marker; concurrent same-thread calls queue in arrival order.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "withStore releases on resolve, reject, synchronous throw and abort.",
+          "Two concurrent same-thread withStore('duckdb') calls both complete one after the other; withStore from inside a held op fails with StoreLockNestedError.",
+          "An acquisition past its limit fails with StoreLockTimeoutError naming the holder.",
+          "reclaim releases a terminated worker's permits after quiescence and marks a store unhealthy past limitMs."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "withStore releases its permit on resolve, reject, synchronous throw and abort"
+          },
+          {
+            "level": "unit",
+            "name": "an acquisition past its limit fails with StoreLockTimeoutError naming the holder"
+          },
+          {
+            "level": "unit",
+            "name": "two concurrent same-thread withStore calls on a one-permit store both complete in turn; withStore inside a held op fails with StoreLockNestedError"
+          },
+          {
+            "level": "unit",
+            "name": "reclaim releases after quiescence and marks the store unhealthy past limitMs"
+          },
+          {
+            "level": "integration",
+            "name": "a worker terminated while holding a permit has it reclaimed and another worker then acquires it"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Thread channel and hub client",
+        "summary": "Add the ChannelEnvelope types, the hub request/reply protocol and the worker-side hub client, whose pending requests fail with HubUnavailableError when the port closes.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A worker's hub request is answered with the matching requestId.",
+          "A closed port rejects every pending request with HubUnavailableError; no request hangs."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a worker's hub request is answered with its own requestId"
+          },
+          {
+            "level": "integration",
+            "name": "closing the port rejects every pending hub request with HubUnavailableError"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Target registry and status board",
+        "summary": "Add the main-thread TargetRegistry (register, unregister, targetFor with the unattributed target) and the StatusBoard (publish, publishIndexing, publishClients, publishRun, publishStore, snapshot), reachable from workers through the hub.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "register/unregister/targetFor follow the conflict rules; a re-register after unregister succeeds; an unknown unregister is a no-op.",
+          "Each publish* is reflected in snapshot (latest per thread, runs by runId with frames only growing); an empty board snapshots as specified; a worker's publish appears in a main-thread snapshot."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target"
+          },
+          {
+            "level": "unit",
+            "name": "a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op"
+          },
+          {
+            "level": "unit",
+            "name": "StatusBoard keeps the latest status per thread and snapshots empty as specified"
+          },
+          {
+            "level": "unit",
+            "name": "publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing"
+          },
+          {
+            "level": "integration",
+            "name": "a status published from a worker appears in a main-thread snapshot"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Process-wide store health",
+        "summary": "Make every reader of the graph store's health (getStoreHealth, recordLocksLost, getGraphStore, withWriteTxn, withWriteTxnSync, runReaderCheck, closeGraphStore) read the shared health word; recordLocksLost sets it with a compare-and-swap and publishes the full record through the hub so every thread keeps a copy.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing.",
+          "runReaderCheck stops probing and closeGraphStore skips the library close in every thread; only the first detection logs."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing"
+          },
+          {
+            "level": "integration",
+            "name": "after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Lance strong read consistency and DuckDB behind the guard",
+        "summary": "Open Lance with readConsistencyInterval 0 and route DuckDB's withConnection through withStore('duckdb') so one 2 GB budget is shared; keep every existing behaviour.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A Lance write in one thread is read from another; with the interval unset the same read misses it.",
+          "Two threads' DuckDB queries run one after the other and both succeed."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a Lance write in one thread is read from another with readConsistencyInterval 0 and missed with it unset"
+          },
+          {
+            "level": "integration",
+            "name": "two threads' DuckDB queries run one after the other behind the one permit and both succeed"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Shared step-state store on the hub",
+        "summary": "Host the four step kinds on the hub behind SharedStepStateStore with per-kind lifecycle adapters (100-entry LRU, 1-hour TTL, read refresh; rotate-token for analyze and workflow, stable-token for review, consume-per-stage for code-review) and a structured-clone check per kind.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Each kind's token rule, eviction, TTL and read refresh behave as today's store.",
+          "A real payload of each kind survives a structured clone; state minted in one worker is read in another after the first exits."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "each step kind's token rule, 100-entry eviction, TTL with read refresh and release match today's stores"
+          },
+          {
+            "level": "integration",
+            "name": "a real payload of each step kind survives a structured clone through the hub"
+          },
+          {
+            "level": "integration",
+            "name": "step state minted in one worker is read in another after the first exits"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Analyze and workflow step callers move to the async shared store",
+        "summary": "Switch the analyze-step and workflow-step state-store modules and their encode/reencode/decode wrappers to the async shared store, add await at their call sites (analyze-step state.ts and phases start, plan, narrow, bundle; workflow-step state.ts and phases start, plan, step, synthesize), and make their test-only helpers async for their test files.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Every analyze and workflow call site awaits the async API; tsc is clean.",
+          "The analyze-step and workflow-step suites, including analyze-step-state.test.ts and workflow-step/__tests__/state-store.test.ts, pass unchanged in meaning with today's not-found messages."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/steps/__tests__/analyze-step-state.test.ts passes unchanged in meaning against the hub-backed store"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts passes unchanged in meaning, with today's not-found messages"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Review and code-review step callers move to the async shared store",
+        "summary": "Switch the review-step and code-review-step state-store modules to the async shared store, add await at their call sites (review-step phases start, claims, findings, verdicts; code-review-step handler), and make their test-only helpers async for their test files, including the code-review attribution tests.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Every review and code-review call site awaits the async API; tsc is clean.",
+          "The review-step and code-review-step suites, peer-state-store-leakfree.test.ts, code-review-rpc-fallback.test.ts and the code-review attribution tests pass unchanged in meaning; a superseded code-review token still fails."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts passes unchanged in meaning against the hub-backed stores"
+          },
+          {
+            "level": "unit",
+            "name": "a superseded code-review token fails with today's not-found message"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/code-review-rpc-fallback.test.ts passes unchanged in meaning"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Worker store ownership and the cross-thread store tests",
+        "summary": "Make declareLiveStoreOwner part of the worker entry (client processes still refused) and add the acceptance tests: concurrent writer/reader on two threads, two threads' writes read by a third, a throwing transaction on a worker leaving nothing visible, and non-owner refusal.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t2",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "ac1: a reader on one thread sees only whole transactions while another writes, and vectors never precede their graph row.",
+          "ac2: two threads' artifact and config writes are read back from a third.",
+          "ac3: a non-owner worker is refused on the live paths.",
+          "ac4: a throwing transaction on a worker leaves nothing visible."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row"
+          },
+          {
+            "level": "integration",
+            "name": "two workers' artifact-vector and config writes are read back from a third thread"
+          },
+          {
+            "level": "integration",
+            "name": "a worker that has not declared the store owner is refused on the live LMDB and Lance paths"
+          },
+          {
+            "level": "unit",
+            "name": "no module outside src/daemon and src/db calls declareLiveStoreOwner"
+          },
+          {
+            "level": "integration",
+            "name": "a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "LMDB environment opened, read and closed from a worker while the main thread holds it",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "LMDB concurrent writer and reader on two threads",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Lance writes in one thread read from another with readConsistencyInterval 0",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "DuckDB guarded with one permit across two threads",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "after locks-lost in a worker, getStoreHealth on the main thread reports locks-lost, runReaderCheck returns without probing, and a second detection does not log again",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "withStore release on resolve, reject, synchronous throw and abort",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "acquisition timeout and nested acquisition",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "reclaim with quiescence inside and past limitMs",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "per-kind step lifecycle: rotate-token, stable-token, consume-per-stage, LRU at 100, TTL with read refresh, release",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "TargetRegistry conflicts and the unattributed target",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "StatusBoard latest-per-thread ordering and empty snapshot",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "register/unregister: a target re-registered after unregister succeeds; unregister of an unknown thread is a no-op",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "publishIndexing, publishClients, publishRun (latest per runId, frames only grow) and publishStore each reflected in snapshot",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "two concurrent same-thread withStore('duckdb') calls both complete, one after the other; withStore called from inside a held op fails with StoreLockNestedError",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "hub client step-state round trip across two workers",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "structured-clone safety of a real payload of each kind",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "HubUnavailableError on port close",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "guard permit reclaimed after a worker is terminated mid-operation",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/__tests__/analyze-step-state.test.ts and peer-state-store-leakfree.test.ts pass unchanged in meaning against the hub-backed stores",
+        "coveredByTaskIds": [
+          "t8",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "the four kinds' not-found errors keep today's messages",
+        "coveredByTaskIds": [
+          "t8",
+          "t9"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails (sc1 store guard: withStore, reclaim; getLanceConn; declareLiveStoreOwner)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails (sc2 shared step-state store: mint, read, update, release)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails (sc3 thread channel and target registry: register, unregister, targetFor)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails (sc4 status board: publish, publishIndexing, publishClients, publishRun, publishStore, snapshot)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges (StepStateEntry, StoreGuardBlock, StatusBoardState, LanceConnectionOptions, StoreThreadingPolicy)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths (gating LMDB test, guard release, timeout, nesting, reclaim, locks-lost across threads)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy (acceptance mapping ac1-ac4)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration (steps 1-7)"
+    }
+  ]
+}

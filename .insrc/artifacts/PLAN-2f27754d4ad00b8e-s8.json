@@ -1,0 +1,346 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792613961486-jpurhz",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T20:21:08.366Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 106854,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s8",
+    "lldRunId": "wf-1792607869369-3pfy3p",
+    "lldEffectiveHash": "bd468fd6cd6cbb10f41ed03278a9990a06432e2f2bb796797ade5f7c51974189",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-21T20:23:37.429Z",
+    "rangeBase": "0c961771e64adeee382139c73e2cb1d5c30038a2"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story starts with the small additive pieces other code stands on (a source on feedback, a post-comment method on the tracker port with a marker on the attach comment, and an integrity check that ignores revision-less entries), then the pure comment rules, then the sync itself in two halves (reading human comments in, posting local feedback out), and last the places it is called from and the notes for s9.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Let FeedbackInput carry a source",
+        "summary": "Add the optional source { system, externalId, url? } to FeedbackInput in src/workflow/feedback/feedback-service.ts: FeedbackService.add stores it on the entry, validates it (a system and an external id), and compares it when an id is repeated.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "An entry added with a source is stored with it and read back with it",
+          "The same id with the same fields and the same source appends nothing; the same id with a different source is refused as already used with different content",
+          "A source with no system or no external id is refused",
+          "An entry added with no source is stored exactly as before"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "feedback-source.test.ts: FeedbackService.add stores a source and a repeat of the same id with the same source appends nothing"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add postComment to the tracker port and mark the attach comment",
+        "summary": "Add TrackerPort.postComment(issue, body) answering { externalId } to src/workflow/tracker/port.ts, implement it in src/workflow/tracker/github-adapter.ts through ghPostCommentReturningId, give the attach comment the first-line marker <!-- insrc:attach:<artifact id> -->, and add postComment to the two other test fakes (src/workflow/__tests__/approve-fallback-kit.ts and src/workflow/tracker/__tests__/attach.test.ts).",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The GitHub adapter's postComment posts one comment and answers its id, and answers a failed PortResult when the post fails or returns no id",
+          "The attach comment starts with the marker line and still holds the Attached line and the link, so s6's reconciliation by link still finds it",
+          "Every TrackerPort fake in the repository typechecks with postComment",
+          "issueOps.comment keeps its behaviour"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "port-post-comment.test.ts: the GitHub adapter's postComment answers the comment id and attach posts its marker"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Make the integrity check read the last revision-bearing entry",
+        "summary": "Change checkIntegrity in src/workflow/artifact-core/lifecycle.ts so it compares the head against the last change log entry that carries a revision, not against a revision-less entry such as a build round or a feedback post receipt, and keep its callers working.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A receipt or a build round appended after the last content entry does not make a head that is ahead of or different from that entry pass the check",
+          "A head that matches its last revision-bearing entry still passes, with or without later revision-less entries",
+          "The existing integrity tests still pass"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "integrity-receipts.test.ts: a revision-less receipt or build round after the last content entry does not make a head that differs from that entry pass the integrity check"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the comment rules",
+        "summary": "Add src/workflow/tracker/comment-rules.ts: classifyComment (first line /revise or revision: gives revision-request, /suggest or suggestion: gives suggestion, else comment), isFrameworkComment (any insrc marker comment, no legacy shape), the actor of a tracker login (github:<lowercased login>, github:unknown for an empty or deleted author) and the feedback entry id tracker:<comment id>.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Only the first line decides the kind, any case, and ordinary prose that starts with the word suggestion is a comment",
+          "isFrameworkComment is true for the insrc:post, insrc:review, insrc:handoff, insrc:attach and insrc:feedback markers and false for human text and for the old unmarked Attached comment",
+          "A mixed-case login gives its lowercased github actor, and an empty author gives github:unknown",
+          "The entry id is tracker: followed by the comment id"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "comment-rules.test.ts: classifyComment gives revision-request, suggestion or comment from the first line only"
+          },
+          {
+            "level": "unit",
+            "name": "comment-rules.test.ts: isFrameworkComment recognises every insrc marker and no human text"
+          },
+          {
+            "level": "unit",
+            "name": "comment-rules.test.ts: the author and the entry id are derived from a tracker comment, a mixed-case login lowercased"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Implement the inbound half of the comment sync",
+        "summary": "Add src/workflow/tracker/comment-sync.ts with syncUnitComments' inbound half: find the unit's artifact and issue from its binding (the LLD for a Story, the TASK head for a Task), read the issue's comments in full, drop the framework's comments, and record each human comment once through FeedbackService.add with its entry id, actor, kind and source; failures go in the result and nothing throws.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A human comment is recorded once as feedback by the tracker user with its kind and source, and a repeated sync records nothing",
+          "Framework comments are counted as skipped and never recorded",
+          "A comment edited on the tracker after it was recorded is skipped silently and does not fail later syncs",
+          "A failed read or a failed record is in the result's failed list, the call can be repeated, and a comment that failed to record is picked up on the next sync",
+          "A unit with no binding or no artifact returns a result that says so"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "comment-sync-inbound.test.ts: a human comment is recorded once as feedback with the tracker user as author, framework comments are never recorded, an edited comment is not mirrored, and a tracker failure is reported without failing the call"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Implement the outbound half of the comment sync",
+        "summary": "Extend src/workflow/tracker/comment-sync.ts: for each feedback entry of the artifact that has no source and no receipt, check the issue's comments for its marker <!-- insrc:feedback:<artifact id>:<feedback id> -->, post it with postComment when none is found (never when the list cannot be read), and append the revision-less receipt entry (operation update, outcome posted, data kind feedback-post) to the artifact's log.",
+        "size": "L",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Feedback entered here is posted once and its receipt is written; a second sync posts nothing",
+          "A post whose receipt was lost is found by its marker and recorded without a second post",
+          "An entry that came from the tracker is never posted back",
+          "A failed post writes no receipt and is retried on the next sync; an unreadable comment list posts nothing",
+          "A reply is posted once as its own comment naming the entry it replies to",
+          "A receipt moves no revision and does not break the integrity check"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "comment-sync-outbound.test.ts: feedback entered here is posted once and its receipt is written, a post whose receipt was lost is found by its marker and not posted again, and failures leave the call repeatable"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Call the sync from implement, validate and the daemon method",
+        "summary": "Add src/daemon/tracker-sync-comments.ts with handleTrackerSyncComments and a best-effort runner for a Task, register tracker.syncComments in src/daemon/index.ts, and call the runner from src/daemon/steps/build-step/phases/implement.ts and validate.ts, reporting a short result in the phase's answer and never failing the phase.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Implement and validate run the sync for the Task and name what it recorded and posted in their result",
+          "tracker.syncComments runs the sync for the named unit on request and returns its result, or an error that says why nothing was attempted",
+          "A failing sync, or a repository with no tracker, leaves implement and validate working as before"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "comment-sync-callers.test.ts: implement and validate run the comment sync for the Task and the daemon method tracker.syncComments runs it on request, and neither is failed by it"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Record the s8 hand-offs",
+        "summary": "Add a section to docs/plans/core-data-model.md naming what s8 leaves for s9: the pre-s8 attach comments with no marker, the Story comments recorded on the LLD that move onto the Story artifact, the revision-less feedback-post receipts, and the since point (none, a full read).",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "The plans document names each s8 hand-off to s9",
+          "No code changes"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "s8-handoffs.test.ts: the plans document names each s8 hand-off to s9"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "classifyComment gives revision-request, suggestion or comment from the first line only",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "isFrameworkComment recognises the insrc markers and the older Attached link comment",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the author, the entry id and the since point derived from a tracker comment",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a human comment is recorded once as feedback by the tracker user, and framework comments are never recorded",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "an edited or deleted tracker comment is not mirrored",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "feedback entered here is posted once with its receipt, and a post whose receipt was lost is found by its marker and not posted again",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the sync failures leave the call repeatable and never fail the caller",
+        "coveredByTaskIds": [
+          "t5",
+          "t6",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "implement and validate run the sync, and the daemon method tracker.syncComments runs it on request",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "FeedbackService.add stores a source and treats the same id with the same source as a repeat",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the GitHub adapter's postComment answers the comment id and attach posts its marker",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 the api of syncUnitComments"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 the api of classifyComment and isFrameworkComment"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 the api of the port's postComment and the attach marker"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 the api of FeedbackService.add with a source"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 the api of handleTrackerSyncComments"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 the data model, the migration and the binding requirements recorded with its approval in docs/plans/core-data-model.md"
+    }
+  ]
+}

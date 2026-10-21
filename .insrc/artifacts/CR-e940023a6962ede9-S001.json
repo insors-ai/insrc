@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792576205965-uihgb1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-21T09:50:05.965Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 25154,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e940023a6962ede9",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-21T09:42:09.459Z",
+    "epicSlug": "stop-code-review-s-material-building",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "e940023a6962ede9",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+        "src/workflow/review-pipeline/adapters/code-review-material.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        "docs/mocks/ontology-editor.html",
+        "docs/mocks/ontology-source/ontology.template.html",
+        "docs/mocks/ontology-source/render.mjs",
+        "docs/mocks/ontology-viewer.html",
+        "docs/ontology-builder-prd.html",
+        "docs/ontology-builder-prd.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

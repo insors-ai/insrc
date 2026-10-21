@@ -201,6 +201,13 @@
         "choice": "Confirm s4 ownership now",
         "rationale": "AMD-8 is approved: s4 wires the durable History, journal and LifecycleService.",
         "resolvedAt": "2026-10-21T05:12:59.825Z"
+      },
+      "q004cd101": {
+        "question": "The Task side of CompletionEvidence reads the BUILD record's per-task results because no Task head has a payload yet; s7 replaces it with the Task artifact's own build rounds, so confirm that handoff",
+        "status": "resolved",
+        "choice": "Defer Task evidence to s7",
+        "rationale": "s3 reads the BUILD record's per-task results; s7 replaces the source.",
+        "resolvedAt": "2026-10-21T05:13:44.164Z"
       }
     }
   },

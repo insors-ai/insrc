@@ -692,6 +692,8 @@ lifecycle-service exports setLifecycleService and getLifecycleService; approveWo
   - **resolved**: Retire together in s9 — Gates keep the legacy meta fields until the s9 back-fill; then fields and readers go together. _(2026-10-21T05:12:15.484Z)_
 - `q8f664c9b` — The service reaches production only when s4 wires a durable History and WriteJournal into the daemon and passes the service on the approval request; confirm that handoff and the addConsumer amendment with s4
   - **resolved**: Confirm s4 ownership now — AMD-8 is approved: s4 wires the durable History, journal and LifecycleService. _(2026-10-21T05:12:59.825Z)_
+- `q004cd101` — The Task side of CompletionEvidence reads the BUILD record's per-task results because no Task head has a payload yet; s7 replaces it with the Task artifact's own build rounds, so confirm that handoff
+  - **resolved**: Defer Task evidence to s7 — s3 reads the BUILD record's per-task results; s7 replaces the source. _(2026-10-21T05:13:44.164Z)_
 
 ## Citations
 

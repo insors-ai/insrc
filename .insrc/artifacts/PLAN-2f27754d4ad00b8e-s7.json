@@ -1,0 +1,404 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792603574936-ucuzd6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T17:28:35.319Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 140369,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s7",
+    "lldRunId": "wf-1792602267744-a9vl16",
+    "lldEffectiveHash": "bd468fd6cd6cbb10f41ed03278a9990a06432e2f2bb796797ade5f7c51974189",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-21T17:44:22.789Z",
+    "rangeBase": "b0080a651aec40c7ba14398d26e1cd7f652db067"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story turns each plan Task into an artifact of its own. First the Task and Tasks payloads are typed and the pure rules (row checks, the edit check, number allocation) are written; then the module that creates the Task set at plan approval, reconciles a re-plan and edits a Task; then the tracker bookkeeping and every reader of the old Plan record move onto the Task heads; and last the approve flow, the daemon seam and the build gate are wired to it.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Type the TASK and TASKS payload codecs",
+        "summary": "Add src/workflow/tasks/types.ts with TaskPayload (title, summary, size, order, acceptanceChecks, tests, planTaskId), TasksPayload (planRevision, taskIds, nextNumber), TaskSetError and TaskStructureError, and replace the pass-through bodies of the TASK and TASKS codecs in src/workflow/artifact-core/codecs.ts with decoders that refuse a malformed body.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The TASK and TASKS codecs round-trip a typed payload and refuse a body with a missing or wrongly typed field",
+          "TaskPayload carries planTaskId and TasksPayload carries planRevision, taskIds and nextNumber",
+          "No other kind's codec changes behaviour"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "tasks-codec.test.ts: the TASK and TASKS codecs round-trip a Task payload and a Tasks payload and refuse a malformed body"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the pure Task diff, row validation, edit check and number allocation",
+        "summary": "Add src/workflow/tasks/pure.ts: map a plan row to a TaskPayload, diff a Task against a row, validate the plan rows (size S/M/L, unique ids, contiguous order, plus checkPlanTaskGraph with the plan's citations), check an edit patch against the editable fields and the Task's status with a pointer to a re-plan, and allocate the next number from a TasksPayload so it only grows.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A patch naming order or a dependency, or a Task that is completed, withdrawn or superseded, is refused with a message that points to a re-plan",
+          "Row validation rejects a bad size, a duplicate id and an order gap and passes the plan's own citations to checkPlanTaskGraph",
+          "Number allocation only grows and never returns the number of a withdrawn Task",
+          "The diff reports a Task as unchanged when its payload equals the row"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "task-diff.test.ts: a plan row maps to a Task payload, the diff reports an equal Task as unchanged, and row validation rejects a bad size, a duplicate id and an order gap"
+          },
+          {
+            "level": "unit",
+            "name": "task-edit-check.test.ts: a patch that names order or a dependency, or a Task that is completed or withdrawn, is refused with a pointer to a re-plan"
+          },
+          {
+            "level": "unit",
+            "name": "task-numbers.test.ts: the next number only grows and never takes a withdrawn Task's id"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement createFromPlan",
+        "summary": "Add src/workflow/tasks/task-set.ts with createFromPlan: validate the rows, write one TASK head per row (parent the Story, a depends-on reference per dependsOn and a derived-from reference to the approved PLAN at its revision), approve each through LifecycleService.apply as the plan's approving actor, move a Task record found on the Plan onto the head's binding, and write the TASKS head last; a repeat for the same plan revision writes nothing.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "createFromPlan writes the TASKS head and one approved TASK head per plan Task, each with parent, depends-on and derived-from references",
+          "A repeat for the same plan revision writes nothing and returns the same set",
+          "A plan with no Tasks writes a TASKS head with no ids and nextNumber 1",
+          "A Task record already on the Plan is moved onto its TASK head's binding"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "task-set-create.test.ts: createFromPlan writes the Tasks file and one approved Task head per plan Task with parent, dependencies and a derived-from reference, and a repeat writes nothing"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement reconcile and edit",
+        "summary": "Extend src/workflow/tasks/task-set.ts with reconcile (revise a changed Task matched by planTaskId, withdraw a dropped Task and close its issue through an injected tracker port or record the pending close, create a new Task under nextNumber, then record the plan revision last) and edit (editable fields only, applied inside an ArtifactStore.update mutator that refuses with LifecycleConflictError when the head's revision differs from the one read).",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A changed Task moves to a new revision and returns to draft, a dropped Task is withdrawn and its issue closed, a new Task takes the next number and no id is reused",
+          "edit moves the Task to a new revision in draft with no signoff and leaves the plan head and the other Tasks untouched",
+          "A structural edit is refused and writes nothing; an identical edit writes nothing",
+          "An edit and a reconcile that read the same revision cannot both land: the second is refused with LifecycleConflictError",
+          "A failed issue close is recorded as a pending close and returned in the result"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "task-set-reconcile.test.ts: a re-plan revises a changed Task, withdraws a dropped Task and closes its issue, adds a new Task under the next number, and never reuses an id"
+          },
+          {
+            "level": "integration",
+            "name": "task-set-edit.test.ts: editing a Task's summary, size, checks or tests moves it to a new revision in draft with no signoff, a structural edit is refused and writes nothing, and a conflicting edit is refused"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Add syncTasksOnPlanApproval, build rounds and the Task-based completion evidence",
+        "summary": "Add syncTasksOnPlanApproval (create, reconcile or nothing; never throws, returns { error }), recordBuildRound (a revision-less History.appendLog entry under ArtifactStore.exclusive) in src/workflow/tasks/task-set.ts, and make taskBuildPassed in src/workflow/artifact-core/completion-evidence.ts read the latest round of the Task's own log, falling back to the BUILD record only for a Task with no head.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "syncTasksOnPlanApproval creates the set for a new plan, reconciles a newer plan revision, does nothing when they agree, and returns { error } instead of throwing",
+          "recordBuildRound appends a log entry that moves no revision",
+          "taskBuildPassed answers from the latest round, so a later failing round un-passes the Task, and falls back to the BUILD record only for a Task with no head",
+          "A passing round completes the Task and the Story through the roll-up"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "task-set-sync.test.ts: syncTasksOnPlanApproval creates the set for a new plan, reconciles a newer plan revision, does nothing when they agree and returns an error instead of throwing"
+          },
+          {
+            "level": "integration",
+            "name": "task-build-rounds.test.ts: a passing build round completes the Task, a later failing round does not, and the Story completes through the roll-up"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Move the Task unit's issue record onto the TASK head",
+        "summary": "Point bindingHome and readRecord in src/workflow/tracker/unit-issue.ts at the TASK head for a task unit (the Plan only for a Task with no head), stop recordUnit writing the Plan's units and taskRefs for a Task, make src/workflow/tracker-auto.ts pushTasks map a plan row to its TASK id through the TASKS head, and stop src/workflow/draft-issues.ts claiming Task units.",
+        "size": "L",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "A Task's issue is created under the Story's issue and bound on its TASK head, with no Task record written on the Plan",
+          "The draft hook claims the Epic and the Story only",
+          "pushTasks maps each plan row to its TASK id and a Task with no head still resolves through the Plan fallback",
+          "Existing Epic and Story unit-issue behaviour is unchanged"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "task-unit-issue.test.ts: a Task's issue is created under the Story's issue and bound on its Task head with no record on the Plan, the draft hook claims the Epic and the Story only, and a Task with no head resolves through the Plan"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Move the remaining Plan Task-record readers",
+        "summary": "Make the Task branch of buildRef and resolveByIssue in src/workflow/tracker/resolve.ts, the prior-taskRefs dedup read in src/workflow/runners/tracker/context.ts and the taskRefs write in src/workflow/orchestrator.ts read the TASK head's binding, keeping the Plan fallback only for a Task with no head.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "#N resolves to a new Task through its head's binding and buildRef carries its issueRef",
+          "The tracker runner's dedup read and the orchestrator's push result use the TASK head's binding for a Task that has a head",
+          "A Task with no head still resolves through the Plan fallback"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "task-readers.test.ts: an issue number resolves to a Task through its head's binding, the tracker runner's dedup read and the orchestrator's push result use the head, and a Task with no head resolves through the Plan"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Run the Task sync from the approve flow and the daemon seam",
+        "summary": "Make approve() in src/cli/services/workflow.ts async and call syncTasksOnPlanApproval before the Task push, update its type in src/cli/services/index.ts and its callers in src/cli/panes/WorkflowsPane.tsx and src/cli/command.ts, add a 'tasks-sync' kind to FollowOnOutcome in src/workflow/gates.ts, and add src/daemon/tasks-sync.ts called at both follow-on sites in src/daemon/index.ts, running the sync and then the Task push.",
+        "size": "L",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Approving a plan through the cli flow and through the daemon seam creates the Task set and binds each Task's issue on its TASK head under the Story's issue",
+          "approve() is async and its callers await it",
+          "A failed sync is reported beside the approval and never fails it, and shows as ok:false in the daemon follow-on"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "task-set-approve.test.ts: approving a plan creates the Task set and each Task's issue is bound on its Task head under the Story's issue, through the cli approve flow and the daemon seam, and a failed sync never fails the approval"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Record a Task's build round from the build validate phase",
+        "summary": "Make src/daemon/steps/build-step/phases/validate.ts call recordBuildRound with the gate's verdict for the Task being validated, keeping the BUILD record write, and log and skip the Task write when the Task has no head.",
+        "size": "S",
+        "order": 9,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "A validate turn records its round (passed or failed, with the summary) in the Task's own log",
+          "A Task with no head keeps writing the BUILD record only"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "validate-task-round.test.ts: a validate turn records its round in the Task's own log, and a Task with no head keeps writing the BUILD record only"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Record the s9 hand-offs",
+        "summary": "Add a section to docs/plans/core-data-model.md naming what s7 leaves for s9: creating Task heads for the Stories planned before s7 and then removing the two head-less fallbacks (the Plan's Task record and the BUILD record's per-task result) and the Plan's taskRefs fields, the PLAN document's task table rendered from the Tasks (Gap 11.4), and the revision-less build-round entries.",
+        "size": "S",
+        "order": 10,
+        "dependsOn": [
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "The plans document names each s7 hand-off to s9",
+          "No code changes"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "s7-handoffs.test.ts: the plans document names each s7 hand-off to s9"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "the Task diff and the plan-row to TaskPayload mapping",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the edit patch check that names order, dependencies and structural changes",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "nextNumber allocation that only grows and skips withdrawn ids",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the TASK and TASKS payload codecs (encode, decode, refusal of a malformed body)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "createFromPlan writes the TASKS head and a TASK head per row, once",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcile revises, withdraws and adds without reusing an id",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "edit returns a Task to draft with a new revision and leaves the plan and the other Tasks alone",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a structural edit is refused with a pointer to a re-plan",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "recordBuildRound and taskBuildPassed complete a Task and, through the roll-up, the Story",
+        "coveredByTaskIds": [
+          "t5",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "the approve flow and the daemon seam both create the Task set, and each Task issue is bound on its TASK head under the Story's issue",
+        "coveredByTaskIds": [
+          "t6",
+          "t7",
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 the api of createFromPlan, reconcile and edit (sc7)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 the api of syncTasksOnPlanApproval and the daemon seam"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 the api of recordBuildRound and taskBuildPassed"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 the data model: TaskPayload, TasksPayload, the Task issue record, taskBuildPassed"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 the binding requirements recorded with its approval in docs/plans/core-data-model.md"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 the migration steps and the s9 hand-offs"
+    }
+  ]
+}

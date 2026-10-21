@@ -59,6 +59,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { open, type Database, type RootDatabase } from 'lmdb';
 
 import { getLogger } from '../../shared/logger.js';
+import { getStoreGuard, HEALTH_LOCKS_LOST } from '../store-guard.js';
 import { PATHS } from '../../shared/paths.js';
 
 const log = getLogger('graph-store');
@@ -438,8 +439,38 @@ export type StoreHealth =
 
 let _health: StoreHealth = { state: 'ok' };
 
+/**
+ * Store health is shared by every daemon thread (Epic 86197ac6, s1): the
+ * process-wide health word in the store guard's block says whether ANY thread
+ * found the locks lost. The thread that found it broadcasts its full record;
+ * until that record arrives, another thread reports the detecting thread.
+ */
+let _mirroredAt: string | undefined;
+let _healthBroadcast: ((health: StoreHealth) => void) | undefined;
+
+function currentHealth(): StoreHealth {
+	if (_health.state !== 'ok') return _health;
+	const guard = getStoreGuard();
+	if (guard.health('graph') !== HEALTH_LOCKS_LOST) return _health;
+	_mirroredAt ??= new Date().toISOString();
+	return {
+		state: 'locks-lost', at: _mirroredAt, detectedBy: 'read', libraryMessage: '',
+		operation: `an operation on daemon thread ${guard.healthSetBy('graph')}`,
+	};
+}
+
 export function getStoreHealth(): StoreHealth {
-	return _health;
+	return currentHealth();
+}
+
+/** Called by the thread that found the locks lost, with its full record, so the daemon can pass it to every thread. */
+export function setStoreHealthBroadcaster(fn: ((health: StoreHealth) => void) | undefined): void {
+	_healthBroadcast = fn;
+}
+
+/** Take the full locks-lost record another thread found; never logs (the finder already did). */
+export function receiveStoreHealth(health: StoreHealth): void {
+	if (health.state === 'locks-lost' && _health.state === 'ok') _health = health;
 }
 
 const MDB_LOCK_FAILURE = -30775;
@@ -457,8 +488,11 @@ function isLockLossReadError(e: unknown): boolean {
 }
 
 function recordLocksLost(operation: string, detectedBy: Exclude<StoreHealth, { state: 'ok' }>['detectedBy'], cause: unknown): void {
-	if (_health.state !== 'ok') return;
+	if (currentHealth().state !== 'ok') return;
 	_health = { state: 'locks-lost', at: new Date().toISOString(), operation, detectedBy, libraryMessage: errMessage(cause) };
+	// Only the first detection in the process logs and broadcasts.
+	if (!getStoreGuard().markLocksLost('graph')) return;
+	_healthBroadcast?.(_health);
 	log.error(
 		{ operation, detectedBy, libraryMessage: _health.libraryMessage },
 		'lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted',
@@ -516,6 +550,8 @@ export function setStoreProbeObserverForTests(fn: ((result: 'ok' | 'locks-lost')
 /** ONLY for tests: a process's health is never cleared in production. */
 export function resetStoreHealthForTests(): void {
 	_health = { state: 'ok' };
+	_mirroredAt = undefined;
+	getStoreGuard().resetHealthForTests('graph');
 }
 
 /**
@@ -526,7 +562,8 @@ export function resetStoreHealthForTests(): void {
  * place the failure is raised: no later call reaches the library.
  */
 export async function getGraphStore(): Promise<GraphStore> {
-	if (_health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`opening the store (failed earlier during: ${_health.operation})`);
+	const health = currentHealth();
+	if (health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`opening the store (failed earlier during: ${health.operation})`);
 	if (_instance !== null) return _instance;
 	if (_initPromise !== null) return _initPromise;
 	// Before anything touches the path: no directory, no lock file, no open.
@@ -727,7 +764,7 @@ export async function getGraphStore(): Promise<GraphStore> {
 export function runReaderCheck(reason: string): number {
 	const inst = _instance;
 	if (inst === null) return 0;
-	if (_health.state === 'locks-lost') return 0;
+	if (currentHealth().state === 'locks-lost') return 0;
 	// A read that failed outside a request or a job (a timer, the boot
 	// sequence, a handler that swallows its own failures) is recorded by
 	// nobody. This check runs anyway, so it also asks whether the store can
@@ -905,12 +942,13 @@ export async function closeGraphStore(): Promise<void> {
 	if (inst === null) return;
 	// A failure that no call has met yet must be found HERE: the library's
 	// close never returns once the semaphores are gone.
-	if (_health.state === 'ok') {
+	if (currentHealth().state === 'ok') {
 		const lost = probeForLockLoss(inst);
 		if (lost !== undefined) recordLocksLost('closing the store', 'read', lost);
 	}
-	if (_health.state === 'locks-lost') {
-		log.warn({ operation: _health.operation, at: _health.at }, 'lmdb graph store close skipped: the store lost its locks');
+	const health = currentHealth();
+	if (health.state === 'locks-lost') {
+		log.warn({ operation: health.operation, at: health.at }, 'lmdb graph store close skipped: the store lost its locks');
 		return;
 	}
 	try {
@@ -1022,7 +1060,8 @@ export function withWriteTxnSync<T>(
 	store: GraphStore,
 	fn: () => T,
 ): T {
-	if (_health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`a synchronous write (failed earlier during: ${_health.operation})`);
+	const health = currentHealth();
+	if (health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`a synchronous write (failed earlier during: ${health.operation})`);
 	try {
 		return store.root.transactionSync(fn);
 	} catch (e) {

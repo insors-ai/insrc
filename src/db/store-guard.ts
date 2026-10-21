@@ -80,7 +80,8 @@ const HOLDER_SLOTS = 256;
 const W_ACQ_COUNTER = 0;                                   // next acquisition id
 const W_PERMITS     = 1;                                   // + store index: permits free
 const W_HEALTH      = W_PERMITS + STORE_IDS.length;        // + store index: 0 ok, 1 locks-lost, 2 unhealthy
-const W_HOLDERS     = W_HEALTH + STORE_IDS.length;         // + slot * 3: [store+1, threadId, acquisitionId]
+const W_HEALTH_BY   = W_HEALTH + STORE_IDS.length;         // + store index: thread that set the health word
+const W_HOLDERS     = W_HEALTH_BY + STORE_IDS.length;      // + slot * 3: [store+1, threadId, acquisitionId]
 const HOLDER_WORDS  = 3;
 const INT_WORDS     = W_HOLDERS + HOLDER_SLOTS * HOLDER_WORDS;
 const F64_OFFSET    = Math.ceil((INT_WORDS * 4) / 8) * 8;  // acquiredAt per slot
@@ -190,6 +191,30 @@ export class StoreGuard {
 
 	health(store: StoreId): number {
 		return Atomics.load(this.words, W_HEALTH + storeIndex(store));
+	}
+
+	/**
+	 * Mark the store's locks lost for every thread. Returns true for the one
+	 * thread whose mark took effect (it logs and broadcasts), false when another
+	 * thread had already marked it.
+	 */
+	markLocksLost(store: StoreId): boolean {
+		const i = storeIndex(store);
+		if (Atomics.compareExchange(this.words, W_HEALTH + i, HEALTH_OK, HEALTH_LOCKS_LOST) !== HEALTH_OK) return false;
+		Atomics.store(this.words, W_HEALTH_BY + i, this.threadId);
+		return true;
+	}
+
+	/** The thread that set the store's health word. */
+	healthSetBy(store: StoreId): number {
+		return Atomics.load(this.words, W_HEALTH_BY + storeIndex(store));
+	}
+
+	/** ONLY for tests: a process's store health is never cleared in production. */
+	resetHealthForTests(store: StoreId): void {
+		const i = storeIndex(store);
+		Atomics.store(this.words, W_HEALTH_BY + i, 0);
+		Atomics.store(this.words, W_HEALTH + i, HEALTH_OK);
 	}
 
 	holders(): readonly StoreLockHolder[] {

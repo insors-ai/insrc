@@ -1,0 +1,103 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * Store health shared by every daemon thread (Epic 86197ac6, Story s1, t5): a
+ * worker that finds the locks lost stops every thread, not only itself.
+ *
+ * Run: npx tsx --test src/db/graph/__tests__/store-health-threads.test.ts
+ */
+
+import { after, beforeEach, test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { Worker } from 'node:worker_threads';
+
+import { getLogger } from '../../../shared/logger.js';
+import { createStoreGuardBlock, installStoreGuard } from '../../store-guard.js';
+import {
+	closeGraphStore, getGraphStore, getStoreHealth, LmdbStoreLocksLostError, receiveStoreHealth, recordStoreFailureIfLockError,
+	resetStoreHealthForTests, runReaderCheck, setGraphStorePath, setStoreProbeObserverForTests, withWriteTxn,
+} from '../store.js';
+import type { StoreHealth } from '../store.js';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const base = mkdtempSync(join(tmpdir(), 'insrc-health-threads-'));
+const block = createStoreGuardBlock();
+installStoreGuard(block);
+let n = 0;
+
+beforeEach(async () => {
+	await closeGraphStore();
+	resetStoreHealthForTests();
+	setGraphStorePath(join(base, `s${++n}.lmdb`));
+});
+after(async () => {
+	setStoreProbeObserverForTests(null);
+	resetStoreHealthForTests();
+	await closeGraphStore();
+	rmSync(base, { recursive: true, force: true });
+});
+
+/** Run the worker that finds the locks lost; resolves with what it reported. */
+async function workerFindsLocksLost(): Promise<{ recorded: boolean; broadcast: StoreHealth; health: StoreHealth }> {
+	const worker = new Worker(join(HERE, 'helpers', 'health-worker.ts'), { workerData: { block } });
+	try {
+		return await new Promise((res, rej) => { worker.once('message', res); worker.once('error', rej); });
+	} finally {
+		await worker.terminate();
+	}
+}
+
+/** Collect the graph store's log calls at one level while `fn` runs. */
+async function logged(level: 'error' | 'warn', fn: () => Promise<void> | void): Promise<unknown[][]> {
+	const logger = getLogger('graph-store') as unknown as Record<string, (...a: unknown[]) => void>;
+	const original = logger[level]!;
+	const calls: unknown[][] = [];
+	logger[level] = (...a: unknown[]) => { calls.push(a); };
+	try { await fn(); } finally { logger[level] = original; }
+	return calls;
+}
+
+test("locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing", async () => {
+	await getGraphStore();   // the main thread has the store open, as the daemon does
+	const found = await workerFindsLocksLost();
+	assert.equal(found.recorded, true);
+	assert.equal(found.broadcast.state, 'locks-lost', 'the finding thread broadcasts its record');
+	assert.equal(found.broadcast.state === 'locks-lost' && found.broadcast.operation, 'request worker.op');
+
+	await assert.rejects(getGraphStore(), LmdbStoreLocksLostError);
+	let ran = false;
+	await assert.rejects(withWriteTxn(() => { ran = true; }), LmdbStoreLocksLostError);
+	assert.equal(ran, false, 'the write callback never ran');
+});
+
+test('after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log', async () => {
+	await getGraphStore();
+	const found = await workerFindsLocksLost();
+
+	const before = getStoreHealth();
+	assert.equal(before.state, 'locks-lost', 'reported before the full record arrives');
+	assert.match(before.state === 'locks-lost' ? before.operation : '', /daemon thread \d+/, 'naming the detecting thread');
+	receiveStoreHealth(found.broadcast);
+	const after_ = getStoreHealth();
+	assert.equal(after_.state === 'locks-lost' && after_.operation, 'request worker.op', 'the full record once it arrives');
+
+	const probes: string[] = [];
+	setStoreProbeObserverForTests(r => probes.push(r));
+	assert.equal(runReaderCheck('periodic'), 0);
+	assert.deepEqual(probes, [], 'runReaderCheck does not probe a store whose locks are lost');
+
+	const errors = await logged('error', () => {
+		assert.equal(recordStoreFailureIfLockError(Object.assign(new Error('MDB_LOCK_FAILURE'), { code: -30775 }), 'request main.op'), true);
+	});
+	assert.deepEqual(errors, [], 'a second detection does not log again');
+
+	const warns = await logged('warn', () => closeGraphStore());
+	assert.ok(warns.some(w => JSON.stringify(w).includes('close skipped')), 'closeGraphStore skips the library close');
+});

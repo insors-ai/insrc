@@ -26,7 +26,7 @@ import { validateLogEntry } from './history.js';
 import type { History } from './history.js';
 import { createMemoryJournal } from './journal.js';
 import type { StagedOperation, WriteJournal } from './journal.js';
-import { assertLegalStatusChange, checkHeadIntegrity, isLifecycleOperation } from './lifecycle.js';
+import { TERMINAL, assertLegalStatusChange, checkHeadIntegrity, isLifecycleOperation } from './lifecycle.js';
 import { ArtifactNotFoundError, ArtifactShapeError, LifecycleConflictError } from './types.js';
 import type { Actor, Artifact, ChangeLogEntry, Feedback, Operation, Reference } from './types.js';
 
@@ -46,6 +46,13 @@ export interface ArtifactStoreDeps {
 	readonly now?:      (() => Date) | undefined;
 	/** Replaces the head file; defaults to the atomic writer. Injected by tests to fail a replace. */
 	readonly writeHead?: ((path: string, bytes: string) => void) | undefined;
+}
+
+/** The prepared head text with its lifecycle status set to completed. */
+function completedBytes(bytes: string): string {
+	const head = JSON.parse(bytes) as { meta: { lifecycle: Record<string, unknown> } };
+	head.meta.lifecycle['status'] = 'completed';
+	return JSON.stringify(head, null, 2) + '\n';
 }
 
 /** What a caller can say about the change log entry of a write. */
@@ -186,7 +193,13 @@ export class ArtifactStore {
 		};
 		const timestamp = (this.deps.now ?? (() => new Date()))().toISOString();
 		// prepareArtifactWrite reconciles meta.lifecycle: the hash and number follow the content, and a content change returns the head to draft.
-		const prepared = prepareArtifactWrite(path, { ...base, meta: { ...base.meta, envelope, lifecycle: source.lifecycle } }, 'content', { by, at: timestamp, cascade: options.cascade === true });
+		// A cascading complete is prepared at the status the head already has (the closed table has no step into completed from every
+		// status) and given its completed status afterwards, once everything else has been reconciled.
+		const cascadeFrom = options.cascade === true && operation === 'complete' && prior !== undefined && !TERMINAL.includes(prior.artifact.lifecycle.status)
+			? prior.artifact.lifecycle.status : undefined;
+		const lifecycle = cascadeFrom === undefined ? source.lifecycle : { ...source.lifecycle, status: cascadeFrom };
+		const reconciled = prepareArtifactWrite(path, { ...base, meta: { ...base.meta, envelope, lifecycle } }, 'content', { by, at: timestamp });
+		const prepared = cascadeFrom === undefined ? reconciled : { ...reconciled, bytes: completedBytes(reconciled.bytes) };
 		const stored = decodeArtifactHead(a.id, prepared.bytes).artifact.lifecycle;
 		const from = prior?.artifact.lifecycle.status;
 		if (from !== undefined && isLifecycleOperation(operation)) assertLegalStatusChange(from, stored.status, operation, options.cascade === true);

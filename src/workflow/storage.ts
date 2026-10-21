@@ -185,7 +185,7 @@ function contentViewOf(head: Record<string, unknown>, revision: number): Content
 
 function reconcileLifecycleOf(
 	prior: Record<string, unknown> | undefined, next: Record<string, unknown>, meta: Record<string, unknown>, revisionNumber: number,
-	opts: { readonly by?: Actor | undefined; readonly at?: string | undefined; readonly cascade?: boolean | undefined },
+	opts: { readonly by?: Actor | undefined; readonly at?: string | undefined },
 ): { readonly lifecycle: Lifecycle; readonly contentChanged: boolean } {
 	const status = (meta['lifecycle'] as { status?: unknown }).status;
 	if (!LIFECYCLE_STATUSES.includes(status as Status)) throw new ArtifactShapeError(`the lifecycle has an unknown status '${String(status)}'`);
@@ -195,7 +195,7 @@ function reconcileLifecycleOf(
 	// the number moves only with the content, whichever number the caller offers for a change
 	const unchanged = priorView !== undefined
 		&& contentHash(priorView.description, priorView.payload) === contentHash(nextView.description, nextView.payload);
-	return reconcileLifecycle(priorView, nextView, unchanged ? priorView.lifecycle.revision.number : revisionNumber, opts.by ?? DEFAULT_ACTOR, opts.at ?? new Date().toISOString(), opts.cascade === true);
+	return reconcileLifecycle(priorView, nextView, unchanged ? priorView.lifecycle.revision.number : revisionNumber, opts.by ?? DEFAULT_ACTOR, opts.at ?? new Date().toISOString());
 }
 
 /** What a write would put on disk. */
@@ -215,7 +215,7 @@ export interface PreparedArtifactWrite {
  */
 export function prepareArtifactWrite(
 	path: string, next: unknown, kind: WriteKind,
-	opts: { readonly replaceUnreadable?: boolean | undefined; readonly by?: Actor | undefined; readonly at?: string | undefined; readonly cascade?: boolean | undefined } = {},
+	opts: { readonly replaceUnreadable?: boolean | undefined; readonly by?: Actor | undefined; readonly at?: string | undefined } = {},
 ): PreparedArtifactWrite {
 	if (!isRecord(next) || !isRecord(next['meta'])) {
 		throw new TypeError(`writeArtifact: ${path}: the artifact must be an object with a meta object`);

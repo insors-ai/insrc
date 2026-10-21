@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 45 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -291,3 +291,39 @@ Run at 2026-10-21T09:02:40.553Z on commit `c66188c6`. Tests check: **passed**. 2
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/code-review/__tests__/subject-attribution.test.ts` | 0 | 6 | 2.3 s |  |
 | `src/workflow/code-review/__tests__/subject.test.ts` | 0 | 19 | 1.5 s |  |
+
+## t11
+
+Run at 2026-10-21T09:06:42.228Z on commit `ec90553f`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces | `src/daemon/tools/builtins/git/__tests__/diff.test.ts` |
+
+**unit: src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call | `src/daemon/tools/builtins/git/__tests__/diff.test.ts` |
+
+**unit: src/workflow/code-review/__tests__/diff-grounding.test.ts: 'splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes | `src/workflow/code-review/__tests__/diff-grounding.test.ts` |
+
+**integration: src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there | `src/workflow/code-review/__tests__/diff-attribution.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/tools/builtins/git/__tests__/diff.test.ts` | 0 | 10 | 2.3 s |  |
+| `src/workflow/code-review/__tests__/diff-attribution.test.ts` | 0 | 6 | 1.8 s |  |
+| `src/workflow/code-review/__tests__/diff-grounding.test.ts` | 0 | 25 | 2.2 s |  |

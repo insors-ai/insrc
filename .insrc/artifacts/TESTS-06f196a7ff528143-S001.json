@@ -4,7 +4,7 @@
     "epicHash": "06f196a7ff528143",
     "storyId": "S001",
     "createdAt": "2026-10-21T05:47:38.616Z",
-    "updatedAt": "2026-10-21T09:02:40.553Z",
+    "updatedAt": "2026-10-21T09:06:42.228Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-21T05:02:26.565Z",
     "epicSlug": "scope-story-s-code-review-what"
@@ -2566,6 +2566,259 @@
               },
               {
                 "title": "the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "ec90553f",
+        "ranAt": "2026-10-21T09:06:42.228Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/diff.test.ts",
+                "title": "a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/diff.test.ts",
+                "title": "a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/diff-grounding.test.ts: 'splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts",
+                "title": "splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+                "title": "a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/diff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2331,
+            "titles": [
+              {
+                "title": "T22: exclude removes a file from BOTH the diff body and the file list; a kept file stays in both",
+                "result": "pass"
+              },
+              {
+                "title": "T22: an excluded file does not count against maxBytes",
+                "result": "pass"
+              },
+              {
+                "title": "T23: with no exclude, and with an empty one, both argument vectors are exactly today's (numstat reads -z since ISSUE-b97752e9)",
+                "result": "pass"
+              },
+              {
+                "title": "T23: the body and the numstat command receive the SAME pathspecs",
+                "result": "pass"
+              },
+              {
+                "title": "T24: path stays the positive pathspec when exclude is given, and the exclusions narrow it",
+                "result": "pass"
+              },
+              {
+                "title": "T25: a malformed exclude is invalid-input and git is not run",
+                "result": "pass"
+              },
+              {
+                "title": "T25: the closed input schema declares exclude as an array of non-empty strings",
+                "result": "pass"
+              },
+              {
+                "title": "when the diff body command succeeds and the numstat command fails, git_diff returns success: false naming the stat failure",
+                "result": "pass"
+              },
+              {
+                "title": "a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces",
+                "result": "pass"
+              },
+              {
+                "title": "a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1835,
+            "titles": [
+              {
+                "title": "a diff review of a trailered Story shows only its own hunks in a file another Story also edited",
+                "result": "pass"
+              },
+              {
+                "title": "without a story key the diff is today's, and both diff callers record the attribution and what was left out on the subject",
+                "result": "pass"
+              },
+              {
+                "title": "the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit",
+                "result": "pass"
+              },
+              {
+                "title": "storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited",
+                "result": "pass"
+              },
+              {
+                "title": "a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding",
+                "result": "pass"
+              },
+              {
+                "title": "a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2192,
+            "titles": [
+              {
+                "title": "assembler: the Story range yields one pseudo-symbol per changed file (kind:file, name:file, hunks in signature)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: with no base the diff-only review is unavailable and no seam is called (ISSUE-b97752e9)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: a binary changed file yields a pseudo-symbol with a binary marker (no hunks), still present in changedFiles",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: an empty range and a clean tree => a valid grounding with symbols:[] (no crash)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: a truncated diff still yields a valid grounding (bounded hunks + a truncation note, review proceeds)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: a working-tree git failure propagates (DiffUnavailableError)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: a range git failure propagates at once — no step-down to the working tree or a last commit",
+                "result": "pass"
+              },
+              {
+                "title": "assembler (integration): a real repo with no base is refused, and the assembler is read-only",
+                "result": "pass"
+              },
+              {
+                "title": "a base and no globs: the range then the working tree, with no excludeGlobs argument",
+                "result": "pass"
+              },
+              {
+                "title": "a base and globs: the RANGE is read first, then the working tree, both with the globs",
+                "result": "pass"
+              },
+              {
+                "title": "a dirty working tree: a Story file's uncommitted hunks join its committed ones; an unrelated file is left out and listed in excludedFromScope",
+                "result": "pass"
+              },
+              {
+                "title": "T45: a base whose range is EMPTY after exclusion gives an empty result, and an uncommitted file is only reported",
+                "result": "pass"
+              },
+              {
+                "title": "seams without rangeDiff cannot anchor the Story: DiffUnavailableError, and the working tree is not read",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not a diff failure propagates at once",
+                "result": "pass"
+              },
+              {
+                "title": "T44 (integration, real git): ledger hunks larger than the diff cap that sort before src/ — with the exclusion every source file keeps its diff text; without it the text is lost",
+                "result": "pass"
+              },
+              {
+                "title": "integration, real git: with no base and a clean tree nothing is reviewed in the Story's place",
+                "result": "pass"
+              },
+              {
+                "title": "the range diff carries full hunks for the Story files and none for merged-in files",
+                "result": "pass"
+              },
+              {
+                "title": "a file changed by both a Story commit and the merge carries only the Story's own hunks",
+                "result": "pass"
+              },
+              {
+                "title": "edits folded into a merge commit are reviewed and marked",
+                "result": "pass"
+              },
+              {
+                "title": "a range with no Story change gives an empty grounding without calling git_diff",
+                "result": "pass"
+              },
+              {
+                "title": "a shared path touched by two Story commits keeps both commits' hunks and a folded marker stays on its own file when it is not first",
+                "result": "pass"
+              },
+              {
+                "title": "without hunksByFile buildDiffSymbols splits the body as before",
+                "result": "pass"
+              },
+              {
+                "title": "the range diff applies the exclusions to every per-unit call",
+                "result": "pass"
+              },
+              {
+                "title": "a truncated per-unit call marks the grounding truncated and a storyChangeSet failure makes the review unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes",
                 "result": "pass"
               }
             ],

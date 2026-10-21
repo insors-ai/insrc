@@ -62,7 +62,7 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 			// Matched by name, as today: a session that ran out its time fails the review, never re-issued.
 			if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') throw deadlineError(job, adapter);
 			const failure = classify(err);
-			log.warn({ dimension: job.dimension, stage: call.stage, role: call.role, attempt: call.attempt, cause: failure.cause }, 'review pipeline: a call did not complete');
+			log.warn({ dimension: job.dimension, stage: call.stage, role: call.role, attempt: call.attempt, cause: failure.cause, detail: failure.detail }, 'review pipeline: a call did not complete');
 			job = applyFailure(job, adapter, call.callId, failure.cause, failure.maxChars, { detail: failure.detail, now: now() });
 			continue;
 		}

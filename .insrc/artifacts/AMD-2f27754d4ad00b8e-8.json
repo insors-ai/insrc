@@ -17,5 +17,7 @@
     "stepId": "s4"
   },
   "proposedAt": "2026-10-21T04:50:52.507Z",
-  "status": "pending"
+  "status": "approved",
+  "approvedAt": "2026-10-21T04:58:56.532Z",
+  "approvedBy": "user (explicit yes in chat, 2026-10-21)"
 }

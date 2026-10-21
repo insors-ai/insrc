@@ -170,7 +170,9 @@
     "reviewOverride": {
       "reason": "Approved by the owner on explicit yes (2026-10-21) over the daemon review block (6 HIGH after two authoring passes; first pass 9 HIGH, 1 MED). The six remaining findings are recorded as binding requirements for the s3 plan and build in docs/plans/core-data-model.md (s3 LLD approved with an override).",
       "at": "2026-10-21T04:56:36.237Z"
-    }
+    },
+    "staleAckedAt": "2026-10-21T04:58:56.533Z",
+    "staleAckedReason": "AMD-8 only adds s4 as a consumer of sc4; the s3 LLD does not change"
   },
   "body": {
     "summary": {

@@ -256,6 +256,13 @@
         "choice": "s6 owns carryBinding in storage.ts",
         "rationale": "Approved LLD review: the owner approved with the recommended answers.",
         "resolvedAt": "2026-10-21T15:32:40.100Z"
+      },
+      "qe02f1e05": {
+        "question": "Binding and attachment bookkeeping appends no change log entry, although the HLD's observability line says every state change does; the record is in the binding itself (posted[].at, attachments[].at) and the log output. Resolve: accept this as tracker bookkeeping rather than artifact state (recommended), or add an Operation for it and have a sync path append through History (needs an HLD amendment to sc3).",
+        "status": "resolved",
+        "choice": "Accept as tracker bookkeeping",
+        "rationale": "Recommended answer, approved with the LLD.",
+        "resolvedAt": "2026-10-21T15:33:59.107Z"
       }
     }
   },

@@ -555,6 +555,8 @@ BindingService as in a1, plus a new receipts sidecar (append-only lines keyed by
 
 - `q0430b408` — The binding and attachments are written by sync meta-only patches, not through ArtifactStore.update, because the team gate and the draft-issue hook that record a unit's issue are synchronous and the store is async; making them async would rewrite every teamGate caller. To keep a store write from undoing a patch, prepareArtifactWrite carries meta.envelope.binding and meta.envelope.attachments from the head on disk into every content write of an existing artifact (carryBinding, as carryTracker does for meta.tracker). That touches the store's write path owned by s2 and s4. Resolve: accept it as an s6-owned change to src/workflow/storage.ts (recommended), or move the two sync recording points to the async store and make the gate async (a large change outside s6).
   - **resolved**: s6 owns carryBinding in storage.ts — Approved LLD review: the owner approved with the recommended answers. _(2026-10-21T15:32:40.100Z)_
+- `qe02f1e05` — Binding and attachment bookkeeping appends no change log entry, although the HLD's observability line says every state change does; the record is in the binding itself (posted[].at, attachments[].at) and the log output. Resolve: accept this as tracker bookkeeping rather than artifact state (recommended), or add an Operation for it and have a sync path append through History (needs an HLD amendment to sc3).
+  - **resolved**: Accept as tracker bookkeeping — Recommended answer, approved with the LLD. _(2026-10-21T15:33:59.107Z)_
 
 ## Citations
 

@@ -1,0 +1,1114 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792602267744-a9vl16",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T17:10:18.568Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 350814,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s7",
+    "hldBaseRunId": "wf-1792406752203-whj6zi",
+    "hldEffectiveHash": "bd468fd6cd6cbb10f41ed03278a9990a06432e2f2bb796797ade5f7c51974189",
+    "hldAmendmentsApplied": [
+      "AMD-2f27754d4ad00b8e-5",
+      "AMD-2f27754d4ad00b8e-6",
+      "AMD-2f27754d4ad00b8e-7",
+      "AMD-2f27754d4ad00b8e-8",
+      "AMD-2f27754d4ad00b8e-9"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Acceptance criteria ac20–ac23 (Task set made at plan approval with issues under the Story's issue; direct edit of summary/size/checks/tests to a new draft revision; structural edits refused with a re-plan pointer; re-plan revises/withdraws/adds without id reuse) each have a designed contract.",
+          "evidence": "DEF.md:221-224 states ac20–ac23; LLD §2.1 createFromPlan, §2.3 edit (+TaskStructureError), §2.2 reconcile (nextNumber only grows, withdraw + issue close) and §2.4 syncTasksOnPlanApproval cover each. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The settled upstream decisions on Tasks (core-data-model.md Gap 11) are all designed: Tasks and their issues exist only from plan approval, and each Task carries a derived-from reference to the approved plan revision.",
+          "evidence": "Gap 11.3: \"Created at plan approval, not at plan draft. Until then the PLAN is the only place tasks exist ... there are no Task issues ... each Task gets a `derived-from` reference to it\". The LLD gives a TASK head only a parent (the Story) and depends-on references, with no derived-from reference to the plan revision. It keeps the team-mode draft hook, which creates Task issues at plan DRAFT time (draft-issues.ts:14 \"plan  the Epic, the Story, then each Task in plan order\"; :77). It only says the hook should \"resolve the Task's head\", but no head exists at draft. Gap 11.4 (\"the PLAN document renders its task table from the Tasks\") is neither designed nor handed off. [files: docs/plans/core-data-model.md, src/workflow/draft-issues.ts]",
+          "action": "Add the derived-from reference (TASK → PLAN at the approved revision) to createFromPlan/reconcile postconditions; either stop the draft hook claiming Task units (Story only) or state explicitly why Task issues may precede approval; design or hand off the PLAN task-table rendering.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "CompletionEvidence.taskBuildPassed today reads the BUILD record's body.tasks[].passed, and no Task history records build rounds.",
+          "evidence": "completion-evidence.ts:43-51 reads artifactJsonPath(buildArtifactId(...)).body.tasks and returns task.passed === true; the file header says \"The Task side reads the BUILD record's per-task results until s7\". [files: src/workflow/artifact-core/completion-evidence.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "TASKS and TASK use pass-through codecs, and the sidecar store maps every TASK onto its Story's TASKS log and feedback files.",
+          "evidence": "codecs.ts:104-107 list ['TASKS','plan'], ['TASK','plan'] with the comment \"EPIC, STORY, TASKS, TASK and DIAG are pass-through\". sidecar-store.ts:77-78 give a TASK the files of ArtifactIds.make({kind:'TASKS',...}). [files: src/workflow/artifact-core/codecs.ts, src/workflow/artifact-core/sidecar-store.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The cli approve service pushes Task issues after a plan approval; the daemon's workflow.approve and workflow.reviewDecision paths do not run it and have a follow-on seam with s6's 'tracker-attach' kind.",
+          "evidence": "cli/services/workflow.ts:201 `else if (approval.workflow === 'plan') tracker = autoPushTasksOnPlan(approval.path);`. daemon/index.ts:652-660 and 752-760: followOn = advanceApprovedBugfixes + followOnTrackerAttach. gates.ts:828 kind: 'bugfix-advance' | 'bugfix-complete' | 'tracker-attach'. [files: src/cli/services/workflow.ts, src/daemon/index.ts, src/workflow/gates.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The reused primitives exist with the stated shape: LifecycleService.updateContent (returns content to draft, carries outcome), apply(id,'withdraw',by), ArtifactStore.write/read/childrenOf/exclusive, a 'withdraw' transition from non-terminal statuses, and TrackerPort.close.",
+          "evidence": "lifecycle-service.ts:75 apply(id, op, by, detail, ctx) and :197 updateContent(id, by, payload, {outcome, references, create, addresses}). store.ts:106 read, :127 childrenOf, :166 write, :217 exclusive. lifecycle.ts:48 `'withdraw': { from: NON_TERMINAL, to: 'withdrawn' }`. port.ts:62 `close(issue: IssueRef): PortResult<void>`. [files: src/workflow/artifact-core/lifecycle-service.ts, src/workflow/artifact-core/store.ts, src/workflow/artifact-core/lifecycle.ts, src/workflow/tracker/port.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A build round can be logged without moving the revision (recordBuildRound). The store has no log-only write, and the recommended path (a revision-less History.appendLog under exclusive) is accepted by validation and skipped by the integrity tail lookup.",
+          "evidence": "store.ts:304 `if (priorBytes === prepared.bytes) return undefined; // nothing changes: no staged operation, no log entry`, so updateContent with an unchanged payload logs nothing; the LLD flags this in open question 2. history.ts:54 validates `revision` only when present. store.ts:265 and lifecycle-service.ts:88 take the tail with `find(e => e.revision !== undefined)`. Note that ArtifactStore keeps its History dependency private, so TaskSets must be given its own History instance. [files: src/workflow/artifact-core/store.ts, src/workflow/artifact-core/history.ts]",
+          "action": "Resolve open question 2 in the contract (§2.5) and name where TaskSets gets its History handle.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The plan's own checkPlanTaskGraph detects the malformed-row cases listed in §5 (duplicate id, unknown dependsOn, order gap, size outside S/M/L).",
+          "evidence": "plan.ts:203-244 checkPlanTaskGraph checks the id pattern, duplicate ids, non-empty derivedFrom, unknown dependsOn, topological order, cycles and citation coverage. It does not check size, and it does not check order gaps or duplicates (only `depOrder >= t.order` for dependent pairs). It also requires citations, so a call without the plan's citations reports under-coverage for every citation. [files: src/workflow/artifacts/plan.ts]",
+          "action": "Add the size and order-contiguity checks to the TaskSets row validation, or extend checkPlanTaskGraph and say so, and state that the plan's citations are passed in.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Step 3 can call the async syncTasksOnPlanApproval from the cli approve service \"before the Task push\" without other change sites.",
+          "evidence": "cli/services/workflow.ts:194 `export function approve(artifactPath, withTracker = true, overrideReview?): ApproveOutcome` is synchronous, and autoPushTasksOnPlan (tracker-auto.ts:158) is synchronous too. Awaiting the store-backed sync before the push means making approve async and changing its declared type and callers: cli/services/index.ts:58, cli/panes/WorkflowsPane.tsx:116 and cli/command.ts:242. None of these is in the inventory, and §8.2 rejects a2 for exactly this \"async seam in synchronous code\". [files: src/cli/services/workflow.ts, src/cli/services/index.ts, src/cli/panes/WorkflowsPane.tsx, src/cli/command.ts]",
+          "action": "List approve()'s signature change and its callers (services/index.ts, WorkflowsPane.tsx, command.ts) in the change sites, or state how ordering is guaranteed otherwise.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The §3.3 inventory (unit-issue.ts, binding.ts, tracker-auto.ts, draft-issues.ts) lists every reader of the Plan's Task issue records that step 4 stops writing.",
+          "evidence": "tracker/resolve.ts:337 `taskRef = plan?.meta?.tracker?.taskRefs?.[taskId];` and :379-381 resolveByIssue scans every PLAN's taskRefs to resolve an `#N` target to a Task. That is the resolution insrc_build_step `implement` uses for `#N` targets. runners/tracker/context.ts:73-87 reads plan.meta.tracker.taskRefs for dedup, and orchestrator.ts:2949-2955 writes taskRefs onto the plan. Once recordUnit stops writing taskRefs for a Task, `#N` no longer resolves to a new Task and buildRef carries no issueRef. None of these files is in §3.3. [files: src/workflow/tracker/resolve.ts, src/workflow/runners/tracker/context.ts, src/workflow/orchestrator.ts]",
+          "action": "Add resolve.ts (resolveByIssue and buildRef task branch), runners/tracker/context.ts and orchestrator.ts to the change sites and make them read the TASK head's binding (with the Plan fallback for head-less Tasks).",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "TaskPayload holds a stable key linking a TASK head to its plan row, so reconcile, pushTasks and the draft hook can find a Task's head once Task numbers come from nextNumber.",
+          "evidence": "§3.1's prose says the payload carries \"the plan row id (t1..)\", but the interface omits it: `interface TaskPayload { title; summary; size; order; acceptanceChecks; tests }`. Callers key units by plan row id: tracker-auto.ts:334 `{ unit: 'task', ..., taskId: task.id }` and draft-issues.ts:77. A TASK id is `TASK-<h>-<s>-t<n>` (artifact-ids.ts:92), and after a re-plan new Tasks take nextNumber (the §5 edge case: \"t3 or higher, never t2\"), so a plan row id and its Task number can differ. The design gives no rule for matching a re-planned row to an existing Task (by row id? by title?), nor for how pushTasks maps a row id to a TASK id. [files: src/workflow/tracker-auto.ts, src/workflow/draft-issues.ts, src/workflow/artifact-ids.ts]",
+          "action": "Add the plan row key (for example planTaskId) to the TaskPayload interface, define reconcile's matching rule, and have pushTasks/draft-issues map a row to its TASK id through the TASKS head.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The Plan-record fallback in bindingHome serves only Stories planned before s7, so s9 can remove it.",
+          "evidence": "In team mode the draft hook claims each Task unit when the plan DRAFT is written (draft-issues.ts:77, 129-137), before any TASK head exists. Under the LLD's rule (\"bindingHome answers the Plan only for a Task that has no head\"), every new plan's Task issues are first recorded on the Plan through the fallback. Once createFromPlan writes the head, readRecord (unit-issue.ts:151-163) reads the empty TASK binding instead, and the Plan record is orphaned. The LLD does not say how that record moves onto the TASK head, and s9 cannot remove the fallback while new drafts depend on it. [files: src/workflow/draft-issues.ts, src/workflow/tracker/unit-issue.ts]",
+          "action": "Either move a draft-time Task record onto its TASK head in createFromPlan or reconcile, or stop the draft hook from creating Task issues (see coverage), and correct the s9 hand-off.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.3",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Older Stories keep working through bindingHome's existing Plan branch and the BUILD-record branch of taskBuildPassed, with no data rewrite.",
+          "evidence": "unit-issue.ts:145-156 and :202-214 already keep a Task's record on the Plan's meta.tracker.units/taskRefs when bindingHome returns undefined. completion-evidence.ts:46-50 is the BUILD-record branch. core-data-model.md:402 records the s6 hand-off of this accessor to s7. [files: src/workflow/tracker/unit-issue.ts, src/workflow/artifact-core/completion-evidence.ts, docs/plans/core-data-model.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The chosen design avoids redesigning other Stories' contracts: it adds a follow-on kind beside s6's 'tracker-attach' rather than changing approveWorkflowTarget, and its recommended build-round path consumes s2's History API instead of changing ArtifactStore.",
+          "evidence": "gates.ts:827-828 FollowOnOutcome.kind is a string union extended additively (s6 added 'tracker-attach'), and both daemon sites build the array in one closure (daemon/index.ts:652-660, 752-760). Open question 2 recommends History.appendLog under ArtifactStore.exclusive (store.ts:217, an existing public method), and alternative a2 (changing the gate) is rejected. [files: src/workflow/gates.ts, src/daemon/index.ts, src/workflow/artifact-core/store.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Two concurrent writers (an edit and a reconcile) are detected: updateContent compares the revision the caller read with the stored one, and the store raises LifecycleConflictError.",
+          "evidence": "lifecycle-service.ts:197-203: updateContent takes a full payload and no expected revision. Its mutator does `return { next: { ...head, payload }, options }` against whatever head is current under the per-artifact queue (store.ts:185-199). LifecycleConflictError is raised only for an integrity mismatch (store.ts:268) or a head that changed after a write was staged (store.ts:376). An edit that read revision N and computed its patched payload is applied over a reconcile's revision N+1 and silently discards it. [files: src/workflow/artifact-core/lifecycle-service.ts, src/workflow/artifact-core/store.ts]",
+          "action": "Have edit/reconcile apply the patch inside a store.update mutator against the current head and refuse when its revision differs from the one read (raise the conflict in TaskSets), or add an expected-revision option; correct §5.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The ac20 integration test can pass as designed: a plan approved through the daemon seam both creates the Task set and binds each Task's issue on its TASK head under the Story's issue.",
+          "evidence": "Neither daemon approval path pushes Task issues: daemon/index.ts:652-660 and :752-760 run only advanceApprovedBugfixes and followOnTrackerAttach. autoPushTasksOnPlan is called only from cli/services/workflow.ts:201. The LLD adds only syncTasksOnPlanApproval at the daemon seam (open question 4), so after a daemon approval no Task issue exists to bind and the named test (task-set-approve.test.ts \"through the cli approve flow and the daemon seam\") fails. ac20 (\"each Task has its issue under the Story's issue\") is then unmet on that path. [files: src/daemon/index.ts, src/cli/services/workflow.ts]",
+          "action": "Either add the Task push to the daemon 'tasks-sync' follow-on (after the Task set is written) or narrow the test and ac20 claim to the cli path and record the daemon gap.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        }
+      ],
+      "counts": {
+        "high": 2,
+        "med": 6,
+        "low": 8,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-21T17:10:31.015Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "questionResolutions": {
+      "qd6a1430f": {
+        "question": "A Task head is written in draft status by createFromPlan (contract postcondition), but a Task whose edit 'returns to draft' and 'needs re-approval' (ac21) and whose build is admitted by the plan's approval must start approved. Resolve: after writing each head, createFromPlan applies the approve operation through LifecycleService.apply as the plan's approving actor, so a new Task is approved on the plan's approval and an edit later returns it to draft (recommended), or leave new Tasks in draft and add a separate Task approval step before build (a change to the build admission gate).",
+        "status": "resolved",
+        "choice": "createFromPlan applies approve through LifecycleService.apply as the plan's approving actor after writing each head; an edit later returns the Task to draft (recommended)",
+        "rationale": "Approved with the LLD (owner chose A, recommended answers).",
+        "resolvedAt": "2026-10-21T17:23:21.736Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "When a plan is approved, each of its Tasks becomes an artifact of its own, with its own id, revision, status, change log, feedback and issue, and the Story's Tasks sit together under one Tasks file that also hands out the next Task number. A person can refine a Task's wording, size, checks or tests without redoing the plan; the Task returns to draft and needs the local user's approval again, and the plan keeps its revision. Adding, dropping or reordering Tasks, or changing what depends on what, is refused with a pointer to a re-plan, and when a re-plan is approved the Tasks are brought into line without ever reusing an id. A Task's build rounds are written to its own history and it completes when a round passes the gate.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework (a1): a shared artifact envelope with typed payloads, stored as a head file plus two append-only sidecar files whose lines carry the owning artifact id, behind a single identity module, with one upfront conversion and no compatibility code. The envelope carries identity, description, parent, references, a typed lifecycle (revision, approval, review, signoffs, staleness, status) and a tracker binding or attachments; the change log and feedback are separate append-only line files; each existing artifact type shrinks to a payload codec and a renderer. Tracker comment reading and attaching are added to the port and implemented for the GitHub adapter only.",
+      "ownedContracts": [
+        {
+          "id": "sc7",
+          "name": "TaskSet",
+          "purpose": "The Tasks file of a plan: the Task artifacts, their ids, and how a re-plan is brought into line without reusing an id.",
+          "interfaceSketch": "interface TaskPayload { title: string; summary: string; size: 'S'|'M'|'L'; order: number; acceptanceChecks: string[]; tests: { level: string; name: string }[] }\ninterface TaskSet { id: string; tasks: Artifact<TaskPayload>[] }\ninterface TaskSets { createFromPlan(planId: string): Promise<TaskSet>; reconcile(planId: string): Promise<{ changed: string[]; withdrawn: string[]; added: string[] }>; edit(taskId: string, patch: Partial<TaskPayload>, by: Actor): Promise<void> }",
+          "ownedByStory": "s7",
+          "consumedByStories": [
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ArtifactIdScheme",
+          "purpose": "The single place artifact ids are made and recognised: the existing hierarchical typed ids extended for Epic, Story, Task, the Tasks file and diagrams, one story and task form, the folder-name date source, and the functional-requirement id helpers that live in id.ts today.",
+          "interfaceSketch": "type ArtifactKind = 'DEF'|'HLD'|'LLD'|'PLAN'|'BUILD'|'CR'|'TESTS'|'EXT'|'AMD'|'SPEC'|'ISSUE'|'EPIC'|'STORY'|'TASK'|'TASKS'|'DIAG';\ninterface ArtifactKey { kind: ArtifactKind; epicHash: string; story?: string; task?: string; seq?: number }\ninterface ArtifactIds { make(key: ArtifactKey): string; parse(id: string): ArtifactKey | undefined; parentOf(key: ArtifactKey): ArtifactKey | undefined }\ninterface RequirementIds { mint(epicHash: string, createdAt: string, ordinal: number, storyId?: string): string; parse(id: string): { epicHash: string; ordinal: number; storyId?: string } | undefined; isRequirementId(s: string): boolean }\n  // + RequirementIds.parse result: { date: string; hash8: string; story?: number | undefined; fr: number } | undefined;  // SUPERSEDES the return type of RequirementIds.parse declared in this sketch ({ epicHash; ordinal; storyId? }): a stored requirement id carries only the date and the first 8 hash characters, so parse returns these parts, story and fr as numbers (amend:AMD-2f27754d4ad00b8e-5)",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "ArtifactEnvelope",
+          "purpose": "The common shape of every stored entity and the one reader and writer for it, with References and namespaced Actors.",
+          "interfaceSketch": "interface Actor { id: string; kind: 'person'|'agent'|'system'; name?: string; properties: Record<string, unknown> }\ninterface Reference { entityId: string; type: string; relation: 'derived-from'|'depends-on'|'tracked-by'|'supersedes'|'documents'|'implements'|'cites'|'reviews'; fragment?: string; quote?: string }\ninterface Artifact<P> { id: string; description: string; parent?: Reference; references: Reference[]; lifecycle: Lifecycle; binding?: TrackerBinding; attachments: Attachment[]; payload: P }\ninterface ArtifactStore { read(id: string): Promise<Artifact<unknown>>; write(a: Artifact<unknown>, by: Actor): Promise<void>; childrenOf(id: string): Promise<string[]> }\n  // + readWithHistory(id: string): Promise<Artifact<unknown> & { changeLog: ChangeLogEntry[]; feedback: Feedback[] }>;  // A read that exposes the artifact together with its change log and feedback in one shape, as DEF ac4 requires; read stays the cheap head-only read. (amend:AMD-2f27754d4ad00b8e-7)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "HistoryRecords",
+          "purpose": "The change log entry and the Feedback entry shapes, the persisted sidecar record that carries the owning artifact id, and the append and read API, including how an update says which feedback it addressed.",
+          "interfaceSketch": "type Operation = 'create'|'update'|'delete'|'reparent'|'request-review'|'review'|'approve'|'reject'|'open-signoff'|'signoff-changes'|'signed-off'|'complete'|'reopen'|'withdraw'|'supersede'|'mark-stale'|'ack-stale';\ninterface ChangeLogEntry { id: string; actor: Actor; timestamp: string; operation: Operation; revision?: { number: number; contentHash: string }; status?: { from: string; to: string }; outcome?: { result: string; summary: string; data?: unknown }; references?: Reference[]; addresses?: 'all' | string[] }\ninterface Feedback { id: string; text: string; actor: Actor; timestamp: string; feedback: Feedback[]; kind: 'comment'|'suggestion'|'revision-request'; anchor?: { quote?: string; section?: string; lines?: [number, number] }; revision?: number; source?: { system: string; externalId: string; url?: string }; batchId?: string }\ninterface SidecarRecord<E> { artifactId: string; entry: E }\ninterface History { appendLog(id: string, e: ChangeLogEntry): Promise<void>; appendFeedback(id: string, f: Feedback): Promise<void>; log(id: string): Promise<ChangeLogEntry[]>; logTail(id: string): Promise<ChangeLogEntry | undefined>; feedback(id: string): Promise<Feedback[]>; openFeedback(id: string): Promise<Feedback[]> }\n  // + Feedback.inReplyTo?: string | undefined;  // The id of the feedback entry this entry replies to. A stored line can never be rewritten, so a reply is its own line that names its parent; the thread is built at read. An entry with no inReplyTo is a thread root. (amend:AMD-2f27754d4ad00b8e-9)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "Lifecycle",
+          "purpose": "The typed lifecycle structures, the ten statuses and their transitions, the revision and content-hash rule, the completion roll-up and the conflict check against the log tail.",
+          "interfaceSketch": "type Status = 'draft'|'pending-review'|'approved'|'in-signoff'|'changes-requested'|'signed-off'|'rejected'|'completed'|'withdrawn'|'superseded';\ninterface Revision { number: number; contentHash: string; at: string; by: Actor }\ninterface Approval { revision: number; by: Actor; at: string; override?: { reason: string } }\ninterface Review { revision: number; reviewer: Actor; party: 'controller'|'daemon'; verdict: 'pass'|'warn'|'block'; counts: Record<string, number>; at: string; report?: Reference }\ninterface Signoff { revision: number; request: Reference; state: 'open'|'changes-requested'|'completed'; actors: Actor[]; at: string }\ninterface Staleness { upstream: Reference; upstreamRevision: number; since: string }\ninterface Lifecycle { status: Status; revision: Revision; approval?: Approval; review?: Review; signoffs: Signoff[]; stale?: Staleness }\ntype Integrity = { ok: true } | { ok: false; reason: 'hash-mismatch'|'head-ahead-of-log'|'log-ahead-of-head' }\ninterface LifecycleRules { transition(a: Artifact<unknown>, op: Operation, by: Actor): Promise<Lifecycle>; checkIntegrity(a: Artifact<unknown>, logTail: ChangeLogEntry | undefined): Integrity; rollUp(id: string): Promise<Status | undefined> }",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s6",
+            "s7",
+            "s8",
+            "s9",
+            "s4"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc6",
+          "name": "TrackerBinding",
+          "purpose": "The typed binding between a lifecycle artifact and its tracker issue, the attachments of supporting artifacts, and the tracker port operations to read comments and attach, implemented for the GitHub adapter.",
+          "interfaceSketch": "interface TrackerBinding { reference: Reference; createdAtRevision: number; posted: { kind: 'milestone'|'task-list'|'design'|'review'|'plan'; at: string; externalId?: string }[]; pendingLink?: { parent: Reference; child?: Reference; childId?: number } }\ninterface Attachment { target: Reference; revision: number; at: string; externalId?: string }\ninterface TrackerPortAdditions { listComments(issue: string, since?: string): PortResult<{ externalId: string; author: string; text: string; at: string; url?: string }[]>; attach(issue: string, artifact: Reference, link: string): PortResult<{ externalId?: string }> }\n  // + findIssuesByTitleToken(token: string): PortResult<IssueRef[]>;  // exact-token title lookup (title equals the artifact id, or starts with it followed by an em dash and a space); added to TrackerPort by Story s1, which implements it with the GitHub adapter and the fake; s6 builds on it and adds no second title lookup (amend:AMD-2f27754d4ad00b8e-6)",
+          "ownedByStory": "s6",
+          "consumedByStories": [
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c6"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s7",
+        "owns": [
+          "sc7"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc6"
+        ],
+        "internal": "Task artifacts: creation of the Tasks file and the Task issues at plan approval, direct edits of a Task's own content with local re-approval, refusal of structural edits, and the re-plan reconciliation. Private to this Story are the diff of a Task against the new plan and the build-round recording in a Task's history."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The id module and its removal of the second scheme: the folder-name formatter moved into the path scheme, the date source fixed to the epic's creation time, the functional-requirement id helpers and their callers moved with stored FR ids staying valid, issue titles switched to the artifact id, and the delivery module's ordinals. The old issue-body marker is not read. Private to this Story are the exact text of the issue title and the relocation of the helpers."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2",
+            "sc3",
+            "sc8"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The envelope model, the one reader and writer, the History API and the sidecar record shape as a contract, and the repository version marker. Private to this Story are the head-file schema, the per-type payload codec registry and how the old per-type read functions delegate to the reader."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The lifecycle rules: status transitions, the revision and content-hash computation, the staleness record, the completion roll-up and the integrity check against the log tail on approve, review and complete. Private to this Story are the hash canonicalisation and how a roll-up is cached or recomputed."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The physical sidecar storage: file layout, the merge attributes for the line files, per-artifact filtering, read-time ordering and de-duplication, and the write order of log entry before head with the repair of a log that is ahead of its head. Private to this Story are the line format and the file naming beside a head."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5"
+          ],
+          "internal": "People-facing feedback: adding feedback and replies from a client, listing open feedback, the addresses rule at revision time, and the per-user identity declaration with alias linking. Private to this Story are the identity file format and the display of linked identities."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The typed binding and attachments, the tracker port additions implemented for GitHub, the retry of pending links and posts, and the switch of unit-issue bookkeeping to the binding. Private to this Story are the permalink construction and the retry bookkeeping."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Comment sync: reading human comments into feedback at implement, validate or on request, classifying a revision request or a suggestion from the first line, and posting feedback once. Private to this Story are the first-line commands, the derived since point and the filter for the framework's own posts."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7",
+            "sc8"
+          ],
+          "internal": "The conversion command: previews, repeats, back-fills history, renames standalone S001 to s1 rewriting the references it can with no alias, creates Epic, Story and Task artifacts for what exists, verifies through the delivery reader, and sets the repository version. Private to this Story are the per-type conversion mappings and the verification report."
+        }
+      ],
+      "rolloutPhase": "Phase D — Tasks and tracker comment sync",
+      "nonFunctional": {
+        "performance": "Reading an artifact reads its head; the log tail is read only on approve, review and complete, and counts, open feedback and status are computed on read. The delivery loader still reads each artifact once. Loading a repository of about a thousand artifacts must stay within twice today's load time on the same machine.",
+        "security": "Gates use the live tracker identity only; declared aliases are never trusted for a decision. The identity file is local and read for attribution. Tracker comments are read through the existing gh path of the GitHub adapter, with no new credential and no direct REST call.",
+        "observability": "Every state change appends a change log entry with actor, operation and, where relevant, revision and status; a conflict, a log-ahead-of-head repair, a failed attach and a pending link are logged and surfaced in the unit's result, not hidden.",
+        "durability": "Heads are replaced atomically as today; sidecar lines are append-only and de-duplicated by (artifactId, entry id) so a repeated append is harmless; a write appends its log entry before it replaces the head so a failure between the two leaves a detectable, repairable gap; the conversion is one commit, repeatable, and reverts with one git revert."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "createFromPlan",
+          "signature": "createFromPlan(planId: string, by: Actor): Promise<TaskSet>",
+          "parameters": [
+            {
+              "name": "planId",
+              "type": "string",
+              "purpose": "The approved PLAN artifact id of the Story (PLAN-<hash>-s1)",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The actor recorded on every write",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TaskSet",
+            "meaning": "The TASKS id and the Task artifacts that now exist, in plan order"
+          },
+          "errors": [
+            {
+              "type": "TaskSetError",
+              "condition": "the plan is not approved, has no head, or a Task row is malformed"
+            }
+          ],
+          "preconditions": [
+            "The plan head is approved at the revision it is read at",
+            "The TASKS head is absent, or present and made from the same plan revision (a repeat)"
+          ],
+          "postconditions": [
+            "A TASKS head exists naming the plan revision, the ordered Task ids and the next number",
+            "One TASK head per plan Task exists with parent the Story id, status draft, and a depends-on reference per dependsOn",
+            "A repeat for the same plan revision writes nothing and returns the same set"
+          ]
+        },
+        {
+          "name": "reconcile",
+          "signature": "reconcile(planId: string, by: Actor): Promise<{ changed: string[]; withdrawn: string[]; added: string[] }>",
+          "parameters": [
+            {
+              "name": "planId",
+              "type": "string",
+              "purpose": "The re-planned PLAN artifact id, approved at a higher revision than the TASKS head records",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The actor recorded on every write",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ changed: string[]; withdrawn: string[]; added: string[] }",
+            "meaning": "The Task ids whose content moved to a new revision, the Task ids withdrawn, and the Task ids created"
+          },
+          "errors": [
+            {
+              "type": "TaskSetError",
+              "condition": "the plan is not approved, or the TASKS head is missing (use createFromPlan)"
+            }
+          ],
+          "preconditions": [
+            "The plan is approved and its revision is greater than the revision the TASKS head records"
+          ],
+          "postconditions": [
+            "A Task whose payload differs gets a new revision through LifecycleService.updateContent and returns to draft",
+            "A Task absent from the plan is withdrawn through LifecycleService.apply with the withdraw operation and its issue is closed",
+            "A Task new in the plan takes the TASKS head's next number, which then moves past it; no number is ever reused, including the number of a withdrawn Task",
+            "The TASKS head records the new plan revision last, so a failure part-way is finished by repeating the call"
+          ]
+        },
+        {
+          "name": "edit",
+          "signature": "edit(taskId: string, patch: Partial<TaskPayload>, by: Actor): Promise<void>",
+          "parameters": [
+            {
+              "name": "taskId",
+              "type": "string",
+              "purpose": "The TASK artifact id",
+              "optional": false
+            },
+            {
+              "name": "patch",
+              "type": "Partial<TaskPayload>",
+              "purpose": "The fields to change: title, summary, size, acceptanceChecks, tests",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The person editing",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Resolves when the new revision is stored"
+          },
+          "errors": [
+            {
+              "type": "TaskStructureError",
+              "condition": "the patch names order, or a dependency, or the Task is not in draft or approved status; the message points to a re-plan"
+            },
+            {
+              "type": "ArtifactNotFoundError",
+              "condition": "no TASK head for the id"
+            }
+          ],
+          "preconditions": [
+            "The Task is not completed, withdrawn or superseded"
+          ],
+          "postconditions": [
+            "The Task has a new revision, status draft, no signoff, an update log entry naming the actor, and open feedback it addresses",
+            "The plan head and the other Tasks are untouched"
+          ]
+        },
+        {
+          "name": "syncTasksOnPlanApproval",
+          "signature": "syncTasksOnPlanApproval(planJsonPath: string, by: Actor): Promise<{ created: string[]; changed: string[]; withdrawn: string[]; added: string[] } | { error: string }>",
+          "parameters": [
+            {
+              "name": "planJsonPath",
+              "type": "string",
+              "purpose": "The approved plan's json path as the approve flow holds it",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The approving actor",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ created: string[]; changed: string[]; withdrawn: string[]; added: string[] } | { error: string }",
+            "meaning": "What the approval did to the Task set, or why nothing was attempted"
+          },
+          "errors": [],
+          "preconditions": [
+            "The artifact is an approved plan"
+          ],
+          "postconditions": [
+            "Calls createFromPlan when no TASKS head exists, reconcile when the plan revision is newer, and does nothing when they agree; never throws, so a plan approval is never failed by it"
+          ]
+        },
+        {
+          "name": "recordBuildRound",
+          "signature": "recordBuildRound(taskId: string, round: { passed: boolean; summary: string; data?: unknown }, by: Actor): Promise<void>",
+          "parameters": [
+            {
+              "name": "taskId",
+              "type": "string",
+              "purpose": "The TASK artifact id",
+              "optional": false
+            },
+            {
+              "name": "round",
+              "type": "{ passed: boolean; summary: string; data?: unknown }",
+              "purpose": "The gate's verdict for one build round",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The daemon actor that ran the gate",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Resolves when the round is in the Task's change log"
+          },
+          "errors": [
+            {
+              "type": "ArtifactNotFoundError",
+              "condition": "no TASK head for the id"
+            }
+          ],
+          "preconditions": [
+            "The Task head exists"
+          ],
+          "postconditions": [
+            "A log entry with operation update-free outcome {result: pass|fail, summary, data} is appended to the Task's log without moving its revision",
+            "A passing round is what taskBuildPassed reads"
+          ]
+        },
+        {
+          "name": "taskBuildPassed",
+          "signature": "taskBuildPassed(taskId: string): Promise<boolean>",
+          "parameters": [
+            {
+              "name": "taskId",
+              "type": "string",
+              "purpose": "The TASK artifact id",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "True when the latest recorded build round of the Task passed"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Reads the Task's own log, and falls back to the BUILD record's body.tasks only while the Task has no head (a Story built before s9)"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "TaskPayload (the body of a TASK head)",
+        "change": "new",
+        "details": "The typed payload of a TASK head: title, summary, size S|M|L, order (1-based position in the plan), acceptanceChecks, tests {level, name}[], and the plan row id (t1..). The TASK codec replaces the pass-through for the body; the dependency edges are References (depends-on) on the envelope, not payload.",
+        "schemaDiff": "interface TaskPayload { title: string; summary: string; size: 'S'|'M'|'L'; order: number; acceptanceChecks: string[]; tests: { level: 'unit'|'integration'|'live'|'smoke'; name: string }[] }",
+        "callSites": [
+          "src/workflow/artifact-core/codecs.ts",
+          "src/workflow/artifacts/plan.ts"
+        ]
+      },
+      {
+        "entity": "TasksPayload (the body of the TASKS head)",
+        "change": "new",
+        "details": "The Tasks file of a Story: the plan revision it was made from, the Task ids in plan order including withdrawn ones, and nextNumber, the number the next new Task takes. nextNumber only ever grows, which is what keeps a Task id from being reused.",
+        "schemaDiff": "interface TasksPayload { planRevision: number; taskIds: string[]; nextNumber: number }",
+        "callSites": [
+          "src/workflow/artifact-core/codecs.ts",
+          "src/workflow/artifact-core/sidecar-store.ts"
+        ]
+      },
+      {
+        "entity": "Task issue record",
+        "change": "field-modify",
+        "details": "A Task unit's issue record moves from the Plan's meta.tracker.units to the TASK head's meta.envelope.binding: bindingHome and readRecord in unit-issue.ts answer the TASK head for a task unit, bindArtifact and recordPosted work on it, and the Task branch of recordUnit stops writing the Plan record and taskRefs.",
+        "callSites": [
+          "src/workflow/tracker/unit-issue.ts",
+          "src/workflow/tracker/binding.ts",
+          "src/workflow/tracker-auto.ts",
+          "src/workflow/draft-issues.ts"
+        ]
+      },
+      {
+        "entity": "CompletionEvidence.taskBuildPassed",
+        "change": "invariant-change",
+        "details": "Reads the Task's own build rounds instead of the BUILD record's per-task results; the BUILD record keeps its results for the delivery view.",
+        "callSites": [
+          "src/workflow/artifact-core/completion-evidence.ts",
+          "src/workflow/artifact-core/lifecycle.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc7",
+        "role": "implements",
+        "howDetails": "Owns TaskPayload, TaskSet, createFromPlan, reconcile and edit as sketched, adding the actor parameter, a typed TASKS payload with nextNumber, and syncTasksOnPlanApproval as the one entry the approve flow calls."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Every TASKS and TASK head is read and written through ArtifactStore (write, read, childrenOf); parent is the Story id and dependencies are depends-on References."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Each create, content revision, withdraw and build round is one change log entry appended by the store; Task feedback uses the shared TASKS feedback file through the sidecar store."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "updateContent returns an edited Task to draft with a new revision; apply(withdraw) withdraws a dropped Task; the TASK roll-up completes the Story from Task status."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "A Task's issue is bound on the TASK head with bindArtifact; the existing tracker push creates each Task's issue under the Story's issue, and a withdrawn Task's issue is closed through the tracker port."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "TASK and TASKS ids come from ArtifactIds.make and are parsed with ArtifactIds.parse."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The plan is approved but writing the Task set fails part-way (a TASK head written, the TASKS head not, or the process stops between the plan approval and the Task creation)",
+          "detection": "syncTasksOnPlanApproval compares the TASKS head's planRevision and taskIds with the plan's rows and the TASK heads that exist (childrenOf the Story id); a TASKS head that is absent or older than the plan, or a plan row with no TASK head, is the gap",
+          "response": "createFromPlan and reconcile write the TASK heads first and the TASKS head last, and skip a head that already exists with the same content, so repeating the call finishes the job; the failure is logged and returned as { error } to the approve flow, which reports it with the approval and never fails the approval",
+          "userImpact": "The plan stays approved and the approve result names the Task set as incomplete; the next approve of the plan, or the daemon seam, finishes it",
+          "recoverable": true
+        },
+        {
+          "scenario": "A Task edit names order or a dependency, or tries to add or drop a Task",
+          "detection": "edit compares the patch keys with the editable set (title, summary, size, acceptanceChecks, tests) and checks that the target id is an existing TASK head",
+          "response": "Throws TaskStructureError with a message that points to re-planning the Story; nothing is written",
+          "userImpact": "The person sees why it was refused and what to do instead (run the plan workflow and approve the new plan)",
+          "recoverable": true
+        },
+        {
+          "scenario": "A Task edit arrives for a Task that is completed, withdrawn or superseded",
+          "detection": "edit reads the head's lifecycle status before writing",
+          "response": "Throws TaskStructureError naming the status; no write",
+          "userImpact": "A finished Task is not reopened by an edit; a person reopens it explicitly through the lifecycle first",
+          "recoverable": true
+        },
+        {
+          "scenario": "Two writers change the same Task at once (an edit and a reconcile, or two edits)",
+          "detection": "The store serialises writes per artifact; updateContent reads the head, compares its revision with the one the caller read, and the store raises LifecycleConflictError when they differ",
+          "response": "The second write is refused with the conflict error; the caller re-reads and retries",
+          "userImpact": "One edit lands; the other is told to retry on the new revision",
+          "recoverable": true
+        },
+        {
+          "scenario": "The plan's Task rows are malformed (a duplicate id, an unknown dependsOn, an order gap, a size outside S, M, L)",
+          "detection": "createFromPlan and reconcile validate the rows with the plan's own checkPlanTaskGraph before writing any head",
+          "response": "Throws TaskSetError listing the rows; nothing is written",
+          "userImpact": "The approve result shows the Task set was not made and why; the plan has to be fixed and re-approved",
+          "recoverable": true
+        },
+        {
+          "scenario": "A dropped Task's issue cannot be closed (offline, gh failure)",
+          "detection": "The tracker port returns a failed PortResult for the close",
+          "response": "The Task is still withdrawn; the failed close is recorded as a pending close on the TASK head's binding (pendingLink-style bookkeeping from s6) and returned in the reconcile result, and the next sync retries it",
+          "userImpact": "The Task shows withdrawn locally and its issue closes on the next sync",
+          "recoverable": true
+        },
+        {
+          "scenario": "A build round is recorded for a Task that has no head (a Story planned and built before s9 created Task artifacts)",
+          "detection": "recordBuildRound reads the TASK head and gets ArtifactNotFoundError",
+          "response": "The build step logs the miss and keeps writing the BUILD record's per-task result as it does today; taskBuildPassed falls back to the BUILD record only when the Task has no head",
+          "userImpact": "No change for an old Story; a new Story's Task rounds go to the Task",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "createFromPlan is called a second time for the same plan revision",
+          "expected": "Nothing is written and the same TaskSet is returned"
+        },
+        {
+          "input": "A plan with no Tasks is approved",
+          "expected": "A TASKS head with an empty taskIds list and nextNumber 1 is written, no TASK head and no issue"
+        },
+        {
+          "input": "A re-plan drops t2 and adds a new Task",
+          "expected": "t2 is withdrawn, its id stays recorded in taskIds, and the new Task takes the TASKS head's nextNumber (t3 or higher), never t2"
+        },
+        {
+          "input": "A re-plan reorders two Tasks without changing their content",
+          "expected": "Each Task's order changes in its payload so each moves to a new revision, and the plan, not a person, made the change"
+        },
+        {
+          "input": "A re-plan changes nothing in the Tasks",
+          "expected": "No Task moves; the TASKS head records the new plan revision and nothing else is written"
+        },
+        {
+          "input": "An edit whose patch equals the current content",
+          "expected": "No revision moves, no log entry is written (an identical rewrite does not move a revision)"
+        },
+        {
+          "input": "A Task is edited after it was approved",
+          "expected": "It returns to draft with a new revision and needs the local user's approval again; its signoffs are not opened"
+        },
+        {
+          "input": "A build round passes, then a later round fails",
+          "expected": "taskBuildPassed answers from the latest round, so the Task is not complete on the earlier pass; completion is the roll-up's, recorded once"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A Task id is never reused: nextNumber on the TASKS head only grows, and a withdrawn Task keeps its id in taskIds",
+          "source": "c1"
+        },
+        {
+          "text": "A revision moves only when content changes; a build round, a binding write or an identical rewrite does not move it",
+          "source": "c1"
+        },
+        {
+          "text": "The plan's own revision and head are never written by a Task edit or a reconcile",
+          "source": "c1"
+        },
+        {
+          "text": "Heads are replaced atomically and the log entry is appended before the head, so a failure leaves a repairable gap rather than a torn Task",
+          "source": "c1"
+        },
+        {
+          "text": "A plan approval is never failed by the Task set; a failure is reported beside it",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The pure parts: the diff of a Task against a plan row, the editable-field check, number allocation from the TASKS head, and the TASK and TASKS codecs",
+          "subjects": [
+            "the Task diff and the plan-row to TaskPayload mapping",
+            "the edit patch check that names order, dependencies and structural changes",
+            "nextNumber allocation that only grows and skips withdrawn ids",
+            "the TASK and TASKS payload codecs (encode, decode, refusal of a malformed body)"
+          ],
+          "fixturesNeeded": [
+            "a plan fixture with Task rows (the approve-fallback kit's seed)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The module against a real durable store and lifecycle service in a temp repository: creation, reconcile, edit, withdrawal, build rounds and completion",
+          "subjects": [
+            "createFromPlan writes the TASKS head and a TASK head per row, once",
+            "reconcile revises, withdraws and adds without reusing an id",
+            "edit returns a Task to draft with a new revision and leaves the plan and the other Tasks alone",
+            "a structural edit is refused with a pointer to a re-plan",
+            "recordBuildRound and taskBuildPassed complete a Task and, through the roll-up, the Story",
+            "the approve flow and the daemon seam both create the Task set, and each Task issue is bound on its TASK head under the Story's issue"
+          ],
+          "fixturesNeeded": [
+            "durableKit (a temp repo with a durable store)",
+            "the fake tracker of the approve-fallback kit"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac20",
+          "provingTests": [
+            "unit: tasks-codec.test.ts: the TASK and TASKS codecs round-trip a Task payload and a Tasks payload and refuse a malformed body",
+            "integration: task-set-create.test.ts: createFromPlan writes the Tasks file and one Task head per plan Task with parent, dependencies and status draft, and a repeat writes nothing",
+            "integration: task-set-approve.test.ts: approving a plan creates the Task set and each Task's issue is bound on its Task head under the Story's issue, through the cli approve flow and the daemon seam"
+          ]
+        },
+        {
+          "criterionId": "ac21",
+          "provingTests": [
+            "integration: task-set-edit.test.ts: editing a Task's summary, size, checks or tests moves it to a new revision in draft with no signoff and leaves the plan and the other Tasks untouched"
+          ]
+        },
+        {
+          "criterionId": "ac22",
+          "provingTests": [
+            "unit: task-edit-check.test.ts: a patch that names order or a dependency, or a Task that is completed or withdrawn, is refused with a pointer to a re-plan",
+            "integration: task-set-edit.test.ts: a refused structural edit writes nothing"
+          ]
+        },
+        {
+          "criterionId": "ac23",
+          "provingTests": [
+            "unit: task-numbers.test.ts: the next number only grows and never takes a withdrawn Task's id",
+            "integration: task-set-reconcile.test.ts: a re-plan revises a changed Task, withdraws a dropped Task and closes its issue, adds a new Task under the next number, and never reuses an id",
+            "integration: task-build-rounds.test.ts: a passing build round completes the Task, a later failing round does not, and the Story completes through the roll-up"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "A Task is only a row in the Plan's body.tasks. Its issue record is in the Plan's meta.tracker.units and taskRefs (s6 left a two-home accessor, bindingHome and readRecord, in src/workflow/tracker/unit-issue.ts). The codec registry holds pass-through codecs for TASKS and TASK, and the sidecar store already points every TASK at its Story's TASKS log and feedback files. CompletionEvidence.taskBuildPassed reads the BUILD record's body.tasks[].passed, and a Task's build rounds are in no Task history (src/workflow/artifact-core/completion-evidence.ts, src/workflow/artifacts/plan.ts, src/workflow/tracker/unit-issue.ts).",
+      "stateAfter": "Approving a plan creates a TASKS head and a TASK head per plan Task, each Task with its own revision, status, log, feedback and binding; the Task unit's issue record lives on its TASK head under the Story's issue; edits go through the Task's own revision; a re-plan reconciles the set without reusing an id; a Task's build rounds are in its own log and taskBuildPassed reads them. The Plan no longer carries Task issue records.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Type the TASK and TASKS payload codecs (replace the two pass-through bodies) and add TaskStructureError and TaskSetError; no stored data changes yet",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the TaskSets module (createFromPlan, reconcile, edit, syncTasksOnPlanApproval, recordBuildRound) with its Task diff, number allocation and edit check; nothing calls it yet",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Call syncTasksOnPlanApproval from the cli approve service before the Task push, and from the daemon's post-approval seam as a second follow-on kind, so a plan approved from either path gets its Task set",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Point bindingHome and readRecord at the TASK head for a task unit, make recordUnit stop writing the Plan's units and taskRefs for a Task, and make the draft-issues hook and pushTasks resolve the Task's head before creating its issue",
+          "rollbackable": false,
+          "prerequisiteFlags": [
+            "step 3 is in place, so every newly approved plan has its Task heads"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Write each build round to the Task's log from the build validate phase and make taskBuildPassed read it, with the BUILD record read only for a Task that has no head",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Record the hand-offs in docs/plans/core-data-model.md: s9 creates Task heads for the stories planned before this Story and then removes the BUILD-record fallback and the Plan's Task record fields",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "A Story planned and approved before this Story has no TASKS or TASK heads, and its Task issue records are still in the Plan. Nothing rewrites them here: bindingHome answers the Plan only for a Task that has no head, and taskBuildPassed reads the BUILD record only for a Task that has no head. s9 creates the heads for those Stories and removes both fallbacks. The public surfaces (the approve result, the tracker.attach method) gain fields and a follow-on kind and lose none.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "A TaskSets module, run once from the approve flow, beside the tracker push",
+        "oneLineSummary": "One new module creates the TASKS head and a TASK head per plan Task after a plan approval, reconciles a later plan revision, and handles edits; the cli approve service calls it before the Task issues are pushed.",
+        "approach": "A new src/workflow/tasks module implements sc7: createFromPlan writes the TASKS head (the ordered Task ids, the plan revision it was made from, and the next number to hand out) and one TASK head per PlanTask through ArtifactStore.write, each with parent = the Story id and a depends-on reference per dependsOn. reconcile(planId) diffs the plan's current Tasks against the TASK heads: a Task whose payload differs gets a content revision through LifecycleService.updateContent, a Task missing from the plan is withdrawn through apply(withdraw) and its issue closed, a new plan Task takes the next number from the TASKS head and is created. edit(taskId, patch, by) accepts only title/summary/size/acceptanceChecks/tests, writes through updateContent (new revision, status back to draft, no signoff), and refuses a patch that touches order or dependsOn with a message pointing to a re-plan. The cli approve service (src/cli/services/workflow.ts approve) calls createFromPlan or reconcile right after the plan approval and before autoPushTasksOnPlan, whose Task units then bind on the TASK head (bindingHome for a task unit points there). The build validate phase appends the round to the Task's log (updateAndLog with an outcome) and taskBuildPassed reads the latest round of the TASK head.",
+        "pros": [
+          "One place creates and changes Tasks, so ac20 to ac23 each have one owner",
+          "Runs in the same flow that already pushes the Task issues, so the Task issue is created for a head that already exists",
+          "Uses only the store and the lifecycle service s2 and s3 built; no new write path",
+          "Task ids come from the TASKS head, so none is ever reused"
+        ],
+        "cons": [
+          "The daemon's workflow.approve path (approveWorkflowTarget alone) does not call the cli service, so it needs the same call or a Task set is missed",
+          "The plan approval and the Task creation are two writes: a failure between them leaves an approved plan with no Tasks until the next approve call repairs it"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Create the Tasks inside approveWorkflowTarget through the lifecycle service",
+        "oneLineSummary": "The Task set is created in the gate itself, in the same function that stamps the plan approval, so every approval path creates it.",
+        "approach": "approveWorkflowTarget in src/workflow/gates.ts gains a step after the plan approval is applied through the lifecycle service: with the service present it calls TaskSets.createFromPlan or reconcile. The cli approve service and the daemon handler both reach it because both call the gate. The TASK heads are written by the same service instance the gate holds, so the approval and the Tasks share one actor and one clock.",
+        "pros": [
+          "Every approval path (daemon, cli, review decision) creates or reconciles the Tasks with no second call site",
+          "The approval and the Task creation are adjacent in one function, so a failure is reported in one result"
+        ],
+        "cons": [
+          "Puts Task creation in the gate, which s3 and s4 own; the gate gains a dependency on the new module and a second reason to change",
+          "The tracker push is outside the gate, so Task issues still have to be created later against heads the gate wrote, with the order enforced by convention",
+          "A gate that is synchronous in places (the team gate and the draft hook) would need an async seam for the creation"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Reaches every approval path with one call site, but puts a second responsibility in a gate other Stories own and needs an async seam in synchronous code."
+      },
+      {
+        "id": "a3",
+        "name": "Create a Task head lazily, on first build or first edit",
+        "oneLineSummary": "A TASK head is written when something first needs it, with the plan row as the source until then.",
+        "approach": "The plan keeps the Task rows. A TASK head is created from its plan row the first time a build round, an edit or a comment sync touches that Task. The TASKS file is not written at approval.",
+        "pros": [
+          "Smallest: nothing runs at plan approval, and a plan that is never built writes no Task heads"
+        ],
+        "cons": [
+          "Fails ac20: the Tasks do not exist together in one file at approval, and a Task has no issue, history or status until it is touched",
+          "Two sources for a Task (plan row, then head) that can disagree until the first touch"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Smallest, but fails the first criterion and leaves two sources for a Task."
+      },
+      {
+        "id": "a4",
+        "name": "Keep the Tasks in the TASKS head body only",
+        "oneLineSummary": "One TASKS head holds every Task as a row with its own status and issue fields; there are no TASK heads.",
+        "approach": "The TASKS head's body carries the ordered Task rows, each with its status, revision, binding and build rounds. Edits rewrite the one head and the shared log carries per-Task entries.",
+        "pros": [
+          "One file per Story, nothing to scan, and the sidecar files are already shared"
+        ],
+        "cons": [
+          "Fails the model: a Task would not be an Artifact with its own envelope, lifecycle, binding and history, which the HLD's sc7 and the s3 roll-up (TASK children of a STORY) already assume",
+          "Two Tasks edited at once would contend on one head, and the s3 lifecycle rules would need a second form for a row"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Breaks the model the lifecycle roll-up and sc7 already assume."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "A Task head is written in draft status by createFromPlan (contract postcondition), but a Task whose edit 'returns to draft' and 'needs re-approval' (ac21) and whose build is admitted by the plan's approval must start approved. Resolve: after writing each head, createFromPlan applies the approve operation through LifecycleService.apply as the plan's approving actor, so a new Task is approved on the plan's approval and an edit later returns it to draft (recommended), or leave new Tasks in draft and add a separate Task approval step before build (a change to the build admission gate).",
+      "recordBuildRound is a log entry that moves no revision (a build round is not content, so k3 forbids a revision move). The store has no log-only method; the contract says it is appended to the Task's log. Resolve: append a revision-less entry with History.appendLog under ArtifactStore.exclusive, which the integrity check already skips when it looks for the log tail with a revision (recommended), or add a log-only write to ArtifactStore (a change to s2's store).",
+      "Until s9 creates Task heads for the Stories planned before this one, bindingHome falls back to the Plan's Task record and taskBuildPassed to the BUILD record for a Task with no head, which is compatibility code the Epic's no-compatibility rule discourages. Resolve: accept both fallbacks as s9-bound and record them in docs/plans/core-data-model.md for s9 to remove (recommended), or drop them and fail for a Task with no head (no Story planned before this one is still open to build).",
+      "The daemon's workflow.approve path does not run the cli approve service, so the Task set would be missed when a plan is approved there. Resolve: add a 'tasks-sync' follow-on kind to FollowOnOutcome beside s6's 'tracker-attach' and call syncTasksOnPlanApproval from the same seam at both daemon sites (recommended), or call it from approveWorkflowTarget (a change to the gate s3 and s4 own)."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "the store, lifecycle service and completion evidence s7 consumes",
+      "quotedText": "ArtifactStore.write/update/updateAndLog/childrenOfStrict write one head with its log entry through a journal; LifecycleService.apply runs one lifecycle operation, updateContent writes content with a revision move that returns the artifact to draft"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "ids and parentage of TASKS and TASK",
+      "quotedText": "FileSidecarStore.filesOf gives every TASK the change log and feedback files of its Story's TASKS id"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "the build gate and the BUILD record's per-task results",
+      "quotedText": "A Task's build rounds are not recorded in any Task history today."
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "docs/plans/core-data-model.md"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/completion-evidence.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "the plan, its tasks and where Task issue records live",
+      "quotedText": "approval of a plan runs approveWorkflowTarget in src/workflow/gates.ts, then the cli approve service pushes Task issues through pushTasks in src/workflow/tracker-auto.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/sidecar-store.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/tracker/unit-issue.ts"
+    }
+  ]
+}

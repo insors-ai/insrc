@@ -1,6 +1,6 @@
 <!-- insrc:artifact LLD-2f27754d4ad00b8e-s6 -->
 
-# LLD: E202610212f27754d:S006
+# LLD: STORY-2f27754d4ad00b8e-s6
 
 ## Summary
 
@@ -106,6 +106,8 @@ readBinding(repoPath: string, artifactId: string): TrackerBinding | undefined
 
 **Postconditions:**
 - synchronous and read-only: the team gate reads it on its synchronous path
+- resolveUnitIssueLocal reads the binding for an Epic or Story unit and no longer falls back to epicRef or storyRef; a Task unit still reads its Plan record
+- its callers are the team gate's teamContext, the draft-issue hook's fast path and its 'could not be recorded' result (src/workflow/draft-issues.ts:113-133) and, through teamContext with createIssue false, the handoff check (src/workflow/team/handoff.ts:395)
 
 ### 2.4 `bindArtifact`
 
@@ -128,7 +130,7 @@ bindArtifact(repoPath: string, artifactId: string, issue: IssueRef, now?: () => 
 - the artifact head exists
 
 **Postconditions:**
-- writes meta.envelope.binding { reference: { entityId: issue, type: 'tracker-issue', relation: 'tracked-by' }, createdAtRevision: the head's revision number, posted: [] } as one meta-only write; the revision number and content hash do not move
+- writes meta.envelope.binding { reference: { entityId: issue, type: 'github:issue', relation: 'tracked-by' }, createdAtRevision: the head's revision number, posted: [] } as one meta-only write; the revision number and content hash do not move
 - a repository with no tracker never reaches this call, so it has no binding
 
 ### 2.5 `recordPosted`
@@ -191,12 +193,14 @@ attachDocuments(unit: UnitRef, port: TrackerPort, targets: readonly AttachTarget
 
 **Preconditions:**
 - the unit's artifact is bound to its issue
+- the files are committed: the caller runs it after the commit step of the approval, not inside the tracker push
 
 **Postconditions:**
 - the link is blob/<last commit that touched the file>/<path> on the repository's GitHub host
 - a link already recorded for (target, revision) is skipped; a new revision commits to a new sha, so it adds a new link and the old comment stays
 - before posting, listComments is searched for the link; a comment holding it is recorded and not posted again
 - an Attachment { target, revision, at, externalId } is recorded per link as one meta-only write
+- the Attachment records it writes change the artifact head, so the caller commits them with a second commit; a target that was refused as uncommitted is not recorded and is attached by the next call, which recomputes the targets and skips the recorded ones
 
 ### 2.8 `runUnitExtras`
 
@@ -235,17 +239,21 @@ ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps?: EnsureIssueDeps
 
 **Errors:**
 - `EnsureResult failure` when as today: before-create failures create nothing; a failed create is unconfirmed and found again by label or title.
+- `EnsureResult failure (phase before-create)` when the artifact head that holds the unit's binding cannot be read or written, so the issue could not be recorded; nothing is created.
 
 **Postconditions:**
 - an Epic or Story issue found or created is recorded with bindArtifact on the unit's artifact; a Task issue keeps its record on the Plan until s7
 - a failed link under the parent is stored with setPendingLink and retried at the next call until it succeeds, then cleared
 - an issue a person created first is adopted through the label or title lookup and bound the same way
+- an issue this call creates is bound only after the duplicate check: the unit label is listed first and the lowest-numbered issue is bound once (tieBreak), this call's own issue being commented on and closed as a duplicate when it is not the lowest; when the listing fails the created issue is bound and kept, as today
+- bindArtifact is therefore called once per unit by a create and never needs to replace a binding; a crash between the create and the bind is found again by the unit label at the next call
+- when the unit's artifact head cannot be read (malformed binding or missing file) the call returns a before-create failure naming the head, before any issue is looked up or created
 
 ## 3. Data model changes
 
 ### 3.1 `TrackerBinding` — invariant-change
 
-The declared sc6 shape is kept. The reference is { entityId: 'owner/repo#N', type: 'tracker-issue', relation: 'tracked-by' } (an external target, so the store's artifact-id check does not apply). posted holds one entry per kind at most (milestone, task-list, design, review, plan), with the comment id as externalId when it was reconciled or known. Written only by bindArtifact, recordPosted and setPendingLink.
+The declared sc6 shape is kept. The reference is { entityId: 'owner/repo#N', type: 'github:issue', relation: 'tracked-by' } (an external target with the namespaced external type docs/plans/core-data-model.md names, github:issue, so the store's artifact-id check does not apply). posted holds one entry per kind at most (milestone, task-list, design, review, plan), with the comment id as externalId when it was reconciled or known. Written only by bindArtifact, recordPosted and setPendingLink.
 
 **Call sites:**
 - `src/workflow/artifact-core/types.ts:158-171`
@@ -274,7 +282,7 @@ The declared sc6 shape is kept. One entry per (target, revision); target is a Re
 
 ### 3.4 `UnitIssue` — field-remove
 
-extrasDone is removed from UnitIssue: the posted marks for an Epic and a Story are binding.posted. A Task unit's record keeps issue, createdAtRevision and pendingLink on the Plan's meta.tracker.units until s7 creates Task artifacts; the Epic and Story entries of units are no longer written.
+extrasDone is removed from UnitIssue: the posted marks for an Epic and a Story are binding.posted. A Task unit's record keeps issue, createdAtRevision and pendingLink on the Plan's meta.tracker.units until s7 creates Task artifacts; the Epic and Story entries of units are no longer written. The older meta.tracker.epicRef and storyRef fallback in resolveUnitIssueLocal is dropped for Epic and Story units: a head with only the old record resolves to no local issue, and the draft hook or the gate's ensure rebinds it through the unit label or title lookup.
 
 ```
 - extrasDone?: {...} from UnitIssue in src/workflow/tracker/refs.ts:40-46
@@ -285,6 +293,8 @@ extrasDone is removed from UnitIssue: the posted marks for an Epic and a Story a
 - `src/workflow/tracker/unit-issue.ts:176-197`
 - `src/workflow/tracker/unit-issue.ts:540-545`
 - `src/workflow/tracker-auto.ts:528-533`
+- `src/workflow/draft-issues.ts:113-133`
+- `src/workflow/team/handoff.ts:395`
 
 ### 3.5 `ExtraStep` — field-add
 
@@ -343,20 +353,24 @@ prepareArtifactWrite carries meta.envelope.binding and meta.envelope.attachments
   - User impact: The unit is usable at once; its issue appears under the parent after the next retry.
 - **A file to attach has uncommitted changes or is not tracked by git** (recoverable)
   - Detection: attachDocuments runs git status --porcelain for the path and finds output, or git log -1 --format=%H for the path prints nothing
-  - Response: The target is reported in failed[] with 'commit the file first'; nothing is posted and nothing recorded.
+  - Response: The target is reported in failed[] with 'commit the file first'; nothing is posted and nothing recorded. The approve flow runs attachDocuments after its commit step, so the approved files are clean; a target still refused is retried by the next approve or ensure of the unit.
   - User impact: The author commits and attaches again; the link always names a commit that holds the content shown.
 - **The unit has no binding when attachDocuments or recordPosted is called** (recoverable)
   - Detection: readBinding returns undefined for the unit's artifact
   - Response: attachDocuments reports every target failed with 'the unit is not bound to an issue yet'; recordPosted returns false. Nothing is written.
   - User impact: A repository with no tracker has no binding and no attach is attempted.
-- **meta.envelope.binding is malformed on disk** (recoverable)
-  - Detection: decode raises ArtifactShapeError in readBinding
-  - Response: resolveUnitIssueLocal logs it and returns null, so the caller falls to the label and title lookup; the same issue is found and bindArtifact replaces the malformed value only when it is absent, so a malformed binding is reported and left for a person to repair.
-  - User impact: The unit shows no issue until the file is fixed; no second issue is created because the lookup finds the first.
 - **The tracker is not GitHub** (terminal)
   - Detection: TrackerPort.kind is not 'github' when listComments or attach is called
   - Response: The adapter for another kind answers a rejected 'unsupported' failure; attach is reported failed and nothing is posted.
   - User impact: Only GitHub is supported, as the owner ruled; no partial behaviour on other trackers.
+- **Two daemons create the same unit's issue at once** (recoverable)
+  - Detection: after its create, ensureUnitIssueDetailed lists the unit label with findIssues and finds more than one issue
+  - Response: The lowest-numbered issue is bound once; this call's own issue, when it is not the lowest, is commented on and closed as a duplicate; when the listing fails the created issue is bound and kept and the duplicate check is reported as not run.
+  - User impact: The unit ends bound to exactly one issue; the duplicate is closed with a pointer to the kept one.
+- **The head holding the binding cannot be read (malformed meta.envelope.binding, unreadable file)** (recoverable)
+  - Detection: decodeArtifactHead raises ArtifactShapeError, so ArtifactStore.read and update of that artifact fail as well as readBinding
+  - Response: readBinding reports it and resolveUnitIssueLocal returns null; ensureUnitIssueDetailed returns a before-create failure naming the head before it looks up or creates anything; isUnitSettled is false, so the draft hook reports not-ready with that reason.
+  - User impact: The artifact is unreadable through the store until a person repairs the binding (or removes it, after which the next ensure rebinds through the unit label); no second issue is created.
 
 **Edge cases**
 
@@ -372,6 +386,8 @@ prepareArtifactWrite carries meta.envelope.binding and meta.envelope.attachments
 | A Task unit asks for its issue | The Task's record is read and written on the Plan's meta.tracker.units as before, with pendingLink retry; s7 moves it to the Task artifact's binding. |
 | A head written before s6 has meta.tracker.units but no binding | readBinding returns undefined; the next ensure finds the issue by its unit label or title and binds it, so no read of the old record is needed; s9 converts what remains. |
 | Two comment steps of one unit are both unrecorded | listComments is read once and shared across both steps. |
+| Two daemons create a unit's issue at the same moment | Both lists show both issues; both calls bind the lowest-numbered one; the other call's issue is closed as a duplicate; the unit has one binding. |
+| The handoff check runs on a pre-s6 head with createIssue false | It finds no binding and refuses with 'this stage has no tracker issue yet' until the draft hook or the gate's ensure rebinds the unit; accepted until s9 converts the old records. |
 
 **Invariants to preserve**
 
@@ -391,16 +407,16 @@ prepareArtifactWrite carries meta.envelope.binding and meta.envelope.attachments
   - Subjects: `bindArtifact writes the typed binding with createdAtRevision, leaves the revision number and content hash unchanged, is idempotent for the same issue, refuses a different issue, and readBinding returns undefined for an unbound artifact`, `recordPosted and setPendingLink record one entry per kind and a pending link that names a child ref or a child id, never twice, and without moving the revision`, `attachDocuments builds a link to the file at the last commit that touched it, refuses a dirty or untracked file, skips a recorded (target, revision), adds a new link for a new commit and keeps the old attachment, and records a link found already posted without posting it again`, `runUnitExtras skips a kind already in the binding, reconciles a comment step through its marker without posting, reads the comment list once for several steps, fails a step when the list cannot be read, and reports a post whose record failed so the next run reconciles it`
   - Fixtures: `a temporary repository with a git history (src/workflow/tracker/__tests__ helpers)`, `an in-memory fake TrackerPort with listComments and attach recording their calls (the fakePort style of src/workflow/team/__tests__/gate.test.ts)`, `a durable-kit store for the head files (src/workflow/artifact-core/__tests__/durable-kit.ts)`
 - **integration** — The GitHub adapter through a fake gh, the unit-issue flow end to end, the store's carry rule and the approve-time pushes, each over a temporary repository.
-  - Subjects: `the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list`, `ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan`, `a failed link under the parent is stored as the binding's pending link, retried by the next ensure, cleared once done and not retried again`, `a content write by the store keeps the binding and attachments on disk, a binding patch leaves the revision and content hash alone, and the team gate resolves a bound unit's issue synchronously with no tracker call`, `the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice, and the design document, plan and build, review and test records are attached to the unit's issue with a link per revision`
+  - Subjects: `the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list`, `ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan`, `a failed link under the parent is stored as the binding's pending link, retried by the next ensure, cleared once done and not retried again`, `a content write by the store keeps the binding and attachments on disk, a binding patch leaves the revision and content hash alone, and the team gate resolves a bound unit's issue synchronously with no tracker call`, `the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice, and the design document, plan and build, review and test records are attached to the unit's issue with a link per revision`, `two racing creates for one unit bind the lowest-numbered issue once, close the other as a duplicate, and keep the created issue when the duplicate check cannot list`, `approve() attaches the approved documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, and retries a target refused as uncommitted at the next approve`, `the draft hook and the handoff check read the binding for an Epic or Story unit, and a pre-s6 head with only the old record is rebound by the next ensure and refused by handoff until then`, `a malformed binding makes ensureUnitIssueDetailed fail before creating anything and leaves the store read of that artifact failing until repaired`
   - Fixtures: `a fake gh runner for the adapter (the runGh seam used by src/workflow/tracker/github.ts tests)`, `the fake gh call recorder of src/workflow/__tests__/tracker-auto.test.ts`, `a temporary git repository with a committed artifact for the permalink`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac17` | `bindArtifact writes the typed binding with createdAtRevision, leaves the revision number and content hash unchanged, is idempotent for the same issue, refuses a different issue, and readBinding returns undefined for an unbound artifact`, `ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan` |
-| `ac18` | `attachDocuments builds a link to the file at the last commit that touched it, refuses a dirty or untracked file, skips a recorded (target, revision), adds a new link for a new commit and keeps the old attachment, and records a link found already posted without posting it again`, `the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list`, `the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice, and the design document, plan and build, review and test records are attached to the unit's issue with a link per revision` |
-| `ac19` | `a failed link under the parent is stored as the binding's pending link, retried by the next ensure, cleared once done and not retried again`, `runUnitExtras skips a kind already in the binding, reconciles a comment step through its marker without posting, reads the comment list once for several steps, fails a step when the list cannot be read, and reports a post whose record failed so the next run reconciles it`, `the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice, and the design document, plan and build, review and test records are attached to the unit's issue with a link per revision` |
+| `ac17` | `bindArtifact writes the typed binding with createdAtRevision, leaves the revision number and content hash unchanged, is idempotent for the same issue, refuses a different issue, and readBinding returns undefined for an unbound artifact`, `ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan`, `two racing creates for one unit bind the lowest-numbered issue once, close the other as a duplicate, and keep the created issue when the duplicate check cannot list`, `the draft hook and the handoff check read the binding for an Epic or Story unit, and a pre-s6 head with only the old record is rebound by the next ensure and refused by handoff until then`, `a malformed binding makes ensureUnitIssueDetailed fail before creating anything and leaves the store read of that artifact failing until repaired` |
+| `ac18` | `attachDocuments builds a link to the file at the last commit that touched it, refuses a dirty or untracked file, skips a recorded (target, revision), adds a new link for a new commit and keeps the old attachment, and records a link found already posted without posting it again`, `the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list`, `the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice, and the design document, plan and build, review and test records are attached to the unit's issue with a link per revision`, `approve() attaches the approved documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, and retries a target refused as uncommitted at the next approve` |
+| `ac19` | `a failed link under the parent is stored as the binding's pending link, retried by the next ensure, cleared once done and not retried again`, `runUnitExtras skips a kind already in the binding, reconciles a comment step through its marker without posting, reads the comment list once for several steps, fails a step when the list cannot be read, and reports a post whose record failed so the next run reconciles it`, `the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice, and the design document, plan and build, review and test records are attached to the unit's issue with a link per revision`, `approve() attaches the approved documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, and retries a target refused as uncommitted at the next approve` |
 
 ## 7. Migration
 
@@ -415,12 +431,12 @@ prepareArtifactWrite carries meta.envelope.binding and meta.envelope.attachments
 1. Add the TrackerComment type, listComments and attach to the tracker port, the GitHub adapter and the in-memory fakes; additive, no caller yet. — ↩ rollbackable
 2. Add the binding module (readBinding, bindArtifact, recordPosted, setPendingLink) as meta-only patches of meta.envelope, and the carryBinding rule in the content branch of the storage write so a store write keeps the on-disk binding and attachments; additive, no caller yet. — ↩ rollbackable
 3. Add the permalink and attachDocuments, with the dirty-file and tracked-file checks and the reconcile-by-link step; no caller yet. — ↩ rollbackable
-4. Switch ensureUnitIssueDetailed, resolveUnitIssueLocal, isUnitSettled and the pending-link retry for an Epic or Story unit from meta.tracker.units to the binding; a Task unit keeps its record. A head with only the old record has no binding, so the next ensure finds its issue by the unit label or title and binds it. — ✕ non-rollbackable
+4. Switch ensureUnitIssueDetailed, resolveUnitIssueLocal, isUnitSettled and the pending-link retry for an Epic or Story unit from meta.tracker.units to the binding; a Task unit keeps its record. A head with only the old record has no binding, so the next ensure finds its issue by the unit label or title and binds it. A created issue is bound after the duplicate check (tieBreak binds the lowest-numbered issue once). resolveUnitIssueLocal drops the epicRef and storyRef fallback for Epic and Story units; draft-issues.ts and team/handoff.ts follow it. — ✕ non-rollbackable
 5. Switch runUnitExtras to the binding's posted list for an Epic or Story, add the comment markers to the design, review and plan comment bodies in tracker-auto, and reconcile an unrecorded comment step through one listComments read before posting; remove extrasDone from UnitIssue. — ✕ non-rollbackable
-6. Call attachDocuments from the approve-time pushes for the HLD, LLD and plan documents with their diagram companions, and from the BUILD approval for the build, review and test records. — ↩ rollbackable
+6. Call attachDocuments from approve() after its commit step for the HLD, LLD and plan documents with their diagram companions, committing the attachment records in a second commit, and from the BUILD approval after the build records are committed for the build, review and test records. — ↩ rollbackable
 7. Update the unit-issue, unit-extras, tracker-auto, approve-fallback-issues and gate tests that assert on meta.tracker.units or extrasDone, and record the s9 conversion inputs in docs/plans/core-data-model.md. — ↩ rollbackable
 
-**Backward compat:** No compatibility code is written (owner ruling). The IPC and tool surfaces do not change. Heads written before s6 carry meta.tracker.units with extrasDone but no binding: the next ensure rebinds the Epic or Story through the label or title lookup, and the old approve-time marks are not read, so an old unit's design, review or plan comment may be posted once more unless its comment already carries the new marker; s9 converts the old records into bindings and marks before that matters. meta.tracker.epicRef, storyRef, storyRefs, taskRefs and pushedAt keep being written for the markdown renderers and the chain report until s9.
+**Backward compat:** No compatibility code is written (owner ruling). The IPC and tool surfaces do not change. Heads written before s6 carry meta.tracker.units with extrasDone but no binding: the next ensure rebinds the Epic or Story through the label or title lookup, and the old approve-time marks are not read, so an old unit's design, review or plan comment may be posted once more unless its comment already carries the new marker; s9 converts the old records into bindings and marks before that matters. meta.tracker.epicRef, storyRef, storyRefs, taskRefs and pushedAt keep being written for the markdown renderers and the chain report until s9. The handoff check refuses a pre-s6 unit with no tracker issue until the next ensure rebinds it; the old epicRef and storyRef are no longer read for Epic and Story units.
 
 ## 8. Alternatives considered
 
@@ -464,29 +480,17 @@ BindingService as in a1, plus a new receipts sidecar (append-only lines keyed by
 - Binding and attachment bookkeeping appends no change log entry, although the HLD's observability line says every state change does; the record is in the binding itself (posted[].at, attachments[].at) and the log output. Resolve: accept this as tracker bookkeeping rather than artifact state (recommended), or add an Operation for it and have a sync path append through History (needs an HLD amendment to sc3).
 - A Task unit keeps its issue record on the Plan's meta.tracker.units until s7 creates Task artifacts, so unit-issue.ts has two homes for a record (binding for Epic and Story, the Plan for Task). Resolve: accept for now and have s7 move Task records onto the Task artifact's binding (recommended), or have s6 create the Task artifacts (that is s7's scope).
 - Until s9 creates Epic and Story artifacts, an Epic's binding sits on the Define and a Story's on the LLD (the artifacts that hold the unit's record today). Resolve: accept and record in docs/plans/core-data-model.md that s9 moves each binding onto the Epic and Story artifact it creates (recommended).
-- attachDocuments is also called when a BUILD record is approved, to attach the build, review and test records (ac18 names them). That adds a call in the daemon's BUILD approval path, which s6 does not otherwise touch. Resolve: include the call (recommended), or leave record attachment to a later change and attach only design documents and plans here.
+- attachDocuments is also called when a BUILD record is approved, after the build records are committed, to attach the build, review and test records (ac18 names them). That adds a call in the daemon's BUILD approval path, which s6 does not otherwise touch. Resolve: include the call (recommended), or leave record attachment to a later change and attach only design documents and plans here.
 - A permalink names the last commit that touched the file but the commit may not be pushed, so the link is dead on GitHub until it is. Resolve: accept; the sha link becomes valid when the commit is pushed (recommended), or refuse to attach until the commit is on a remote branch.
 
-<!-- insrc:review -->
+## Citations
 
-## Review
-
-### ⛔ Review `BLOCK` — design.story (design.story)
-
-**5 do not hold · 0 could not be verified · 10 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-21T13:36:06.917Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| change-sites | HIGH | Making bindArtifact refuse a second, different issue is compatible with the rest of ensureUnitIssueDetailed. | After a create, tieBreak (unit-issue.ts:412-429) adopts the lowest-numbered duplicate made by another daemon: `if (!recordUnit(unit, lowest, now())) return kept;` and only then comments on and closes its own issue. Under the design, the unit is already bound to its own new issue, and bindArtifact returns { ok:false } for a different issue (2.4, error path 'A second, different issue...'). So tieBreak's re-record fails and returns `kept`, and the duplicate is never closed. Two daemons end up bound to two different issues for one unit, which breaks the invariant 'a lost local record never produces a second issue'. The LLD never mentions tieBreak. [files: src/workflow/tracker/unit-issue.ts] | Design the tieBreak path explicitly: let tieBreak replace the binding (a privileged rebind, or bind only after the duplicate check), and add a test where two creates race and the lower issue is kept and bound. |
-| change-sites | HIGH | Calling attachDocuments from the approve-time pushes for the HLD, LLD and plan attaches those documents, because they are committed at that point. | cli/services/workflow.ts:162-174 approve() stamps the approval (a JSON write), runs autoPush*On* (which relinks/re-renders the .md through writeAtomic at tracker-auto.ts:524-525 and :563 and patches meta.tracker), and only then calls commitApprovedArtifacts: 'Commit + push AFTER the tracker push'. Under the design, the binding write is also a meta-only JSON write inside that push. So when attachDocuments runs inside the push, the approved file has uncommitted changes, and 2.7 / error path 'A file to attach has uncommitted changes' refuses it with 'commit the file first'. Every approve-time attach of the document being approved would fail. [files: src/cli/services/workflow.ts, src/workflow/tracker-auto.ts] | Move the attach after the commit (e.g. a post-commit step in approve(), or the next ensure retries attachments), or define which committed revision is linked. Add an integration test over the real approve() order. |
-| change-sites | MED | The change-site inventory lists every caller whose behaviour changes when Epic and Story resolution moves from meta.tracker.units to the binding. | resolveUnitIssueLocal and isUnitSettled are also called from src/workflow/draft-issues.ts:113-133 (the draft hook's fast path and its 'could not be recorded' not-ready result) and, through teamContext, from src/workflow/team/handoff.ts:395 with { createIssue: false }. Neither is in 3.4's call sites. For a pre-s6 head with only meta.tracker.units, epicRef or storyRef, handoff never calls ensure, so it would refuse with 'this stage has no tracker issue yet' until something else ensures the unit. The design does not say whether the older epicRef/storyRef fallback (unit-issue.ts:183-188) is kept. [files: src/workflow/draft-issues.ts, src/workflow/team/handoff.ts, src/workflow/tracker/unit-issue.ts] | Add draft-issues.ts and team/handoff.ts to the change sites. State whether resolveUnitIssueLocal still falls back to epicRef/storyRef for Epic and Story units, or accept the handoff refusal until s9 explicitly. |
-| data-compatibility | MED | The binding's reference uses the documented type convention for an external target. | core-data-model.md:144 says `type` for an external target is 'a namespaced external type (`github:issue`, `jira:issue`, ...)'. LLD 2.4 and 3.1 store { type: 'tracker-issue', relation: 'tracked-by' }. Either value passes store.ts:90-95 checkReference, because neither is an artifact kind, so nothing catches the drift. s8 and s9, which consume sc6, would read a type that differs from the settled model. [files: docs/plans/core-data-model.md, src/workflow/artifact-core/store.ts] | Use 'github:issue' (the adapter's namespace), or record an amendment if 'tracker-issue' is intended. |
-| error-paths | MED | A malformed meta.envelope.binding only makes readBinding fail, and the unit 'shows no issue until the file is fixed'. | decode.ts:117-118 throws ArtifactShapeError for the whole head when the binding is malformed. Every ArtifactStore read or update of that Define or LLD fails, not just readBinding. bindArtifact's own head read fails too, so ensure cannot return its normal result, and isUnitSettled stays false, so draft-issues.ts:133 reports not-ready. The impact is wider than the error path states. [files: src/workflow/artifact-core/decode.ts, src/workflow/draft-issues.ts] | State the full impact (the artifact is unreadable through the store until repaired) and what ensureUnitIssueDetailed returns when bindArtifact cannot read the head. |
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `analyze-bundle` `src/workflow/tracker/refs.ts:26-47` — "UnitIssue record with pendingLink and extrasDone"
+- **[[c2]]** `code` `src/workflow/tracker/unit-issue.ts:176-337` — "resolveUnitIssueLocal, ensureUnitIssueDetailed, pending-link retry"
+- **[[c3]]** `code` `src/workflow/tracker/unit-issue.ts:518-576` — "runUnitExtras and its mark-after-post residual"
+- **[[c4]]** `code` `src/workflow/artifact-core/types.ts:155-181` — "TrackerBinding and Attachment declared by s2"
+- **[[c5]]** `code` `src/workflow/tracker/port.ts:69-90` — "TrackerPort without listComments and attach"
+- **[[c6]]** `doc` `docs/epics/one-common-model-every-artifact-E202610192f27754d/HLD.md` — "sc6 TrackerBinding, AMD-2f27754d4ad00b8e-6"
+- **[[c7]]** `code` `src/workflow/tracker-auto.ts:495-620` — "approve-time extras and teamPush functions"
+- **[[c8]]** `code` `src/workflow/storage.ts:125-250` — "carryTracker and prepareArtifactWrite"
+- **[[c9]]** `code` `src/workflow/team/gate.ts:204-225` — "synchronous teamContext resolve and ensure"

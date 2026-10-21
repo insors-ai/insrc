@@ -109,7 +109,7 @@ test("the step tool carries a caller's stated size in its state token from the s
 	// --- start: the caller states L. The repo holds two files, which is S. ---
 	const started = await handleStart({ phase: 'start', focus: 'how are refunds paid', repo: REPO, scope: 'L' }) as StepOutputEmitPlan;
 	assert.equal(started.next, 'emit_plan');
-	const atStart = decodeState(started.state);
+	const atStart = (await decodeState(started.state));
 	// The planning prompt is given the size of the named area, and the token keeps the stated size as a hint.
 	assert.equal(atStart.intent.scope, 'S');
 	assert.equal(sizeIn(started.userTurn), 'S');
@@ -120,19 +120,19 @@ test("the step tool carries a caller's stated size in its state token from the s
 	// The area is counted through the registered repo that contains the path: started on a directory inside the
 	// repo, the size is that directory's (one file: XS), not that of a path the index does not hold.
 	const inner = await handleStart({ phase: 'start', focus: 'how are refunds paid', repo: join(REPO, 'src'), scope: 'L' }) as StepOutputEmitPlan;
-	assert.equal(decodeState(inner.state).intent.scope, 'XS');
+	assert.equal((await decodeState(inner.state)).intent.scope, 'XS');
 
 	// With no size stated: the same measured size (no default of M), and no hint in the token.
 	const unstated = await handleStart({ phase: 'start', focus: 'how are refunds paid', repo: REPO }) as StepOutputEmitPlan;
-	assert.equal(decodeState(unstated.state).intent.scope, 'S');
+	assert.equal((await decodeState(unstated.state)).intent.scope, 'S');
 	assert.equal(sizeIn(unstated.userTurn), 'S');
-	assert.ok(!('sizeHint' in decodeState(unstated.state)));
+	assert.ok(!('sizeHint' in (await decodeState(unstated.state))));
 
 	// --- plan: the lookups run with the request's measured size in their runner context. ---
 	const planned = await handlePlan({ phase: 'plan', plan: PLAN_NO_MODEL, state: started.state } as StepInputPlan) as StepOutputEmitBundle;
 	assert.equal(planned.next, 'emit_bundle', JSON.stringify(planned).slice(0, 300));
 	assert.deepEqual(handed, ['S']);
-	const atBundle = decodeState(planned.state);
+	const atBundle = (await decodeState(planned.state));
 	assert.equal(atBundle.sizeHint, 'L', 'the hint is carried to the next token');
 	// The answer turn is given the size measured from what the lookups returned, with the hint.
 	const fromResults = measureLookupResults(atBundle.executed!.results, 'L');
@@ -178,12 +178,12 @@ test("the step tool carries a caller's stated size in its state token from the s
 	assert.equal(paused.next, 'emit_narrow', JSON.stringify(paused).slice(0, 300));
 	if (paused.next !== 'emit_narrow') return;
 	assert.deepEqual(prepared, ['S']);
-	assert.equal(decodeState(paused.state).sizeHint, 'L');
+	assert.equal((await decodeState(paused.state)).sizeHint, 'L');
 	assert.deepEqual(handed, [], 'the concept lookup has not run yet');
 	const resumed = await handleNarrow({ phase: 'narrow', explorationId: 'e1', narrow: VALID_ANSWER, state: paused.state } as unknown as StepInputNarrow) as StepOutputEmitBundle;
 	assert.equal(resumed.next, 'emit_bundle', JSON.stringify(resumed).slice(0, 300));
 	assert.deepEqual(handed, ['S']);
-	const afterNarrow = decodeState(resumed.state);
+	const afterNarrow = (await decodeState(resumed.state));
 	assert.equal(afterNarrow.sizeHint, 'L');
 	assert.equal(sizeIn(resumed.userTurn), measureLookupResults(afterNarrow.executed!.results, 'L').size);
 	const narrowDone = await handleBundle({ phase: 'bundle', bundle: LAYERS, state: resumed.state } as StepInputBundle) as StepOutputDone;
@@ -199,7 +199,7 @@ test("the step tool carries a caller's stated size in its state token from the s
 	const secondPause = await handleNarrow({ phase: 'narrow', explorationId: 'e1', narrow: { ...VALID_ANSWER, subject: 'refund window' }, state: firstPause.state } as unknown as StepInputNarrow);
 	assert.equal(secondPause.next, 'emit_narrow', JSON.stringify(secondPause).slice(0, 300));
 	if (secondPause.next !== 'emit_narrow') return;
-	assert.equal(decodeState(secondPause.state).sizeHint, 'L');
+	assert.equal((await decodeState(secondPause.state)).sizeHint, 'L');
 
 	// The narrow phase's own answer turn: with the answer prompt missing, its report's measure has the hint.
 	_setSynthesizerPromptPathForTest('adherence', MISSING);
@@ -219,8 +219,8 @@ test("the step tool carries a caller's stated size in its state token from the s
 	// --- a token minted before the change: no `sizeHint` field. It decodes, and its phases work. ---
 	const { sizeHint: _dropped, ...before } = atBundle;
 	assert.ok(!('sizeHint' in before));
-	const oldToken = encodeState(before as StepStatePayload);
-	assert.deepEqual(decodeState(oldToken), before);
+	const oldToken = await encodeState(before as StepStatePayload);
+	assert.deepEqual((await decodeState(oldToken)), before);
 	const oldDone = await handleBundle({ phase: 'bundle', bundle: LAYERS, state: oldToken } as StepInputBundle) as StepOutputDone;
 	assert.equal(oldDone.next, 'done');
 	assert.deepEqual(oldDone.report?.measure, withoutHint);

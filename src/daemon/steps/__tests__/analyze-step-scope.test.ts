@@ -100,7 +100,7 @@ test('step tool plan and narrow phases resolve the scope from a token that has n
 		synthesizerKey: 'code',
 		stage:          'awaiting_plan',
 	} as unknown as StepStatePayload;
-	const decoded = decodeState(encodeState(payload));
+	const decoded = await decodeState(await encodeState(payload));
 	assert.ok(!('scope' in (decoded as unknown as Record<string, unknown>)), 'the token carries no resolved scope');
 	assert.ok(!('resolvedScope' in (decoded as unknown as Record<string, unknown>)));
 
@@ -137,7 +137,7 @@ test('the real start phase builds a workspace scope, for every kind of source, a
 
 		// The token minted by the real start phase: an intent with a
 		// workspace scope on the repo, and no resolved scope.
-		const state = decodeState(out.state) as unknown as Record<string, unknown> & { intent: ClassifiedIntent; repoPath: string };
+		const state = await decodeState(out.state) as unknown as Record<string, unknown> & { intent: ClassifiedIntent; repoPath: string };
 		assert.deepEqual(state.intent.scopeRef, { kind: 'workspace', value: repo }, target);
 		assert.equal(state.intent.target, target);
 		assert.ok(!('scope' in state) && !('resolvedScope' in state), 'the token carries no resolved scope');

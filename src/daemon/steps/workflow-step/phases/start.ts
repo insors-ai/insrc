@@ -99,7 +99,7 @@ export async function handleStart(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema,
-		state:    encodeState(state),
+		state:    await encodeState(state),
 	};
 }
 

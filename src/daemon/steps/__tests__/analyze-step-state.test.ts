@@ -6,10 +6,14 @@
  * blob.
  *
  * Regressing this file breaks every multi-turn run.
+ *
+ * Runs against the hub-backed store (Epic 86197ac6 s1/t8): every call
+ * crosses a MessageChannel to the shared store, as it does from a worker.
  */
 
-import { test } from 'node:test';
+import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { MessageChannel } from 'node:worker_threads';
 
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import {
@@ -29,6 +33,24 @@ import {
 	replaceState,
 	saveState,
 } from '../analyze-step/state-store.js';
+import { HubClient, serveHub } from '../../threads/channel.js';
+import {
+	HubStepStateStore,
+	installStepStateStore,
+	LocalStepStateStore,
+	stepStateHubHandlers,
+} from '../../threads/step-state.js';
+
+const hubChannel = new MessageChannel();
+before(() => {
+	serveHub(hubChannel.port1, stepStateHubHandlers(new LocalStepStateStore()));
+	installStepStateStore(new HubStepStateStore(new HubClient(hubChannel.port2)));
+});
+after(() => {
+	installStepStateStore(new LocalStepStateStore());
+	hubChannel.port1.close();
+	hubChannel.port2.close();
+});
 
 const INTENT: ClassifiedIntent = {
 	target:    'code',
@@ -56,36 +78,36 @@ function samplePayload(overrides?: Partial<StepStatePayload>): StepStatePayload 
 // encodeState + decodeState round-trip
 // ---------------------------------------------------------------------------
 
-test('encodeState + decodeState round-trip preserves every field', () => {
-	_clearStateStoreForTests();
+test('encodeState + decodeState round-trip preserves every field', async () => {
+	await _clearStateStoreForTests();
 	const p = samplePayload();
-	const token = encodeState(p);
-	const back = decodeState(token);
+	const token = await encodeState(p);
+	const back = await decodeState(token);
 	assert.deepEqual(back, p);
 });
 
-test('encodeState mints a short URL-safe base64 token (22 chars, no padding)', () => {
-	_clearStateStoreForTests();
+test('encodeState mints a short URL-safe base64 token (22 chars, no padding)', async () => {
+	await _clearStateStoreForTests();
 	const p = samplePayload();
-	const token = encodeState(p);
+	const token = await encodeState(p);
 	// 16 random bytes URL-safe base64 without padding = 22 chars.
 	assert.equal(token.length, 22);
 	assert.match(token, /^[A-Za-z0-9_-]+$/);
 	assert.doesNotMatch(token, /[=+/]/);   // no padding, no + or /
 });
 
-test('decodeState rejects a bogus token with StepStateDecodeError', () => {
-	_clearStateStoreForTests();
-	assert.throws(
+test('decodeState rejects a bogus token with StepStateDecodeError', async () => {
+	await _clearStateStoreForTests();
+	await assert.rejects(
 		() => decodeState('this-token-was-never-issued'),
 		(err: unknown) =>
 			err instanceof StepStateDecodeError && err.code === 'malformed',
 	);
 });
 
-test('decodeState rejects a token of the wrong shape (too short)', () => {
-	_clearStateStoreForTests();
-	assert.throws(
+test('decodeState rejects a token of the wrong shape (too short)', async () => {
+	await _clearStateStoreForTests();
+	await assert.rejects(
 		() => decodeState('short'),
 		(err: unknown) =>
 			err instanceof StepStateDecodeError && err.code === 'malformed',
@@ -114,17 +136,17 @@ test('assertStage throws on a stage mismatch', () => {
 // Store hygiene
 // ---------------------------------------------------------------------------
 
-test('releaseState drops the entry so a subsequent decodeState fails', () => {
-	_clearStateStoreForTests();
-	const token = encodeState(samplePayload());
-	assert.equal(_stateStoreSize(), 1);
-	releaseState(token);
-	assert.equal(_stateStoreSize(), 0);
-	assert.throws(() => decodeState(token));
+test('releaseState drops the entry so a subsequent decodeState fails', async () => {
+	await _clearStateStoreForTests();
+	const token = await encodeState(samplePayload());
+	assert.equal(await _stateStoreSize(), 1);
+	await releaseState(token);
+	assert.equal(await _stateStoreSize(), 0);
+	await assert.rejects(() => decodeState(token));
 });
 
-test('token round-trips a state with an executed plan attached', () => {
-	_clearStateStoreForTests();
+test('token round-trips a state with an executed plan attached', async () => {
+	await _clearStateStoreForTests();
 	const p = samplePayload({
 		stage: 'awaiting_bundle',
 		plan: {
@@ -150,8 +172,8 @@ test('token round-trips a state with an executed plan attached', () => {
 			totalCached: 0,
 		},
 	});
-	const token = encodeState(p);
-	const back = decodeState(token);
+	const token = await encodeState(p);
+	const back = await decodeState(token);
 	assert.deepEqual(back, p);
 });
 
@@ -160,35 +182,35 @@ test('token round-trips a state with an executed plan attached', () => {
 // store (the other leaking store). Same release-superseded-on-save invariant.
 // ---------------------------------------------------------------------------
 
-test('analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted', () => {
-	_clearStateStoreForTests();
-	let token = saveState(samplePayload());
+test('analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted', async () => {
+	await _clearStateStoreForTests();
+	let token = await saveState(samplePayload());
 	for (let i = 0; i < 150; i++) {
-		const next = replaceState(token, samplePayload());
+		const next = await replaceState(token, samplePayload());
 		assert.notEqual(next, token);
-		assert.throws(() => loadState(token));          // superseded token released (single-use)
-		assert.equal(loadState(next).runId, 'run-1');   // fresh token resolves
-		assert.equal(_stateStoreSize(), 1);             // bounded — no per-turn leak
+		await assert.rejects(() => loadState(token));   // superseded token released (single-use)
+		assert.equal((await loadState(next)).runId, 'run-1');   // fresh token resolves
+		assert.equal(await _stateStoreSize(), 1);             // bounded — no per-turn leak
 		token = next;
 	}
 });
 
-test('analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)', () => {
-	_clearStateStoreForTests();
-	const token = replaceState(undefined, samplePayload());
-	assert.equal(_stateStoreSize(), 1);
-	assert.equal(loadState(token).runId, 'run-1');
+test('analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)', async () => {
+	await _clearStateStoreForTests();
+	const token = await replaceState(undefined, samplePayload());
+	assert.equal(await _stateStoreSize(), 1);
+	assert.equal((await loadState(token)).runId, 'run-1');
 });
 
-test('analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)', () => {
-	_clearStateStoreForTests();
-	const prev = encodeState(samplePayload());
-	const next = reencodeState(prev, samplePayload());
+test('analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)', async () => {
+	await _clearStateStoreForTests();
+	const prev = await encodeState(samplePayload());
+	const next = await reencodeState(prev, samplePayload());
 	assert.notEqual(next, prev);
-	assert.throws(() => loadState(prev));               // prev released
-	assert.equal(loadState(next).runId, 'run-1');
+	await assert.rejects(() => loadState(prev));        // prev released
+	assert.equal((await loadState(next)).runId, 'run-1');
 	try {
-		reencodeState(next, samplePayload({ version: 999 as unknown as typeof STATE_VERSION }));
+		await reencodeState(next, samplePayload({ version: 999 as unknown as typeof STATE_VERSION }));
 		assert.fail('expected a wrong-version throw');
 	} catch (e) {
 		assert.ok(e instanceof StepStateDecodeError);

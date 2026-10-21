@@ -8,61 +8,36 @@
  *
  * Structurally identical to `daemon/steps/analyze-step/state-store.ts` —
  * same 22-char opaque tokens, same LRU + TTL sweep, same
- * `StateTokenNotFound` semantics. Kept module-local (not shared
- * with analyze) because the state payload shape differs and the
- * TTLs / capacities may drift in the future.
+ * `StateTokenNotFound` semantics, under its own step kind.
  *
  * See docstring in `daemon/steps/analyze-step/state-store.ts` for the full
  * rationale on why we store server-side rather than round-tripping
  * a blob through the outer LLM.
  */
 
-import { randomBytes } from 'node:crypto';
-
-import { getLogger } from '../../../shared/logger.js';
+import { getStepStateStore } from '../../threads/step-state.js';
 import type { WorkflowStepStatePayload } from './state.js';
 
-const log = getLogger('mcp:workflow-step:state-store');
+// The entries live in the daemon's shared step-state store (Epic 86197ac6
+// s1), kind 'workflow': a run resumes on whichever thread serves the next turn.
 
-const MAX_ENTRIES = 100;
-const TTL_MS      = 60 * 60 * 1_000;
-
-interface Entry {
-	readonly payload:   WorkflowStepStatePayload;
-	readonly createdAt: number;
-	touchedAt:          number;
+export function saveState(payload: WorkflowStepStatePayload): Promise<string> {
+	return getStepStateStore().mint('workflow', payload);
 }
 
-const store = new Map<string, Entry>();
-
-export function saveState(payload: WorkflowStepStatePayload): string {
-	sweep();
-	const now = Date.now();
-	const token = mintToken();
-	store.set(token, { payload, createdAt: now, touchedAt: now });
-	if (store.size >= MAX_ENTRIES / 2) {
-		log.warn(
-			{ size: store.size, cap: MAX_ENTRIES, stage: payload.stage, runId: payload.runId },
-			'workflow-step state-store: entries approaching cap',
-		);
-	}
-	return token;
-}
-
-export function loadState(token: string): WorkflowStepStatePayload {
-	const entry = store.get(token);
+export async function loadState(token: string): Promise<WorkflowStepStatePayload> {
+	const entry = await getStepStateStore().read<WorkflowStepStatePayload>('workflow', token);
 	if (entry === undefined) {
 		throw new StateTokenNotFound(
 			`workflow state token '${token}' not found: the insrc daemon was restarted (runs are held in its memory and a restart loses them), ` +
 			`the token went unused for an hour, or the run was already completed. Start the run again with phase='start'.`,
 		);
 	}
-	entry.touchedAt = Date.now();
 	return entry.payload;
 }
 
-export function releaseState(token: string): void {
-	store.delete(token);
+export function releaseState(token: string): Promise<void> {
+	return getStepStateStore().release('workflow', token);
 }
 
 /**
@@ -75,49 +50,21 @@ export function releaseState(token: string): void {
  * distinct from the freshly-minted token (never deletes the just-minted one).
  * `previousToken === undefined` (the first save) behaves exactly like saveState.
  */
-export function replaceState(previousToken: string | undefined, payload: WorkflowStepStatePayload): string {
-	const token = saveState(payload);
-	if (previousToken !== undefined && previousToken !== token) {
-		releaseState(previousToken);
-	}
-	return token;
+export function replaceState(previousToken: string | undefined, payload: WorkflowStepStatePayload): Promise<string> {
+	return getStepStateStore().update('workflow', previousToken, payload);
 }
 
-export function _clearWorkflowStateStoreForTests(): void {
-	store.clear();
+export function _clearWorkflowStateStoreForTests(): Promise<void> {
+	return getStepStateStore().clearForTests('workflow');
 }
 
-export function _workflowStateStoreSize(): number {
-	return store.size;
+export function _workflowStateStoreSize(): Promise<number> {
+	return getStepStateStore().sizeForTests('workflow');
 }
 
 export class StateTokenNotFound extends Error {
 	constructor(msg: string) {
 		super(msg);
 		this.name = 'StateTokenNotFound';
-	}
-}
-
-function mintToken(): string {
-	return randomBytes(16)
-		.toString('base64')
-		.replace(/\+/g, '-')
-		.replace(/\//g, '_')
-		.replace(/=/g, '');
-}
-
-function sweep(): void {
-	const now = Date.now();
-	for (const [k, v] of store) {
-		if (now - v.touchedAt > TTL_MS) store.delete(k);
-	}
-	if (store.size >= MAX_ENTRIES) {
-		const arr = [...store.entries()].sort(
-			(a, b) => a[1].touchedAt - b[1].touchedAt,
-		);
-		while (store.size >= MAX_ENTRIES && arr.length > 0) {
-			const [k] = arr.shift()!;
-			store.delete(k);
-		}
 	}
 }

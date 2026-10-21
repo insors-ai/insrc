@@ -221,7 +221,7 @@ async function walkToSynthesize(
 // ---------------------------------------------------------------------------
 
 test('design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-hld-e2e-'));
 	const slug = HASH;
@@ -251,7 +251,7 @@ test('design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../', asyn
 });
 
 test('design.epic: refuses to start without an approved Define', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-hld-e2e-'));
 	try {
@@ -290,7 +290,7 @@ test('design.epic: refuses to start without an approved Define', async () => {
 });
 
 test('design.epic: refuses without epicHash param', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-hld-e2e-'));
 	try {
@@ -307,7 +307,7 @@ test('design.epic: refuses without epicHash param', async () => {
 });
 
 test('design.epic: s6 sbdry1=missed forces synthesize hard-fail', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-hld-e2e-'));
 	const slug = HASH;
@@ -328,7 +328,7 @@ test('design.epic: s6 sbdry1=missed forces synthesize hard-fail', async () => {
 });
 
 test('design.epic: refuses when a Story from Epic is missing from storyBoundaries', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-hld-e2e-'));
 	const slug = HASH;
@@ -356,7 +356,7 @@ test('design.epic: refuses when a Story from Epic is missing from storyBoundarie
 });
 
 test('design.epic: refuses when interfaceSketch contains a return', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-hld-e2e-'));
 	const slug = HASH;

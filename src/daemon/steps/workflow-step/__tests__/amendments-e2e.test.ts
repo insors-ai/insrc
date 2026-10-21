@@ -267,7 +267,7 @@ async function walkLld(repo: string, slug: string, storyId: string, s4Response: 
 // ---------------------------------------------------------------------------
 
 test('LLD s4 amendment proposal lands as pending AmendmentRecord', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-amend-e2e-'));
 	const slug = HASH;
@@ -293,7 +293,7 @@ test('Bad amendment proposal is dropped; the LLD still synthesizes', async () =>
 	// An amendment proposal is OPTIONAL back-flow. A malformed one that the
 	// applier would reject must NOT fail the otherwise-valid (expensive) LLD —
 	// it is dropped with a warning and the LLD is written, with no record.
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-amend-e2e-'));
 	const slug = HASH;
@@ -312,7 +312,7 @@ test('Bad amendment proposal is dropped; the LLD still synthesizes', async () =>
 });
 
 test('Approving amendment marks existing LLD stale via effective-hash mismatch', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-amend-e2e-'));
 	const slug = HASH;
@@ -341,7 +341,7 @@ test('Approving amendment marks existing LLD stale via effective-hash mismatch',
 });
 
 test('ack-stale writes staleAckedAt onto LLD meta', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-amend-e2e-'));
 	const slug = HASH;

@@ -100,7 +100,7 @@ async function walkToExecutePrompt(repo: string): Promise<{ prompt: string; stat
 }
 
 test('coarse push with pushTasks: execute prompt carries the TASK TIER block + the approved plan tasks', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-coarse-tasks-'));
 	const cfg = stubGithubConfig(repo, /* pushTasks */ true);
@@ -117,7 +117,7 @@ test('coarse push with pushTasks: execute prompt carries the TASK TIER block + t
 });
 
 test('coarse push with pushTasks but an UNAPPROVED plan: no TASK TIER (plan excluded)', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-coarse-tasks-'));
 	const cfg = stubGithubConfig(repo, true);
@@ -129,7 +129,7 @@ test('coarse push with pushTasks but an UNAPPROVED plan: no TASK TIER (plan excl
 });
 
 test('coarse push with pushTasks OFF: execute prompt has no task instructions', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-coarse-tasks-'));
 	const cfg = stubGithubConfig(repo, /* pushTasks */ false);
@@ -142,7 +142,7 @@ test('coarse push with pushTasks OFF: execute prompt has no task instructions', 
 });
 
 test('coarse push synthesize persists LLM-returned taskRefs onto the plan meta.tracker', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-coarse-tasks-'));
 	const cfg = stubGithubConfig(repo, true);

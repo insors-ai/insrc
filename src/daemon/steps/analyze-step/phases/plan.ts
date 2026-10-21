@@ -65,7 +65,7 @@ export async function handlePlan(
 	// (1) Decode + stage-check.
 	let state: StepStatePayload;
 	try {
-		state = decodeState(input.state);
+		state = await decodeState(input.state);
 		assertStage(state, 'awaiting_plan');
 	} catch (err) {
 		if (err instanceof StepStateDecodeError) {
@@ -170,7 +170,7 @@ export async function handlePlan(
 			prompt:          step.systemPrompt,
 			userTurn:        step.userTurn,
 			schema:          step.schema as unknown as Record<string, unknown>,
-			state:           reencodeState(input.state, pauseState),
+			state:           await reencodeState(input.state, pauseState),
 			explorationId:   step.explorationId,
 			explorationType: step.explorationType,
 		};
@@ -229,7 +229,7 @@ export async function handlePlan(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema as Record<string, unknown>,
-		state:    reencodeState(input.state, nextState),
+		state:    await reencodeState(input.state, nextState),
 	};
 }
 

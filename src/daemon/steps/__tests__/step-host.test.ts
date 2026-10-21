@@ -300,7 +300,7 @@ test('cancellation: closing the stream during a design-review wait and during a 
 
 // --- the state stores' miss message -------------------------------------------------
 
-test('state store miss: each of the four stores says the daemon was restarted and the run must be started again', () => {
+test('state store miss: each of the four stores says the daemon was restarted and the run must be started again', async () => {
 	const misses: [string, () => unknown][] = [
 		['analyze',      () => loadAnalyzeState('no-such-token')],
 		['workflow',     () => loadWorkflowState('no-such-token')],
@@ -309,7 +309,7 @@ test('state store miss: each of the four stores says the daemon was restarted an
 		['code-review',  () => loadCodeReviewState('no-such-token')],
 	];
 	for (const [store, miss] of misses) {
-		assert.throws(miss, (err: unknown) => {
+		await assert.rejects(async () => miss(), (err: unknown) => {
 			const message = err instanceof Error ? err.message : '';
 			assert.match(message, /the insrc daemon was restarted/, `${store}: ${message}`);
 			assert.match(message, /Start the run again with phase='start'/, `${store}: ${message}`);

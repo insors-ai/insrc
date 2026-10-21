@@ -29,7 +29,7 @@ const PLAN: ExplorationPlan = {
 } as unknown as ExplorationPlan;
 
 /** A state as the tool holds it when it asks the agent for the bundle. */
-function awaitingBundle(outputs: readonly unknown[]): string {
+async function awaitingBundle(outputs: readonly unknown[]): Promise<string> {
 	const executed = {
 		plan: PLAN,
 		results: PLAN.explorations.slice(0, outputs.length).map((e, i) => ({ exploration: e, output: outputs[i], cached: false, elapsedMs: 0 })),
@@ -39,7 +39,7 @@ function awaitingBundle(outputs: readonly unknown[]): string {
 		version: STATE_VERSION, runId: 'r1', repoPath: REPO, repoIndexedAt: 1_790_000_000_000,
 		intent: INTENT, synthesizerKey: 'code', plan: PLAN, executed, stage: 'awaiting_bundle',
 	};
-	return encodeState(payload);
+	return await encodeState(payload);
 }
 
 const WHOLE = { type: 'module.profile', completeness: buildCompleteness({ returned: 4, basis: 'filesystem' }) };
@@ -54,7 +54,7 @@ const FAILED = { type: 'failed', requested: 'symbol.locate', errorCode: 'runtime
 
 test("the step tool's bundle phase attaches the report it derives from its state and rejects an agent-supplied one as 'bundle-schema'", async () => {
 	// One complete, one limited and one failed lookup in the tool's state.
-	const out = await handleBundle({ phase: 'bundle', bundle: LAYERS, state: awaitingBundle([WHOLE, LIMITED, FAILED]) } as StepInputBundle) as StepOutputDone;
+	const out = await handleBundle({ phase: 'bundle', bundle: LAYERS, state: await awaitingBundle([WHOLE, LIMITED, FAILED]) } as StepInputBundle) as StepOutputDone;
 	assert.equal(out.next, 'done');
 	// (The report's measure has its own test; this one is about the completeness part.)
 	assert.deepEqual((({ measure: _m, ...rest }) => rest)(out.report!), {
@@ -75,12 +75,12 @@ test("the step tool's bundle phase attaches the report it derives from its state
 	assert.match(firstLine, /symbol\.locate \[e3\]/);
 
 	// Every lookup complete: the report says so.
-	const whole = await handleBundle({ phase: 'bundle', bundle: LAYERS, state: awaitingBundle([WHOLE]) } as StepInputBundle) as StepOutputDone;
+	const whole = await handleBundle({ phase: 'bundle', bundle: LAYERS, state: await awaitingBundle([WHOLE]) } as StepInputBundle) as StepOutputDone;
 	assert.deepEqual((({ measure: _m, ...rest }) => rest)(whole.report!), { completeness: { complete: true, incomplete: [], failed: [] } });
 
 	// The agent writes the seven layers. A bundle in which it also states its
 	// completeness is rejected, and the state is kept for a corrected bundle.
-	const token = awaitingBundle([WHOLE, LIMITED, FAILED]);
+	const token = await awaitingBundle([WHOLE, LIMITED, FAILED]);
 	const forged = { ...LAYERS, report: { completeness: { complete: true, incomplete: [], failed: [] } } };
 	const rejected = await handleBundle({ phase: 'bundle', bundle: forged, state: token } as unknown as StepInputBundle) as StepOutputError;
 	assert.equal(rejected.next, 'error');

@@ -33,7 +33,7 @@ const log = getLogger('mcp:workflow-step:plan');
 export async function handlePlan(
 	input: WorkflowStepInputPlan,
 ): Promise<WorkflowStepEmitStep | WorkflowStepEmitSynthesize | WorkflowStepError> {
-	const state = decodeState(input.state);
+	const state = await decodeState(input.state);
 	assertStage(state, 'awaiting_plan');
 
 	if (input.plan.workflow !== state.intent.workflow) {
@@ -79,7 +79,7 @@ export async function handlePlan(
 			prompt:   pause.prompt,
 			userTurn: pause.userTurn,
 			schema:   pause.schema,
-			state:    reencodeState(input.state, next),
+			state:    await reencodeState(input.state, next),
 		};
 	}
 	// complete — all deterministic. Prepare the synthesizer.
@@ -102,7 +102,7 @@ export async function handlePlan(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema,
-		state:    reencodeState(input.state, next),
+		state:    await reencodeState(input.state, next),
 	};
 }
 

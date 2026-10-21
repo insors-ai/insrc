@@ -31,7 +31,7 @@ const log = getLogger('mcp:workflow-step:step');
 export async function handleStep(
 	input: WorkflowStepInputStep,
 ): Promise<WorkflowStepEmitStep | WorkflowStepEmitSynthesize | WorkflowStepError> {
-	const state = decodeState(input.state);
+	const state = await decodeState(input.state);
 	assertStage(state, 'awaiting_llm_step');
 
 	if (state.executor === undefined || state.executor.pause === undefined) {
@@ -81,7 +81,7 @@ export async function handleStep(
 			prompt:   pause.prompt,
 			userTurn: pause.userTurn,
 			schema:   pause.schema,
-			state:    reencodeState(input.state, next),
+			state:    await reencodeState(input.state, next),
 		};
 	}
 	// complete
@@ -104,7 +104,7 @@ export async function handleStep(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema,
-		state:    reencodeState(input.state, next),
+		state:    await reencodeState(input.state, next),
 	};
 }
 

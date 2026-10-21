@@ -166,7 +166,7 @@ const synthArtifact = {
 // ---------------------------------------------------------------------------
 
 test('plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>/PLAN.md', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-e2e-'));
 	try {
@@ -195,7 +195,7 @@ test('plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>
 });
 
 test('plan: refuses when the Story LLD is unapproved (gate)', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-e2e-'));
 	try {
@@ -207,7 +207,7 @@ test('plan: refuses when the Story LLD is unapproved (gate)', async () => {
 });
 
 test('plan: refuses when the Story LLD is stale with no ack (gate)', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-e2e-'));
 	try {
@@ -219,7 +219,7 @@ test('plan: refuses when the Story LLD is stale with no ack (gate)', async () =>
 });
 
 test('plan: finalize rejects a task graph with a dangling dependsOn', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-e2e-'));
 	try {

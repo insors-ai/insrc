@@ -318,7 +318,7 @@ async function walkToSynthesize(
 // ---------------------------------------------------------------------------
 
 test('design.story enhancement: happy path writes LLD under docs/epics/<slug>-E.../S<nnn>/LLD.md', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-lld-e2e-'));
 	const slug = HASH;
@@ -350,7 +350,7 @@ test('design.story enhancement: happy path writes LLD under docs/epics/<slug>-E.
 });
 
 test('design.story new-capability: s7 skips, artifact has no Migration section', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-lld-e2e-'));
 	const slug = HASH;
@@ -371,7 +371,7 @@ test('design.story new-capability: s7 skips, artifact has no Migration section',
 });
 
 test('design.story: refuses without an approved HLD', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-lld-e2e-'));
 	const slug = HASH;
@@ -417,7 +417,7 @@ test('design.story: refuses without an approved HLD', async () => {
 });
 
 test('design.story: refuses without epicHash or storyId params', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-lld-e2e-'));
 	try {
@@ -432,7 +432,7 @@ test('design.story: refuses without epicHash or storyId params', async () => {
 });
 
 test('design.story: unknown shared-contract id fails synthesize', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-lld-e2e-'));
 	const slug = HASH;
@@ -454,7 +454,7 @@ test('design.story: unknown shared-contract id fails synthesize', async () => {
 });
 
 test('design.story: migration MISSING for enhancement Epic → hard-fail', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-lld-e2e-'));
 	const slug = HASH;
@@ -472,7 +472,7 @@ test('design.story: migration MISSING for enhancement Epic → hard-fail', async
 });
 
 test('design.story: migration PRESENT for new-capability Epic → hard-fail', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-lld-e2e-'));
 	const slug = HASH;

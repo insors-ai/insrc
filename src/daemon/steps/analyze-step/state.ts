@@ -122,7 +122,7 @@ export class StepStateDecodeError extends Error {
  * (Kept the `encodeState` name so the phase handlers don't need to
  * change; the on-wire shape changed underneath.)
  */
-export function encodeState(payload: StepStatePayload): string {
+export async function encodeState(payload: StepStatePayload): Promise<string> {
 	if (payload.version !== STATE_VERSION) {
 		throw new StepStateDecodeError(
 			'wrong-version',
@@ -140,7 +140,7 @@ export function encodeState(payload: StepStatePayload): string {
  * ~1 live token rather than leaking one per turn; start (first mint) keeps calling
  * encodeState and bundle keeps its terminal releaseState.
  */
-export function reencodeState(previousToken: string, payload: StepStatePayload): string {
+export async function reencodeState(previousToken: string, payload: StepStatePayload): Promise<string> {
 	if (payload.version !== STATE_VERSION) {
 		throw new StepStateDecodeError(
 			'wrong-version',
@@ -156,7 +156,7 @@ export function reencodeState(previousToken: string, payload: StepStatePayload):
  * StepStateDecodeError on unknown tokens (the daemon was restarted,
  * the token expired, malformed token shape).
  */
-export function decodeState(token: string): StepStatePayload {
+export async function decodeState(token: string): Promise<StepStatePayload> {
 	if (typeof token !== 'string' || token.length < 8 || token.length > 128) {
 		throw new StepStateDecodeError(
 			'malformed',
@@ -166,7 +166,7 @@ export function decodeState(token: string): StepStatePayload {
 		);
 	}
 	try {
-		return loadState(token);
+		return await loadState(token);
 	} catch (err) {
 		if (err instanceof StateTokenNotFound) {
 			throw new StepStateDecodeError('malformed', err.message);

@@ -135,7 +135,7 @@ const s4Passed = {
 
 test('define EXTEND: scope=extend → skip frame/compose → append Story + pending amendment + ExtendArtifact', async () => {
 	registerWorkflowRunners();
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-extend-'));
 	try {
 		seed(repo);
@@ -204,7 +204,7 @@ test('define EXTEND: scope=extend → skip frame/compose → append Story + pend
 
 test('define EXTEND: s4 scope-boundary hard-fail refuses synthesize (no Story appended)', async () => {
 	registerWorkflowRunners();
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-extend-fail-'));
 	try {
 		seed(repo);

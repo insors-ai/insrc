@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { H, alice, artifact } from '../../artifact-core/__tests__/store-kit.js';
 import { durableKit } from '../../artifact-core/__tests__/durable-kit.js';
+import { recordAttachment } from '../attach.js';
 import { bindArtifact, hasStagedWrite, readBinding, recordPosted, setPendingLink } from '../binding.js';
 
 const LLD = `LLD-${H}-s6`;
@@ -30,6 +31,8 @@ describe('binding-staged', () => {
 			const bound = bindArtifact(k.repo, `LLD-${H}-s6`, issue(7));
 			assert.equal(bound.ok, false);
 			assert.equal(!bound.ok && bound.kind, 'staged');
+			const attachment = { target: { entityId: LLD, type: 'LLD', relation: 'documents', fragment: 'docs/LLD.md' }, revision: 1, at: '2026-10-21T10:00:00.000Z' };
+			assert.equal(recordAttachment(k.repo, LLD, attachment), false, 'the attachment patch is refused too');
 			assert.equal(JSON.stringify(readBinding(k.repo, LLD)), headBefore);
 
 			// the staged write then completes: the next store write finishes it first, with no head-changed-after-stage conflict
@@ -41,6 +44,7 @@ describe('binding-staged', () => {
 
 			// with nothing staged the patches work again
 			assert.equal(recordPosted(k.repo, LLD, 'design'), true);
+			assert.equal(recordAttachment(k.repo, LLD, attachment), true);
 		} finally { k.done(); }
 	});
 });

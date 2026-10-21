@@ -39,9 +39,9 @@ export type BindResult =
 	| { readonly ok: true; readonly binding: TrackerBinding; readonly created: boolean }
 	| { readonly ok: false; readonly kind: BindFailureKind; readonly reason: string };
 
-type Head = { meta: Record<string, unknown> } & Record<string, unknown>;
+export type Head = { meta: Record<string, unknown> } & Record<string, unknown>;
 
-const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+export const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /** True while the store has a write staged for the artifact (its journal file exists). */
 export function hasStagedWrite(repoPath: string, artifactId: string): boolean {
@@ -49,7 +49,7 @@ export function hasStagedWrite(repoPath: string, artifactId: string): boolean {
 }
 
 /** The head of the artifact, or undefined when there is no file. A file that is not a head throws ArtifactShapeError. */
-function readHead(repoPath: string, artifactId: string): { readonly path: string; readonly head: Head } | undefined {
+export function readHead(repoPath: string, artifactId: string): { readonly path: string; readonly head: Head } | undefined {
 	const path = artifactJsonPath(repoPath, artifactId);
 	if (!existsSync(path)) return undefined;
 	let parsed: unknown;
@@ -167,24 +167,4 @@ export function readAttachments(repoPath: string, artifactId: string): readonly 
 	if (list === undefined) return [];
 	if (!Array.isArray(list) || !list.every(isAttachment)) throw new ArtifactShapeError(`meta.envelope of ${artifactId} has a malformed attachment`);
 	return list as unknown as Attachment[];
-}
-
-/**
- * Record one Attachment on the head of the unit's own artifact (the one that holds the binding): { target, revision, at, externalId }.
- * Appends; an identical (target, fragment, revision) already recorded is left as it is. Refused while the store has a write staged.
- * False when it could not be recorded.
- */
-export function recordAttachment(repoPath: string, artifactId: string, attachment: Attachment): boolean {
-	const fail = (why: BindFailureKind, reason: string): false => { log.warn({ artifactId, why, reason }, 'binding: the attachment was not recorded'); return false; };
-	if (hasStagedWrite(repoPath, artifactId)) return fail('staged', `a store write is staged for ${artifactId}; the attachment is recorded by the next call`);
-	try {
-		const read = readHead(repoPath, artifactId);
-		if (read === undefined) return fail('unreadable', `${artifactId} has no head to record an attachment on`);
-		const current = [...readAttachments(repoPath, artifactId)];
-		const same = (a: Attachment): boolean => a.target.entityId === attachment.target.entityId && a.target.fragment === attachment.target.fragment && a.revision === attachment.revision;
-		if (current.some(same)) return true;
-		const envelope = isObject(read.head.meta['envelope']) ? read.head.meta['envelope'] : {};
-		writeArtifact(read.path, { ...read.head, meta: { ...read.head.meta, envelope: { ...envelope, attachments: [...current, attachment] } } }, 'meta-only');
-		return true;
-	} catch (err) { return fail('write', (err as Error).message); }
 }

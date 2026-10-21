@@ -12,7 +12,7 @@
  *
  * Nothing here is posted twice: a (target, revision) already recorded is skipped, and a link already in the issue's comments
  * (a post whose record was lost) is recorded without posting again. The Attachment records go on the head of the unit's own
- * artifact (the Define for an Epic, the LLD for a Story), the one that holds the binding, through the binding module.
+ * artifact (the Define for an Epic, the LLD for a Story), the one that holds the binding, through `recordAttachment` below, a meta-only patch like the binding module's (it moves no revision and is refused while the store has a write staged).
  */
 
 import { execFileSync } from 'node:child_process';
@@ -20,9 +20,9 @@ import { readFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
 import { ArtifactIds } from '../artifact-ids.js';
-import type { Reference } from '../artifact-core/types.js';
-import { artifactJsonPath, defineArtifactId, lldArtifactId } from '../storage.js';
-import { readAttachments, readBinding, recordAttachment } from './binding.js';
+import type { Attachment, Reference } from '../artifact-core/types.js';
+import { artifactJsonPath, defineArtifactId, lldArtifactId, writeArtifact } from '../storage.js';
+import { hasStagedWrite, isObject, readAttachments, readBinding, readHead } from './binding.js';
 import { gitOriginOwnerRepo } from './github.js';
 import type { TrackerComment, TrackerPort } from './port.js';
 import type { UnitRef } from './refs.js';
@@ -72,6 +72,26 @@ function revisionOf(repoPath: string, artifactId: string): number {
 		const n = meta?.lifecycle?.revision?.number ?? meta?.revision;
 		return typeof n === 'number' && Number.isInteger(n) && n >= 0 ? n : 0;
 	} catch { return 0; }
+}
+
+/**
+ * Record one Attachment on the head of the unit's own artifact (the one that holds the binding): { target, revision, at, externalId }.
+ * Appends; an identical (target, fragment, revision) already recorded is left as it is. Refused while the store has a write staged.
+ * False when it could not be recorded.
+ */
+export function recordAttachment(repoPath: string, artifactId: string, attachment: Attachment): boolean {
+	const fail = (why: 'conflict' | 'unreadable' | 'staged' | 'write', reason: string): false => { log.warn({ artifactId, why, reason }, 'binding: the attachment was not recorded'); return false; };
+	if (hasStagedWrite(repoPath, artifactId)) return fail('staged', `a store write is staged for ${artifactId}; the attachment is recorded by the next call`);
+	try {
+		const read = readHead(repoPath, artifactId);
+		if (read === undefined) return fail('unreadable', `${artifactId} has no head to record an attachment on`);
+		const current = [...readAttachments(repoPath, artifactId)];
+		const same = (a: Attachment): boolean => a.target.entityId === attachment.target.entityId && a.target.fragment === attachment.target.fragment && a.revision === attachment.revision;
+		if (current.some(same)) return true;
+		const envelope = isObject(read.head.meta['envelope']) ? read.head.meta['envelope'] : {};
+		writeArtifact(read.path, { ...read.head, meta: { ...read.head.meta, envelope: { ...envelope, attachments: [...current, attachment] } } }, 'meta-only');
+		return true;
+	} catch (err) { return fail('write', (err as Error).message); }
 }
 
 export function attachDocuments(unit: UnitRef, port: TrackerPort, targets: readonly AttachTarget[], deps: AttachDeps = {}): AttachOutcome {

@@ -242,16 +242,17 @@ test('the binding writer is listed as a meta-only writer of meta.envelope and ev
 });
 
 test('the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry', () => {
-	// the binding module is the one writer of meta.envelope.binding and meta.envelope.attachments; the attach module records through it
-	const entry = byFile.get('src/workflow/tracker/binding.ts');
-	assert.equal(entry?.class, 'meta-only');
-	assert.match(entry?.note ?? '', /meta\.envelope\.binding and attachments/);
-	const attach = read('src/workflow/tracker/attach.ts');
-	assert.match(attach, /recordAttachment\(/, 'the attach module records its attachments through the binding module');
-	assert.deepEqual(scanWriters(attach, 'src/workflow/tracker/attach.ts').calls, [], 'the attach module writes no file itself');
-	assert.deepEqual(checkInventoryEntry(attach, byFile.get('src/workflow/tracker/attach.ts'), 'src/workflow/tracker/attach.ts'), []);
-	assert.match(read('src/workflow/tracker/binding.ts'), /export function recordAttachment\(/);
+	// the binding module writes meta.envelope.binding, the attach module meta.envelope.attachments; both are meta-only patches
+	for (const [file, field] of [['src/workflow/tracker/binding.ts', /meta\.envelope\.binding/], ['src/workflow/tracker/attach.ts', /meta\.envelope\.attachments/]] as const) {
+		const entry = byFile.get(file);
+		assert.equal(entry?.class, 'meta-only', file);
+		assert.equal(entry?.via, 'writeArtifact', file);
+		assert.match(entry?.note ?? '', field, file);
+		assert.deepEqual(checkInventoryEntry(read(file), entry, file), [], file);
+		assert.deepEqual(scanWriters(read(file), file).rawCalls, [], `${file} writes only through writeArtifact`);
+	}
+	assert.match(read('src/workflow/tracker/attach.ts'), /export function recordAttachment\(/);
 	// no other production file writes the two fields
-	const others = productionFiles(join(ROOT, 'src')).filter(f => !/tracker\/binding\.ts$|artifact-core\/|workflow\/storage\.ts$/.test(f) && /envelope['"\]]*\s*[:=][^;\n]*\b(binding|attachments)\b/.test(read(f)));
+	const others = productionFiles(join(ROOT, 'src')).filter(f => !/tracker\/(binding|attach)\.ts$|artifact-core\/|workflow\/storage\.ts$/.test(f) && /envelope['"\]]*\s*[:=][^;\n]*\b(binding|attachments)\b/.test(read(f)));
 	assert.deepEqual(others, []);
 });

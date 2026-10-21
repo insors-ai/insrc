@@ -194,6 +194,13 @@
         "choice": "Retire together in s9",
         "rationale": "Gates keep the legacy meta fields until the s9 back-fill; then fields and readers go together.",
         "resolvedAt": "2026-10-21T05:12:15.484Z"
+      },
+      "q8f664c9b": {
+        "question": "The service reaches production only when s4 wires a durable History and WriteJournal into the daemon and passes the service on the approval request; confirm that handoff and the addConsumer amendment with s4",
+        "status": "resolved",
+        "choice": "Confirm s4 ownership now",
+        "rationale": "AMD-8 is approved: s4 wires the durable History, journal and LifecycleService.",
+        "resolvedAt": "2026-10-21T05:12:59.825Z"
       }
     }
   },

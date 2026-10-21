@@ -690,6 +690,8 @@ lifecycle-service exports setLifecycleService and getLifecycleService; approveWo
   - **resolved**: Amend according to contract impact — Keep AMD-8; amend only additions that change cross-story obligations. _(2026-10-21T05:11:18.174Z)_
 - `q0dabad0a` — The gates keep writing meta.approvedAt, rejectedAt, staleAckedAt and meta.review for the delivery board, so a head can carry both representations until s9 back-fills; decide whether and when those fields and their readers are retired (the owner's no-compatibility ruling disfavours keeping both indefinitely)
   - **resolved**: Retire together in s9 — Gates keep the legacy meta fields until the s9 back-fill; then fields and readers go together. _(2026-10-21T05:12:15.484Z)_
+- `q8f664c9b` — The service reaches production only when s4 wires a durable History and WriteJournal into the daemon and passes the service on the approval request; confirm that handoff and the addConsumer amendment with s4
+  - **resolved**: Confirm s4 ownership now — AMD-8 is approved: s4 wires the durable History, journal and LifecycleService. _(2026-10-21T05:12:59.825Z)_
 
 ## Citations
 

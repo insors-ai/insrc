@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 45 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 47 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -327,3 +327,26 @@ Run at 2026-10-21T09:06:42.228Z on commit `ec90553f`. Tests check: **passed**. 4
 | `src/daemon/tools/builtins/git/__tests__/diff.test.ts` | 0 | 10 | 2.3 s |  |
 | `src/workflow/code-review/__tests__/diff-attribution.test.ts` | 0 | 6 | 1.8 s |  |
 | `src/workflow/code-review/__tests__/diff-grounding.test.ts` | 0 | 25 | 2.2 s |  |
+
+## t12
+
+Run at 2026-10-21T09:09:57.673Z on commit `d995207c`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/daemon/tools/__tests__/shell-helper.test.ts: 'a multibyte UTF-8 character split across two output chunks is decoded whole, and the byte cap and truncation flag are unchanged'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a multibyte UTF-8 character split across two output chunks is decoded whole, and the byte cap and truncation flag are unchanged | `src/daemon/tools/__tests__/shell-helper.test.ts` |
+
+**integration: src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks | `src/workflow/code-review/__tests__/diff-attribution.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/tools/__tests__/shell-helper.test.ts` | 0 | 1 | 0.7 s |  |
+| `src/workflow/code-review/__tests__/diff-attribution.test.ts` | 0 | 7 | 2 s |  |

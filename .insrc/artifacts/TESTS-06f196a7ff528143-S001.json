@@ -4,7 +4,7 @@
     "epicHash": "06f196a7ff528143",
     "storyId": "S001",
     "createdAt": "2026-10-21T05:47:38.616Z",
-    "updatedAt": "2026-10-21T09:06:42.228Z",
+    "updatedAt": "2026-10-21T09:09:57.673Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-21T05:02:26.565Z",
     "epicSlug": "scope-story-s-code-review-what"
@@ -2819,6 +2819,92 @@
               },
               {
                 "title": "splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "d995207c",
+        "ranAt": "2026-10-21T09:09:57.673Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/shell-helper.test.ts: 'a multibyte UTF-8 character split across two output chunks is decoded whole, and the byte cap and truncation flag are unchanged'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/shell-helper.test.ts",
+                "title": "a multibyte UTF-8 character split across two output chunks is decoded whole, and the byte cap and truncation flag are unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+                "title": "a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/shell-helper.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 747,
+            "titles": [
+              {
+                "title": "a multibyte UTF-8 character split across two output chunks is decoded whole, and the byte cap and truncation flag are unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2024,
+            "titles": [
+              {
+                "title": "a diff review of a trailered Story shows only its own hunks in a file another Story also edited",
+                "result": "pass"
+              },
+              {
+                "title": "without a story key the diff is today's, and both diff callers record the attribution and what was left out on the subject",
+                "result": "pass"
+              },
+              {
+                "title": "the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit",
+                "result": "pass"
+              },
+              {
+                "title": "storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited",
+                "result": "pass"
+              },
+              {
+                "title": "a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding",
+                "result": "pass"
+              },
+              {
+                "title": "a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there",
+                "result": "pass"
+              },
+              {
+                "title": "a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks",
                 "result": "pass"
               }
             ],

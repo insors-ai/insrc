@@ -33,6 +33,8 @@ import { DEFAULT_DEPS, runCodeReview, type RunCodeReviewOpts } from '../runner.j
 import type { CodeReviewSubject, DimensionResult, ReviewDimension } from '../types.js';
 import { changedFiles, LEDGER_EXCLUDE_GLOBS } from '../../runners/build/changed-files.js';
 import { storyChangeSet } from '../../runners/build/story-commits.js';
+import { resolveCodeReviewSubject } from '../subject.js';
+import { ArtifactMissingError } from '../../gates.js';
 import { stampBuildStart } from '../../runners/build/range-base.js';
 import { artifactJsonPath, buildArtifactId } from '../../storage.js';
 import { codeReviewRunStart, type CodeReviewRunDeps } from '../../../daemon/code-review-rpc.js';
@@ -270,6 +272,15 @@ test('a Story file whose path has multibyte characters is in the Story set, the 
 		let excluded: readonly string[] | undefined;
 		assert.deepEqual([...await changedFiles(r, { base, storyKey: KEY, onAttribution: a => { excluded = a.excludedUncommitted; } })], [FILE]);
 		assert.deepEqual(excluded, [], 'its uncommitted edit is the Story\'s, not excluded');
+		// The review subject itself, through the resolver.
+		const missing = (): never => { throw new ArtifactMissingError('none'); };
+		const subject = await resolveCodeReviewSubject(r, EPIC, STORY, {
+			requireApprovedLld: missing, requireApprovedPlan: missing, changedFiles,
+			resolveRangeBase: () => base, readBuildRecord: () => null, readTestRecord: () => null,
+		});
+		assert.ok(subject.ok, JSON.stringify(subject));
+		assert.deepEqual(subject.subject.changedFiles, [FILE]);
+		assert.equal(subject.subject.excludedFromScope, undefined);
 		const res = await assembleDiffCodeReviewGrounding(r, realDiffGroundingDeps(), { base, storyKey: KEY });
 		assert.deepEqual(res.changedFiles, [FILE]);
 		assert.match(sig(res, FILE), /^\+COMMITTED-EDIT$/m);

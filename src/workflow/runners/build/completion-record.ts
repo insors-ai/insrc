@@ -24,13 +24,20 @@ import { resolveStoryRangeBase } from './range-base.js';
 import { buildArtifactId, inheritedStoryStandalone } from '../../storage.js';
 import { ArtifactNotFoundError } from '../../artifact-core/types.js';
 import type { Actor } from '../../artifact-core/types.js';
+import type { ContentWriteOptions } from '../../artifact-core/lifecycle-service.js';
 import type { HeadPayload } from '../../artifact-core/codecs.js';
 import { collectBuildChangeLog } from './changed-files.js';
 import { getLogger } from '../../../shared/logger.js';
 
 /** Where the record's content goes first when a lifecycle service is in play: its artifact store, so the change log stays in step. */
 export interface BuildContentWriter {
-	updateContent(id: string, by: Actor, payload: HeadPayload): Promise<boolean>;
+	updateContent(id: string, by: Actor, payload: HeadPayload, opts?: ContentWriteOptions): Promise<boolean>;
+}
+
+/** What a round persister (BUILD, TESTS, code review) takes to store its content through the lifecycle service: the writer and who is acting. */
+export interface RoundWriter {
+	readonly writer: BuildContentWriter;
+	readonly actor:  Actor;
 }
 
 /**
@@ -43,7 +50,7 @@ export async function ensureBuildRecordOnCompletion(
 	repoPath: string,
 	ref: { readonly epicHash: string; readonly storyId: string },
 	listChanged?: (repoPath: string) => Promise<readonly string[]>,
-	through?: { readonly writer: BuildContentWriter; readonly actor: Actor },
+	through?: RoundWriter,
 ): Promise<{ readonly md: string; readonly json: string } | undefined> {
 	if (ref.epicHash.length === 0 || ref.storyId.length === 0) return undefined;
 	try {

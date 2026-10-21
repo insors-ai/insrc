@@ -18,7 +18,8 @@ import type { ArtifactStore, WriteOptions } from './store.js';
 import {
 	ArtifactNotFoundError, IllegalTransitionError, LifecycleConflictError,
 } from './types.js';
-import type { Actor, ChangeLogEntry, Lifecycle, Operation, Status } from './types.js';
+import type { Actor, ChangeLogEntry, Lifecycle, Operation, Reference, Status } from './types.js';
+import { emptyLifecycle } from './decode.js';
 
 const log = getLogger('lifecycle-service');
 
@@ -32,6 +33,14 @@ export interface LifecycleServiceDeps {
 	/** The evidence, or a factory that builds it per call from the call's context (the approval's override reason). */
 	readonly evidence: CompletionEvidence | ((ctx: EvidenceContext) => CompletionEvidence);
 	readonly now?:     (() => Date) | undefined;
+}
+
+/** What a content write can say about its change log entry, and whether it may create the head. */
+export interface ContentWriteOptions {
+	readonly outcome?:    ChangeLogEntry['outcome'] | undefined;
+	readonly references?: readonly Reference[] | undefined;
+	/** Create the artifact through the store when it has no head yet. */
+	readonly create?:     boolean | undefined;
 }
 
 export interface ApplyResult {
@@ -179,13 +188,26 @@ export class LifecycleService {
 	/**
 	 * Replace the content (body and citations) of a stored artifact, through the store: the change is staged, logged with its
 	 * revision and applied under the per-artifact queue, and a content change returns a non-terminal head to draft. For the
-	 * writers (the BUILD record hook, the review auto-fix) that used to rewrite a head behind the store's back.
+	 * writers (the BUILD record hook, the review auto-fix, the round records) that used to rewrite a head behind the store's back.
+	 * `outcome` and `references` ride on the change log entry. With `create`, a missing head is created through the store, so the
+	 * first round of a record is logged like every later one.
 	 */
-	updateContent(id: string, by: Actor, payload: HeadPayload): Promise<boolean> {
-		return this.deps.store.update(id, by, current => {
-			const { changeLog: _log, ...head } = current;
-			return { next: { ...head, payload }, options: { operation: 'update' } };
-		});
+	async updateContent(id: string, by: Actor, payload: HeadPayload, opts: ContentWriteOptions = {}): Promise<boolean> {
+		const options = { operation: 'update' as const, ...(opts.outcome !== undefined ? { outcome: opts.outcome } : {}), ...(opts.references !== undefined ? { references: opts.references } : {}) };
+		try {
+			return await this.deps.store.update(id, by, current => {
+				const { changeLog: _log, ...head } = current;
+				return { next: { ...head, payload }, options };
+			});
+		} catch (err) {
+			if (!(err instanceof ArtifactNotFoundError) || opts.create !== true) throw err;
+		}
+		await this.deps.store.write(
+			{ id, description: '', references: [], attachments: [], lifecycle: emptyLifecycle(0), payload },
+			by,
+			{ ...(opts.outcome !== undefined ? { outcome: opts.outcome } : {}), ...(opts.references !== undefined ? { references: opts.references } : {}) },
+		);
+		return true;
 	}
 
 	private evidenceFor(ctx: EvidenceContext): CompletionEvidence {

@@ -24,8 +24,7 @@
     "lldRunId": "wf-1792401350307-1gkpsq",
     "lldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
     "authoredBy": "controller",
-    "rangeBase": "9d1bbf1a2f0d01e4bcaa843af7aab66e7c7fd5e4",
-    "approvedAt": "2026-10-21T04:27:32.873Z"
+    "rangeBase": "9d1bbf1a2f0d01e4bcaa843af7aab66e7c7fd5e4"
   },
   "body": {
     "summary": {
@@ -230,7 +229,7 @@
       {
         "id": "t7",
         "title": "Merge and finish into today's DimensionResult",
-        "summary": "Each model dimension's finish handles a divided review (replacing today's 'dividing a code review is not available yet' error): the chunk results (coverage symbol findings, quality findings and pair findings) in stage order; gather.merge concatenates them with the obligation and relation parts, keeps identical findings once, expands a finding naming a note id to that note's atoms through the job's provenance, and applies each dimension's existing result filters: today's changed-set filter on the daemon path (findings outside it dropped, as today), functional coverage's known-FR expectationRef filter, and normalizeCoverageFindings run once over coverage's merged result with the prepared grounding. On the controller path out-of-set findings still reach the step handler's outOfScope handling (src/daemon/steps/code-review-step/handler.ts) as today. pipelineCalls is set by s1 and absent on a single-chunk review; runCodeReview folds with foldVerdict unchanged.",
+        "summary": "Each model dimension's finish handles a divided review (replacing today's 'dividing a code review is not available yet' error): the chunk results (coverage symbol findings, quality findings and pair findings) in stage order; gather.merge concatenates them with the obligation and relation parts, keeps identical findings once, re-asks a finding located at a note id rather than rewriting it, and applies each dimension's existing result filters: today's changed-set filter on the daemon path (findings outside it dropped, as today), functional coverage's known-FR expectationRef filter, and normalizeCoverageFindings run once over coverage's merged result with the prepared grounding. On the controller path out-of-set findings still reach the step handler's outOfScope handling (src/daemon/steps/code-review-step/handler.ts) as today. pipelineCalls is set by s1 and absent on a single-chunk review; runCodeReview folds with foldVerdict unchanged.",
         "size": "M",
         "order": 7,
         "dependsOn": [
@@ -239,7 +238,7 @@
           "t6"
         ],
         "acceptanceChecks": [
-          "merge keeps identical findings once, expands note ids to atoms, and normalises coverage once over the merged result.",
+          "merge keeps identical findings once and normalises coverage once over the merged result; it never rewrites a location: a gather finding located at an evidence note id (or anything not file:line) is re-asked once with the reason, then fails the review (the approved LLD, stakeholder option A).",
           "Out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today.",
           "A functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by finish, as today.",
           "pipelineCalls counts the divided review's calls per role and is absent on a single-chunk review.",
@@ -253,7 +252,7 @@
         "tests": [
           {
             "level": "unit",
-            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'merge keeps identical findings once, expands note ids to atoms, moves out-of-set findings to outOfScope, and normalises coverage once'"
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once'"
           },
           {
             "level": "unit",
@@ -373,7 +372,7 @@
         ]
       },
       {
-        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'merge keeps identical findings once, expands note ids to atoms, moves out-of-set findings to outOfScope, and normalises coverage once'",
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once'",
         "coveredByTaskIds": [
           "t7"
         ]
@@ -466,6 +465,16 @@
           "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/PLAN.md"
         },
         "comment": "Amended 2026-10-20 by the stakeholder's decision after t2's third build gate. t2's check required a correction note on every re-issue, which conflicts with s1's approved rule: prepare lets one symbol fill the hard limit, and a correction that does not fit beside such a call is left out and logged, never cut. The check now follows s1: the reasons have a fixed size (a made-up value is located by count and position, never quoted back), so the correction is sent whenever the call has room; a call that already fills the limit is re-issued as planned with the omission logged, and a second invalid answer still fails the review. Also recorded: commit 581e1d76 (a t2 fix) changed quality's description reasons to the same fixed-size form for consistency, since every chunk validator lives in one module; that part belongs to t3's surface.",
+        "kind": "feedback"
+      },
+      {
+        "id": "872179b1",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-21T04:28:16.013Z",
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/PLAN.md"
+        },
+        "comment": "Amended 2026-10-21: t7 follows the approved LLD on note ids (stakeholder option A, 2026-10-20): merge never rewrites a location; a gather finding located at an evidence note id is re-asked, then fails the review. The note-id expansion wording in t7 (check, summary, test name, coverage row) was missed when the LLD was amended; it is corrected here.",
         "kind": "feedback"
       }
     ]

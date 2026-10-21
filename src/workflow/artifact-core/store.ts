@@ -26,8 +26,9 @@ import { validateLogEntry } from './history.js';
 import type { History } from './history.js';
 import { createMemoryJournal } from './journal.js';
 import type { StagedOperation, WriteJournal } from './journal.js';
-import { ArtifactNotFoundError, ArtifactShapeError } from './types.js';
-import type { Actor, Artifact, ChangeLogEntry, Feedback, Reference } from './types.js';
+import { assertLegalStatusChange, checkHeadIntegrity, isLifecycleOperation } from './lifecycle.js';
+import { ArtifactNotFoundError, ArtifactShapeError, LifecycleConflictError } from './types.js';
+import type { Actor, Artifact, ChangeLogEntry, Feedback, Operation, Reference } from './types.js';
 
 const log = getLogger('artifact-store');
 
@@ -47,13 +48,15 @@ export interface ArtifactStoreDeps {
 	readonly writeHead?: ((path: string, bytes: string) => void) | undefined;
 }
 
-/** Sorted-key JSON, so two payloads that differ only in key order compare equal. */
-function canonical(v: unknown): string {
-	if (Array.isArray(v)) return `[${v.map(canonical).join(',')}]`;
-	if (typeof v === 'object' && v !== null) {
-		return `{${Object.keys(v).sort().filter(k => (v as Record<string, unknown>)[k] !== undefined).map(k => `${JSON.stringify(k)}:${canonical((v as Record<string, unknown>)[k])}`).join(',')}}`;
-	}
-	return JSON.stringify(v) ?? 'null';
+/** What a caller can say about the change log entry of a write. */
+export interface WriteOptions {
+	/** The log operation; create or update when absent. A lifecycle operation must match the status change it makes. */
+	readonly operation?:  Operation | undefined;
+	readonly outcome?:    ChangeLogEntry['outcome'] | undefined;
+	readonly references?: readonly Reference[] | undefined;
+	readonly addresses?:  'all' | readonly string[] | undefined;
+	/** Lets `complete` start from any non-terminal status: a unit's completion freezes its dependent records. */
+	readonly cascade?:    boolean | undefined;
 }
 
 /** The writes in flight, one queue per repository and artifact, shared by every store instance in the process. */
@@ -126,18 +129,18 @@ export class ArtifactStore {
 	 * head is prepared (the revision and exact bytes are known before a file changes), the operation is staged
 	 * with its change log entry, the entry is appended, the head replaced and the journal cleared.
 	 */
-	async write(a: Artifact<HeadPayload>, by: Actor): Promise<void> {
+	async write(a: Artifact<HeadPayload>, by: Actor, options: WriteOptions = {}): Promise<void> {
 		// One write at a time per artifact in this process: recovery, stage, append and replace must not interleave.
 		const lockKey = `${this.deps.repoPath}\0${a.id}`;
 		const previous = WRITE_QUEUES.get(lockKey) ?? Promise.resolve();
-		const run = previous.then(() => this.writeUnlocked(a, by));
+		const run = previous.then(() => this.writeUnlocked(a, by, options));
 		const tail = run.catch(() => undefined);
 		WRITE_QUEUES.set(lockKey, tail);
 		try { await run; }
 		finally { if (WRITE_QUEUES.get(lockKey) === tail) WRITE_QUEUES.delete(lockKey); }
 	}
 
-	private async writeUnlocked(a: Artifact<HeadPayload>, by: Actor): Promise<void> {
+	private async writeUnlocked(a: Artifact<HeadPayload>, by: Actor, options: WriteOptions): Promise<void> {
 		const key = ArtifactIds.parse(a.id);
 		if (key === undefined) throw new InvalidArtifactKeyError(`'${a.id}' is not an artifact id`);
 		if (typeof by?.id !== 'string' || !ACTOR_ID.test(by.id) || by.id !== by.id.toLowerCase()) {
@@ -155,43 +158,53 @@ export class ArtifactStore {
 
 		const priorBytes = existsSync(path) ? readFileSync(path, 'utf8') : undefined;
 		const prior = priorBytes === undefined ? undefined : decodeArtifactHead(a.id, priorBytes);
-		const contentChanged = prior === undefined
-			|| a.description !== prior.artifact.description
-			|| canonical(a.payload.body) !== canonical(prior.artifact.payload.body)
-			|| canonical(a.payload.citations) !== canonical(prior.artifact.payload.citations);
-		const kind = contentChanged ? 'content' : 'meta-only';
 		const priorRevision = prior === undefined ? 0 : prior.artifact.lifecycle.revision.number;
 
-		// The base head (and, on a create, its creation context) is built once, so both preparations see the same identity meta.
+		const operation = options.operation ?? (prior === undefined ? 'create' : 'update');
+		if (options.operation !== undefined && options.operation !== 'create' && options.operation !== 'update' && !isLifecycleOperation(options.operation)) {
+			throw new ArtifactShapeError(`'${options.operation}' is a content operation that a write cannot log; use create, update or a lifecycle operation`);
+		}
+		// An ordinary write on a head whose stored hash differs from its content is refused; a conflict-resolved write adopts the head's content.
+		const resolving = options.outcome?.result === 'conflict-resolved';
+		if (prior !== undefined && !resolving) {
+			const view = { description: prior.artifact.description, payload: prior.artifact.payload, lifecycle: prior.artifact.lifecycle };
+			const integrity = checkHeadIntegrity(view);
+			if (!integrity.ok) throw new LifecycleConflictError(a.id, integrity.reason);
+		}
+		const source = resolving && prior !== undefined ? { ...a, description: prior.artifact.description, payload: prior.artifact.payload } : a;
+
+		// The base head (and, on a create, its creation context) is built once, so the preparation sees the identity meta.
 		const base: HeadFile = prior === undefined
-			? codec.encode(a.payload, key, (this.deps.contexts ?? creationContextProvider(this.deps.repoPath, { now: this.deps.now }))(key))
-			: { ...prior.head, meta: prior.head.meta, body: a.payload.body, citations: a.payload.citations };
-		const build = (revisionNumber: number): HeadFile => {
-			const envelope = {
-				description: a.description,
-				...(a.parent !== undefined ? { parent: a.parent } : {}),
-				references:  a.references,
-				...(a.binding !== undefined ? { binding: a.binding } : {}),
-				attachments: a.attachments,
-			};
-			const lifecycle = { ...a.lifecycle, revision: { ...a.lifecycle.revision, number: revisionNumber } };
-			return { ...base, meta: { ...base.meta, envelope, lifecycle } };
+			? codec.encode(source.payload, key, (this.deps.contexts ?? creationContextProvider(this.deps.repoPath, { now: this.deps.now }))(key))
+			: { ...prior.head, meta: prior.head.meta, body: source.payload.body, citations: source.payload.citations };
+		const envelope = {
+			description: source.description,
+			...(source.parent !== undefined ? { parent: source.parent } : {}),
+			references:  source.references,
+			...(source.binding !== undefined ? { binding: source.binding } : {}),
+			attachments: source.attachments,
 		};
-		// The revision depends on the bytes and the bytes carry the revision: prepare once for the number, once with it.
-		const first = prepareArtifactWrite(path, build(priorRevision), kind);
-		const prepared = prepareArtifactWrite(path, build(first.revision), kind);
+		const timestamp = (this.deps.now ?? (() => new Date()))().toISOString();
+		// prepareArtifactWrite reconciles meta.lifecycle: the hash and number follow the content, and a content change returns the head to draft.
+		const prepared = prepareArtifactWrite(path, { ...base, meta: { ...base.meta, envelope, lifecycle: source.lifecycle } }, 'content', { by, at: timestamp, cascade: options.cascade === true });
+		const stored = decodeArtifactHead(a.id, prepared.bytes).artifact.lifecycle;
+		const from = prior?.artifact.lifecycle.status;
+		if (from !== undefined && isLifecycleOperation(operation)) assertLegalStatusChange(from, stored.status, operation, options.cascade === true);
 		if (priorBytes === prepared.bytes) return;       // nothing changes: no staged operation, no log entry
 
 		// A fresh id per staged operation, so the same transition made twice (references A to B, back to A, to B again)
 		// is logged twice. A retry does not mint another: it finds the staged operation in the journal and reuses its id.
-		const timestamp = (this.deps.now ?? (() => new Date()))().toISOString();
 		const operationId = randomUUID().replace(/-/g, '');
 		const entry: ChangeLogEntry = {
 			id: operationId,
 			actor: by,
 			timestamp,
-			operation: prior === undefined ? 'create' : 'update',
-			revision: { number: prepared.revision, contentHash: a.lifecycle.revision.contentHash },
+			operation,
+			revision: { number: prepared.revision, contentHash: stored.revision.contentHash },
+			...(from !== undefined && from !== stored.status ? { status: { from, to: stored.status } } : {}),
+			...(options.outcome !== undefined ? { outcome: options.outcome } : {}),
+			...(options.references !== undefined ? { references: options.references } : {}),
+			...(options.addresses !== undefined ? { addresses: options.addresses } : {}),
 		};
 		// Never stage what a later read or append would refuse: it would block every later write of this artifact.
 		validateLogEntry(entry);

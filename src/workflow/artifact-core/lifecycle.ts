@@ -150,7 +150,7 @@ export function checkIntegrity(a: ContentView, logTail: ChangeLogEntry | undefin
  * at. Without one, the number does not move and a status change must be a step of the closed table.
  */
 export function reconcileLifecycle(
-	prior: ContentView | undefined, next: ContentView, revisionNumber: number, by: Actor, at: string,
+	prior: ContentView | undefined, next: ContentView, revisionNumber: number, by: Actor, at: string, cascade = false,
 ): { readonly lifecycle: Lifecycle; readonly contentChanged: boolean } {
 	const hash = hashOf(next);
 	if (prior === undefined) {
@@ -164,7 +164,7 @@ export function reconcileLifecycle(
 		}
 		return { lifecycle: { ...next.lifecycle, status: 'draft', revision: { number: revisionNumber, contentHash: hash, at, by } }, contentChanged };
 	}
-	assertLegalStatusChange(prior.lifecycle.status, next.lifecycle.status);
+	assertLegalStatusChange(prior.lifecycle.status, next.lifecycle.status, undefined, cascade);
 	const { at: priorAt, by: priorBy } = prior.lifecycle.revision;
 	return { lifecycle: { ...next.lifecycle, revision: { number: revisionNumber, contentHash: hash, at: priorAt, by: priorBy } }, contentChanged };
 }

@@ -18,7 +18,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
-import { headConflict } from '../artifact-core/head-guard.js';
+import { headConflict } from '../gates.js';
 import { LifecycleConflictError } from '../artifact-core/types.js';
 import { writeArtifact, writeAtomic } from '../storage.js';
 import { applyAutoFixes, pendingUserFindings } from './apply.js';

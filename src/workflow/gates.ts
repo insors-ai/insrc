@@ -34,8 +34,9 @@ import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld
 import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
 import type { PlanArtifact } from './artifacts/plan.js';
 import { decodeArtifactHead } from './artifact-core/decode.js';
-import { headConflict } from './artifact-core/head-guard.js';
+import { checkHeadIntegrity } from './artifact-core/lifecycle.js';
 import { LifecycleConflictError } from './artifact-core/types.js';
+import type { IntegrityReason } from './artifact-core/types.js';
 import { isSpecBody } from './artifacts/spec.js';
 import type { SpecArtifact } from './artifacts/spec.js';
 import { authorPartyOf, reviewerPartyOf } from './review/party.js';
@@ -588,6 +589,22 @@ function headFullSha(cwd: string): string | undefined {
 		return /^[0-9a-f]{40}$/.test(out) ? out : undefined;
 	} catch {
 		return undefined;   // not a git repo, no commits yet, or git unavailable
+	}
+}
+
+/**
+ * The conflict of the head at `jsonPath`: its stored content hash no longer matches its content. The synchronous half of the
+ * integrity check, for the paths that have no History. Undefined when the head has no stored hash, or cannot be decoded (those
+ * gates behave as they always have).
+ */
+export function headConflict(jsonPath: string): { readonly artifactId: string; readonly reason: IntegrityReason } | undefined {
+	try {
+		const artifactId = basename(jsonPath).replace(/\.json$/, '');
+		const { artifact } = decodeArtifactHead(artifactId, readFileSync(jsonPath, 'utf8'));
+		const integrity = checkHeadIntegrity({ description: artifact.description, payload: artifact.payload, lifecycle: artifact.lifecycle });
+		return integrity.ok ? undefined : { artifactId, reason: integrity.reason };
+	} catch {
+		return undefined;
 	}
 }
 

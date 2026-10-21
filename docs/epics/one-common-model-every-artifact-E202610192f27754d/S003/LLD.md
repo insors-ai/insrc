@@ -686,6 +686,8 @@ lifecycle-service exports setLifecycleService and getLifecycleService; approveWo
 
 - `q6f07234c` — sbdry5: the build edits s2's store, codecs and prepareArtifactWrite (update, childrenOfStrict, the options parameter of write, five pass-through codecs and the lifecycle reconcile) and adds an optional field to the gate request; confirm with the sc2 owner (s2, already built) that these additions are accepted and whether they need an HLD amendment like readWithHistory did (AMD-7)
   - **resolved**: Split acceptance by change — Owner: covered additions are recorded; the rest are amended as AMD-7 was. _(2026-10-21T05:09:56.116Z)_
+- `qd5676e97` — sbdry3: transition gains an optional detail parameter and ArtifactStore gains update, childrenOfStrict and an options parameter that the HLD sketch does not show; only the storyBoundary.addConsumer making s4 a consumer of sc4 is proposed as an amendment, so decide whether the others need one (contentHash is also not in the sketch)
+  - **resolved**: Amend according to contract impact — Keep AMD-8; amend only additions that change cross-story obligations. _(2026-10-21T05:11:18.174Z)_
 
 ## Citations
 

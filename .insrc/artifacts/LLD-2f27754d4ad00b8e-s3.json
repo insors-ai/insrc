@@ -180,6 +180,13 @@
         "choice": "Split acceptance by change",
         "rationale": "Owner: covered additions are recorded; the rest are amended as AMD-7 was.",
         "resolvedAt": "2026-10-21T05:09:56.116Z"
+      },
+      "qd5676e97": {
+        "question": "sbdry3: transition gains an optional detail parameter and ArtifactStore gains update, childrenOfStrict and an options parameter that the HLD sketch does not show; only the storyBoundary.addConsumer making s4 a consumer of sc4 is proposed as an amendment, so decide whether the others need one (contentHash is also not in the sketch)",
+        "status": "resolved",
+        "choice": "Amend according to contract impact",
+        "rationale": "Keep AMD-8; amend only additions that change cross-story obligations.",
+        "resolvedAt": "2026-10-21T05:11:18.174Z"
       }
     }
   },

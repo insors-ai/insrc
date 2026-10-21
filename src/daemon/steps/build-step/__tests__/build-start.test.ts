@@ -487,6 +487,6 @@ test('T38: no resolvable base and a clean tree -> validate writes an EMPTY chang
 		assert.equal(resolveStoryRangeBase(fx.repo, HASH, 's1'), undefined, 'fixture precondition: no stamp, no upstream artifact');
 		_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
 		try { await handleBuildStep({ phase: 'validate', target: 's1', repo: fx.repo, standalone: TRIVIAL }); } finally { _setBuildValidateProviderForTests(undefined); }
-		assert.equal(buildRecord(fx, 's1').body['changeLog'], undefined);
+		assert.deepEqual(buildRecord(fx, 's1').body['changeLog'], [], 'empty, written so it replaces any prior one (ISSUE-b97752e9)');
 	} finally { fx.cleanup(); }
 });

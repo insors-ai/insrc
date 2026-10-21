@@ -563,19 +563,20 @@ async function runValidateSession(
 				// usually these, so the record would report that the Story changed its
 				// own ledger entries. The list is the one the completion record uses.
 				const exclude = storyWorkflowFiles(repoPath, rec);
-				// The Story's COMMITTED range base. Consulted by the derivation only
-				// when the working tree is clean — which is the normal case here,
-				// because the implement prompt commits before validation runs.
-				// `undefined` means no base could be established, which yields an
-				// empty change set rather than a substituted (wrong) range.
+				// The Story's COMMITTED range base and key: the change set is the
+				// Story's own commits, plus uncommitted edits of their files
+				// (ISSUE-b97752e9). `undefined` means no base could be established,
+				// which yields an empty change set rather than the working tree.
 				const base = resolveStoryRangeBase(repoPath, epicHash, storyId);
 				const changeLog = await collectBuildChangeLog(repoPath, {
-					author: 'insrc-build', timestamp: now, exclude,
+					author: 'insrc-build', timestamp: now, exclude, storyKey: `${epicHash}/${storyId}`,
 					...(base !== undefined ? { base } : {}),
 				});
+				// Written even when empty, so it replaces a prior changeLog that the
+				// old working-tree derivation filled with unrelated files.
 				persistBuildRecord(repoPath, {
 					...rec,
-					body: { ...rec.body, ...(changeLog.length > 0 ? { changeLog } : {}) },
+					body: { ...rec.body, changeLog },
 				});
 			} catch (err) {
 				log.warn(

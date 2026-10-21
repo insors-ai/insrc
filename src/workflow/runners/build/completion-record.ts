@@ -73,16 +73,21 @@ export async function ensureBuildRecordOnCompletion(
 		// about this Story's base. See range-base.ts for the precedence and for why
 		// an unresolvable base yields empty rather than a substituted range.
 		const rangeBase = resolveStoryRangeBase(repoPath, ref.epicHash, ref.storyId);
+		// The Story's key scopes the set to its own commits (ISSUE-b97752e9); with no
+		// base the collector yields [] rather than the working tree.
 		const ctx = {
-			author: 'insrc-build', timestamp: now, exclude,
+			author: 'insrc-build', timestamp: now, exclude, storyKey: `${ref.epicHash}/${ref.storyId}`,
 			...(rangeBase !== undefined ? { base: rangeBase } : {}),
 		};
 		const changeLog = listChanged !== undefined
 			? await collectBuildChangeLog(repoPath, ctx, listChanged)
 			: await collectBuildChangeLog(repoPath, ctx);
+		// Written even when empty: the persist merges over the prior record, so an
+		// omitted changeLog would keep one written before this scoping, unrelated
+		// files included. The md omits an empty `## Changes`.
 		const rec: BuildRecord = {
 			...base,
-			body: { ...base.body, ...(changeLog.length > 0 ? { changeLog } : {}) },
+			body: { ...base.body, changeLog },
 		};
 		return persistBuildRecord(repoPath, rec);
 	} catch (err) {

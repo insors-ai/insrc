@@ -18,13 +18,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { changedFiles, collectBuildChangeLog, LEDGER_EXCLUDE_GLOBS, NoBuildChangesError } from '../changed-files.js';
 import { gitDiffTool, setGitDiffShellForTests } from '../../../../daemon/tools/builtins/git/diff.js';
 import { runShell } from '../../../../daemon/tools/shell-helper.js';
+import { ensureBuildRecordOnCompletion } from '../completion-record.js';
+import { stampBuildStart } from '../range-base.js';
 import type { GitDiffData } from '../../../../daemon/tools/builtins/git/diff.js';
 
 // ---------------------------------------------------------------------------
@@ -746,5 +748,68 @@ test('a git_diff result that fails its stat read makes the anchored derivation r
 			await assert.rejects(() => changedFiles(repo, { base, storyKey: STORY_KEY }), (e: unknown) => e instanceof NoBuildChangesError);
 		} finally { setGitDiffShellForTests(); }
 		assert.deepEqual([...await changedFiles(repo, { base, storyKey: STORY_KEY })], ['src/mine.ts'], 'and the same call succeeds once git works');
+	} finally { cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE-b97752e9 t6: the BUILD writers' changeLog is the Story's, and replaces
+// a prior one.
+// ---------------------------------------------------------------------------
+
+/** A Story repo with its build start stamped at the base, as the build does. */
+function mkStampedStoryRepo(storyId: string): ReturnType<typeof mkStoryRepo> {
+	const fx = mkStoryRepo();
+	execFileSync('git', ['checkout', '-q', fx.base], { cwd: fx.repo, stdio: 'ignore' });
+	assert.equal(stampBuildStart(fx.repo, STORY_KEY.split('/')[0]!, storyId), 'stamped');
+	execFileSync('git', ['checkout', '-q', 'main'], { cwd: fx.repo, stdio: 'ignore' });
+	return fx;
+}
+
+const changeLogOf = (jsonPath: string): string[] | undefined =>
+	(JSON.parse(readFileSync(jsonPath, 'utf8')) as { body: { changeLog?: { target: { file: string } }[] } }).body.changeLog?.map(e => e.target.file);
+
+test("a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change", async () => {
+	const { repo, commit, cleanup } = mkStampedStoryRepo('S001');
+	try {
+		commit({ 'src/mine.ts': '1\n' }, 'feat(build): S001/t1 mine', STORY_KEY);
+		commit({ 'src/theirs.ts': '1\n' }, 'feat(build): s1/t1 theirs', OTHER_KEY);
+		writeFileSync(join(repo, 'unrelated.ts'), '1\n');
+		execFileSync('git', ['add', 'unrelated.ts'], { cwd: repo });
+		const out = await ensureBuildRecordOnCompletion(repo, { epicHash: STORY_KEY.split('/')[0]!, storyId: 'S001' });
+		assert.ok(out !== undefined, 'the record was written');
+		assert.deepEqual(changeLogOf(out.json), ['src/mine.ts'], "neither the other Story's commit nor the uncommitted file");
+	} finally { cleanup(); }
+});
+
+test('rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included', async () => {
+	const epicHash = STORY_KEY.split('/')[0]!;
+	const { repo, commit, cleanup } = mkStampedStoryRepo('S001');
+	try {
+		commit({ 'src/mine.ts': '1\n' }, 'feat(build): S001/t1 mine', STORY_KEY);
+		// A record the old working-tree derivation wrote: unrelated files in its changeLog.
+		const first = await ensureBuildRecordOnCompletion(repo, { epicHash, storyId: 'S001' });
+		assert.ok(first !== undefined);
+		const prior = JSON.parse(readFileSync(first.json, 'utf8')) as { body: Record<string, unknown> };
+		prior.body['changeLog'] = [{ target: { file: 'docs/ontology.md' }, author: 'insrc-build', timestamp: '2026-10-20T00:00:00.000Z' }];
+		writeFileSync(first.json, JSON.stringify(prior));
+
+		const rewritten = await ensureBuildRecordOnCompletion(repo, { epicHash, storyId: 'S001' });
+		assert.ok(rewritten !== undefined);
+		assert.deepEqual(changeLogOf(rewritten.json), ['src/mine.ts']);
+
+		// A Story with no range base: its record's changeLog becomes empty, not the
+		// working tree, and the stale one is replaced.
+		const noBase = { epicHash: 'ffffffffffffffff', storyId: 'S002' };
+		writeFileSync(join(repo, 'unrelated.ts'), '1\n');
+		execFileSync('git', ['add', 'unrelated.ts'], { cwd: repo });
+		const seeded = await ensureBuildRecordOnCompletion(repo, noBase);
+		assert.ok(seeded !== undefined);
+		const stale = JSON.parse(readFileSync(seeded.json, 'utf8')) as { body: Record<string, unknown> };
+		stale.body['changeLog'] = [{ target: { file: 'unrelated.ts' }, author: 'insrc-build', timestamp: '2026-10-20T00:00:00.000Z' }];
+		writeFileSync(seeded.json, JSON.stringify(stale));
+		const emptied = await ensureBuildRecordOnCompletion(repo, noBase);
+		assert.ok(emptied !== undefined);
+		assert.deepEqual(changeLogOf(emptied.json), []);
+		assert.doesNotMatch(readFileSync(emptied.md, 'utf8'), /## Changes/, 'an empty changeLog renders no section');
 	} finally { cleanup(); }
 });

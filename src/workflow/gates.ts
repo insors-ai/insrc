@@ -868,6 +868,8 @@ function pendingArtifactJsonPaths(repoPath: string, epicHash: string): string[] 
 const GATE_ACTOR: Actor = { id: 'insrc:approval', kind: 'system', properties: {} };
 const artifactIdOf = (jsonPath: string): string => basename(jsonPath).replace(/\.json$/, '');
 const REVIEWED_KINDS: readonly string[] = ['DEF', 'HLD', 'LLD'];
+/** What approveArtifactByJsonPath stamps (and clears): the keys an approval taken back has to restore. */
+const STAMP_KEYS: readonly string[] = ['approvedAt', 'rejectedAt', 'rejectReason', 'rangeBase', 'reviewOverride'];
 const APPROVED_OR_BEYOND: readonly string[] = ['approved', 'in-signoff', 'changes-requested', 'signed-off', 'completed'];
 
 /**
@@ -1014,9 +1016,15 @@ export async function approveWorkflowTarget(
 			const stampless = lifecycle !== undefined ? readFileSync(jsonPath, 'utf8') : undefined;
 			approved.push({ path: jsonPath, result: approveArtifactByJsonPath(jsonPath, approveOpts) });
 			const restoreStamp = (): void => {
-				// the service did not approve: the legacy stamp is taken back, so nothing reads the target as approved
-				// raw-write: restores the bytes the gate stamped over; the lifecycle part of the head was never changed.
-				if (stampless !== undefined) writeAtomic(jsonPath, stampless);
+				// The service did not approve, so the stamp this approval wrote is taken back and nothing reads the target as approved.
+				// Only the stamp keys go back: whatever the service committed meanwhile (a mirrored review, say) stays.
+				const prior = (JSON.parse(stampless ?? '{}') as { meta?: Record<string, unknown> }).meta ?? {};
+				const current = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown> };
+				for (const key of STAMP_KEYS) {
+					if (key in prior) current.meta[key] = prior[key];
+					else delete current.meta[key];
+				}
+				writeArtifact(jsonPath, current, 'meta-only');
 			};
 			let applied: boolean;
 			try { applied = await approveThroughService(jsonPath); }

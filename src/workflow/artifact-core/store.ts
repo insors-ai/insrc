@@ -155,7 +155,7 @@ export class ArtifactStore {
 	 * with its change log entry, the entry is appended, the head replaced and the journal cleared.
 	 */
 	async write(a: Artifact<HeadPayload>, by: Actor, options: WriteOptions = {}): Promise<void> {
-		return this.enqueue(a.id, () => this.writeUnlocked(a, by, options));
+		await this.enqueue(a.id, () => this.writeUnlocked(a, by, options));
 	}
 
 	/**
@@ -169,15 +169,24 @@ export class ArtifactStore {
 		mutate: (current: Artifact<HeadPayload> & { readonly changeLog: ChangeLogEntry[] }) => Promise<UpdateResult | undefined> | UpdateResult | undefined,
 		options: WriteOptions = {},
 	): Promise<boolean> {
+		return (await this.updateAndLog(id, by, mutate, options)).wrote;
+	}
+
+	/** {@link update}, answering also the change log entry the write appended (undefined when it appended none), captured under the queue. */
+	async updateAndLog(
+		id: string, by: Actor,
+		mutate: (current: Artifact<HeadPayload> & { readonly changeLog: ChangeLogEntry[] }) => Promise<UpdateResult | undefined> | UpdateResult | undefined,
+		options: WriteOptions = {},
+	): Promise<{ readonly wrote: boolean; readonly entry?: ChangeLogEntry | undefined }> {
 		if (ArtifactIds.parse(id) === undefined) throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);
 		return this.enqueue(id, async () => {
 			await this.completePending(id, artifactJsonPath(this.deps.repoPath, id));
 			const current = { ...(await this.read(id)), changeLog: await this.deps.history.log(id) };
 			const result = await mutate(current);
-			if (result === undefined) return false;
+			if (result === undefined) return { wrote: false };
 			if (result.next.id !== id) throw new ArtifactShapeError(`update of ${id} was given the artifact ${result.next.id}`);
-			await this.writeUnlocked(result.next, by, { ...options, ...(result.options ?? {}) });
-			return true;
+			const entry = await this.writeUnlocked(result.next, by, { ...options, ...(result.options ?? {}) });
+			return { wrote: true, entry };
 		});
 	}
 
@@ -192,7 +201,7 @@ export class ArtifactStore {
 		finally { if (WRITE_QUEUES.get(lockKey) === tail) WRITE_QUEUES.delete(lockKey); }
 	}
 
-	private async writeUnlocked(a: Artifact<HeadPayload>, by: Actor, options: WriteOptions): Promise<void> {
+	private async writeUnlocked(a: Artifact<HeadPayload>, by: Actor, options: WriteOptions): Promise<ChangeLogEntry | undefined> {
 		const key = ArtifactIds.parse(a.id);
 		if (key === undefined) throw new InvalidArtifactKeyError(`'${a.id}' is not an artifact id`);
 		if (typeof by?.id !== 'string' || !ACTOR_ID.test(by.id) || by.id !== by.id.toLowerCase()) {
@@ -252,7 +261,7 @@ export class ArtifactStore {
 		const stored = decodeArtifactHead(a.id, prepared.bytes).artifact.lifecycle;
 		const from = prior?.artifact.lifecycle.status;
 		if (from !== undefined && isLifecycleOperation(operation)) assertLegalStatusChange(from, stored.status, operation, options.cascade === true);
-		if (priorBytes === prepared.bytes) return;       // nothing changes: no staged operation, no log entry
+		if (priorBytes === prepared.bytes) return undefined;       // nothing changes: no staged operation, no log entry
 
 		// A fresh id per staged operation, so the same transition made twice (references A to B, back to A, to B again)
 		// is logged twice. A retry does not mint another: it finds the staged operation in the journal and reuses its id.
@@ -281,6 +290,7 @@ export class ArtifactStore {
 			throw err;
 		}
 		await this.clearQuietly(a.id, operationId);
+		return entry;
 	}
 
 	/** Finish the operation the journal holds for `id`: append its entry if the log lacks it, replace the head if it differs, clear. */

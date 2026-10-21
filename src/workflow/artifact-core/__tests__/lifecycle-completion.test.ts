@@ -131,4 +131,38 @@ describe('LifecycleService.completeIfRolledUp', () => {
 			assert.equal(await status(k, member), 'draft');
 		} finally { k.done(); }
 	});
+
+	it('a unit whose own transition is refused leaves its members untouched, and a withdrawn unit is left alone', async () => {
+		const k = kit();
+		try {
+			await seedEpic(k);
+			const svc = service(k, stubEvidence([T1, T2]));
+			await svc.apply(T1, 'complete', bob);
+			await svc.apply(T2, 'complete', bob);
+			await svc.apply(STORY, 'withdraw', bob, { reason: 'dropped' });
+			// the roll-up holds, but a withdrawn Story cannot complete: refused before any member is frozen
+			await assert.rejects(svc.apply(STORY, 'complete', bob), IllegalTransitionError);
+			for (const member of [...RECORDS, TASKS, ...DIAGS]) assert.equal(await status(k, member), 'draft', member);
+			assert.deepEqual((await svc.completeIfRolledUp(T2, bob)).completed, [], 'a withdrawn unit is left alone');
+			assert.equal(await status(k, EPIC), 'draft');
+		} finally { k.done(); }
+	});
+
+	it('competing operations on one artifact each answer with their own entry', async () => {
+		const k = kit();
+		try {
+			await seedEpic(k);
+			const svc = service(k, stubEvidence([]));
+			const id = RECORDS[1] as string;
+			const [reviewed, approved] = await Promise.all([
+				svc.apply(id, 'review', bob, { review: { reviewer: bob, party: 'controller', verdict: 'pass', counts: {} } }),
+				svc.apply(id, 'approve', bob),
+			]);
+			assert.equal(reviewed.entry.operation, 'review');
+			assert.equal(approved.entry.operation, 'approve');
+			assert.equal(approved.lifecycle.status, 'approved');
+			assert.ok(approved.lifecycle.revision.contentHash.length > 0, 'the returned lifecycle carries the stored revision');
+		} finally { k.done(); }
+	});
 });
+

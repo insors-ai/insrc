@@ -68,8 +68,9 @@ export class LifecycleService {
 		const key = ArtifactIds.parse(id);
 		const isUnit = key !== undefined && (UNITS as readonly string[]).includes(key.kind);
 		let standing: { lifecycle: Lifecycle; entry: ChangeLogEntry } | undefined;
+		let written: Lifecycle | undefined;
 
-		await store.update(id, by, async current => {
+		const { entry } = await store.updateAndLog(id, by, async current => {
 			const { changeLog, ...head } = current;
 
 			if (INTEGRITY_CHECKED.includes(op)) {
@@ -86,6 +87,11 @@ export class LifecycleService {
 				}
 			}
 			if (op === 'reopen' && isUnit) await this.checkParentOpen(id);
+
+			// The unit's own transition is validated before any member is touched, so a refusal leaves everything as it was.
+			// A unit is completed by its roll-up, which stands in for the approval a record needs, so it may start from any open status.
+			const cascade = op === 'complete' && isUnit;
+			const lifecycle = nextLifecycle(head, op, by, this.at(), cascade ? { ...detail, cascade } : detail);
 
 			let members: string[] = [];
 			if (isUnit && key !== undefined && key.kind !== 'TASK' && (op === 'complete' || op === 'reopen')) {
@@ -104,9 +110,7 @@ export class LifecycleService {
 				outcome = { result: detail.review.verdict, summary: `reviewed by the ${detail.review.party}: ${detail.review.verdict}`, data: { counts } };
 			}
 
-			// A unit is completed by its roll-up, which stands in for the approval a record needs, so it may start from any open status.
-			const cascade = op === 'complete' && isUnit;
-			const lifecycle = nextLifecycle(head, op, by, this.at(), cascade ? { ...detail, cascade } : detail);
+			written = lifecycle;
 			return {
 				next: { ...head, lifecycle },
 				options: {
@@ -119,10 +123,16 @@ export class LifecycleService {
 		});
 
 		if (standing !== undefined) return { ...standing, recorded: false };
+		if (entry !== undefined && written !== undefined) {
+			// the store reconciles the revision on the way in; the entry carries the number and hash it stored
+			const stored = entry.revision === undefined ? written : { ...written, revision: { ...written.revision, ...entry.revision } };
+			return { lifecycle: stored, entry, recorded: true };
+		}
+		// the write appended nothing (the head already was what the operation makes it): answer from the stored head and log
 		const stored = await store.readWithHistory(id);
-		const entry = stored.changeLog[stored.changeLog.length - 1];
-		if (entry === undefined) throw new IllegalTransitionError(`${id} has no change log entry after ${op}`);
-		return { lifecycle: stored.lifecycle, entry, recorded: true };
+		const last = stored.changeLog[stored.changeLog.length - 1];
+		if (last === undefined) throw new IllegalTransitionError(`${id} has no change log entry after ${op}`);
+		return { lifecycle: stored.lifecycle, entry: last, recorded: true };
 	}
 
 	/**
@@ -138,7 +148,7 @@ export class LifecycleService {
 			if (key === undefined) throw new IllegalTransitionError(`'${next}' is not an artifact id`);
 			if ((await rollUp(next, this.reader, evidence)) !== 'completed') break;
 			const status = await this.reader.statusOf(next);
-			if (status === undefined) break;
+			if (status === undefined || status === 'withdrawn' || status === 'superseded') break;
 			if (status !== 'completed') {
 				const result = await this.apply(next, 'complete', by, {}, ctx);
 				if (result.recorded) completed.push(next);

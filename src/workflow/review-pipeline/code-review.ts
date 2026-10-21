@@ -154,12 +154,17 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 	const { grounding, groundingMode } = groundingOf(snapshot);
 	const execution = { mode: 'structured' as const, cwd: subject.repoPath };
 	// Story s2: the dimension's rows as whole atoms with their relations; Story s3: its
-	// obligations and their context. From the snapshot and the saved subject only.
+	// obligations and their context. From the snapshot and the saved subject only, so it
+	// is built once and every caller reads the same material: the pipeline asks for it
+	// on every chunk, relation and validation call, and rebuilding it each time froze
+	// the daemon on a large review (ISSUE-2f4cb54c).
+	let built: ReviewMaterial | undefined;
 	const material = (): ReviewMaterial => {
+		if (built !== undefined) return built;
 		const base = codeReviewMaterial(spec.materialGrounding?.(grounding, groundingMode) ?? grounding);
 		const own = spec.obligations?.(base);
-		if (own === undefined) return base;
-		return { ...base, obligations: own.obligations, ...(own.context.length > 0 ? { context: own.context } : {}) };
+		built = own === undefined ? base : { ...base, obligations: own.obligations, ...(own.context.length > 0 ? { context: own.context } : {}) };
+		return built;
 	};
 	const singleSchema = JSON.stringify(spec.schema);
 	// A divided review's merged findings through today's result filters, applied once over the whole.

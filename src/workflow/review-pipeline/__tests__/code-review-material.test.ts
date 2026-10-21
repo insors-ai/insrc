@@ -250,3 +250,28 @@ test('ISSUE-e940023a: 50000 symbols sharing one name, each in its own directory 
 	assert.ok(ms < 1500, `built 50000 same-named atoms in ${ms} ms`);
 });
 
+
+// ---------------------------------------------------------------------------
+// ISSUE-2f4cb54c: an adapter builds its material once, however often it is read.
+// ---------------------------------------------------------------------------
+
+test('ISSUE-2f4cb54c: an adapter builds its material once however many calls read it, and it is the same material a fresh adapter builds', () => {
+	const subject = {
+		repoPath: '/repo', epicHash: 'e1a2b3c4d5e6f708', storyId: 's1', changedFiles: ['src/a.ts', 'src/b.ts'],
+		approvedLld: null, approvedPlan: null, buildRecord: null,
+	} as CodeReviewSubject;
+	const g = grounding(row('fn', 'src/a.ts', 'run'), row('other', 'src/b.ts', 'helper'), { ...row('reached', 'src/a.ts', 'call'), testsReaching: ['src/__tests__/a.test.ts#t'] });
+	for (const make of [coverageSpec, qualitySpec]) {
+		const spec = make(subject);
+		let builds = 0;
+		const counted = {
+			...spec,
+			materialGrounding: (gr: CodeReviewGrounding, mode: 'full' | 'degraded') => { builds++; return spec.materialGrounding?.(gr, mode) ?? gr; },
+		};
+		const adapter = modelDimensionAdapter(counted as typeof spec, subject, codeReviewSnapshot(subject, g));
+		const first = adapter.material();
+		for (let i = 0; i < 50; i++) assert.equal(adapter.material(), first, 'every read is the same material');
+		assert.equal(builds, 1, `${spec.dimension}: built once for 51 reads`);
+		assert.deepEqual(first, modelDimensionAdapter(make(subject), subject, codeReviewSnapshot(subject, g)).material(), `${spec.dimension}: the same material as before`);
+	}
+});

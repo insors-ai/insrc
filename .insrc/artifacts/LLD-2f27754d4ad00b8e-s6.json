@@ -277,6 +277,13 @@
         "choice": "Interim binding + documented s9 migration",
         "rationale": "Recommended answer, approved with the LLD.",
         "resolvedAt": "2026-10-21T15:35:58.410Z"
+      },
+      "qaedce153": {
+        "question": "A permalink names the last commit that touched the file but the commit may not be pushed, so the link is dead on GitHub until it is. Resolve: accept; the sha link becomes valid when the commit is pushed (recommended), or refuse to attach until the commit is on a remote branch.",
+        "status": "resolved",
+        "choice": "Accept unpushed sha",
+        "rationale": "Recommended answer, approved with the LLD.",
+        "resolvedAt": "2026-10-21T15:36:41.535Z"
       }
     }
   },

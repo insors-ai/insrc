@@ -1,0 +1,599 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s7",
+    "createdAt": "2026-10-21T17:47:41.683Z",
+    "updatedAt": "2026-10-21T18:17:38.087Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "c2df1521",
+        "ranAt": "2026-10-21T17:47:41.683Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "tasks-codec.test.ts: the TASK and TASKS codecs round-trip a Task payload and a Tasks payload and refuse a malformed body",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/tasks-codec.test.ts",
+                "title": "the TASK and TASKS codecs round-trip a Task payload and a Tasks payload and refuse a malformed body",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/tasks-codec.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1179,
+            "titles": [
+              {
+                "title": "the TASK and TASKS codecs round-trip a Task payload and a Tasks payload and refuse a malformed body",
+                "result": "pass"
+              },
+              {
+                "title": "tasks-codec",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "921758ff",
+        "ranAt": "2026-10-21T17:50:01.413Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "task-diff.test.ts: a plan row maps to a Task payload, the diff reports an equal Task as unchanged, and row validation rejects a bad size, a duplicate id and an order gap",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tasks/__tests__/task-diff.test.ts",
+                "title": "a plan row maps to a Task payload, the diff reports an equal Task as unchanged, and row validation rejects a bad size, a duplicate id and an order gap",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "task-edit-check.test.ts: a patch that names order or a dependency, or a Task that is completed or withdrawn, is refused with a pointer to a re-plan",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tasks/__tests__/task-edit-check.test.ts",
+                "title": "a patch that names order or a dependency, or a Task that is completed or withdrawn, is refused with a pointer to a re-plan",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "task-numbers.test.ts: the next number only grows and never takes a withdrawn Task's id",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tasks/__tests__/task-numbers.test.ts",
+                "title": "the next number only grows and never takes a withdrawn Task's id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tasks/__tests__/task-diff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 754,
+            "titles": [
+              {
+                "title": "a plan row maps to a Task payload, the diff reports an equal Task as unchanged, and row validation rejects a bad size, a duplicate id and an order gap",
+                "result": "pass"
+              },
+              {
+                "title": "task-diff",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tasks/__tests__/task-edit-check.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2279,
+            "titles": [
+              {
+                "title": "a patch that names order or a dependency, or a Task that is completed or withdrawn, is refused with a pointer to a re-plan",
+                "result": "pass"
+              },
+              {
+                "title": "task-edit-check",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tasks/__tests__/task-numbers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2878,
+            "titles": [
+              {
+                "title": "the next number only grows and never takes a withdrawn Task's id",
+                "result": "pass"
+              },
+              {
+                "title": "task-numbers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "42158a10",
+        "ranAt": "2026-10-21T17:53:12.373Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "task-set-create.test.ts: createFromPlan writes the Tasks file and one approved Task head per plan Task with parent, dependencies and a derived-from reference, and a repeat writes nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tasks/__tests__/task-set-create.test.ts",
+                "title": "createFromPlan writes the Tasks file and one approved Task head per plan Task with parent, dependencies and a derived-from reference, and a repeat writes nothing",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tasks/__tests__/task-set-create.test.ts",
+                "title": "a plan with no Tasks writes a Tasks file with no ids, and a plan that is not approved or has bad rows makes nothing",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tasks/__tests__/task-set-create.test.ts",
+                "title": "a Task head left by an earlier run is kept, the plan's Task record moves onto its head, and a newer plan revision is left to reconcile",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tasks/__tests__/task-set-create.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1389,
+            "titles": [
+              {
+                "title": "createFromPlan writes the Tasks file and one approved Task head per plan Task with parent, dependencies and a derived-from reference, and a repeat writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a plan with no Tasks writes a Tasks file with no ids, and a plan that is not approved or has bad rows makes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a Task head left by an earlier run is kept, the plan's Task record moves onto its head, and a newer plan revision is left to reconcile",
+                "result": "pass"
+              },
+              {
+                "title": "task-set-create",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "5b7f79dc",
+        "ranAt": "2026-10-21T17:58:44.041Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "task-set-reconcile.test.ts: a re-plan revises a changed Task, withdraws a dropped Task and closes its issue, adds a new Task under the next number, and never reuses an id",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tasks/__tests__/task-set-reconcile.test.ts",
+                "title": "a re-plan revises a changed Task, withdraws a dropped Task and closes its issue, adds a new Task under the next number, and never reuses an id",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tasks/__tests__/task-set-reconcile.test.ts",
+                "title": "a dropped Task whose issue cannot be closed is withdrawn anyway, the failure is returned, and the next call retries the close",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tasks/__tests__/task-set-reconcile.test.ts",
+                "title": "reconcile refuses a plan with no Tasks file yet and a plan behind the Tasks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "task-set-edit.test.ts: editing a Task's summary, size, checks or tests moves it to a new revision in draft with no signoff, a structural edit is refused and writes nothing, and a conflicting edit is refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tasks/__tests__/task-set-edit.test.ts",
+                "title": "editing a Task's summary, size, checks or tests moves it to a new revision in draft with no signoff, a structural edit is refused and writes nothing, and a conflicting edit is refused",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tasks/__tests__/task-set-edit.test.ts",
+                "title": "an edit and a reconcile that read the same revision cannot both land, and a withdrawn Task cannot be edited",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tasks/__tests__/task-set-edit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1300,
+            "titles": [
+              {
+                "title": "editing a Task's summary, size, checks or tests moves it to a new revision in draft with no signoff, a structural edit is refused and writes nothing, and a conflicting edit is refused",
+                "result": "pass"
+              },
+              {
+                "title": "an edit and a reconcile that read the same revision cannot both land, and a withdrawn Task cannot be edited",
+                "result": "pass"
+              },
+              {
+                "title": "task-set-edit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tasks/__tests__/task-set-reconcile.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1297,
+            "titles": [
+              {
+                "title": "a re-plan revises a changed Task, withdraws a dropped Task and closes its issue, adds a new Task under the next number, and never reuses an id",
+                "result": "pass"
+              },
+              {
+                "title": "a dropped Task whose issue cannot be closed is withdrawn anyway, the failure is returned, and the next call retries the close",
+                "result": "pass"
+              },
+              {
+                "title": "reconcile refuses a plan with no Tasks file yet and a plan behind the Tasks",
+                "result": "pass"
+              },
+              {
+                "title": "task-set-reconcile",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "85437dc0",
+        "ranAt": "2026-10-21T18:01:25.864Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "task-set-sync.test.ts: syncTasksOnPlanApproval creates the set for a new plan, reconciles a newer plan revision, does nothing when they agree and returns an error instead of throwing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tasks/__tests__/task-set-sync.test.ts",
+                "title": "syncTasksOnPlanApproval creates the set for a new plan, reconciles a newer plan revision, does nothing when they agree and returns an error instead of throwing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "task-build-rounds.test.ts: a passing build round completes the Task, a later failing round does not, and the Story completes through the roll-up",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tasks/__tests__/task-build-rounds.test.ts",
+                "title": "a passing build round completes the Task, a later failing round does not, and the Story completes through the roll-up",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tasks/__tests__/task-build-rounds.test.ts",
+                "title": "a Task with no head is judged by the BUILD record's per-task result, and a Task with a head is not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tasks/__tests__/task-build-rounds.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1191,
+            "titles": [
+              {
+                "title": "a passing build round completes the Task, a later failing round does not, and the Story completes through the roll-up",
+                "result": "pass"
+              },
+              {
+                "title": "a Task with no head is judged by the BUILD record's per-task result, and a Task with a head is not",
+                "result": "pass"
+              },
+              {
+                "title": "task-build-rounds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tasks/__tests__/task-set-sync.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1466,
+            "titles": [
+              {
+                "title": "syncTasksOnPlanApproval creates the set for a new plan, reconciles a newer plan revision, does nothing when they agree and returns an error instead of throwing",
+                "result": "pass"
+              },
+              {
+                "title": "task-set-sync",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "79960f40",
+        "ranAt": "2026-10-21T18:05:51.876Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "task-unit-issue.test.ts: a Task's issue is created under the Story's issue and bound on its Task head with no record on the Plan, the draft hook claims the Epic and the Story only, and a Task with no head resolves through the Plan",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tasks/__tests__/task-unit-issue.test.ts",
+                "title": "a Task's issue is created under the Story's issue and bound on its Task head with no record on the Plan, the draft hook claims the Epic and the Story only, and a Task with no head resolves through the Plan",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/draft-issues.test.ts",
+                "title": "Define, LLD and plan drafts create one issue per unit, a second write creates none, and failures stop and report",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/draft-issues.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1790,
+            "titles": [
+              {
+                "title": "ensureDraftIssues returns not-applicable without a team policy and maps policy and sc1 failures to messages",
+                "result": "pass"
+              },
+              {
+                "title": "Define, LLD and plan drafts create one issue per unit, a second write creates none, and failures stop and report",
+                "result": "pass"
+              },
+              {
+                "title": "outcomeKnown wording for a failed lookup and for a create that times out",
+                "result": "pass"
+              },
+              {
+                "title": "a plan whose Story is recorded needs no Epic, and an issue that cannot be recorded is not reported ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tasks/__tests__/task-unit-issue.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1979,
+            "titles": [
+              {
+                "title": "a Task's issue is created under the Story's issue and bound on its Task head with no record on the Plan, the draft hook claims the Epic and the Story only, and a Task with no head resolves through the Plan",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "74d7b8bd",
+        "ranAt": "2026-10-21T18:08:53.490Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "task-readers.test.ts: an issue number resolves to a Task through its head's binding, the tracker runner's dedup read and the orchestrator's push result use the head, and a Task with no head resolves through the Plan",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tasks/__tests__/task-readers.test.ts",
+                "title": "an issue number resolves to a Task through its head's binding, the tracker runner's dedup read and the orchestrator's push result use the head, and a Task with no head resolves through the Plan",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tasks/__tests__/task-readers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1488,
+            "titles": [
+              {
+                "title": "an issue number resolves to a Task through its head's binding, the tracker runner's dedup read and the orchestrator's push result use the head, and a Task with no head resolves through the Plan",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "e0f0813c",
+        "ranAt": "2026-10-21T18:13:47.811Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "task-set-approve.test.ts: approving a plan creates the Task set and each Task's issue is bound on its Task head under the Story's issue, through the cli approve flow and the daemon seam, and a failed sync never fails the approval",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tasks/__tests__/task-set-approve.test.ts",
+                "title": "approving a plan creates the Task set and each Task's issue is bound on its Task head under the Story's issue, through the cli approve flow and the daemon seam, and a failed sync never fails the approval",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tasks/__tests__/task-set-approve.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2388,
+            "titles": [
+              {
+                "title": "approving a plan creates the Task set and each Task's issue is bound on its Task head under the Story's issue, through the cli approve flow and the daemon seam, and a failed sync never fails the approval",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "fecfedee",
+        "ranAt": "2026-10-21T18:16:13.387Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "validate-task-round.test.ts: a validate turn records its round in the Task's own log, and a Task with no head keeps writing the BUILD record only",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts",
+                "title": "a validate turn records its round in the Task's own log, and a Task with no head keeps writing the BUILD record only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1996,
+            "titles": [
+              {
+                "title": "a validate turn records its round in the Task's own log, and a Task with no head keeps writing the BUILD record only",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "fdc7c9e0",
+        "ranAt": "2026-10-21T18:17:38.087Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s7-handoffs.test.ts: the plans document names each s7 hand-off to s9",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/s7-handoffs.test.ts",
+                "title": "the plans document names each s7 hand-off to s9",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/s7-handoffs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 442,
+            "titles": [
+              {
+                "title": "the plans document names each s7 hand-off to s9",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

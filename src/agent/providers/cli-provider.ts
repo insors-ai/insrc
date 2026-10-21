@@ -460,10 +460,7 @@ export class CliProvider implements LLMProvider {
 		try {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, codexSchemaJson(schema));
-			const { events } = await this.runCodex(codexReviewSessionArgs(schemaPath, exec.cwd, this.modelArgs()), prompt, exec);
-			// A tool-using run narrates before it answers: the answer is the LAST message.
-			const messages = events.filter(e => e.type === 'item.completed' && e.item?.type === 'agent_message');
-			const text = messages[messages.length - 1]?.item?.text;
+			const { agentText: text } = await this.runCodex(codexReviewSessionArgs(schemaPath, exec.cwd, this.modelArgs()), prompt, exec);
 			if (text === undefined) throw new Error('codex review session emitted no agent_message item');
 			let parsed: unknown;
 			try {
@@ -571,7 +568,8 @@ export class CliProvider implements LLMProvider {
 		if (out.exitCode !== 0) {
 			throw cliExitError('codex', out.exitCode, out.stdout, out.stderr);
 		}
-		const agentMsg = events.find(e => e.type === 'item.completed' && e.item?.type === 'agent_message');
+		// A tool-using run narrates before it answers: the answer is the LAST message.
+		const agentMsg = events.filter(e => e.type === 'item.completed' && e.item?.type === 'agent_message').at(-1);
 		log.debug({ exitCode: out.exitCode, eventCount: events.length, hasAgentMessage: agentMsg !== undefined }, 'codex completed');
 		return { events, agentText: agentMsg?.item?.text };
 	}

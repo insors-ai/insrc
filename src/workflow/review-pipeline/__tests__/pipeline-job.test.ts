@@ -1190,3 +1190,24 @@ test("a stage's prompt may declare the atoms it carries, and a stage's redivide 
 		j2 = applyOutput(j2, big, call.callId, answer(call));
 	}
 });
+
+test('a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)', async () => {
+	const snap = toySnapshot([atom(1)]);
+	const adapter = toyAdapter(snap);
+	const warnings: unknown[] = [];
+	const logger = getLogger('review-pipeline:driver') as unknown as { warn: (...a: unknown[]) => void };
+	const original = logger.warn;
+	logger.warn = (...a: unknown[]) => { warnings.push(a); return original.apply(logger, a as never); };
+	let calls = 0;
+	try {
+		await runReviewJob(createReviewJob(adapter, 'daemon', snap, LIMIT), adapter, {
+			completeStructured: async (messages: LLMMessage[]) => {
+				if (calls++ === 0) throw new Error('codex agent_message.text was not parseable JSON: Unexpected token');
+				return seeingModel().answer({ messages } as unknown as ReviewCall);
+			},
+		} as unknown as LLMProvider);
+	} finally { logger.warn = original; }
+	const warned = warnings.map(w => JSON.stringify(w)).find(w => w.includes('a call did not complete'));
+	assert.ok(warned !== undefined, 'the failed call is logged');
+	assert.ok(warned.includes('not parseable JSON: Unexpected token'), 'with its detail');
+});

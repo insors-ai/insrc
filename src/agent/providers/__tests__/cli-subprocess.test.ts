@@ -171,3 +171,29 @@ test('a structured call honours its own timeoutMs, so a silent CLI is killed at 
 		assert.ok(Date.now() - started < 20_000, `killed after ${Date.now() - started} ms, not at the call's 1,500 ms limit`);
 	} finally { f.cleanup(); }
 });
+
+// ---------------------------------------------------------------------------
+// The answer of a codex run that narrates first (ISSUE-d3a6b651)
+// ---------------------------------------------------------------------------
+
+/** A fake codex that, like a tool-using run, says what it will do before it
+ *  answers: two agent messages, the narration first and the answer last. */
+const NARRATING_FAKE = `#!/usr/bin/env node
+const say = text => process.stdout.write(JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text } }) + '\\n');
+say("I'll inspect the caller and callee first.");
+say(JSON.stringify({ cwd: 'answered' }));
+`;
+
+test('a codex run that narrates before answering yields its last agent message to completeStructured and complete', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-fake-codex-narrate-'));
+	try {
+		const bin = join(dir, 'fake.mjs');
+		writeFileSync(bin, NARRATING_FAKE);
+		chmodSync(bin, 0o755);
+		const p = new CliProvider({ kind: 'codex', binPath: bin, timeoutMs: 20_000 });
+		const structured = await p.completeStructured<{ cwd: string }>([{ role: 'user', content: 'answer' }], CWD_SCHEMA);
+		assert.equal(structured.cwd, 'answered');
+		const plain = await p.complete([{ role: 'user', content: 'answer' }]);
+		assert.equal(plain.text, JSON.stringify({ cwd: 'answered' }));
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});

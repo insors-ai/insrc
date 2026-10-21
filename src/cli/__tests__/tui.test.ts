@@ -69,7 +69,7 @@ function fakeServices(): Services {
 			listEpics:        () => [],
 			chain:            () => CHAIN,
 			chainText:        () => '',
-			approve:          () => ({ approval: { workflow: 'define', path: '', approvedAt: '' } }),
+			approve:          async () => ({ approval: { workflow: 'define', path: '', approvedAt: '' } }),
 			reject:           () => ({ workflow: 'define', path: '', rejectedAt: '', rejectReason: '' }),
 			ackStale:         () => ({ path: '', ackedAt: '', reason: '' }),
 			amendments:       () => [],

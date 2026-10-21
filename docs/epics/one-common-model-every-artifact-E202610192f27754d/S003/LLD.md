@@ -694,6 +694,8 @@ lifecycle-service exports setLifecycleService and getLifecycleService; approveWo
   - **resolved**: Confirm s4 ownership now — AMD-8 is approved: s4 wires the durable History, journal and LifecycleService. _(2026-10-21T05:12:59.825Z)_
 - `q004cd101` — The Task side of CompletionEvidence reads the BUILD record's per-task results because no Task head has a payload yet; s7 replaces it with the Task artifact's own build rounds, so confirm that handoff
   - **resolved**: Defer Task evidence to s7 — s3 reads the BUILD record's per-task results; s7 replaces the source. _(2026-10-21T05:13:44.164Z)_
+- `q23880366` — cd1/cd2/dm1/dm2: new helper names (contentHash, reconcileLifecycle, checkHeadIntegrity, LifecycleService, update, childrenOfStrict, CompletionEvidence) are not in s1 or the HLD, the reviewArtifactFile arguments are given as a placeholder type, and not every invariant-change entry cites its current-behaviour invariant (the invariantsToPreserve cite c1 to c6)
+  - **deferred**: deferred for review — Covered by the LLD approval override; the plan names the new helpers and the build gives reviewArtifactFile a concrete argument type. _(2026-10-21T05:14:03.078Z)_
 
 ## Citations
 

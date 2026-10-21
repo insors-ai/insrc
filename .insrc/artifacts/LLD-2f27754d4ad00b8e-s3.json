@@ -208,6 +208,12 @@
         "choice": "Defer Task evidence to s7",
         "rationale": "s3 reads the BUILD record's per-task results; s7 replaces the source.",
         "resolvedAt": "2026-10-21T05:13:44.164Z"
+      },
+      "q23880366": {
+        "question": "cd1/cd2/dm1/dm2: new helper names (contentHash, reconcileLifecycle, checkHeadIntegrity, LifecycleService, update, childrenOfStrict, CompletionEvidence) are not in s1 or the HLD, the reviewArtifactFile arguments are given as a placeholder type, and not every invariant-change entry cites its current-behaviour invariant (the invariantsToPreserve cite c1 to c6)",
+        "status": "deferred",
+        "rationale": "Covered by the LLD approval override; the plan names the new helpers and the build gives reviewArtifactFile a concrete argument type.",
+        "resolvedAt": "2026-10-21T05:14:03.078Z"
       }
     }
   },

@@ -29,7 +29,213 @@
       "AMD-2f27754d4ad00b8e-7",
       "AMD-2f27754d4ad00b8e-8"
     ],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of ac14 (feedback/reply on any artifact incl. a Task, recorded once, never edited), ac15 (a revision addresses feedback unless the author lists only some) and ac16 (namespaced identities, declared links, gates on the tracker identity) has a designed contract.",
+          "evidence": "DEF.md:189-191 states ac14-ac16. The LLD covers ac14 with FeedbackService.add (no edit or delete call; TASK routed to the TASKS file), ac15 with the addresses rule in ArtifactStore.write plus History.openFeedback, and ac16 with IdentityService.currentActor/declare and gates that keep calling TrackerPort.whoAmI (gate.ts:177,211). The identity file location ~/.insrc/identity.json {primary, aliases[]} matches core-data-model.md Gap 9 item 5. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md, docs/plans/core-data-model.md, src/workflow/team/gate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The mapping of the legacy kind 'feedback' and of companion-file targets is decided.",
+          "evidence": "The LLD contradicts itself. §8 Backward compat says the legacy kind 'feedback' 'is stored as revision-request'. §2.11 maps by decision instead ('revision-request for send-feedback and comment for approve and reject'). §11 still lists 'should it be stored as revision-request, as comment, or by the decision it came with' as open. The legacy kinds really are 'feedback' | 'suggestion' | 'comment' (provenance/types.ts:60). Review-decision comments also carry target.file of a companion (review-decision.ts:201), and the Feedback shape has no file field (types.ts:71-89), which is still an open question. The production writer cannot be re-pointed until both are decided. [files: src/workflow/artifacts/provenance/types.ts, src/workflow/review-decision.ts, src/workflow/artifact-core/types.ts]",
+          "action": "Resolve the two open questions and make §2.11, §2.12 and §8 state one mapping for kind and for companion targets.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today open feedback is derived from the log by (timestamp, id) order and an update's addresses is logged only when a writer passes it; nothing defaults it to 'all'.",
+          "evidence": "history.ts:121-127: openFeedback filters on `compareEntries(e, f) > 0 && (e.addresses === 'all' || ...includes(f.id))`. store.ts:308: `...(options.addresses !== undefined ? { addresses: options.addresses } : {})`, so no default exists today. [files: src/workflow/artifact-core/history.ts, src/workflow/artifact-core/store.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "State before: artifact.feedback.append writes body.feedback through the legacy appendFeedback, and the review decision writes its comments through appendFeedbackBatch under a plain-name author.",
+          "evidence": "daemon/index.ts:619-628: 'artifact.feedback.append' calls `appendFeedback(coerceRequest(...))` from provenance/writer.js. review-decision.ts:160 has `author = resolveReviewer(...).name`, and review-decision.ts:196-207 has `(deps.appendBatch ?? appendFeedbackBatch)({ artifactPath: jsonPath, entries })` with entries carrying `author` and `kind: 'comment'`. [files: src/daemon/index.ts, src/workflow/review-decision.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The identity module (currentActor: tracker login, else git email, else OS user) is new; the codebase has no person-identity resolver to reuse.",
+          "evidence": "src/understanding/identity.ts already holds `resolveLearner(repo, deps)`. It tries github/gitlab/jira providers, then `gitEmail(repo)` (`git config --get user.email`), then the OS user, and returns a LearnerIdentity with `aliases: readonly string[]`. `localIdentityDeps` and `githubIdentities` (gh auth status) also exist, and daemon/index.ts:3 imports them. The LLD neither reuses this module nor says why it builds a second fallback chain with a different id form (github:<login> versus node_id/uid). [files: src/understanding/identity.ts, src/daemon/index.ts]",
+          "action": "State whether IdentityService reuses or wraps resolveLearner/localIdentityDeps (e.g. its gitEmail seam) or why a separate chain is needed, and keep the two from diverging.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "WriteOptions already has an addresses field while ContentWriteOptions does not and must gain it.",
+          "evidence": "store.ts:79 has `readonly addresses?: 'all' | readonly string[] | undefined;` on WriteOptions. lifecycle-service.ts:39-44: ContentWriteOptions has only outcome, references and create, and updateContent (line 196) forwards only outcome and references. [files: src/workflow/artifact-core/store.ts, src/workflow/artifact-core/lifecycle-service.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Applying the 'all by default' addresses rule inside ArtifactStore.write affects only the writers the design names.",
+          "evidence": "Every content writer goes through store.write/update. That includes the daemon reviewer's auto-fix (`lifecycle.updateContent(artifactId, REVIEWER, ...)` at daemon/steps/review-step/phases/verdicts.ts:134 and review/run-artifact.ts:150) and the build round writer (round-writer.ts:69). Under the new rule, an automated citation fix by the reviewer would silently address every open human revision-request on the artifact. The LLD does not list these call sites or say whether they should pass `addresses: []`. [files: src/daemon/steps/review-step/phases/verdicts.ts, src/workflow/review/run-artifact.ts, src/workflow/runners/build/round-writer.ts, src/workflow/artifact-core/store.ts]",
+          "action": "Inventory every updateContent/write caller and decide per caller: automated writers (review auto-fix, round records) should pass an explicit empty list, or the rule should apply only to person-authored revisions.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "handleReviewDecision's kind mapping ('revision-request for send-feedback, comment for approve and reject') matches the decision values the code carries.",
+          "evidence": "The decision values are 'approve' | 'reject' | 'feedback' (provenance/types.ts:49); there is no 'send-feedback'. The comments are saved with `took`, the decision that took effect: `outcome === 'approved' ? 'approve' : outcome === 'rejected' ? 'reject' : 'feedback'` (review-decision.ts:192). A withheld approval therefore records its comments as 'feedback', so they would become revision-requests. The LLD does not say whether the requested decision or `took` drives the kind. [files: src/workflow/review-decision.ts, src/workflow/artifacts/provenance/types.ts]",
+          "action": "Name the real decision value and state whether the kind follows the requested decision or `took`, covering the withheld-approval case in a test.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Existing log entries without addresses keep addressing nothing, and existing feedback lines without inReplyTo stay valid, so no stored line has to change.",
+          "evidence": "history.ts:124-126 treats an entry with undefined addresses as addressing nothing. validateFeedback (history.ts:61-90) does not reject unknown fields, and adding an optional inReplyTo check leaves older lines valid. The store's revision-bearing entries are unchanged (store.ts:299-309). [files: src/workflow/artifact-core/history.ts, src/workflow/artifact-core/store.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design keeps s4's sidecar integrity rule (a repeated id with different content is a read error) and changes sc3 only through an additive amendment.",
+          "evidence": "sidecar-store.ts:127-130 throws `repeats entry ... with different content`. The LLD keeps this rule, rejects a3 for weakening it, and asks for inReplyTo through an amendment to the sc3 Feedback shape (types.ts:71) owned by s2. core-data-model.md Gap 5 item 2 ('a reply ... nested under its parent') is what the amendment revises. TASK→TASKS file routing is reused from s4 (sidecar-store.ts:77-79) and not redesigned. [files: src/workflow/artifact-core/sidecar-store.ts, src/workflow/artifact-core/types.ts, docs/plans/core-data-model.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A retried add with the same caller id 'finds an identical stored entry' and returns it.",
+          "evidence": "The LLD says the service mints `timestamp` and stamps `revision` from the head at add time (§2.1 postconditions), so a retry produces a line with a new timestamp, and possibly a new revision. Compared as whole entries, that line is never identical to the stored one, so the retry would be refused as 'id already used with different content', which defeats the stated idempotency. The sidecar reader compares whole frames (sidecar-store.ts:129). [files: src/workflow/artifact-core/sidecar-store.ts]",
+          "action": "Define the retry comparison over the caller-supplied fields (text, kind, anchor, inReplyTo, batchId, actor id) and return the stored entry, with its original timestamp and revision, when they match.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The check-then-append in add guarantees that two entries with one caller id are never both appended in one clone.",
+          "evidence": "Nothing in the LLD runs add under a per-artifact queue. ArtifactStore serializes only its own writes (store.ts:213-221 WRITE_QUEUES), and History.appendFeedback appends directly (history.ts:101-105). Two concurrent adds with the same id and different content can both pass the lookup and both append. After that every read of the artifact's feedback throws HistoryReadError (sidecar-store.ts:129), which also breaks readWithHistory (store.ts:122) and LifecycleService.inspect (lifecycle-service.ts:178) for that artifact. [files: src/workflow/artifact-core/store.ts, src/workflow/artifact-core/history.ts, src/workflow/artifact-core/sidecar-store.ts]",
+          "action": "Serialize add per artifact (reuse the store's queue or an equivalent lock) so the lookup and the append are atomic within the process, and state it as a postcondition.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.3",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Feedback on a Task with no head yet is refused by ArtifactStore.read raising ArtifactNotFoundError before anything is appended.",
+          "evidence": "store.ts:106-116: read throws `ArtifactNotFoundError(no head for ${id} ...)` on ENOENT for the head at artifactJsonPath. A TASK id's head is its own file (sidecar-store.ts:81), which only exists once s7 creates it. [files: src/workflow/artifact-core/store.ts, src/workflow/artifact-core/sidecar-store.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.4",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A request naming a non-namespaced actor is refused, not replaced, through approvalActorOf.",
+          "evidence": "approval-actor.ts:19-29: returns APPROVAL_ACTOR when raw is undefined and otherwise throws '`actor` has to be a namespaced lower-case id' for an id that is not namespaced and lower-case. review-decision.ts:171 calls it inside the try that returns an error (lines 187-189). Note the LLD's 'else currentActor' default for comments differs from the approval's insrc:approval default, and that difference is intended. [files: src/workflow/artifact-core/approval-actor.ts, src/workflow/review-decision.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion maps to at least one named test, including the gate-unaffected-by-alias property and the daemon wiring.",
+          "evidence": "The §7 acceptance mapping lists, for ac14, the feedback-service, feedback-storage, feedback-merge and review-decision tests. For ac15 it lists addresses-rule, feedback-threads and feedback-storage. For ac16 it lists identity-service, gate-identity and feedback-wiring. Each named test traces to a §6 edge case. The test files do not exist yet, which is expected because they are new. The gaps raised under change-sites and error-paths (automated writers addressing feedback, retry with a re-minted timestamp, concurrent same-id adds, withheld-approval kind) have no tests yet. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md]",
+          "action": "Add tests for the retry-with-new-timestamp case, a concurrent same-id add, the review auto-fix not addressing human feedback, and the withheld-approval comment kind.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 6,
+        "low": 9,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-21T11:44:55.324Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "questionResolutions": {
+      "q684a09a1": {
+        "question": "A legacy review comment can target a companion file (target.file other than the artifact's own document, for example a diagram or mock) while the Feedback shape has an anchor but no file: should such a comment be stored on the companion's own DIAG artifact when one exists, kept on the parent artifact with the file path in anchor.section, or have its file dropped?",
+        "status": "resolved",
+        "choice": "Keep on the parent artifact with the file path in anchor.section",
+        "rationale": "No DIAG lookup; the file is not lost and the thread stays on the artifact the person reviewed.",
+        "resolvedAt": "2026-10-21T11:51:00.707Z"
+      }
+    }
   },
   "body": {
     "summary": {

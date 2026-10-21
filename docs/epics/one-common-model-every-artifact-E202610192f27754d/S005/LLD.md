@@ -458,3 +458,16 @@ Keep the sc3 Feedback shape exactly as s2 shipped it. add() of a top-level entry
 - A legacy review comment can target a companion file (target.file other than the artifact's own document, for example a diagram or mock) while the Feedback shape has an anchor but no file: should such a comment be stored on the companion's own DIAG artifact when one exists, kept on the parent artifact with the file path in anchor.section, or have its file dropped?
 - The legacy kind 'feedback' (a request to change the artifact) has no direct match: should it be stored as revision-request, as comment, or by the decision it came with (send-feedback to revision-request, approve and reject to comment)?
 - The readers of body.feedback (companion headers, delivery) will show only entries written before s5 until the s9 conversion, while new feedback is in the line files: should s5 add the line-file entries to those readers, or leave the mixed view until s9?
+
+## Resolved questions
+
+- `q684a09a1` — A legacy review comment can target a companion file (target.file other than the artifact's own document, for example a diagram or mock) while the Feedback shape has an anchor but no file: should such a comment be stored on the companion's own DIAG artifact when one exists, kept on the parent artifact with the file path in anchor.section, or have its file dropped?
+  - **resolved**: Keep on the parent artifact with the file path in anchor.section — No DIAG lookup; the file is not lost and the thread stays on the artifact the person reviewed. _(2026-10-21T11:51:00.707Z)_
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `src/workflow/artifact-core/history.ts`
+- **[[c2]]** `analyze-bundle` `src/workflow/artifact-core/sidecar-store.ts`
+- **[[c3]]** `analyze-bundle` `src/workflow/artifacts/provenance/writer.ts`
+- **[[c4]]** `analyze-bundle` `src/workflow/team/gate.ts`
+- **[[c5]]** `doc` `docs/plans/core-data-model.md#gap-9-actor-identity-settled`

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -102,3 +102,34 @@ Run at 2026-10-21T06:18:08.129Z on commit `79e66e0c`. Tests check: **passed**. 7
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/runners/build/__tests__/changed-files.test.ts` | 0 | 40 | 4.9 s |  |
+
+## t4
+
+Run at 2026-10-21T06:26:10.632Z on commit `fabb2d0e`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/workflow/code-review/__tests__/diff-attribution.test.ts: 'the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit | `src/workflow/code-review/__tests__/diff-attribution.test.ts` |
+| pass | assembler: with no base the diff-only review is unavailable and no seam is called (ISSUE-b97752e9) | `src/workflow/code-review/__tests__/diff-grounding.test.ts` |
+| pass | assembler: a range git failure propagates at once — no step-down to the working tree or a last commit | `src/workflow/code-review/__tests__/diff-grounding.test.ts` |
+
+**integration: src/workflow/code-review/__tests__/diff-attribution.test.ts: 'storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited | `src/workflow/code-review/__tests__/diff-attribution.test.ts` |
+
+**integration: src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding | `src/workflow/code-review/__tests__/diff-attribution.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/__tests__/diff-attribution.test.ts` | 0 | 5 | 1.9 s |  |
+| `src/workflow/code-review/__tests__/diff-grounding.test.ts` | 0 | 24 | 2.3 s |  |

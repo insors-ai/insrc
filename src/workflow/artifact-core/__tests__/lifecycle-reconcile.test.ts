@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { contentHash, reconcileLifecycle } from '../lifecycle.js';
 import type { ContentView } from '../lifecycle.js';
-import { IllegalTransitionError, TerminalArtifactError } from '../types.js';
+import { ArtifactShapeError, IllegalTransitionError, TerminalArtifactError } from '../types.js';
 import type { Actor, Lifecycle, Status } from '../types.js';
 
 const alice: Actor = { id: 'github:alice', kind: 'person', properties: {} };
@@ -81,6 +81,7 @@ describe('reconcileLifecycle', () => {
 			assert.throws(() => reconcileLifecycle(view({ status }), view({ status, body: { a: 2 } }), 2, alice, T1), TerminalArtifactError, status);
 		}
 		assert.throws(() => reconcileLifecycle(undefined, view({ status: 'approved' }), 1, alice, T1), IllegalTransitionError);
+		assert.throws(() => reconcileLifecycle(undefined, view({ status: 'nope' as Status }), 1, alice, T1), ArtifactShapeError);
 		// without a content change a status change must be a table step
 		assert.throws(() => reconcileLifecycle(view({ status: 'draft' }), view({ status: 'completed' }), 1, alice, T1), IllegalTransitionError);
 		assert.equal(reconcileLifecycle(view({ status: 'draft' }), view({ status: 'approved' }), 1, alice, T1).lifecycle.status, 'approved');

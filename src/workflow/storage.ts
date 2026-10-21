@@ -179,6 +179,17 @@ function contentViewOf(head: Record<string, unknown>, revision: number): Content
 	};
 }
 
+function reconcileLifecycleOf(
+	prior: Record<string, unknown> | undefined, next: Record<string, unknown>, meta: Record<string, unknown>, revisionNumber: number,
+	opts: { readonly by?: Actor | undefined; readonly at?: string | undefined },
+): { readonly lifecycle: Lifecycle; readonly contentChanged: boolean } {
+	const priorRevision = readRevision(prior);
+	return reconcileLifecycle(
+		prior === undefined ? undefined : contentViewOf(prior, priorRevision), contentViewOf({ ...next, meta }, priorRevision),
+		revisionNumber, opts.by ?? DEFAULT_ACTOR, opts.at ?? new Date().toISOString(),
+	);
+}
+
 /** What a write would put on disk. */
 export interface PreparedArtifactWrite {
 	/** The exact file text. */
@@ -215,14 +226,10 @@ export function prepareArtifactWrite(
 		// citations instead, so metadata and key order cannot mint a revision.
 		const unchanged = !isRecord(meta['lifecycle']) && prior !== undefined && sameApartFromRevision(prior, { ...next, meta });
 		if (isRecord(meta['lifecycle'])) {
-			const priorRevision = readRevision(prior);
-			const reconciled = reconcileLifecycle(
-				prior === undefined ? undefined : contentViewOf(prior, priorRevision), contentViewOf({ ...next, meta }, priorRevision),
-				priorRevision + 1, opts.by ?? DEFAULT_ACTOR, opts.at ?? new Date().toISOString(),
-			);
+			const reconciled = reconcileLifecycleOf(prior, next, meta, readRevision(prior) + 1, opts);
 			meta['lifecycle'] = reconciled.lifecycle;
 			if (reconciled.contentChanged) {
-				meta['revision'] = priorRevision + 1;
+				meta['revision'] = readRevision(prior) + 1;
 				contentChanged = true;
 			} else if (priorMeta !== undefined && 'revision' in priorMeta) meta['revision'] = priorMeta['revision'];
 			else delete meta['revision'];
@@ -233,10 +240,11 @@ export function prepareArtifactWrite(
 			meta['revision'] = readRevision(prior) + 1;
 			contentChanged = true;
 		}
-	} else if (priorMeta !== undefined && 'revision' in priorMeta) {
-		meta['revision'] = priorMeta['revision'];
 	} else {
-		delete meta['revision'];
+		// A meta-only write never moves the revision; a lifecycle-bearing head still has its hash and times reconciled.
+		if (isRecord(meta['lifecycle'])) meta['lifecycle'] = reconcileLifecycleOf(prior, next, meta, readRevision(prior), opts).lifecycle;
+		if (priorMeta !== undefined && 'revision' in priorMeta) meta['revision'] = priorMeta['revision'];
+		else delete meta['revision'];
 	}
 	const out = { ...next, meta };
 	return { bytes: JSON.stringify(out, null, 2) + '\n', revision: readRevision(out), contentChanged };

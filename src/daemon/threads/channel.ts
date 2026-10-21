@@ -54,7 +54,7 @@ export interface HubRequest { readonly kind: 'hub-request'; readonly requestId: 
 export type HubReply =
 	| { readonly kind: 'hub-reply'; readonly requestId: string; readonly ok: true; readonly value: unknown }
 	| { readonly kind: 'hub-reply'; readonly requestId: string; readonly ok: false; readonly error: { readonly name: string; readonly message: string } };
-/** A worker's one-way message to a main-thread service (status publishes); never answered. */
+/** A one-way message, never answered: a worker's to a main-thread service (status publishes), or the main thread's push to a worker. */
 export interface HubMessage { readonly kind: 'hub-message'; readonly op: string; readonly args: unknown; }
 
 export type HubHandler = (args: unknown) => unknown;
@@ -106,14 +106,26 @@ export function serveHub(port: Port, handlers: HubHandlers): () => void {
 	return () => port.off('message', onMessage);
 }
 
+/** Push a one-way message from the main thread to one worker's port. */
+export function pushToWorker(port: Pick<MessagePort, 'postMessage'>, op: string, args: unknown): void {
+	port.postMessage({ kind: 'hub-message', op, args } satisfies HubMessage);
+}
+
 /** A worker's client for the main thread's hub. */
 export class HubClient {
+	private readonly pushHandlers = new Map<string, HubHandler>();
 	private readonly pending = new Map<string, { readonly op: string; readonly resolve: (v: unknown) => void; readonly reject: (e: Error) => void }>();
 	private seq = 0;
 	private closed = false;
 
 	constructor(private readonly port: Port & Pick<MessagePort, 'once'>) {
 		port.on('message', (msg: unknown) => {
+			if (isHubMessage(msg)) {
+				const handler = this.pushHandlers.get(msg.op);
+				if (handler === undefined) { log.warn({ op: msg.op }, 'hub: no handler for a pushed message'); return; }
+				try { void handler(msg.args); } catch (e) { log.warn({ op: msg.op, err: (e as Error).message }, 'hub: push handler threw'); }
+				return;
+			}
 			if (!isHubReply(msg)) return;
 			const waiting = this.pending.get(msg.requestId);
 			if (waiting === undefined) return;
@@ -143,6 +155,11 @@ export class HubClient {
 	send(op: string, args: unknown): void {
 		if (this.closed) return;
 		this.port.postMessage({ kind: 'hub-message', op, args } satisfies HubMessage);
+	}
+
+	/** Handle the main thread's one-way pushes for `op`. */
+	onPush(op: string, handler: HubHandler): void {
+		this.pushHandlers.set(op, handler);
 	}
 
 	/** Requests still waiting for an answer. */

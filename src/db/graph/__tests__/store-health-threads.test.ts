@@ -16,8 +16,10 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Worker } from 'node:worker_threads';
+import { MessageChannel, Worker } from 'node:worker_threads';
 
+import { serveHub } from '../../../daemon/threads/channel.js';
+import { wireMainStoreHealth } from '../../../daemon/threads/store-health-hub.js';
 import { getLogger } from '../../../shared/logger.js';
 import { createStoreGuardBlock, installStoreGuard, StoreGuard } from '../../store-guard.js';
 import {
@@ -111,4 +113,42 @@ test('after locks-lost in a worker, getStoreHealth on the main thread reports it
 
 	const warns = await logged('warn', () => closeGraphStore());
 	assert.ok(warns.some(w => JSON.stringify(w).includes('close skipped')), 'closeGraphStore skips the library close');
+});
+
+test('the full locks-lost record reaches the main thread and every other worker through the hub', async () => {
+	const ports: { postMessage(m: unknown): void }[] = [];
+	const handlers = wireMainStoreHealth(() => ports);
+	const workers: Worker[] = [];
+	const start = (role: 'finder' | 'bystander'): { worker: Worker; next: () => Promise<{ step: string; health?: StoreHealth }> } => {
+		const { port1: main, port2: workerPort } = new MessageChannel();
+		serveHub(main, handlers);
+		ports.push(main);
+		const worker = new Worker(join(HERE, 'helpers', 'health-hub-worker.ts'), { workerData: { block, port: workerPort, role }, transferList: [workerPort] });
+		workers.push(worker);
+		return { worker, next: () => new Promise((res, rej) => { worker.once('message', res); worker.once('error', rej); }) };
+	};
+	try {
+		const finder = start('finder');
+		const bystander = start('bystander');
+		assert.equal((await finder.next()).step, 'ready');
+		assert.equal((await bystander.next()).step, 'ready');
+
+		finder.worker.postMessage('find');
+		assert.equal((await finder.next()).step, 'found');
+		// The record crosses two hops (worker to main, main to the bystander); wait for it on the main thread.
+		for (let i = 0; i < 100 && (getStoreHealth().state !== 'locks-lost' || (getStoreHealth() as { operation: string }).operation !== 'request finder.op'); i++) await new Promise(r => setTimeout(r, 10));
+		const main = getStoreHealth();
+		assert.equal(main.state === 'locks-lost' && main.operation, 'request finder.op', 'the main thread holds the finder\'s full record');
+
+		let seen: StoreHealth | undefined;
+		for (let i = 0; i < 100; i++) {
+			bystander.worker.postMessage('health');
+			seen = (await bystander.next()).health;
+			if (seen?.state === 'locks-lost' && seen.operation === 'request finder.op') break;
+			await new Promise(r => setTimeout(r, 10));
+		}
+		assert.equal(seen?.state === 'locks-lost' && seen.operation, 'request finder.op', 'another worker holds the finder\'s full record');
+	} finally {
+		for (const w of workers) await w.terminate();
+	}
 });

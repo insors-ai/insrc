@@ -38,6 +38,7 @@
 
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { getLogger } from '../../shared/logger.js';
+import { getStoreGuard } from '../../db/store-guard.js';
 
 const log = getLogger('duckdb-pool');
 
@@ -168,14 +169,22 @@ export async function closeDuckDB(): Promise<void> {
 export async function withConnection<T>(
   fn: (conn: DuckDBConnection) => Promise<T>,
 ): Promise<T> {
-  const instance = await getDuckDB();
-  const conn = await instance.connect();
-  try {
-    return await fn(conn);
-  } finally {
-    conn.disconnectSync();
-  }
+  // Each daemon thread has its own in-memory instance with its own memory
+  // limit; the store guard's one DuckDB permit keeps the process to one
+  // budget (Epic 86197ac6, s1). Queries from other threads wait their turn.
+  return getStoreGuard().withStore('duckdb', async () => {
+    const instance = await getDuckDB();
+    const conn = await instance.connect();
+    try {
+      return await fn(conn);
+    } finally {
+      conn.disconnectSync();
+    }
+  }, { acquireTimeoutMs: DUCKDB_PERMIT_WAIT_MS });
 }
+
+/** How long a query waits for the DuckDB permit before failing (another thread's long query holds it). */
+export const DUCKDB_PERMIT_WAIT_MS = 10 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
 // Internals

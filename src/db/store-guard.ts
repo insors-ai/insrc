@@ -301,7 +301,17 @@ export class StoreGuard {
 					throw err;
 				}
 				const wait = waitAsync(this.words, idx, free, left);
-				if (wait.async) await waitOrAbort(wait.value, opts.signal);
+				if (wait.async) {
+					// A pending Atomics.waitAsync does not keep a thread's event loop
+					// alive: a thread whose only work is this wait would exit. A timer
+					// for the length of the wait keeps it alive.
+					const keepAlive = setTimeout(() => {}, left);
+					try {
+						await waitOrAbort(wait.value, opts.signal);
+					} finally {
+						clearTimeout(keepAlive);
+					}
+				}
 			}
 		} finally {
 			turnDone();

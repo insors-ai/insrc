@@ -83,7 +83,10 @@ export async function getLanceConn(): Promise<lancedb.Connection> {
 		if (!existsSync(_path)) {
 			mkdirSync(_path, { recursive: true });
 		}
-		const conn = await lancedb.connect(_path);
+		// Strong read consistency: every read checks for writes committed through
+		// another connection, which is what another daemon thread holds (Epic
+		// 86197ac6, s1). Writes were always consistent.
+		const conn = await lancedb.connect(_path, { readConsistencyInterval: 0 });
 		log.info(
 			{ initMs: Date.now() - t0, path: _path },
 			'lance connection initialised',

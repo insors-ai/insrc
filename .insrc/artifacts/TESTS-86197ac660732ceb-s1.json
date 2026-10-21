@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s1",
     "createdAt": "2026-10-21T15:03:00.014Z",
-    "updatedAt": "2026-10-21T15:03:00.014Z",
+    "updatedAt": "2026-10-21T15:16:42.801Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -60,6 +60,110 @@
               },
               {
                 "title": "a worker thread and the daemon's lock on the store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "e61cc5a3",
+        "ranAt": "2026-10-21T15:16:42.801Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "withStore releases its permit on resolve, reject, synchronous throw and abort",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/store-guard.test.ts",
+                "title": "withStore releases its permit on resolve, reject, synchronous throw and abort",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an acquisition past its limit fails with StoreLockTimeoutError naming the holder",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/store-guard.test.ts",
+                "title": "an acquisition past its limit fails with StoreLockTimeoutError naming the holder",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "two concurrent same-thread withStore calls on a one-permit store both complete in turn; withStore inside a held op fails with StoreLockNestedError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/store-guard.test.ts",
+                "title": "two concurrent same-thread withStore calls on a one-permit store both complete in turn; withStore inside a held op fails with StoreLockNestedError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reclaim releases after quiescence and marks the store unhealthy past limitMs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/store-guard.test.ts",
+                "title": "reclaim releases after quiescence and marks the store unhealthy past limitMs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a worker terminated while holding a permit has it reclaimed and another worker then acquires it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/store-guard.test.ts",
+                "title": "a worker terminated while holding a permit has it reclaimed and another worker then acquires it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/store-guard.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 889,
+            "titles": [
+              {
+                "title": "withStore releases its permit on resolve, reject, synchronous throw and abort",
+                "result": "pass"
+              },
+              {
+                "title": "an acquisition past its limit fails with StoreLockTimeoutError naming the holder",
+                "result": "pass"
+              },
+              {
+                "title": "two concurrent same-thread withStore calls on a one-permit store both complete in turn; withStore inside a held op fails with StoreLockNestedError",
+                "result": "pass"
+              },
+              {
+                "title": "reclaim releases after quiescence and marks the store unhealthy past limitMs",
+                "result": "pass"
+              },
+              {
+                "title": "a worker terminated while holding a permit has it reclaimed and another worker then acquires it",
                 "result": "pass"
               }
             ],

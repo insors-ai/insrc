@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -27,3 +27,43 @@ Run at 2026-10-21T15:03:00.014Z on commit `b038c9e4`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/graph/__tests__/worker-thread-lock.test.ts` | 0 | 3 | 0.8 s |  |
+
+## t2
+
+Run at 2026-10-21T15:16:42.801Z on commit `e61cc5a3`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: withStore releases its permit on resolve, reject, synchronous throw and abort**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | withStore releases its permit on resolve, reject, synchronous throw and abort | `src/db/__tests__/store-guard.test.ts` |
+
+**unit: an acquisition past its limit fails with StoreLockTimeoutError naming the holder**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an acquisition past its limit fails with StoreLockTimeoutError naming the holder | `src/db/__tests__/store-guard.test.ts` |
+
+**unit: two concurrent same-thread withStore calls on a one-permit store both complete in turn; withStore inside a held op fails with StoreLockNestedError**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | two concurrent same-thread withStore calls on a one-permit store both complete in turn; withStore inside a held op fails with StoreLockNestedError | `src/db/__tests__/store-guard.test.ts` |
+
+**unit: reclaim releases after quiescence and marks the store unhealthy past limitMs**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reclaim releases after quiescence and marks the store unhealthy past limitMs | `src/db/__tests__/store-guard.test.ts` |
+
+**integration: a worker terminated while holding a permit has it reclaimed and another worker then acquires it**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a worker terminated while holding a permit has it reclaimed and another worker then acquires it | `src/db/__tests__/store-guard.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/__tests__/store-guard.test.ts` | 0 | 5 | 0.9 s |  |

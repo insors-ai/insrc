@@ -1,0 +1,424 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s8",
+    "createdAt": "2026-10-21T20:24:57.645Z",
+    "updatedAt": "2026-10-21T20:41:20.371Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "a83a5351",
+        "ranAt": "2026-10-21T20:24:57.645Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "feedback-source.test.ts: FeedbackService.add stores a source and a repeat of the same id with the same source appends nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/feedback/__tests__/feedback-source.test.ts",
+                "title": "FeedbackService.add stores a source and a repeat of the same id with the same source appends nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/feedback/__tests__/feedback-source.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1199,
+            "titles": [
+              {
+                "title": "FeedbackService.add stores a source and a repeat of the same id with the same source appends nothing",
+                "result": "pass"
+              },
+              {
+                "title": "feedback-source",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "695872fa",
+        "ranAt": "2026-10-21T20:27:02.523Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "port-post-comment.test.ts: the GitHub adapter's postComment answers the comment id and attach posts its marker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/port-post-comment.test.ts",
+                "title": "the GitHub adapter's postComment answers the comment id and attach posts its marker",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/github-comments.test.ts",
+                "title": "the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/github-comments.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1194,
+            "titles": [
+              {
+                "title": "the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/port-post-comment.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1183,
+            "titles": [
+              {
+                "title": "the GitHub adapter's postComment answers the comment id and attach posts its marker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "e6c815a7",
+        "ranAt": "2026-10-21T20:29:11.040Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "integrity-receipts.test.ts: a revision-less receipt or build round after the last content entry does not make a head that differs from that entry pass the integrity check",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/integrity-receipts.test.ts",
+                "title": "a revision-less receipt or build round after the last content entry does not make a head that differs from that entry pass the integrity check",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-integrity.test.ts",
+                "title": "checkHeadIntegrity and checkIntegrity report every reason and treat unhashed and unlogged heads as ok",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/integrity-receipts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 811,
+            "titles": [
+              {
+                "title": "a revision-less receipt or build round after the last content entry does not make a head that differs from that entry pass the integrity check",
+                "result": "pass"
+              },
+              {
+                "title": "integrity-receipts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/lifecycle-integrity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 860,
+            "titles": [
+              {
+                "title": "checkHeadIntegrity and checkIntegrity report every reason and treat unhashed and unlogged heads as ok",
+                "result": "pass"
+              },
+              {
+                "title": "integrity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "e918d096",
+        "ranAt": "2026-10-21T20:30:48.315Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "comment-rules.test.ts: classifyComment gives revision-request, suggestion or comment from the first line only",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/comment-rules.test.ts",
+                "title": "classifyComment gives revision-request, suggestion or comment from the first line only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "comment-rules.test.ts: isFrameworkComment recognises every insrc marker and no human text",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/comment-rules.test.ts",
+                "title": "isFrameworkComment recognises every insrc marker and no human text",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "comment-rules.test.ts: the author and the entry id are derived from a tracker comment, a mixed-case login lowercased",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/comment-rules.test.ts",
+                "title": "the author and the entry id are derived from a tracker comment, a mixed-case login lowercased",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/comment-rules.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1023,
+            "titles": [
+              {
+                "title": "classifyComment gives revision-request, suggestion or comment from the first line only",
+                "result": "pass"
+              },
+              {
+                "title": "isFrameworkComment recognises every insrc marker and no human text",
+                "result": "pass"
+              },
+              {
+                "title": "the author and the entry id are derived from a tracker comment, a mixed-case login lowercased",
+                "result": "pass"
+              },
+              {
+                "title": "comment-rules",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "664f179e",
+        "ranAt": "2026-10-21T20:33:39.174Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "comment-sync-inbound.test.ts: a human comment is recorded once as feedback with the tracker user as author, framework comments are never recorded, an edited comment is not mirrored, and a tracker failure is reported without failing the call",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/comment-sync-inbound.test.ts",
+                "title": "a human comment is recorded once as feedback with the tracker user as author, framework comments are never recorded, an edited comment is not mirrored, and a tracker failure is reported without failing the call",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/comment-sync-inbound.test.ts",
+                "title": "a comment that failed to record is picked up on the next sync, and a unit with no binding or no artifact says so",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/comment-sync-inbound.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 554,
+            "titles": [
+              {
+                "title": "a human comment is recorded once as feedback with the tracker user as author, framework comments are never recorded, an edited comment is not mirrored, and a tracker failure is reported without failing the call",
+                "result": "pass"
+              },
+              {
+                "title": "a comment that failed to record is picked up on the next sync, and a unit with no binding or no artifact says so",
+                "result": "pass"
+              },
+              {
+                "title": "comment-sync-inbound",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "98d15550",
+        "ranAt": "2026-10-21T20:36:12.455Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "comment-sync-outbound.test.ts: feedback entered here is posted once and its receipt is written, a post whose receipt was lost is found by its marker and not posted again, and failures leave the call repeatable",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/comment-sync-outbound.test.ts",
+                "title": "feedback entered here is posted once and its receipt is written, a post whose receipt was lost is found by its marker and not posted again, and failures leave the call repeatable",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/comment-sync-outbound.test.ts",
+                "title": "a post whose receipt was lost, or whose answer was lost, is found by its marker and not posted again",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/comment-sync-outbound.test.ts",
+                "title": "a failed post writes no receipt and is retried, and an unreadable comment list posts nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/comment-sync-outbound.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 913,
+            "titles": [
+              {
+                "title": "feedback entered here is posted once and its receipt is written, a post whose receipt was lost is found by its marker and not posted again, and failures leave the call repeatable",
+                "result": "pass"
+              },
+              {
+                "title": "a post whose receipt was lost, or whose answer was lost, is found by its marker and not posted again",
+                "result": "pass"
+              },
+              {
+                "title": "a failed post writes no receipt and is retried, and an unreadable comment list posts nothing",
+                "result": "pass"
+              },
+              {
+                "title": "comment-sync-outbound",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "ebd69b5b",
+        "ranAt": "2026-10-21T20:40:14.623Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "comment-sync-callers.test.ts: implement and validate run the comment sync for the Task and the daemon method tracker.syncComments runs it on request, and neither is failed by it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/comment-sync-callers.test.ts",
+                "title": "comment-sync-callers.test.ts: implement and validate run the comment sync for the Task and the daemon method tracker.syncComments runs it on request, and neither is failed by it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/comment-sync-callers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1812,
+            "titles": [
+              {
+                "title": "comment-sync-callers.test.ts: implement and validate run the comment sync for the Task and the daemon method tracker.syncComments runs it on request, and neither is failed by it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "fb2af039",
+        "ranAt": "2026-10-21T20:41:20.371Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s8-handoffs.test.ts: the plans document names each s8 hand-off to s9",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/s8-handoffs.test.ts",
+                "title": "s8-handoffs.test.ts: the plans document names each s8 hand-off to s9",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/s8-handoffs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 970,
+            "titles": [
+              {
+                "title": "s8-handoffs.test.ts: the plans document names each s8 hand-off to s9",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

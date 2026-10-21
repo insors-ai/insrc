@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s8",
+    "createdAt": "2026-10-21T20:24:57.645Z",
+    "updatedAt": "2026-10-21T20:41:20.371Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S008/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/plans/core-data-model.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/comment-sync-callers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/implement.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tracker-sync-comments.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/approve-fallback-kit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/s8-handoffs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/integrity-receipts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/lifecycle-service.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/feedback/__tests__/feedback-source.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/feedback/feedback-service.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tasks/task-set.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/attach.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/comment-rules.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/comment-sync-inbound.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/comment-sync-kit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/comment-sync-outbound.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/github-comments.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/port-post-comment.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/comment-rules.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/comment-sync.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/github-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/port.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T20:41:20.371Z"
+      }
+    ],
+    "commit": "fb2af039",
+    "summary": "Added the section \"s8 build: hand-offs to s9\" (four items) to docs/plans/core-data-model.md and s8-handoffs.test.ts. No code changes."
+  }
+}

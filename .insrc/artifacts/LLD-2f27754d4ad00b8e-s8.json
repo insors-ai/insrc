@@ -220,6 +220,13 @@
         "choice": "Accept the proposed forms",
         "rationale": "Approved with the LLD (option A).",
         "resolvedAt": "2026-10-21T20:17:45.336Z"
+      },
+      "q467f5e67": {
+        "question": "A Story's comments are recorded on the artifact that holds its binding, the LLD, until s9 gives the Story its own artifact. Resolve: accept and record the move for s9 in docs/plans/core-data-model.md (recommended), or record Story comments only once the Story artifact exists.",
+        "status": "resolved",
+        "choice": "Record on LLD now; note the s9 move",
+        "rationale": "Approved with the LLD (option A).",
+        "resolvedAt": "2026-10-21T20:18:01.769Z"
       }
     }
   },

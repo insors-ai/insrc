@@ -355,6 +355,8 @@ tracker.syncComments is the single entry; the build phases are left alone.
   - **resolved**: Accept the marker line — Approved with the LLD (option A). _(2026-10-21T20:17:20.218Z)_
 - `q8ba3793b` — The comment commands are /revise and revision: for a revision request, /suggest and suggestion: for a suggestion, on the first line only. Resolve: accept these forms (recommended), or name other words.
   - **resolved**: Accept the proposed forms — Approved with the LLD (option A). _(2026-10-21T20:17:45.336Z)_
+- `q467f5e67` — A Story's comments are recorded on the artifact that holds its binding, the LLD, until s9 gives the Story its own artifact. Resolve: accept and record the move for s9 in docs/plans/core-data-model.md (recommended), or record Story comments only once the Story artifact exists.
+  - **resolved**: Record on LLD now; note the s9 move — Approved with the LLD (option A). _(2026-10-21T20:18:01.769Z)_
 
 ## Citations
 

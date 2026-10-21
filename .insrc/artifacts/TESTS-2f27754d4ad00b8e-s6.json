@@ -1,0 +1,701 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s6",
+    "createdAt": "2026-10-21T15:43:51.977Z",
+    "updatedAt": "2026-10-21T16:27:34.958Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "983c6453",
+        "ranAt": "2026-10-21T15:43:51.977Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "github-comments.test.ts: the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-comments.test.ts",
+                "title": "the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/github-comments.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 614,
+            "titles": [
+              {
+                "title": "the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "42069538",
+        "ranAt": "2026-10-21T15:46:43.391Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "binding-carry.test.ts: a content write by the store keeps the binding and attachments on disk, a first write keeps what the caller gave, and the carry leaves the revision number and content hash alone",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/binding-carry.test.ts",
+                "title": "a content write by the store keeps the binding and attachments on disk, a first write keeps what the caller gave, and the carry leaves the revision number and content hash alone",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/binding-carry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1259,
+            "titles": [
+              {
+                "title": "a content write by the store keeps the binding and attachments on disk, a first write keeps what the caller gave, and the carry leaves the revision number and content hash alone",
+                "result": "pass"
+              },
+              {
+                "title": "binding-carry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "f0415cc2",
+        "ranAt": "2026-10-21T15:50:38.996Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "binding.test.ts: bindArtifact writes the typed binding with createdAtRevision, leaves the revision number and content hash unchanged, is idempotent for the same issue, refuses a different issue, and readBinding returns undefined for an unbound artifact",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/binding.test.ts",
+                "title": "bindArtifact writes the typed binding with createdAtRevision, leaves the revision number and content hash unchanged, is idempotent for the same issue, refuses a different issue, and readBinding returns undefined for an unbound artifact",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "binding.test.ts: recordPosted and setPendingLink record one entry per kind and a pending link that names a child ref or a child id, never twice, and without moving the revision",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/binding.test.ts",
+                "title": "recordPosted and setPendingLink record one entry per kind and a pending link that names a child ref or a child id, never twice, and without moving the revision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "binding-staged.test.ts: a binding, post or attachment patch is refused while the store has a write staged for the artifact, and the staged write then completes with no head-changed-after-stage conflict",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/binding-staged.test.ts",
+                "title": "a binding, post or attachment patch is refused while the store has a write staged for the artifact, and the staged write then completes with no head-changed-after-stage conflict",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "artifact-write-inventory.test.ts: the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4191,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              },
+              {
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised",
+                "result": "pass"
+              },
+              {
+                "title": "the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the identity file writer is classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/binding-staged.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1273,
+            "titles": [
+              {
+                "title": "a binding, post or attachment patch is refused while the store has a write staged for the artifact, and the staged write then completes with no head-changed-after-stage conflict",
+                "result": "pass"
+              },
+              {
+                "title": "binding-staged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/binding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1313,
+            "titles": [
+              {
+                "title": "bindArtifact writes the typed binding with createdAtRevision, leaves the revision number and content hash unchanged, is idempotent for the same issue, refuses a different issue, and readBinding returns undefined for an unbound artifact",
+                "result": "pass"
+              },
+              {
+                "title": "recordPosted and setPendingLink record one entry per kind and a pending link that names a child ref or a child id, never twice, and without moving the revision",
+                "result": "pass"
+              },
+              {
+                "title": "binding",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "43d874f8",
+        "ranAt": "2026-10-21T15:56:12.876Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "attach.test.ts: attachDocuments builds a link to the file at the last commit that touched it, refuses a dirty or untracked file, skips a recorded (target, revision), adds a new link for a new commit and keeps the old attachment, and records a link found already posted without posting it again",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/attach.test.ts",
+                "title": "attachDocuments builds a link to the file at the last commit that touched it, refuses a dirty or untracked file, skips a recorded (target, revision), adds a new link for a new commit and keeps the old attachment, and records a link found already posted without posting it again",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "artifact-write-inventory.test.ts: the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4385,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              },
+              {
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised",
+                "result": "pass"
+              },
+              {
+                "title": "the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the identity file writer is classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/attach.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1571,
+            "titles": [
+              {
+                "title": "attachDocuments builds a link to the file at the last commit that touched it, refuses a dirty or untracked file, skips a recorded (target, revision), adds a new link for a new commit and keeps the old attachment, and records a link found already posted without posting it again",
+                "result": "pass"
+              },
+              {
+                "title": "attach",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "274e6699",
+        "ranAt": "2026-10-21T16:02:14.809Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "unit-issue-binding.test.ts: ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue-binding.test.ts",
+                "title": "ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "unit-issue-binding.test.ts: a failed link under the parent is stored as the binding's pending link, retried by the next ensure, cleared once done and not retried again",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue-binding.test.ts",
+                "title": "a failed link under the parent is stored as the binding's pending link, retried by the next ensure, cleared once done and not retried again",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "unit-issue-binding.test.ts: the draft hook and the handoff check read the binding for an Epic or Story unit, and a pre-s6 head with only the old ref is rebound once from it with no new issue",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue-binding.test.ts",
+                "title": "the draft hook and the handoff check read the binding for an Epic or Story unit, and a pre-s6 head with only the old ref is rebound once from it with no new issue",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "binding-gate.test.ts: the team gate resolves a bound unit's issue synchronously from the binding with no tracker call",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/binding-gate.test.ts",
+                "title": "the team gate resolves a bound unit's issue synchronously from the binding with no tracker call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/binding-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 594,
+            "titles": [
+              {
+                "title": "the team gate resolves a bound unit's issue synchronously from the binding with no tracker call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/unit-issue-binding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 839,
+            "titles": [
+              {
+                "title": "ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan",
+                "result": "pass"
+              },
+              {
+                "title": "a failed link under the parent is stored as the binding's pending link, retried by the next ensure, cleared once done and not retried again",
+                "result": "pass"
+              },
+              {
+                "title": "the draft hook and the handoff check read the binding for an Epic or Story unit, and a pre-s6 head with only the old ref is rebound once from it with no new issue",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "b651ab94",
+        "ranAt": "2026-10-21T16:04:14.989Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "unit-issue-bind-failures.test.ts: two racing creates for one unit bind the lowest-numbered issue once, close the other as a duplicate, and keep the created issue when the duplicate check cannot list",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue-bind-failures.test.ts",
+                "title": "two racing creates for one unit bind the lowest-numbered issue once, close the other as a duplicate, and keep the created issue when the duplicate check cannot list",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "unit-issue-bind-failures.test.ts: a malformed binding makes ensureUnitIssueDetailed fail before creating anything and leaves the store read of that artifact failing until repaired",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue-bind-failures.test.ts",
+                "title": "a malformed binding makes ensureUnitIssueDetailed fail before creating anything and leaves the store read of that artifact failing until repaired",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "unit-issue-bind-failures.test.ts: a bind that fails to write after the issue was created returns ok with the issue, leaves the unit unsettled so the draft hook reports it, and the next ensure binds it by label",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue-bind-failures.test.ts",
+                "title": "a bind that fails to write after the issue was created returns ok with the issue, leaves the unit unsettled so the draft hook reports it, and the next ensure binds it by label",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/unit-issue-bind-failures.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1147,
+            "titles": [
+              {
+                "title": "two racing creates for one unit bind the lowest-numbered issue once, close the other as a duplicate, and keep the created issue when the duplicate check cannot list",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed binding makes ensureUnitIssueDetailed fail before creating anything and leaves the store read of that artifact failing until repaired",
+                "result": "pass"
+              },
+              {
+                "title": "a bind that fails to write after the issue was created returns ok with the issue, leaves the unit unsettled so the draft hook reports it, and the next ensure binds it by label",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "a487a456",
+        "ranAt": "2026-10-21T16:10:27.911Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "unit-extras.test.ts: runUnitExtras skips a kind already in the binding, reconciles a comment step through its marker without posting, reads the comment list once for several steps, fails a step when the list cannot be read, and reports a post whose record failed so the next run reconciles it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-extras.test.ts",
+                "title": "runUnitExtras skips a kind already in the binding, reconciles a comment step through its marker without posting, reads the comment list once for several steps, fails a step when the list cannot be read, and reports a post whose record failed so the next run reconciles it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tracker-posts-once.test.ts: the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/tracker-posts-once.test.ts",
+                "title": "the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/tracker-posts-once.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1157,
+            "titles": [
+              {
+                "title": "the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/unit-extras.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1012,
+            "titles": [
+              {
+                "title": "runUnitExtras skips a kind already in the binding, reconciles a comment step through its marker without posting, reads the comment list once for several steps, fails a step when the list cannot be read, and reports a post whose record failed so the next run reconciles it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "e5fd592a",
+        "ranAt": "2026-10-21T16:15:53.339Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "tracker-push-modes.test.ts: the three approve-time pushes run one path in team mode and in individual mode: each binds the Epic or Story, posts each comment once, retries a pending link, individual mode keeps its pushTasks policy and makes no claim, and a repository with no tracker has no binding",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/tracker-push-modes.test.ts",
+                "title": "the three approve-time pushes run one path in team mode and in individual mode: each binds the Epic or Story, posts each comment once, retries a pending link, individual mode keeps its pushTasks policy and makes no claim, and a repository with no tracker has no binding",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/tracker-push-modes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1505,
+            "titles": [
+              {
+                "title": "the three approve-time pushes run one path in team mode and in individual mode: each binds the Epic or Story, posts each comment once, retries a pending link, individual mode keeps its pushTasks policy and makes no claim, and a repository with no tracker has no binding",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "6c8b5dd5",
+        "ranAt": "2026-10-21T16:26:01.003Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "approve-attach.test.ts: approve() attaches the approved HLD, LLD and plan documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, skips attachment with a stated reason when commitArtifacts is false, and tracker.attach attaches a diagram companion or any target refused as uncommitted once it is committed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/approve-attach.test.ts",
+                "title": "approve() attaches the approved HLD, LLD and plan documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, skips attachment with a stated reason when commitArtifacts is false, and tracker.attach attaches a diagram companion or any target refused as uncommitted once it is committed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tracker-attach-followon.test.ts: the BUILD approval's follow-on attaches the build, review and test records that git reports clean and reports the dirty ones, and the daemon workflow.approve commits nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/tracker-attach-followon.test.ts",
+                "title": "the BUILD approval's follow-on attaches the build, review and test records that git reports clean and reports the dirty ones, and the daemon workflow.approve commits nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tracker-attach-followon.test.ts: the design document, plan and build, review and test records are attached to the unit's issue with a link per revision",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/tracker-attach-followon.test.ts",
+                "title": "the design document, plan and build, review and test records are attached to the unit's issue with a link per revision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/approve-attach.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1986,
+            "titles": [
+              {
+                "title": "approve() attaches the approved HLD, LLD and plan documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, skips attachment with a stated reason when commitArtifacts is false, and tracker.attach attaches a diagram companion or any target refused as uncommitted once it is committed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/tracker-attach-followon.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1964,
+            "titles": [
+              {
+                "title": "the BUILD approval's follow-on attaches the build, review and test records that git reports clean and reports the dirty ones, and the daemon workflow.approve commits nothing",
+                "result": "pass"
+              },
+              {
+                "title": "the design document, plan and build, review and test records are attached to the unit's issue with a link per revision",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "6a03b146",
+        "ranAt": "2026-10-21T16:27:34.958Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s6-handoffs.test.ts: the plans document names each s6 hand-off to s7 and s9 and each carve-out this Story chose",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/s6-handoffs.test.ts",
+                "title": "the plans document names each s6 hand-off to s7 and s9 and each carve-out this Story chose",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/s6-handoffs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1350,
+            "titles": [
+              {
+                "title": "the plans document names each s6 hand-off to s7 and s9 and each carve-out this Story chose",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

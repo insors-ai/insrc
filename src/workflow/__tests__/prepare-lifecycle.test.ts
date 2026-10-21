@@ -52,6 +52,8 @@ describe('prepareArtifactWrite with meta.lifecycle', () => {
 			assert.equal(metaChange.contentChanged, false);
 			assert.equal(metaChange.revision, 1);
 			assert.equal(parse(metaChange.bytes).meta.lifecycle.revision.at, T0);
+			assert.equal(parse(metaChange.bytes).meta.lifecycle.revision.number, 1);
+			assert.equal(parse(metaChange.bytes).meta.lifecycle.revision.by.id, 'github:alice');
 			const reordered = { citations: [], body: { text: 'one' }, meta: head('one', { lifecycle: created.meta.lifecycle }).meta };
 			const reorder = prepareArtifactWrite(path, reordered, 'content', { by: bob, at: T1 });
 			assert.equal(reorder.contentChanged, false);
@@ -74,6 +76,20 @@ describe('prepareArtifactWrite with meta.lifecycle', () => {
 			assert.equal(metaOnly.revision, 1);
 			assert.equal(metaOnly.contentChanged, false);
 			assert.equal(parse(metaOnly.bytes).meta.lifecycle.status, 'approved');
+
+			// a meta-only write of changed content leaves the lifecycle as given and the revision alone
+			const metaOnlyChanged = prepareArtifactWrite(path, head('three', { lifecycle: approved }), 'meta-only', opts);
+			assert.equal(metaOnlyChanged.revision, 1);
+			assert.equal(parse(metaOnlyChanged.bytes).meta.lifecycle.status, 'approved');
+
+			// a head without meta.lifecycle is prepared as before: legacy comparison, no lifecycle added
+			const legacy = join(dir, 'legacy.json');
+			const l1 = prepareArtifactWrite(legacy, head('one'), 'content');
+			assert.equal(l1.revision, 1);
+			assert.equal('lifecycle' in parse(l1.bytes).meta, false);
+			writeArtifact(legacy, head('one'), 'content');
+			assert.equal(prepareArtifactWrite(legacy, head('one'), 'content').contentChanged, false);
+			assert.equal(prepareArtifactWrite(legacy, head('one', { extra: { note: 'n' } }), 'content').revision, 2);
 
 			// the default actor and clock apply when no opts are given
 			const dflt = parse(prepareArtifactWrite(join(dir, 'b.json'), head('x', { lifecycle: lc() }), 'content').bytes);

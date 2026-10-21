@@ -4,10 +4,11 @@
     "epicHash": "2f27754d4ad00b8e",
     "storyId": "s5",
     "createdAt": "2026-10-21T12:07:40.117Z",
-    "updatedAt": "2026-10-21T12:52:38.863Z",
+    "updatedAt": "2026-10-21T13:22:58.565Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-19T09:22:37.764Z",
-    "epicSlug": "one-common-model-every-artifact"
+    "epicSlug": "one-common-model-every-artifact",
+    "approvedAt": "2026-10-21T13:23:03.776Z"
   },
   "body": {
     "tasks": [
@@ -58,229 +59,243 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/CR-2f27754d4ad00b8e-s5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T13:22:58.565Z"
+      },
+      {
+        "target": {
           "file": ".insrc/artifacts/PLAN-2f27754d4ad00b8e-s5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S005/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "docs/plans/core-data-model.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/artifact-feedback-handler-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/feedback-wiring.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/daemon/feedback-handlers.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/daemon/lifecycle-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/phases/verdicts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/artifact-write-inventory.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/review-decision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/__tests__/addresses-rule.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/__tests__/automated-writers-addresses.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/__tests__/feedback-reply-shape.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/decode.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/history.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/lifecycle-service.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-write-inventory.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/feedback/__tests__/feedback-merge.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/feedback/__tests__/feedback-service.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/feedback/__tests__/feedback-storage.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/feedback/__tests__/feedback-threads.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/feedback/feedback-service.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/feedback/legacy-anchor.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/feedback/threads.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/identity/__tests__/gate-identity.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/identity/__tests__/identity-service.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/identity/identity-service.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/review-decision.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/review/run-artifact.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/round-writer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T12:52:38.863Z"
+        "timestamp": "2026-10-21T13:22:58.565Z"
       }
     ],
-    "commit": "87b58b47"
+    "commit": "46472cdc"
   }
 }

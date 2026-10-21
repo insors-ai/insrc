@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s5
 
-**Standalone:** no  ·  **Created:** 2026-10-21T12:07:40.117Z  ·  **Updated:** 2026-10-21T12:52:38.863Z
+**Standalone:** no  ·  **Created:** 2026-10-21T12:07:40.117Z  ·  **Updated:** 2026-10-21T13:22:58.565Z
 
-**Commit:** 87b58b47
+**Commit:** 46472cdc
 
 ## Tasks validated
 
@@ -23,35 +23,37 @@
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-2f27754d4ad00b8e-s5.json` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `docs/plans/core-data-model.md` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/daemon/__tests__/artifact-feedback-handler-contract.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/daemon/__tests__/feedback-wiring.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/daemon/feedback-handlers.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/daemon/index.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/daemon/lifecycle-registry.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/daemon/steps/review-step/phases/verdicts.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/__tests__/artifact-write-inventory.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/__tests__/review-decision.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/artifact-core/__tests__/addresses-rule.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/artifact-core/__tests__/automated-writers-addresses.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/artifact-core/__tests__/feedback-reply-shape.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/artifact-core/decode.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/artifact-core/history.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/artifact-core/lifecycle-service.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/artifact-core/store.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/artifact-core/types.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/artifact-write-inventory.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/feedback/__tests__/feedback-merge.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/feedback/__tests__/feedback-service.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/feedback/__tests__/feedback-storage.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/feedback/__tests__/feedback-threads.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/feedback/feedback-service.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/feedback/legacy-anchor.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/feedback/threads.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/identity/__tests__/gate-identity.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/identity/__tests__/identity-service.test.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/identity/identity-service.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/review-decision.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/review/run-artifact.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
-- `src/workflow/runners/build/round-writer.ts` — **insrc-build** (2026-10-21T12:52:38.863Z)
+- `.insrc/artifacts/CR-2f27754d4ad00b8e-s5.json` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `.insrc/artifacts/PLAN-2f27754d4ad00b8e-s5.json` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `docs/epics/one-common-model-every-artifact-E202610192f27754d/S005/CR.md` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `docs/plans/core-data-model.md` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/daemon/__tests__/artifact-feedback-handler-contract.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/daemon/__tests__/feedback-wiring.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/daemon/feedback-handlers.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/daemon/index.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/daemon/lifecycle-registry.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/daemon/steps/review-step/phases/verdicts.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/__tests__/artifact-write-inventory.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/__tests__/review-decision.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/artifact-core/__tests__/addresses-rule.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/artifact-core/__tests__/automated-writers-addresses.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/artifact-core/__tests__/feedback-reply-shape.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/artifact-core/decode.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/artifact-core/history.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/artifact-core/lifecycle-service.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/artifact-core/store.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/artifact-core/types.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/artifact-write-inventory.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/feedback/__tests__/feedback-merge.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/feedback/__tests__/feedback-service.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/feedback/__tests__/feedback-storage.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/feedback/__tests__/feedback-threads.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/feedback/feedback-service.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/feedback/legacy-anchor.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/feedback/threads.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/identity/__tests__/gate-identity.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/identity/__tests__/identity-service.test.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/identity/identity-service.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/review-decision.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/review/run-artifact.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)
+- `src/workflow/runners/build/round-writer.ts` — **insrc-build** (2026-10-21T13:22:58.565Z)

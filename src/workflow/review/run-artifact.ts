@@ -15,11 +15,14 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
+import { basename } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
 import { headConflict } from '../gates.js';
+import type { LifecycleService } from '../artifact-core/lifecycle-service.js';
 import { LifecycleConflictError } from '../artifact-core/types.js';
+import type { Actor } from '../artifact-core/types.js';
 import { writeArtifact, writeAtomic } from '../storage.js';
 import { applyAutoFixes, pendingUserFindings } from './apply.js';
 import { reviewFixModeFor } from '../team/approval-gate.js';
@@ -50,6 +53,13 @@ export interface ReviewArtifactOpts {
 	/** Reads a repository's indexed entities for the source roots. Passed by a
 	 *  caller outside the daemon (the CLI), which may not open the store. */
 	readonly readEntitiesForRepo?: EntitiesForRepoReader | undefined;
+	/**
+	 * The lifecycle service. With it the full integrity check (the head against its change log) runs before the review, and the
+	 * log is brought in step with the auto-fix write right after it, so the next approval is not refused as head-ahead-of-log.
+	 */
+	readonly lifecycle?: LifecycleService | undefined;
+	/** The actor the service records; the review itself when absent. */
+	readonly actor?: Actor | undefined;
 }
 
 export interface ReviewArtifactResult {
@@ -79,6 +89,12 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 	// A head whose stored content hash no longer matches its content is not reviewed or stamped until a person resolves it.
 	const conflict = headConflict(opts.jsonPath);
 	if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
+	const artifactId = basename(opts.jsonPath).replace(/\.json$/, '');
+	const reviewer: Actor = opts.actor ?? { id: 'insrc:review', kind: 'system', properties: {} };
+	if (opts.lifecycle !== undefined) {
+		const seen = await opts.lifecycle.inspect(artifactId);
+		if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
+	}
 
 	const artifact = JSON.parse(readFileSync(opts.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
 	const stage = typeof artifact.meta.workflow === 'string' ? artifact.meta.workflow : 'unknown';
@@ -127,6 +143,8 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 	const nextJson = { ...artifact, meta: { ...artifact.meta, review: stamped }, body: fixed.body };
 	// auto-fixes change the body (content); a report-only review changes only meta.
 	writeArtifact(opts.jsonPath, nextJson, fixed.applied.length > 0 ? 'content' : 'meta-only');
+	// The write above is outside the store, so the change log is brought in step with it here.
+	if (opts.lifecycle !== undefined) await opts.lifecycle.recordWrite(artifactId, reviewer);
 	const nextMd = `${fixed.markdown.replace(/\s+$/, '')}\n\n${REVIEW_SECTION}\n\n## Review\n\n${renderReviewReport(report)}\n`;
 	// raw-write: markdown render of the review.
 	writeAtomic(opts.mdPath, nextMd);

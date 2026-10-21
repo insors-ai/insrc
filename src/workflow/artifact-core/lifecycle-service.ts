@@ -12,18 +12,24 @@
 import { ArtifactIds } from '../artifact-ids.js';
 import { getLogger } from '../../shared/logger.js';
 import { checkIntegrity, isLifecycleOperation, nextLifecycle, rollUp, unitMembers } from './lifecycle.js';
-import type { ChildStatusReader, CompletionEvidence, TransitionDetail } from './lifecycle.js';
+import type { ChildStatusReader, CompletionEvidence, Integrity, TransitionDetail } from './lifecycle.js';
 import type { ArtifactStore, WriteOptions } from './store.js';
 import {
 	ArtifactNotFoundError, IllegalTransitionError, LifecycleConflictError,
 } from './types.js';
-import type { Actor, ChangeLogEntry, Lifecycle, Operation } from './types.js';
+import type { Actor, ChangeLogEntry, Lifecycle, Operation, Status } from './types.js';
 
 const log = getLogger('lifecycle-service');
 
+/** What one call knows that the service does not: the override reason the approval in hand carries. */
+export interface EvidenceContext {
+	readonly overrideReview?: string | undefined;
+}
+
 export interface LifecycleServiceDeps {
 	readonly store:    ArtifactStore;
-	readonly evidence: CompletionEvidence;
+	/** The evidence, or a factory that builds it per call from the call's context (the approval's override reason). */
+	readonly evidence: CompletionEvidence | ((ctx: EvidenceContext) => CompletionEvidence);
 	readonly now?:     (() => Date) | undefined;
 }
 
@@ -54,7 +60,8 @@ export class LifecycleService {
 	}
 
 	/** Apply one lifecycle operation. Writes and logs nothing when it throws before the write. */
-	async apply(id: string, op: Operation, by: Actor, detail: TransitionDetail = {}): Promise<ApplyResult> {
+	async apply(id: string, op: Operation, by: Actor, detail: TransitionDetail = {}, ctx: EvidenceContext = {}): Promise<ApplyResult> {
+		const evidence = this.evidenceFor(ctx);
 		if (!isLifecycleOperation(op)) throw new IllegalTransitionError(`'${op}' is a content operation, not a lifecycle operation`);
 		const store = this.deps.store;
 		const key = ArtifactIds.parse(id);
@@ -73,7 +80,7 @@ export class LifecycleService {
 			if (op === 'complete') {
 				const done = this.standingCompletion(changeLog);
 				if (done !== undefined && head.lifecycle.status === 'completed') { standing = { lifecycle: head.lifecycle, entry: done }; return undefined; }
-				if (isUnit && (await rollUp(id, this.reader, this.deps.evidence)) !== 'completed') {
+				if (isUnit && (await rollUp(id, this.reader, evidence)) !== 'completed') {
 					throw new IllegalTransitionError(`${id} cannot be completed: its completion condition is not met`);
 				}
 			}
@@ -86,7 +93,7 @@ export class LifecycleService {
 			let outcome: WriteOptions['outcome'];
 			if (op === 'complete') {
 				for (const member of members) await this.completeMember(member, id, by);
-				outcome = await this.completionOutcome(id);
+				outcome = await this.completionOutcome(id, evidence);
 			} else if (op === 'reopen') {
 				for (const member of members) await this.reopenMember(member, id, by);
 			} else if (op === 'approve' && detail.override !== undefined) {
@@ -118,23 +125,49 @@ export class LifecycleService {
 	 * Starting at `id`, complete every unit whose roll-up is true: a Task, then its Story, then its Epic. A unit whose roll-up is
 	 * not true is left alone and stops the walk; so does a unit with no head. Answers the ids completed by this call.
 	 */
-	async completeIfRolledUp(id: string, by: Actor): Promise<{ completed: string[] }> {
+	async completeIfRolledUp(id: string, by: Actor, ctx: EvidenceContext = {}): Promise<{ completed: string[] }> {
+		const evidence = this.evidenceFor(ctx);
 		const completed: string[] = [];
 		let next: string | undefined = id;
 		while (next !== undefined) {
 			const key = ArtifactIds.parse(next);
 			if (key === undefined) throw new IllegalTransitionError(`'${next}' is not an artifact id`);
-			if ((await rollUp(next, this.reader, this.deps.evidence)) !== 'completed') break;
+			if ((await rollUp(next, this.reader, evidence)) !== 'completed') break;
 			const status = await this.reader.statusOf(next);
 			if (status === undefined) break;
 			if (status !== 'completed') {
-				const result = await this.apply(next, 'complete', by);
+				const result = await this.apply(next, 'complete', by, {}, ctx);
 				if (result.recorded) completed.push(next);
 			}
 			const parent = ArtifactIds.parentOf(key);
 			next = parent === undefined ? undefined : ArtifactIds.make(parent);
 		}
 		return { completed };
+	}
+
+	/**
+	 * The status of a head and whether it and its log agree (the full check, against the last revision-bearing entry);
+	 * undefined when there is no head.
+	 */
+	async inspect(id: string): Promise<{ readonly status: Status; readonly integrity: Integrity; readonly lifecycle: Lifecycle } | undefined> {
+		try {
+			const stored = await this.deps.store.readWithHistory(id);
+			const tail = [...stored.changeLog].reverse().find(e => e.revision !== undefined);
+			const integrity = checkIntegrity({ description: stored.description, payload: stored.payload, lifecycle: stored.lifecycle }, tail);
+			return { status: stored.lifecycle.status, integrity, lifecycle: stored.lifecycle };
+		} catch (err) {
+			if (err instanceof ArtifactNotFoundError) return undefined;
+			throw err;
+		}
+	}
+
+	/** Bring the log in step with a head that a writer outside the store has just changed. */
+	recordWrite(id: string, by: Actor): Promise<boolean> {
+		return this.deps.store.recordExternalWrite(id, by);
+	}
+
+	private evidenceFor(ctx: EvidenceContext): CompletionEvidence {
+		return typeof this.deps.evidence === 'function' ? this.deps.evidence(ctx) : this.deps.evidence;
 	}
 
 	private at(): string { return (this.deps.now ?? (() => new Date()))().toISOString(); }
@@ -150,10 +183,10 @@ export class LifecycleService {
 	}
 
 	/** The outcome of a unit's complete entry; it carries the code-review override reason when the review was overridden. */
-	private async completionOutcome(id: string): Promise<NonNullable<WriteOptions['outcome']>> {
+	private async completionOutcome(id: string, evidence: CompletionEvidence): Promise<NonNullable<WriteOptions['outcome']>> {
 		const key = ArtifactIds.parse(id);
 		if (key?.kind === 'STORY' && key.story !== undefined) {
-			const review = await this.deps.evidence.storyCodeReview(key.epicHash, key.story);
+			const review = await evidence.storyCodeReview(key.epicHash, key.story);
 			if (review.kind === 'overridden') {
 				return { result: 'completed', summary: `completed with a code-review override: ${review.overrideReason ?? ''}`, data: { codeReviewOverride: review.overrideReason ?? '' } };
 			}

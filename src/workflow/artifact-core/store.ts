@@ -181,6 +181,35 @@ export class ArtifactStore {
 		});
 	}
 
+	/**
+	 * Bring the log in step with a head that a writer outside the store (`writeArtifact`: the BUILD record hook, the review
+	 * auto-fix) has just changed: append the revision-bearing entry the store would have written. Does nothing when the head
+	 * has no stored hash (a legacy head) or the last revision-bearing entry already names the head's revision and hash.
+	 * Answers whether an entry was appended.
+	 */
+	async recordExternalWrite(id: string, by: Actor): Promise<boolean> {
+		if (ArtifactIds.parse(id) === undefined) throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);
+		return this.enqueue(id, async () => {
+			await this.completePending(id, artifactJsonPath(this.deps.repoPath, id));
+			const head = await this.read(id).catch(err => { if (err instanceof ArtifactNotFoundError) return undefined; throw err; });
+			if (head === undefined || head.lifecycle.revision.contentHash === '') return false;
+			const { number, contentHash } = head.lifecycle.revision;
+			const tail = [...(await this.deps.history.log(id))].reverse().find(e => e.revision !== undefined);
+			if (tail?.revision?.number === number && tail.revision.contentHash === contentHash) return false;
+			const entry: ChangeLogEntry = {
+				id: randomUUID().replace(/-/g, ''),
+				actor: by,
+				timestamp: (this.deps.now ?? (() => new Date()))().toISOString(),
+				operation: 'update',
+				revision: { number, contentHash },
+				outcome: { result: 'external-write', summary: 'the head was rewritten by a writer outside the store' },
+			};
+			validateLogEntry(entry);
+			await this.deps.history.appendLog(id, entry);
+			return true;
+		});
+	}
+
 	/** One write at a time per artifact in this process: recovery, stage, append and replace must not interleave. */
 	private async enqueue<T>(id: string, run: () => Promise<T>): Promise<T> {
 		const lockKey = `${this.deps.repoPath}\0${id}`;

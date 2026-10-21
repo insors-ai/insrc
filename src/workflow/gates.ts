@@ -35,8 +35,10 @@ import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
 import type { PlanArtifact } from './artifacts/plan.js';
 import { decodeArtifactHead } from './artifact-core/decode.js';
 import { checkHeadIntegrity } from './artifact-core/lifecycle.js';
-import { LifecycleConflictError } from './artifact-core/types.js';
-import type { IntegrityReason } from './artifact-core/types.js';
+import type { LifecycleService } from './artifact-core/lifecycle-service.js';
+import { IllegalTransitionError, LifecycleConflictError, ReviewRequiredError } from './artifact-core/types.js';
+import type { Actor, IntegrityReason } from './artifact-core/types.js';
+import { ArtifactIds } from './artifact-ids.js';
 import { isSpecBody } from './artifacts/spec.js';
 import type { SpecArtifact } from './artifacts/spec.js';
 import { authorPartyOf, reviewerPartyOf } from './review/party.js';
@@ -787,6 +789,15 @@ export interface WorkflowApproveRequest {
 	readonly artifactPath?:  string;
 	readonly epicHash?:      string;
 	readonly overrideReview?: string;
+	/**
+	 * The lifecycle service. With it the full integrity check (the head against the change log) runs before a BUILD record is
+	 * touched or anything is stamped, the approval is also applied through the service, the log is kept in step with the BUILD
+	 * record hook, and a BUILD approval completes the Story (and then the Epic) once its roll-up is true. Without it the gates
+	 * run the synchronous head-only check and behave as before.
+	 */
+	readonly lifecycle?:     LifecycleService | undefined;
+	/** The actor the service records; the approval gate itself when absent. */
+	readonly actor?:         Actor | undefined;
 }
 
 /** The code-review gate outcome for a single story-scoped artifact, projected
@@ -854,6 +865,33 @@ function pendingArtifactJsonPaths(repoPath: string, epicHash: string): string[] 
 	return out;
 }
 
+const GATE_ACTOR: Actor = { id: 'insrc:approval', kind: 'system', properties: {} };
+const artifactIdOf = (jsonPath: string): string => basename(jsonPath).replace(/\.json$/, '');
+const REVIEWED_KINDS: readonly string[] = ['DEF', 'HLD', 'LLD'];
+
+/**
+ * A DEF, HLD or LLD is approved by the lifecycle only against a review bound to its revision. The review a design stage
+ * stamps is still `meta.review`, so it is mirrored onto `lifecycle.review` first (the verdict after the user's resolutions).
+ */
+async function mirrorLegacyReview(lifecycle: LifecycleService, jsonPath: string): Promise<void> {
+	const id = artifactIdOf(jsonPath);
+	if (!REVIEWED_KINDS.includes(ArtifactIds.parse(id)?.kind ?? '')) return;
+	const seen = await lifecycle.inspect(id);
+	if (seen === undefined || seen.status !== 'draft' || seen.lifecycle.review?.revision === seen.lifecycle.revision.number) return;
+	const meta = (readJsonOrUndefined(jsonPath) as { meta?: { review?: ReviewReport; reviewResolutions?: Record<string, ReviewResolution> } } | undefined)?.meta;
+	const review = meta?.review;
+	if (review === undefined) return;
+	const reviewerParty = reviewerPartyOf(review);
+	const party = reviewerParty === 'daemon' ? 'daemon' : 'controller';
+	await lifecycle.apply(id, 'review', { id: `insrc:${party}`, kind: 'agent', properties: {} }, {
+		review: {
+			reviewer: { id: `insrc:${party}`, kind: 'agent', properties: {} }, party,
+			verdict: effectiveReviewVerdict(review, meta?.reviewResolutions),
+			counts: { high: review.counts.high, med: review.counts.med, low: review.counts.low },
+		},
+	});
+}
+
 /** Approve a single artifact or a whole epic's pending set — daemon-safe (no
  *  cli/services dependency). Each artifact goes through approveArtifactByJsonPath
  *  (the review block-verdict gate), so a `ReviewBlockedError` routes the artifact
@@ -886,7 +924,49 @@ export async function approveWorkflowTarget(
 		return true;
 	};
 
-	const approveOne = (jsonPath: string): void => {
+	const lifecycle = req.lifecycle;
+	const actor = req.actor ?? GATE_ACTOR;
+	/** With a service: the head and its change log must agree before a BUILD record is touched or anything is stamped. */
+	const refuseLogConflict = async (jsonPath: string): Promise<boolean> => {
+		if (lifecycle === undefined) return false;
+		const seen = await lifecycle.inspect(artifactIdOf(jsonPath));
+		if (seen === undefined || seen.integrity.ok) return false;
+		skipped.push({ path: jsonPath, reason: new LifecycleConflictError(artifactIdOf(jsonPath), seen.integrity.reason).message });
+		return true;
+	};
+	/** The BUILD record hook rewrites the record outside the store, so the log is brought in step right after it. */
+	const runBuildHook = async (jsonPath: string): Promise<void> => {
+		const ref = buildRefFor(jsonPath);
+		if (ref !== undefined) await ensureBuildRecordOnCompletion(req.repoPath, ref);
+		if (lifecycle !== undefined) await lifecycle.recordWrite(artifactIdOf(jsonPath), actor);
+	};
+	/** With a service: apply the approval through it once the legacy gates have passed, then complete what the BUILD approval finishes. */
+	const applyThroughService = async (jsonPath: string): Promise<boolean> => {
+		if (lifecycle === undefined) return true;
+		const id = artifactIdOf(jsonPath);
+		const ctx = { overrideReview: req.overrideReview };
+		try {
+			await mirrorLegacyReview(lifecycle, jsonPath);
+			const seen = await lifecycle.inspect(id);
+			if (seen !== undefined && seen.status === 'draft') {
+				await lifecycle.apply(id, 'approve', actor, req.overrideReview !== undefined && req.overrideReview.length > 0 ? { override: { reason: req.overrideReview } } : {}, ctx);
+			}
+		} catch (err) {
+			if (err instanceof ReviewRequiredError || err instanceof IllegalTransitionError || err instanceof LifecycleConflictError) {
+				approved.pop();
+				skipped.push({ path: jsonPath, reason: err.message });
+				return false;
+			}
+			throw err;
+		}
+		const key = ArtifactIds.parse(id);
+		if (key?.kind === 'BUILD' && key.story !== undefined) {
+			await lifecycle.completeIfRolledUp(ArtifactIds.make({ kind: 'STORY', epicHash: key.epicHash, story: key.story }), actor, ctx);
+		}
+		return true;
+	};
+
+	const approveOne = async (jsonPath: string): Promise<void> => {
 		// A test record carries an Epic and a Story in its meta, so without this it
 		// would be put through the code-review gate below and come back with that
 		// gate's outcome. It is refused first, by kind, with no code-review outcome.
@@ -894,6 +974,7 @@ export async function approveWorkflowTarget(
 			skipped.push({ path: jsonPath, reason: NOT_APPROVABLE_REASON });
 			return;
 		}
+		if (await refuseLogConflict(jsonPath)) return;
 		// Code-review gate: a SEPARATE check over the CODE review's body.verdict —
 		// runs BEFORE the meta.review approve and never merges into it. Story-scoped
 		// artifacts (meta.epicHash && meta.storyId) only; a `blocked` verdict
@@ -918,6 +999,7 @@ export async function approveWorkflowTarget(
 		}
 		try {
 			approved.push({ path: jsonPath, result: approveArtifactByJsonPath(jsonPath, approveOpts) });
+			await applyThroughService(jsonPath);
 		} catch (err) {
 			if (err instanceof ReviewBlockedError) {
 				skipped.push({ path: jsonPath, reason: err.summary });
@@ -940,11 +1022,11 @@ export async function approveWorkflowTarget(
 			// Authorize BEFORE the record is created or merged: a refused target changes nothing.
 			if (refuseBeforeRecord(jsonPath)) return { approved, skipped, codeReview };
 			if (refuseConflict(jsonPath)) return { approved, skipped, codeReview };
-			const ref = buildRefFor(jsonPath);
-			if (ref !== undefined) await ensureBuildRecordOnCompletion(req.repoPath, ref);
+			if (await refuseLogConflict(jsonPath)) return { approved, skipped, codeReview };
+			await runBuildHook(jsonPath);
 		}
 		if (!existsSync(jsonPath)) throw new ArtifactMissingError(`No artifact at ${jsonPath}`);
-		approveOne(jsonPath);
+		await approveOne(jsonPath);
 	} else if (req.epicHash !== undefined) {
 		const pending = pendingArtifactJsonPaths(req.repoPath, req.epicHash);
 		if (pending.length === 0) throw new NoPendingArtifactsError(`No pending artifacts under epic ${req.epicHash} to approve`);
@@ -952,10 +1034,10 @@ export async function approveWorkflowTarget(
 			if (basename(p).startsWith('BUILD-')) {
 				if (refuseBeforeRecord(p)) continue;
 				if (refuseConflict(p)) continue;
-				const ref = buildRefFor(p);
-				if (ref !== undefined) await ensureBuildRecordOnCompletion(req.repoPath, ref);
+				if (await refuseLogConflict(p)) continue;
+				await runBuildHook(p);
 			}
-			approveOne(p);
+			await approveOne(p);
 		}
 	} else {
 		throw new Error('approveWorkflowTarget: exactly one of artifactPath | epicHash is required');

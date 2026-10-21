@@ -59,6 +59,9 @@ import {
 } from '../../workflow/tracker/setup.js';
 import { githubConfigPath, resolveGithubConfig } from '../../workflow/config/github.js';
 import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
+import { openTracker } from '../../workflow/tracker-auto.js';
+import { attachApprovedDocument } from '../../workflow/tracker/attach-unit.js';
+import type { AttachUnitResult } from '../../workflow/tracker/attach-unit.js';
 import { getLogger } from '../../shared/logger.js';
 import { createRoleRouter } from '../../analyze/context/role-router.js';
 import { runWithRoutingContext } from '../../analyze/context/shaper-provider.js';
@@ -87,6 +90,10 @@ export interface ApproveOutcome {
 	readonly approval: ApprovalResult;
 	readonly tracker?: AutoPushResult;
 	readonly commit?:  CommitArtifactsResult;
+	/** The approved document's links on its unit's issue, or why none were attached. */
+	readonly attach?:  AttachUnitResult | { readonly skipped: string };
+	/** The second commit, of the unit head that records the attachments. */
+	readonly attachCommit?: CommitArtifactsResult;
 }
 
 /** Commit + push the artifact files this approval wrote/patched, so the chain
@@ -121,6 +128,31 @@ function commitApprovedArtifacts(approval: ApprovalResult): CommitArtifactsResul
 	const result = commitAndPushArtifacts(repoPath, [...files], `chore(workflow): ${approval.workflow} approved — check in artifacts + tracker refs`);
 	log.info({ workflow: approval.workflow, committed: result.committed, pushed: result.pushed, reason: result.reason }, 'approve: artifact check-in');
 	return result;
+}
+
+/** After the check-in commit the approved files are clean, so their permalinks name that commit: attach the approved document (and its
+ *  companions) to the unit's issue, then commit the unit head that records the attachments, in a second commit. Without a commit
+ *  there is nothing to link to, and the reason is stated. */
+function attachApprovedDocuments(approval: ApprovalResult, commit: CommitArtifactsResult | undefined): { attach: AttachUnitResult | { skipped: string }; commit?: CommitArtifactsResult } | undefined {
+	if (approval.workflow !== 'design.epic' && approval.workflow !== 'design.story' && approval.workflow !== 'plan') return undefined;
+	let meta: { repoPath?: string; epicHash?: string; epicSlug?: string; storyId?: string; epicCreatedAt?: string; createdAt?: string; standalone?: boolean };
+	try { meta = ((JSON.parse(readFileSync(approval.path, 'utf8')) as { meta?: typeof meta }).meta) ?? {}; }
+	catch { return undefined; }
+	const { repoPath, epicHash, epicSlug, storyId } = meta;
+	if (typeof repoPath !== 'string' || typeof epicHash !== 'string') return undefined;
+	if (commit === undefined) return { attach: { skipped: 'attachments skipped: the artifacts are not committed' } };
+	const gate = openTracker(repoPath);
+	if ('skip' in gate) return undefined;
+	const result = attachApprovedDocument(approval.workflow, { repoPath, epicHash, ...(storyId !== undefined ? { storyId } : {}) }, gate.port);
+	if ('error' in result || result.attached.length + result.reconciled.length === 0) return { attach: result };
+	const anchor = workItemAnchorCreatedAt(meta);
+	const kind = workItemKindOf(meta);
+	const head = approval.workflow === 'design.epic' ? defineArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)
+		: typeof storyId === 'string' ? lldArtifactPaths(repoPath, epicHash, storyId, anchor, kind, epicSlug) : undefined;
+	if (head === undefined) return { attach: result };
+	const second = commitAndPushArtifacts(repoPath, [head.md, head.json], `chore(workflow): ${approval.workflow} approved — record the attached documents`);
+	log.info({ workflow: approval.workflow, committed: second.committed, pushed: second.pushed, reason: second.reason }, 'approve: attachment records check-in');
+	return { attach: result, commit: second };
 }
 
 const DEF_RE = /^DEF-([0-9a-f]{16})\.json$/;
@@ -170,8 +202,12 @@ export function approve(artifactPath: string, withTracker = true, overrideReview
 	// Commit + push AFTER the tracker push, so the checked-in MD carries the
 	// re-rendered `**Tracker:**` link and the issue bodies link the committed blob.
 	const commit = commitApprovedArtifacts(approval);
+	const attached = attachApprovedDocuments(approval, commit);
 	const out: ApproveOutcome = { approval };
-	return { ...out, ...(tracker !== undefined ? { tracker } : {}), ...(commit !== undefined ? { commit } : {}) };
+	return {
+		...out, ...(tracker !== undefined ? { tracker } : {}), ...(commit !== undefined ? { commit } : {}),
+		...(attached !== undefined ? { attach: attached.attach, ...(attached.commit !== undefined ? { attachCommit: attached.commit } : {}) } : {}),
+	};
 }
 
 export function reject(artifactPath: string, reason: string): RejectionResult {

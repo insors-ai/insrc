@@ -171,6 +171,9 @@ export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
 
 type GithubCfg = Extract<ResolvedGithubConfig, { type: 'github' }>;
 
+/** The repository's GitHub tracker, or why there is none (config disabled, gh not signed in): the one way a push or an attach gets its port. */
+export function openTracker(repoPath: string): { readonly cfg: GithubCfg; readonly port: TrackerPort } | { readonly skip: AutoPushResult } { return trackerGate(repoPath, testDeps); }
+
 function trackerGate(repoPath: string, deps: AutoPushDeps): { cfg: GithubCfg; port: TrackerPort } | { skip: AutoPushResult } {
 	const g = deps.port !== undefined ? gateNoAuth(repoPath) : gate(repoPath);
 	if ('skip' in g) return g;

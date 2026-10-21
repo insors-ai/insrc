@@ -651,13 +651,21 @@ async function main(): Promise<void> {
 				// IPC uses) and injected: the workflow layer stays DB-free.
 				followOn: async (approved, repoPath) => {
 					const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
-					return advanceApprovedBugfixes(approved, {
+					const { followOnTrackerAttach } = await import('./tracker-attach.js');
+					const bugfix = await advanceApprovedBugfixes(approved, {
 						repoPath,
 						inferCandidates: async (req: InferParentsRequest) =>
 							inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
 					});
+					return [...(bugfix ?? []), ...followOnTrackerAttach(approved, repoPath)];
 				},
 			});
+		},
+
+		// s6: attach a unit's committed documents to its issue (a link per revision). Commits nothing.
+		'tracker.attach': async (params) => {
+			const { handleTrackerAttach } = await import('./tracker-attach.js');
+			return handleTrackerAttach(params, process.env['INSRC_REPO']);
 		},
 
 		// sc1 (ide-artifact-review-panel S001): the pending-approval artifact
@@ -743,11 +751,13 @@ async function main(): Promise<void> {
 					},
 					followOn: async (approved, repoPath) => {
 						const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
-						return advanceApprovedBugfixes(approved, {
+						const { followOnTrackerAttach } = await import('./tracker-attach.js');
+						const bugfix = await advanceApprovedBugfixes(approved, {
 							repoPath,
 							inferCandidates: async (req: InferParentsRequest) =>
 								inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
 						});
+						return [...(bugfix ?? []), ...followOnTrackerAttach(approved, repoPath)];
 					},
 				},
 			);

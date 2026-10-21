@@ -37,9 +37,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design covers the upstream requirement to scope reviews, diff grounding and BUILD change logs to Story work and report unrelated uncommitted files.",
-          "evidence": "The approved ISSUE's fixIntent names these three consumers and requires unrelated changes to be 'excluded from the review and reported as excluded on the record'. Sections 2.1 and 2.5\u20132.7 address each consumer. The implementation routes them through storyChangeSet and propagates excludedFromScope to review records. [files: .insrc/artifacts/ISSUE-b97752e9c7cee6fe.json, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/workflow/code-review/runner.ts]",
-          "action": "Retain this scope while resolving the legacy-end persistence problem below.",
+          "premise": "The design covers the approved ISSUE's three consumers and exclusion reporting.",
+          "evidence": "The ISSUE's fixIntent names the review, diff-only grounding and build records, and requires unrelated changes to be reported as excluded. Sections 2.1 and 2.5\u20132.7 cover these. The inspected implementations share storyChangeSet and propagate excludedFromScope into the review record. [files: .insrc/artifacts/ISSUE-b97752e9c7cee6fe.json, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/workflow/code-review/runner.ts]",
+          "action": "Retain this scope.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -48,10 +48,22 @@
           "ref": "current-behaviour",
           "item": "current-behaviour",
           "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The core scoping changes are implemented, while the recorded-end cap and completion-time preservation remain to be built.",
+          "evidence": "changedFiles already derives committed units before reading working-tree diffs; subject resolution already declines without a base. storyChangeSet still enumerates base..HEAD without reading a BUILD end, and completion-record constructs body from tasks and changeLog without forwarding the prior commit. This matches the amendment's progress statement. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/completion-record.ts, src/workflow/code-review/subject.ts]",
+          "action": "Keep historical 'today' descriptions clearly distinguished from the current amended baseline.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
           "severity": "MED",
-          "premise": "The checkout currently uses working-tree-first derivation, review fallbacks, and BUILD collectors without storyKey.",
-          "evidence": "These are historical descriptions, not current behavior. changedFiles already calls storyChangeSet before readWorking and rejects storyKey without base. resolveCodeReviewSubject already returns 'no-build-record' when base is undefined. Both BUILD writers already pass storyKey and write changeLog unconditionally. The recorded-end amendment remains unimplemented. [files: src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/range-base.ts]",
-          "action": "Separate the original defect baseline from the current implementation and identify the recorded-end amendment as remaining work.",
+          "premise": "A clean legacy range with no foreign commit remains unchanged after the amendment.",
+          "evidence": "storyChangeSet currently reads 'rev-list --first-parent --reverse --parents base..HEAD'. The existing clean legacy test expects both src/a.ts and src/b.ts from two untrailered commits. Under the proposed cap, a BUILD end at the first commit removes src/b.ts even on a clean tree with no foreign trailer. The unconditional clean-tree invariant conflicts with the amendment. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/__tests__/changed-files.test.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
+          "action": "Qualify compatibility guarantees to exclude legacy ranges shortened by a recorded end, and add a clean-tree test with a BUILD end before HEAD.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -61,9 +73,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The existing synchronous storyChangeSet seam can be reused for validation project and trivial-test selection.",
-          "evidence": "storyChangeSet synchronously returns paths and units using execFileSync. validation-checks.ts already calls 'storyChangeSet(repoPath, base, { storyKey, strict: true }).paths'; withTypecheckProjects combines those paths with plan.testFiles, and trivialCheckPlan filters Story test paths by checkout existence. [files: src/workflow/runners/build/story-commits.ts, src/daemon/steps/build-step/validation-checks.ts]",
-          "action": "Extend this shared seam for the legacy end rather than introduce another attribution implementation.",
+          "premise": "persistBuildRecord already honors an explicit body.commit, allowing the completion writer to preserve an existing end without changing persistence.",
+          "evidence": "The persistence function selects 'rec.body.commit ?? storyCommit(repoPath, rec.meta.epicHash, rec.meta.storyId) ?? headShortSha(repoPath)' before merging and writing. Supplying the prior commit therefore takes precedence over both automatic sources. [files: src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/completion-record.ts]",
+          "action": "Reuse this explicit-commit precedence.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -73,9 +85,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Both production diff-only callers supply the Story base and key and can propagate excludedFromScope.",
-          "evidence": "codeReviewRunStart and beginDiffOnlyReview both pass resolveStoryRangeBase(...), LEDGER_EXCLUDE_GLOBS and `${epicHash}/${storyId}` to the assembler. Both copy excludedFromScope onto the review subject; runner.ts conditionally stamps it into body.subject. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/runner.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts]",
-          "action": "Preserve both caller paths and their integration coverage.",
+          "premise": "Both production diff-only callers already supply the Story base and key and propagate exclusion attribution.",
+          "evidence": "The RPC degraded branch and beginDiffOnlyReview both call the assembler with resolveStoryRangeBase, LEDGER_EXCLUDE_GLOBS and '<epicHash>/<storyId>'. Both replace the subject's changedFiles and forward changeSetAttribution, sharedWithExcluded and excludedFromScope. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Preserve both caller integrations.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -84,36 +96,24 @@
           "ref": "data-compatibility",
           "item": "data-compatibility",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Reading the legacy BUILD body.commit as the range end is sufficient to keep later unrelated commits excluded across BUILD rewrites.",
-          "evidence": "persistBuildRecord computes 'rec.body.commit ?? storyCommit(...) ?? headShortSha(repoPath)' before merging prior data. Its comment explicitly says that without a trailered commit, 'a re-persist REFRESHES it rather than preserving the earlier value'. Both normal writers omit body.commit. Thus a rewrite can collect a correctly bounded changeLog using the old end, then overwrite that end with today's unrelated HEAD. Subsequent reviews would include the later untrailered commits again, defeating the amendment. [files: src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/runners/build/range-base.ts]",
-          "action": "Design a stable legacy-end lifecycle: preserve a trustworthy recorded end during metadata/completion rewrites, or introduce a separate immutable boundary with explicit rebuild semantics. Include persistBuildRecord among the change sites and test review scope after repeated persistence.",
+          "severity": "LOW",
+          "premise": "Optional excludedFromScope and retention of working-tree attribution preserve older review-record shapes.",
+          "evidence": "CodeReviewBody.subject declares excludedFromScope optional; ChangeSetAttribution retains 'working-tree'. The runner emits excludedFromScope only when nonempty, and its record validation does not require the new field. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts]",
+          "action": "Retain the optional field and historical attribution variant.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "data-compatibility.2",
           "ref": "data-compatibility",
           "item": "data-compatibility",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "An explicitly empty changeLog replaces stale prior entries and renders without a Changes section.",
-          "evidence": "Both writers construct 'body: { ...rec.body, changeLog }' or its equivalent. mergeWithPrior spreads '...prior.body, ...rec.body', so [] replaces the prior value. changeLogBodyLines returns [] when the changeLog is undefined or empty. [files: src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/artifacts/format/bindings.ts]",
-          "action": "Retain the unconditional field write and replacement regression test.",
+          "severity": "HIGH",
+          "premise": "Keeping validate-time commit refresh unchanged is compatible with using body.commit as the authoritative legacy range end.",
+          "evidence": "validate.ts selects typecheck projects before running checks, then calls 'const changeLog = await collectBuildChangeLog(...)' before 'persistBuildRecord(...)'. Persistence uses 'rec.body.commit ?? storyCommit(...) ?? headShortSha(repoPath)'. For a legacy Story ending at A with later unrelated untrailered commit B, a validation rerun would select and record files through A, then move body.commit to B despite no new Story commit. The next review would include B. Preserving the end only during completion does not prevent this widening. [files: src/daemon/steps/build-step/phases/validate.ts, src/daemon/steps/build-step/validation-checks.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/changed-files.ts]",
+          "action": "Define a stable legacy boundary across validation reruns. Advance it only with explicit evidence of new Story build work, and ensure checks, changeLog and the persisted boundary use the same selected end. Add a regression covering validate followed by review after unrelated untrailered commits.",
           "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.3",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The review-record addition remains compatible with records lacking excludedFromScope or carrying working-tree attribution.",
-          "evidence": "CodeReviewSubject declares excludedFromScope optional, ChangeSetAttribution retains 'working-tree', and the record assembler omits excludedFromScope when empty. The inspected artifact validator does not require the new field. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts]",
-          "action": "Keep the field optional and retain the historical attribution value.",
-          "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "boundaries.1",
@@ -121,9 +121,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "This work is a standalone sized bugfix without a parent HLD's shared contracts.",
-          "evidence": "The approved ISSUE metadata has standalone:true and magnitude:'sized'. The LLD metadata has standalone:true, sizeClass:'bugfix', and hldAmendmentsApplied:[]. The inspected changes extend internal workflow scoping and validation seams. [files: .insrc/artifacts/ISSUE-b97752e9c7cee6fe.json, .insrc/artifacts/LLD-06f196a7ff528143-S001.json, src/workflow/runners/build/story-commits.ts, src/daemon/steps/build-step/validation-checks.ts]",
-          "action": "Keep the correction within those internal seams.",
+          "premise": "This is a standalone bugfix without parent-HLD shared contracts to redesign.",
+          "evidence": "The approved ISSUE metadata declares standalone:true and magnitude:'sized'. The LLD metadata declares standalone:true, sizeClass:'bugfix' and hldAmendmentsApplied:[]. The reviewed changes concern internal attribution and validation seams. [files: .insrc/artifacts/ISSUE-b97752e9c7cee6fe.json, .insrc/artifacts/LLD-06f196a7ff528143-S001.json, src/workflow/runners/build/story-commits.ts, src/daemon/steps/build-step/validation-checks.ts]",
+          "action": "Keep the amendment within these internal seams.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -133,9 +133,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Strict trailer-scan and numstat failures can propagate into review refusal while BUILD change-log collection remains fail-open.",
-          "evidence": "scanTrailers rethrows when strict is true. git_diff returns success:false for 'stat.spawnError || stat.code !== 0'. collectDiff turns unsuccessful results into NoBuildChangesError; subject resolution maps that error to no-build-record. The diff seam wraps attribution failures as DiffUnavailableError, while collectBuildChangeLog catches derivation errors and returns []. [files: src/workflow/runners/build/story-commits.ts, src/daemon/tools/builtins/git/diff.ts, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
-          "action": "Preserve these error mappings when adding legacy-end resolution.",
+          "premise": "Missing bases, failed strict trailer scans and failed numstat reads have detectable refusal paths rather than working-tree fallbacks.",
+          "evidence": "changedFiles rejects storyKey without a base and uses strict trailer scanning. git_diff returns success:false for stat.spawnError or nonzero stat.code. collectDiff and runDiff convert failure to their respective error classes; subject resolution maps NoBuildChangesError to no-build-record, while collectBuildChangeLog catches failures and returns []. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/daemon/tools/builtins/git/diff.ts, src/workflow/code-review/grounding.ts, src/workflow/code-review/subject.ts]",
+          "action": "Preserve these refusal paths when adding the end resolver.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -145,33 +145,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design maps all five acceptance criteria to planned tests.",
-          "evidence": "The mapping assigns scope/reporting to ac1, own-file edits to ac2, refusal paths to ac3, consumer integration to ac4, and installed-daemon smoke to ac5. Inspected test bodies exercise real Git attribution, own-file dirty edits, missing-base refusal, failed numstat, and both diff-review callers. This confirms the mapping and available seams, not execution success or completion of the new amendment tests. [files: src/workflow/runners/build/__tests__/changed-files.test.ts, src/workflow/code-review/__tests__/subject-attribution.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts]",
-          "action": "Add the stable-end persistence regression and execute the amendment tests and installed-daemon smoke.",
+          "premise": "The design maps ac1\u2013ac5 to concrete tests or an installed-daemon smoke procedure.",
+          "evidence": "The mapping covers scope/reporting, own-file edits, refusal paths, consumer integration and installed-daemon smoke. Inspected test bodies assert real-Git exclusion reporting, missing-base and strict-scan refusal, filtered legacy hunks, staged-plus-unstaged preservation and replacement of stale changeLogs. The proposed end-cap tests cover completion rewrites but should also cover the validation lifecycle finding above. Tests were read, not executed; smoke success is not established by this review. [files: src/workflow/runners/build/__tests__/changed-files.test.ts, src/workflow/runners/build/__tests__/story-commits-trailer.test.ts, src/workflow/runners/build/__tests__/completion-record.test.ts, src/workflow/code-review/__tests__/subject-attribution.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
+          "action": "Add the validation-rerun boundary regression and execute the amendment tests and installed-daemon smoke before completion.",
           "fixability": "manual",
           "outcome": "holds"
-        },
-        {
-          "claimId": "tests.2",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The named BUILD integration test proves scoping through both the completion writer and the validate phase.",
-          "evidence": "The test titled \"a BUILD record's changeLog, from the completion writer and the validate phase...\" invokes only 'ensureBuildRecordOnCompletion(...)' and asserts its persisted changeLog. Its body never invokes the validate handler. The subsequent stale-changeLog replacement test likewise exercises only completion. [files: src/workflow/runners/build/__tests__/changed-files.test.ts, src/daemon/steps/build-step/phases/validate.ts]",
-          "action": "Add a validate-phase integration test that persists and then rewrites a BUILD record, asserting Story-only files and replacement by an empty changeLog.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
         }
       ],
       "counts": {
         "high": 1,
-        "med": 2,
+        "med": 1,
         "low": 8,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-21T07:55:52.492Z",
+      "reviewedAt": "2026-10-21T07:59:06.308Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
     },
@@ -323,7 +311,7 @@
           "preconditions": [],
           "postconditions": [
             "Used only by storyChangeSet's legacy case; a trailered Story never reads it.",
-            "The end is stable across non-build rewrites: ensureBuildRecordOnCompletion carries the prior record's body.commit forward explicitly (persistBuildRecord honours an explicit body.commit), so a completion or approval-time rewrite never moves a pre-trailer Story's end to today's HEAD. Only a validate write, which is build activity, refreshes it, as today."
+            "The end is stable across every rewrite (validate reruns, completion, approval): persistBuildRecord computes body.commit as `rec.body.commit ?? storyCommit(...) ?? prior.body.commit ?? headShortSha(repoPath)`, so once a pre-trailer Story's record names a commit it is never refreshed to a later HEAD. It advances only with evidence of new Story work: a commit carrying the Story's trailer, which also switches the Story to trailer attribution, where the end is not read. Checks, changeLog and the persisted record therefore all use the same end."
           ]
         },
         {
@@ -443,7 +431,7 @@
             "The completion record and the validate phase pass the Story's storyKey, so an unrelated uncommitted file never enters a BUILD record's changeLog.",
             "With ctx.storyKey and no ctx.base (resolveStoryRangeBase returned undefined), the seam refuses (NoBuildChangesError) and the swallow yields an empty changeLog: a Story's BUILD record never falls back to the working tree.",
             "Both writers (completion-record.ts and validate.ts) write changeLog whenever they pass a storyKey, even when it is empty, instead of omitting an empty one: mergeWithPrior's { ...prior.body, ...rec.body } then replaces a prior changeLog (including one contaminated by the old working-tree derivation) rather than keeping it. The md renderer already omits the ## Changes section for an empty changeLog.",
-            "Change site (amendment): src/workflow/runners/build/completion-record.ts reads the prior BUILD record and, when it has body.commit, writes that value explicitly; src/workflow/runners/build/standalone-record.ts persistBuildRecord is unchanged (it already prefers an explicit body.commit)."
+            "Change site (amendment): src/workflow/runners/build/standalone-record.ts persistBuildRecord prefers the prior record's body.commit over HEAD when the Story has no trailered commit; neither writer changes."
           ]
         },
         {
@@ -732,13 +720,13 @@
           "expected": "The end is ignored with a warning and the legacy range runs to HEAD, as before; untrailered commits interleaved with the Story's own build window always count (stated limit: that history carries no attribution)."
         },
         {
-          "input": "A pre-trailer Story's BUILD record is rewritten by the completion writer (approval) after later untrailered commits landed.",
+          "input": "A pre-trailer Story's BUILD record is rewritten (a validate rerun, the completion writer or an approval) after later untrailered commits landed.",
           "expected": "Its body.commit keeps the recorded build commit; a review after the rewrite is bounded exactly as before it."
         }
       ],
       "invariantsToPreserve": [
         {
-          "text": "A clean tree's change set is byte-for-byte today's committed-range result for a range with trailer units, and for a legacy range in which no commit carries another Story's trailer. A legacy range holding another Story's trailered commits changes deliberately: those commits are left out (the existing story-commits-trailer.test.ts expectation of ['src/a.ts', 'src/b.ts'] for a Story with no carrying commit becomes ['src/a.ts']). Likewise a range holding a merge whose message carries only another Story's trailer changes deliberately: that merge's edit (or octopus change) is left out. A range with no foreign commit of any kind is unchanged.",
+          "text": "A clean tree's change set is byte-for-byte today's committed-range result for a range with trailer units, and for a legacy range in which no commit carries another Story's trailer. A legacy range holding another Story's trailered commits changes deliberately: those commits are left out (the existing story-commits-trailer.test.ts expectation of ['src/a.ts', 'src/b.ts'] for a Story with no carrying commit becomes ['src/a.ts']). Likewise a range holding a merge whose message carries only another Story's trailer changes deliberately: that merge's edit (or octopus change) is left out. A range with no foreign commit of any kind is unchanged. Also changed deliberately: a legacy range shortened by the Story's recorded build commit (a pre-trailer Story with a BUILD record whose commit is before HEAD) leaves out the commits after it, on a clean tree too; the existing clean legacy tests have no BUILD record and are unchanged.",
           "source": "c1"
         },
         {
@@ -785,7 +773,8 @@
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a git_diff result that fails its stat read makes the anchored derivation refuse, never return an empty set'",
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a merge carrying only another Story's trailer is not a unit, two-parent or octopus, with and without a commit carrying this Story's trailer, while an untrailered merge edit still is'",
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a pre-trailer Story's range ends at its BUILD record's commit: a later untrailered commit is not its unit, and an end off the first-parent line is ignored'",
-            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'the missing-trailer warning names only untrailered commits, never another Story's commit whose subject reads the same story id'"
+            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'the missing-trailer warning names only untrailered commits, never another Story's commit whose subject reads the same story id'",
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits'"
           ],
           "fixturesNeeded": [
             "a git repository with a base commit, two commits carrying the Story's Insrc-Story trailer, one carrying another Story's, and unstaged, staged and untracked-then-added changes inside and outside the Story's files",
@@ -807,7 +796,7 @@
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included'",
             "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding'",
             "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched'",
-            "src/workflow/runners/build/__tests__/completion-record.test.ts: 'a completion rewrite of a pre-trailer Story's BUILD record keeps its recorded commit, so a review after repeated rewrites stays bounded'",
+            "src/workflow/runners/build/__tests__/build-record.test.ts: 'a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it'",
             "src/daemon/steps/build-step/__tests__/build-step.test.ts: 'the validate phase's changeLog leaves out another Story's commit and replaces a stale changeLog (ISSUE-b97752e9)'",
             "src/daemon/steps/build-step/__tests__/build-step.test.ts: 'CHARACTERISATION C (TRIVIAL route \u2014 NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section'"
           ],
@@ -839,7 +828,7 @@
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a merge carrying only another Story's trailer is not a unit, two-parent or octopus, with and without a commit carrying this Story's trailer, while an untrailered merge edit still is'",
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a pre-trailer Story's range ends at its BUILD record's commit: a later untrailered commit is not its unit, and an end off the first-parent line is ignored'",
             "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched'",
-            "src/workflow/runners/build/__tests__/completion-record.test.ts: 'a completion rewrite of a pre-trailer Story's BUILD record keeps its recorded commit, so a review after repeated rewrites stays bounded'"
+            "src/workflow/runners/build/__tests__/build-record.test.ts: 'a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it'"
           ]
         },
         {
@@ -848,7 +837,8 @@
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'an uncommitted edit to a file the Story's commits changed is part of the Story's set'",
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike'",
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a filtered legacy range reads each kept unit's own diff: a file another Story also edited, or later reverted, carries only this Story's change'",
-            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding'"
+            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding'",
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits'"
           ]
         },
         {
@@ -895,7 +885,7 @@
         },
         {
           "order": 2,
-          "action": "Add resolveStoryRangeEnd and end a pre-trailer Story's legacy range at its recorded build commit inside storyChangeSet; restrict the missing-trailer warning to untrailered commits. The completion writer carries the prior body.commit forward so the end does not move on a non-build rewrite.",
+          "action": "Add resolveStoryRangeEnd and end a pre-trailer Story's legacy range at its recorded build commit inside storyChangeSet; restrict the missing-trailer warning to untrailered commits. persistBuildRecord keeps a prior body.commit instead of refreshing it to HEAD when the Story has no trailered commit, so the end never moves for a pre-trailer Story.",
           "rollbackable": true
         },
         {

@@ -38,6 +38,8 @@ import { buildAuthorParty } from '../../../workflow/code-review/author.js';
 import { SamePartyReviewError } from '../../../workflow/review/party.js';
 import type { PartyOrUnknown } from '../../../workflow/review/party.js';
 import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../../../workflow/code-review/grounding.js';
+import { roundWriterFor } from '../../lifecycle-registry.js';
+import type { RoundWriter } from '../../../workflow/runners/build/round-writer.js';
 import { runCodeReview, writeRecordFile, type CodeReviewRunnerDeps } from '../../../workflow/code-review/runner.js';
 import { codeReviewArtifactPaths } from '../../../workflow/storage.js';
 import { codeReviewSubjectPathArgs } from '../../../workflow/code-review/subject-paths.js';
@@ -91,6 +93,8 @@ export interface CodeReviewStepDeps {
 	readonly assembleDiffGrounding: typeof assembleDiffCodeReviewGrounding;
 	readonly runReview:      typeof runCodeReview;
 	readonly write:          (absPath: string, content: string) => void;
+	/** The repository's round writer: the record is stored through the lifecycle service first. The daemon's registry by default; answering undefined stores nothing through it (for tests of that path). */
+	readonly roundWriterFor?: ((repoPath: string) => RoundWriter | undefined) | undefined;
 	readonly sleep:          (ms: number) => Promise<void>;
 	readonly now:            () => number;
 	readonly freshnessTimeoutMs: () => number;
@@ -547,6 +551,7 @@ async function handleJudgements(
 		})),
 		assembleGrounding: async (): Promise<CodeReviewGrounding> => grounding,
 		write: deps.write,
+		through: (deps.roundWriterFor ?? roundWriterFor)(payload.subject.repoPath),
 	};
 
 	// s10: a degraded state (built from the diff on the decline branch) drives the

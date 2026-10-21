@@ -68,6 +68,7 @@ function harness(author: PartyOrUnknown, overrides: Partial<CodeReviewStepDeps> 
 		assembleDiffGrounding: async () => { diffCalls += 1; return { grounding, changedFiles: ['src/a.ts'] }; },
 		runReview: runCodeReview,
 		write: (path) => { writes.push(path); },
+		roundWriterFor: () => undefined,
 		sleep: async () => {},
 		now: () => 0,
 		freshnessTimeoutMs: () => 120000,

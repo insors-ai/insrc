@@ -61,3 +61,15 @@ export function storedCitations(jsonPath: string): { readonly citations?: unknow
 		return head.citations !== undefined ? { citations: head.citations } : {};
 	} catch { return {}; }
 }
+
+/**
+ * `record` (a {meta, body} head being refreshed) with the envelope and lifecycle the store holds for it, and its citations, so the
+ * raw refresh of a round record leaves what the store wrote as it was. Without a stored head the record is returned as it is.
+ */
+export function withStoredModel<T extends { readonly meta: object }>(jsonPath: string, record: T): T {
+	try {
+		const head = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: Record<string, unknown>; citations?: unknown };
+		const kept = Object.fromEntries(['envelope', 'lifecycle'].filter(k => head.meta !== undefined && k in head.meta).map(k => [k, head.meta![k]]));
+		return { ...record, ...(head.citations !== undefined ? { citations: head.citations } : {}), meta: { ...kept, ...record.meta } };
+	} catch { return record; }
+}

@@ -111,6 +111,7 @@ test("every judge slot receives the run's groundingMode and the non-coverage jud
 		resolveProvider: () => ({ provider: {} as LLMProvider, modelLabel: 'm' }),
 		assembleDiffGrounding: (async () => ({ grounding: { symbols: [] }, changedFiles: ['src/a.ts'] })) as never,
 		write: () => {},
+		roundWriterFor: () => undefined,
 		runReview: (async (s: CodeReviewSubject, p: LLMProvider, o: Parameters<typeof runCodeReview>[2], d: CodeReviewRunnerDeps | undefined) =>
 			runCodeReview(s, p, o, { judges: spyJudges(seen), assembleGrounding: d!.assembleGrounding, write: d!.write })) as never,
 	};

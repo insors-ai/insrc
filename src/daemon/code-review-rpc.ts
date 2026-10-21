@@ -24,6 +24,8 @@ import { SamePartyReviewError } from '../workflow/review/party.js';
 import { buildAuthorParty } from '../workflow/code-review/author.js';
 import type { CodeReviewFallbackReason } from '../workflow/code-review/types.js';
 import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../workflow/code-review/grounding.js';
+import { roundWriterFor } from './lifecycle-registry.js';
+import type { RoundWriter } from '../workflow/runners/build/round-writer.js';
 import type { CodeReviewProgress, runCodeReview as RunCodeReview } from '../workflow/code-review/runner.js';
 import { LEDGER_EXCLUDE_GLOBS } from '../workflow/runners/build/changed-files.js';
 import { resolveStoryRangeBase } from '../workflow/runners/build/range-base.js';
@@ -71,6 +73,8 @@ export interface CodeReviewRunDeps {
 	readonly assembleDiffGrounding?: typeof assembleDiffCodeReviewGrounding | undefined;
 	/** Where the record is written (the runner's `write`). */
 	readonly write?: ((absPath: string, content: string) => void) | undefined;
+	/** The repository's round writer: the record is stored through the lifecycle service first. The daemon's registry by default; answering undefined stores nothing through it (for tests of that path). */
+	readonly roundWriterFor?: ((repoPath: string) => RoundWriter | undefined) | undefined;
 }
 
 /** `codeReview.run` stream handler. Emits `progress` frames per phase, then a
@@ -124,6 +128,7 @@ export async function codeReviewRunStart(
 		// 5. Drive the runner, streaming each progress frame.
 		const runner = await import('../workflow/code-review/runner.js');
 		const runCodeReview = deps.runReview ?? runner.runCodeReview;
+		const through = (deps.roundWriterFor ?? roundWriterFor)(repoPath);
 		let stageIndex = 0;
 		const base = {
 			runId, modelLabel, signal,
@@ -156,12 +161,12 @@ export async function codeReviewRunStart(
 			outcome = await runCodeReview(
 				{ ...resolved.subject, changedFiles: diff.changedFiles, changeSetAttribution: diff.changeSetAttribution, sharedWithExcluded: diff.sharedWithExcluded, excludedFromScope: diff.excludedFromScope }, provider,
 				{ ...base, groundingMode: 'degraded', capVerdictAtWarn: true, ...(params.fallbackReason !== undefined ? { fallbackReason: params.fallbackReason } : {}) },
-				{ ...runner.DEFAULT_DEPS, ...(deps.write !== undefined ? { write: deps.write } : {}), assembleGrounding: async () => diff.grounding },
+				{ ...runner.DEFAULT_DEPS, ...(deps.write !== undefined ? { write: deps.write } : {}), ...(through !== undefined ? { through } : {}), assembleGrounding: async () => diff.grounding },
 			);
 		} else if (deps.write !== undefined) {
-			outcome = await runCodeReview(resolved.subject, provider, base, { ...runner.DEFAULT_DEPS, write: deps.write });
+			outcome = await runCodeReview(resolved.subject, provider, base, { ...runner.DEFAULT_DEPS, write: deps.write, ...(through !== undefined ? { through } : {}) });
 		} else {
-			outcome = await runCodeReview(resolved.subject, provider, base);
+			outcome = await runCodeReview(resolved.subject, provider, base, { ...runner.DEFAULT_DEPS, ...(through !== undefined ? { through } : {}) });
 		}
 
 		// 6. Terminal frame. A runner {ok:false} is an error frame; {ok:true}

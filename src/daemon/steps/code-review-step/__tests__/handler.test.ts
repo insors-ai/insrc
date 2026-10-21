@@ -89,6 +89,7 @@ function makeDeps(overrides: Partial<CodeReviewStepDeps> = {}): { deps: CodeRevi
 		assembleDiffGrounding: async () => ({ grounding: diffGrounding, changedFiles: DIFF_CHANGED }),
 		runReview:      runCodeReview,
 		write:          (path, content) => { writes.push({ path, content }); },
+		roundWriterFor: () => undefined,
 		sleep:          async () => {},
 		now:            () => 0,
 		freshnessTimeoutMs: () => 120000,

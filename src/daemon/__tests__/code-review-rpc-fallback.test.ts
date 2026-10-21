@@ -67,6 +67,7 @@ function rpcDeps() {
 		resolveProvider: () => ({ provider: {} as LLMProvider, modelLabel: 'cli-codex:gpt' }),
 		assembleDiffGrounding: (async () => ({ grounding: DIFF, changedFiles: ['src/a.ts'] })) as never,
 		write: (path, content) => { writes.push({ path, content }); },
+		roundWriterFor: () => undefined,
 		runReview: (async (subject: CodeReviewSubject, provider: LLMProvider, o: RunCodeReviewOpts, runnerDeps: typeof DEFAULT_DEPS | undefined) => {
 			opts.push(o);
 			return runCodeReview(subject, provider, o, { judges: judges as never, assembleGrounding: runnerDeps!.assembleGrounding, write: runnerDeps!.write });

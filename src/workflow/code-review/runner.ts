@@ -59,6 +59,8 @@ import { judgeUx } from './dimensions/ux/index.js';
 import { computeExpectedDimensions } from './expected-dimensions.js';
 import { codeReviewSnapshot } from '../review-pipeline/code-review.js';
 import type { Party } from '../review/party.js';
+import { storeRound, withStoredModel } from '../runners/build/round-writer.js';
+import type { RoundWriter } from '../runners/build/round-writer.js';
 
 const log = getLogger('code-review:runner');
 
@@ -90,6 +92,12 @@ export interface CodeReviewRunnerDeps {
 	readonly assembleGrounding: (repoPath: string, changedFiles: readonly string[]) => Promise<CodeReviewGrounding>;
 	/** Persist a file atomically (tmp-then-rename). */
 	readonly write: (absPath: string, content: string) => void;
+	/**
+	 * When set, the record's body is stored through the lifecycle service first (staged, logged with the review's outcome,
+	 * revisioned; the first round is created through the store) and `write` then only refreshes the json and the markdown.
+	 * A failed store fails the run before any file is written.
+	 */
+	readonly through?: RoundWriter | undefined;
 }
 
 /** Run options — mirrors workflow-rpc's run opts. `modelLabel` is the resolved
@@ -240,7 +248,11 @@ export async function runCodeReview(
 		//    summary). Validation has already passed, so a write here is never partial.
 		emit({ phase: 'finalize' });
 		const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, pa.epicCreatedAt, pa.workItemKind, pa.epicSlug);
-		deps.write(paths.json, JSON.stringify(artifact, null, 2) + '\n');
+		if (deps.through !== undefined) {
+			await storeRound(deps.through, codeReviewArtifactId(subject.epicHash, subject.storyId), paths.json, artifact.body,
+				{ result: verdict, summary: `Code review ${verdict}: ${counts.high} HIGH, ${counts.med} MED, ${counts.low} LOW` });
+		}
+		deps.write(paths.json, JSON.stringify(deps.through !== undefined ? withStoredModel(paths.json, artifact) : artifact, null, 2) + '\n');
 		deps.write(paths.md,   renderCodeReviewMd(artifact));
 		log.info({ runId: opts.runId, storyId: subject.storyId, verdict, counts }, 'code-review record written');
 		emit({ phase: 'done' });

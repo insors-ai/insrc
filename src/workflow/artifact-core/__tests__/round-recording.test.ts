@@ -1,9 +1,16 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { buildArtifactId, testsArtifactId } from '../../storage.js';
+import type { IpcStreamMessage, LLMProvider } from '../../../shared/types.js';
+import { codeReviewRunStart } from '../../../daemon/code-review-rpc.js';
+import { DEFAULT_DEPS as STEP_DEFAULT_DEPS, handleCodeReviewStep } from '../../../daemon/steps/code-review-step/handler.js';
+import { _clearCodeReviewStateStoreForTests } from '../../../daemon/steps/code-review-step/state-store.js';
+import { runCodeReview, writeRecordFile as DEFAULT_WRITE } from '../../code-review/runner.js';
+import type { CodeReviewRunnerDeps } from '../../code-review/runner.js';
+import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../code-review/types.js';
+import { buildArtifactId, codeReviewArtifactId, testsArtifactId } from '../../storage.js';
 import { LifecycleService } from '../lifecycle-service.js';
 import { persistBuildRecord } from '../../runners/build/standalone-record.js';
 import type { BuildRecord } from '../../runners/build/standalone-record.js';
@@ -102,6 +109,85 @@ describe('round-recording', () => {
 			assert.equal((await service.inspect(BUILD))?.integrity.ok, true);
 			await service.apply(BUILD, 'approve', alice);
 			assert.equal((await k.store.read(BUILD)).lifecycle.status, 'approved');
+		} finally { k.done(); }
+	});
+
+	it('runCodeReview with a RoundWriter stores the content through the service and logs the round on the daemon route and the controller route, and a failed store replaces no record', async () => {
+		const { k, through } = await seeded();
+		const CR = codeReviewArtifactId(H, 's1');
+		const CREATED = '2026-10-21T00:00:00.000Z';
+		const subject: CodeReviewSubject = {
+			repoPath: k.repo, epicHash: H, storyId: 's1', changedFiles: ['src/a.ts'],
+			approvedLld:  { meta: { epicHash: H, storyId: 's1', epicSlug: 'demo', createdAt: CREATED, epicCreatedAt: CREATED }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
+			approvedPlan: { body: { tasks: [] } } as unknown as CodeReviewSubject['approvedPlan'],
+			buildRecord: null,
+		};
+		const grounding: CodeReviewGrounding = { symbols: [{ entityId: 'sym:src/a.ts#f', file: 'src/a.ts', kind: 'function', name: 'f', signature: 'f(): void', callers: [], callees: [], testsReaching: [] }] };
+		const dims: ReviewDimension[] = ['adherence', 'conventions', 'coverage', 'quality'];
+		const judges = dims.map(dimension => ({ dimension, judge: async (): Promise<DimensionResult> => ({ dimension, findings: [] }) }));
+		const crJson = () => join(k.repo, '.insrc', 'artifacts', `${CR}.json`);
+		try {
+			// Daemon route: every branch of codeReviewRunStart hands the runner the repository's round writer.
+			const seen: (CodeReviewRunnerDeps | undefined)[] = [];
+			const viaRunner = async (s: CodeReviewSubject, p: LLMProvider, o: Parameters<typeof runCodeReview>[2], d?: CodeReviewRunnerDeps) => {
+				seen.push(d);
+				return runCodeReview(s, p, o, { judges, assembleGrounding: async () => grounding, write: d?.write ?? DEFAULT_WRITE, ...(d?.through !== undefined ? { through: d.through } : {}) });
+			};
+			const run = async (extra: Record<string, unknown>, params: Record<string, unknown> = {}): Promise<IpcStreamMessage[]> => {
+				const sent: IpcStreamMessage[] = [];
+				await codeReviewRunStart({ epicHash: H, storyId: 's1', repo: k.repo, ...params }, m => sent.push(m), new AbortController().signal, {
+					resolveSubject: async () => ({ ok: true, subject }),
+					resolveProvider: () => ({ provider: {} as LLMProvider, modelLabel: 'm' }),
+					assembleDiffGrounding: (async () => ({ grounding, changedFiles: ['src/a.ts'] })) as never,
+					runReview: viaRunner as never,
+					roundWriterFor: () => through,
+					...extra,
+				});
+				return sent;
+			};
+			const dbg = (sent: IpcStreamMessage[]) => JSON.stringify(sent.filter(m => m.stream === 'error'));
+			const first = await run({});                                                    // default branch
+			assert.ok(first.some(m => m.stream === 'done'), dbg(first));
+			const second = await run({ write: DEFAULT_WRITE });                              // injected-write branch
+			assert.ok(second.some(m => m.stream === 'done'), dbg(second));
+			const third = await run({}, { groundingMode: 'degraded', fallbackReason: { kind: 'declined' } });   // degraded branch
+			assert.ok(third.some(m => m.stream === 'done'), dbg(third));
+			assert.deepEqual(seen.map(d => d?.through === through), [true, true, true], 'every branch hands the runner the round writer');
+			let log = await logOf(k, CR);
+			assert.equal(log[0]?.operation, 'create');
+			assert.ok(log.length >= 2 && log.every(e => e.outcome !== undefined), 'each review round is logged with its outcome');
+			assert.equal((await k.store.read(CR)).lifecycle.revision.number, log.at(-1)?.revision?.number);
+
+			// Controller route: the step handler stores the round through the service too.
+			_clearCodeReviewStateStoreForTests();
+			const before = (await logOf(k, CR)).length;
+			const stepDeps = {
+				...STEP_DEFAULT_DEPS,
+				resolveSubject: async () => ({ ok: true as const, subject }),
+				fetchGrounding: async () => ({ ok: true as const, grounding }),
+				fetchFreshness: async () => ({ ok: true as const, isProcessing: false, staleFiles: [] }),
+				readBuildAuthor: () => 'daemon' as const,
+				roundWriterFor: () => through,
+			};
+			const parse = (env: { content: readonly { text: string }[] }) => JSON.parse(env.content[0]!.text) as { next: string; state?: string };
+			const judgements = { judgements: dims.map(d => ({ dimension: d, findings: [] })) };
+			const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: H, storyId: 's1', repo: k.repo }, stepDeps));
+			const done = parse(await handleCodeReviewStep({ phase: 'judgements', judgements, state: start.state! } as never, stepDeps));
+			assert.equal(done.next, 'done', JSON.stringify(done));
+			log = await logOf(k, CR);
+			assert.equal(log.length, before + 1, 'the controller round is logged through the service');
+			assert.ok(log.every(e => e.outcome !== undefined));
+
+			// A failed store fails the run's finalize and replaces no record.
+			const headBefore = readFileSync(crJson(), 'utf8');
+			_clearCodeReviewStateStoreForTests();
+			const start2 = parse(await handleCodeReviewStep({ phase: 'start', epicHash: H, storyId: 's1', repo: k.repo }, stepDeps));
+			k.faults.append = true;
+			const judgements2 = { judgements: dims.map((d, i) => ({ dimension: d, findings: i === 0 ? [{ dimension: d, severity: 'MED', location: 'src/a.ts:1', message: 'a new finding' }] : [] })) };
+			const failed = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements2, state: start2.state! } as never, stepDeps));
+			assert.equal(failed.next, 'error', JSON.stringify(failed));
+			assert.equal(readFileSync(crJson(), 'utf8'), headBefore, 'no record was replaced');
+			assert.ok(existsSync(crJson()));
 		} finally { k.done(); }
 	});
 });

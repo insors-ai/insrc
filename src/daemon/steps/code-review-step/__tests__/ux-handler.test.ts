@@ -54,6 +54,7 @@ function makeDeps(subj: CodeReviewSubject): { deps: CodeReviewStepDeps; writes: 
 		assembleDiffGrounding: async () => ({ grounding, changedFiles: CHANGED }),
 		runReview:      runCodeReview,
 		write:          (path, content) => { writes.push({ path, content }); },
+		roundWriterFor: () => undefined,
 		sleep:          async () => {},
 		now:            () => 0,
 		freshnessTimeoutMs: () => 120000,

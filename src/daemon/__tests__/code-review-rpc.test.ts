@@ -167,6 +167,7 @@ function realRunnerDeps(diff: 'ok' | 'unavailable' | 'broken' = 'ok') {
 			return { grounding: DIFF_GROUNDING, changedFiles: ['src/from-diff.ts'] };
 		}) as never,
 		write: (path, content) => { writes.push({ path, content }); },
+		roundWriterFor: () => undefined,
 		runReview: (async (subject: { changedFiles: readonly string[] }, provider: LLMProvider, opts: RunCodeReviewOpts, runnerDeps: typeof DEFAULT_DEPS | undefined) => {
 			seen.opts.push(opts); seen.subjects.push(subject);
 			return runCodeReview(subject as never, provider, opts, {

@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s1",
     "createdAt": "2026-10-21T15:03:00.014Z",
-    "updatedAt": "2026-10-21T15:54:40.240Z",
+    "updatedAt": "2026-10-21T15:59:53.674Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -940,6 +940,110 @@
               },
               {
                 "title": "on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "c93a6782",
+        "ranAt": "2026-10-21T15:59:53.674Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "two workers' artifact-vector and config writes are read back from a third thread",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "two workers' artifact-vector and config writes are read back from a third thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a worker that has not declared the store owner is refused on the live LMDB and Lance paths",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a worker that has not declared the store owner is refused on the live LMDB and Lance paths, and startDaemonWorker refuses a main thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no module outside src/daemon and src/db calls declareLiveStoreOwner",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "no module outside src/daemon and src/db calls declareLiveStoreOwner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2166,
+            "titles": [
+              {
+                "title": "a worker that has not declared the store owner is refused on the live LMDB and Lance paths, and startDaemonWorker refuses a main thread",
+                "result": "pass"
+              },
+              {
+                "title": "no module outside src/daemon and src/db calls declareLiveStoreOwner",
+                "result": "pass"
+              },
+              {
+                "title": "a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row",
+                "result": "pass"
+              },
+              {
+                "title": "two workers' artifact-vector and config writes are read back from a third thread",
+                "result": "pass"
+              },
+              {
+                "title": "a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread",
                 "result": "pass"
               }
             ],

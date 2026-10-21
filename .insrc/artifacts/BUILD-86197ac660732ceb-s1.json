@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s1",
     "createdAt": "2026-10-21T15:03:00.014Z",
-    "updatedAt": "2026-10-21T15:54:40.240Z",
+    "updatedAt": "2026-10-21T15:59:53.674Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
@@ -46,6 +46,10 @@
       {
         "id": "t9",
         "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
       }
     ],
     "summary": "Added src/daemon/threads/step-state.ts: SharedStepStateStore with today's per-kind lifecycles (LocalStepStateStore on the main thread: 100-entry cap evicting the least recently touched, 1-hour idle TTL swept on mint, read refreshing the expiry; analyze and workflow rotate tokens, review keeps its token and requires it to exist, code-review consumes and mints per stage), payloads stored as a structured clone; stepStateHubHandlers and HubStepStateStore so a worker uses the same interface over the hub; getStepStateStore/installStepStateStore. Nothing calls it yet (t8/t9 move the four state-store modules onto it). Tests in src/daemon/threads/__tests__/step-state.test.ts, including real workers, a payload of each kind crossing the hub unchanged, an unclonable payload failing with DataCloneError, and state minted in one worker read by another after the first exits. Four lifecycle mutations each fail the lifecycle test.",
@@ -58,548 +62,569 @@
           "file": "src/db/graph/__tests__/helpers/lmdb-open-close.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/helpers/lmdb-worker.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/worker-thread-lock.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/helpers/store-guard-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/store-guard.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/store-guard.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/channel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/helpers/hub-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/channel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/helpers/board-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/registry-board.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/status-board.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/helpers/health-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/store-health-threads.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/store-health-hub.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/helpers/health-hub-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/db/duckdb-pool.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/cross-thread-stores.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/helpers/duckdb-query-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/helpers/lance-reader-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/db/lance/conn.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/helpers/step-state-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/step-state.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/step-state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-step-answer-prompt-missing.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-step-bundle-report.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-step-failed-lookup.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-step-measure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-step-narrow.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-step-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/step-host.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/phases/bundle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/phases/narrow.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/phases/plan.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/phases/start.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/state-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/brainstorm-state.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/define-e2e.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/design-story-e2e.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/handler.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/phases/plan.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/phases/start.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/phases/step.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/phases/synthesize.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/state-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/code-review-rpc-fallback.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/__tests__/routing.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/__tests__/ux-handler.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/handler.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/state-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/__tests__/review-step.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/handler.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/phases/claims.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/phases/findings.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/phases/start.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/phases/verdicts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/state-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/subject-attribution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:54:40.240Z"
+        "timestamp": "2026-10-21T15:59:53.674Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/helpers/store-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T15:59:53.674Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/worker-stores.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T15:59:53.674Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/worker-entry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T15:59:53.674Z"
       }
     ],
-    "commit": "28bb36ea"
+    "commit": "c93a6782"
   }
 }

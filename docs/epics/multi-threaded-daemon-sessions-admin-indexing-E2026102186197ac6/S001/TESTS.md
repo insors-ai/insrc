@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 39 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 44 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -267,3 +267,43 @@ Run at 2026-10-21T15:54:40.240Z on commit `28bb36ea`. Tests check: **passed**. 7
 | `src/daemon/__tests__/code-review-rpc-fallback.test.ts` | 0 | 2 | 0.9 s |  |
 | `src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts` | 0 | 3 | 0.5 s |  |
 | `src/daemon/steps/code-review-step/__tests__/handler.test.ts` | 0 | 31 | 0.7 s |  |
+
+## t10
+
+Run at 2026-10-21T15:59:53.674Z on commit `c93a6782`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row | `src/daemon/threads/__tests__/worker-stores.test.ts` |
+
+**integration: two workers' artifact-vector and config writes are read back from a third thread**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | two workers' artifact-vector and config writes are read back from a third thread | `src/daemon/threads/__tests__/worker-stores.test.ts` |
+
+**integration: a worker that has not declared the store owner is refused on the live LMDB and Lance paths**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a worker that has not declared the store owner is refused on the live LMDB and Lance paths, and startDaemonWorker refuses a main thread | `src/daemon/threads/__tests__/worker-stores.test.ts` |
+
+**unit: no module outside src/daemon and src/db calls declareLiveStoreOwner**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | no module outside src/daemon and src/db calls declareLiveStoreOwner | `src/daemon/threads/__tests__/worker-stores.test.ts` |
+
+**integration: a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread | `src/daemon/threads/__tests__/worker-stores.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/worker-stores.test.ts` | 0 | 5 | 2.2 s |  |

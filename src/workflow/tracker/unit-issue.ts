@@ -291,6 +291,13 @@ type GithubCfg = Extract<ResolvedGithubConfig, { type: 'github' }>;
  */
 export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: EnsureIssueDeps = {}): EnsureResult<EnsuredIssue> {
 	const now = deps.now ?? (() => new Date().toISOString());
+	// The head that holds the unit's binding has to be readable: a malformed binding makes every store read of it fail, and an
+	// issue that could not be recorded must not be created. Checked before any lookup or create.
+	const home = bindingHome(unit);
+	if (home !== undefined) {
+		try { readBinding(home.repoPath, home.artifactId); }
+		catch (err) { return before(`the head of ${home.artifactId} cannot be read, so the unit's issue could not be recorded: ${(err as Error).message}`); }
+	}
 	const local = resolveUnitIssueLocal(unit, now);
 	if (local !== null) {
 		retryPendingLink(unit, port, local);

@@ -254,6 +254,13 @@
         "choice": "Append a revision-less entry with History.appendLog under ArtifactStore.exclusive (recommended)",
         "rationale": "Approved with the LLD (owner chose A, recommended answers).",
         "resolvedAt": "2026-10-21T17:23:59.335Z"
+      },
+      "qc3c527e2": {
+        "question": "Until s9 creates Task heads for the Stories planned before this one, bindingHome falls back to the Plan's Task record and taskBuildPassed to the BUILD record for a Task with no head, which is compatibility code the Epic's no-compatibility rule discourages. Resolve: accept both fallbacks as s9-bound and record them in docs/plans/core-data-model.md for s9 to remove (recommended), or drop them and fail for a Task with no head (no Story planned before this one is still open to build).",
+        "status": "resolved",
+        "choice": "Accept both fallbacks as s9-bound and record them in docs/plans/core-data-model.md for s9 to remove (recommended)",
+        "rationale": "Approved with the LLD (owner chose A, recommended answers).",
+        "resolvedAt": "2026-10-21T17:24:27.447Z"
       }
     }
   },

@@ -42,10 +42,14 @@ export function storyWorkflowFiles(repoPath: string, rec: BuildRecord, intent: P
 		// An identity the path scheme cannot place has no test record to leave out.
 	}
 	// The change log and feedback line files the store keeps beside each record head.
-	const sidecar = new FileSidecarStore(repoPath);
-	for (const id of [buildArtifactId(epicHash, storyId), testsArtifactId(epicHash, storyId)]) {
-		const files = sidecar.filesOf(id);
-		out.push(join(repoPath, files.log), join(repoPath, files.feedback));
+	try {
+		const sidecar = new FileSidecarStore(repoPath);
+		for (const id of [buildArtifactId(epicHash, storyId), testsArtifactId(epicHash, storyId)]) {
+			const files = sidecar.filesOf(id);
+			out.push(join(repoPath, files.log), join(repoPath, files.feedback));
+		}
+	} catch {
+		// An identity the artifact id scheme rejects has no line files to leave out.
 	}
 	out.push(buildStartRelPath(epicHash, storyId));
 	return out;

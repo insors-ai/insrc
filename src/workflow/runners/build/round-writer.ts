@@ -31,21 +31,30 @@ export interface RoundWriter {
 
 const log = getLogger('workflow:build:round-writer');
 
-/**
- * A round record is regenerable, so a head the store cannot read (not JSON, not an envelope) is replaced by the round, as the
- * raw writers did: it is removed here, and the store then creates the head anew. Returns true when one was removed.
- */
 /** True when `jsonPath` holds a head the store can read. */
 export function hasReadableHead(id: string, jsonPath: string): boolean {
 	if (!existsSync(jsonPath)) return false;
 	try { decodeArtifactHead(id, readFileSync(jsonPath, 'utf8')); return true; } catch { return false; }
 }
 
+/**
+ * A round record is regenerable, so a head with nothing in it to keep (not JSON at all, or an object with no meta and no body)
+ * is replaced by the round, as the raw writers replaced it: it is removed here, and the store then creates the head anew.
+ * A head with git conflict markers, or one that parses and holds a meta or body the store cannot decode, may carry stamps
+ * (approval, rejection, override) that a person has to resolve, so the round is refused instead.
+ */
 function discardUnreadableHead(id: string, jsonPath: string): boolean {
 	if (!existsSync(jsonPath)) return false;
-	try { decodeArtifactHead(id, readFileSync(jsonPath, 'utf8')); return false; }
+	const text = readFileSync(jsonPath, 'utf8');
+	try { decodeArtifactHead(id, text); return false; }
 	catch (err) {
-		log.warn({ id, jsonPath, err: err instanceof Error ? err.message : String(err) }, 'the stored round record cannot be read; this round replaces it');
+		const reason = err instanceof Error ? err.message : String(err);
+		if (/^(<{7}|={7}|>{7})/m.test(text)) throw new Error(`the stored round record ${id} has unresolved merge conflict markers; resolve it before this round can be recorded`);
+		let parsed: unknown;
+		try { parsed = JSON.parse(text); } catch { parsed = undefined; }
+		const hasContent = typeof parsed === 'object' && parsed !== null && ('meta' in parsed || 'body' in parsed);
+		if (hasContent) throw new Error(`the stored round record ${id} cannot be read (${reason}); resolve it before this round can be recorded`);
+		log.warn({ id, jsonPath, err: reason }, 'the stored round record has nothing readable in it; this round replaces it');
 		rmSync(jsonPath, { force: true });
 		return true;
 	}

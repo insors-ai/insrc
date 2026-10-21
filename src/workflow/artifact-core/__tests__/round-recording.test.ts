@@ -227,4 +227,24 @@ describe('round-recording', () => {
 			assert.deepEqual((await lifecycleFor(repo).store.readWithHistory(BUILD)).changeLog.map(e => e.operation), ['create']);
 		} finally { resetLifecycleRegistry(); rmSync(repo, { recursive: true, force: true }); }
 	});
+
+	it('a round head with merge conflict markers or a meta the store cannot read is refused untouched, and one with nothing in it is replaced', async () => {
+		const repo = mkdtempSync(join(tmpdir(), 'round-conflict-'));
+		try {
+			mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+			const path = join(repo, '.insrc', 'artifacts', `${BUILD}.json`);
+			const rec = { meta: { workflow: 'build' as const, standalone: true, sizeClass: 'trivial', epicHash: H, storyId: 's1', createdAt: T1, authoredBy: 'controller' as const }, body: { focus: 'x', producesLld: false } };
+			const marked = '<<<<<<< HEAD\n{ "meta": { "approvedAt": "2026-10-20T00:00:00Z" } }\n=======\n{}\n>>>>>>> branch\n';
+			writeFileSync(path, marked);
+			await assert.rejects(persistStandaloneBuildRecord(repo, rec, roundWriterFor(repo)), /merge conflict markers/);
+			assert.equal(readFileSync(path, 'utf8'), marked);
+			const stamped = JSON.stringify({ meta: { approvedAt: '2026-10-20T00:00:00Z', lifecycle: { status: 'nonsense' } }, body: {} });
+			writeFileSync(path, stamped);
+			await assert.rejects(persistStandaloneBuildRecord(repo, rec, roundWriterFor(repo)), /cannot be read/);
+			assert.equal(readFileSync(path, 'utf8'), stamped);
+			writeFileSync(path, '{}');
+			await persistStandaloneBuildRecord(repo, rec, roundWriterFor(repo));
+			assert.deepEqual((await lifecycleFor(repo).store.readWithHistory(BUILD)).changeLog.map(e => e.operation), ['create']);
+		} finally { resetLifecycleRegistry(); rmSync(repo, { recursive: true, force: true }); }
+	});
 });

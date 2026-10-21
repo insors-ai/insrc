@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
 
 import { getLogger } from '../../../shared/logger.js';
-import { createStoreGuardBlock, installStoreGuard } from '../../store-guard.js';
+import { createStoreGuardBlock, installStoreGuard, StoreGuard } from '../../store-guard.js';
 import {
 	closeGraphStore, getGraphStore, getStoreHealth, LmdbStoreLocksLostError, receiveStoreHealth, recordStoreFailureIfLockError,
 	resetStoreHealthForTests, runReaderCheck, setGraphStorePath, setStoreProbeObserverForTests, withWriteTxn,
@@ -81,12 +81,11 @@ test('after locks-lost in a worker, getStoreHealth on the main thread reports it
 	await getGraphStore();
 	const found = await workerFindsLocksLost();
 
+	// Everything below runs before the full record reaches this thread: only
+	// the shared health word tells it the locks are lost.
 	const before = getStoreHealth();
 	assert.equal(before.state, 'locks-lost', 'reported before the full record arrives');
 	assert.match(before.state === 'locks-lost' ? before.operation : '', /daemon thread \d+/, 'naming the detecting thread');
-	receiveStoreHealth(found.broadcast);
-	const after_ = getStoreHealth();
-	assert.equal(after_.state === 'locks-lost' && after_.operation, 'request worker.op', 'the full record once it arrives');
 
 	const probes: string[] = [];
 	setStoreProbeObserverForTests(r => probes.push(r));
@@ -97,6 +96,18 @@ test('after locks-lost in a worker, getStoreHealth on the main thread reports it
 		assert.equal(recordStoreFailureIfLockError(Object.assign(new Error('MDB_LOCK_FAILURE'), { code: -30775 }), 'request main.op'), true);
 	});
 	assert.deepEqual(errors, [], 'a second detection does not log again');
+
+	// Two threads detecting at the same instant: only one mark takes effect, so
+	// only one of them logs and broadcasts (the compare-and-swap in the block).
+	const raceBlock = createStoreGuardBlock();
+	const first = new StoreGuard(raceBlock, { threadId: 11 }).markLocksLost('graph');
+	const second = new StoreGuard(raceBlock, { threadId: 12 }).markLocksLost('graph');
+	assert.deepEqual([first, second], [true, false], 'exactly one thread\'s mark takes effect');
+	assert.equal(new StoreGuard(raceBlock).healthSetBy('graph'), 11);
+
+	receiveStoreHealth(found.broadcast);
+	const after_ = getStoreHealth();
+	assert.equal(after_.state === 'locks-lost' && after_.operation, 'request worker.op', 'the full record once it arrives');
 
 	const warns = await logged('warn', () => closeGraphStore());
 	assert.ok(warns.some(w => JSON.stringify(w).includes('close skipped')), 'closeGraphStore skips the library close');

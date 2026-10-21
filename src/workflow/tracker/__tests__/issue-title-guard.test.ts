@@ -7,7 +7,7 @@
  * Every issue create is guarded (s1/t12): an issue made earlier is found by its unit label or by
  * the artifact id its title starts with and adopted; s10 is never taken for s1 or t10 for t1;
  * several matches, or a failed lookup, create nothing. The team path (ensureUnitIssueDetailed) and the
- * legacy path (tracker-auto through the createTracker seam) both write artifact-id titles and markers.
+ * individual mode (tracker-auto) both write artifact-id titles and markers.
  *
  * Run: npx tsx --test src/workflow/tracker/__tests__/issue-title-guard.test.ts
  */
@@ -37,7 +37,7 @@ const STORY_ID = `STORY-${HASH}-s1`;
 const TASK_ID = `TASK-${HASH}-s1-t1`;
 
 const teamPolicy: PolicyReader = () => ({ ok: true, value: { teamMode: true } as unknown as TeamPolicy });
-const legacyPolicy: PolicyReader = () => ({ ok: true, value: 'none' });
+const individualPolicy: PolicyReader = () => ({ ok: true, value: 'none' });
 
 afterEach(() => { _setAutoPushDepsForTests(); _setTrackerExecForTests(); });
 
@@ -107,16 +107,16 @@ const story = (repo: string): UnitRef => ({ unit: 'story', repoPath: repo, epicH
 const task = (repo: string): UnitRef => ({ unit: 'task', repoPath: repo, epicHash: HASH, storyId: 's1', taskId: 't1' });
 
 /** Runs the three pushes of the given mode against the tracker. */
-function pushAll(fx: ReturnType<typeof seed>, t: ReturnType<typeof fakeTracker>, mode: 'team' | 'legacy') {
-	_setTrackerExecForTests(() => '');   // gh sign-in check for the legacy path
+function pushAll(fx: ReturnType<typeof seed>, t: ReturnType<typeof fakeTracker>, mode: 'team' | 'individual') {
+	_setTrackerExecForTests(() => '');   // gh sign-in check for the push path
 	_setAutoPushDepsForTests(mode === 'team'
 		? { policy: teamPolicy, port: t.port }
-		: { policy: legacyPolicy, createTracker: () => t.port });
+		: { policy: individualPolicy, port: t.port });
 	return [autoPushEpicOnHld(fx.hld), autoPushStoryOnLld(fx.lld), autoPushTasksOnPlan(fx.plan)];
 }
 
-test('tracker-auto on the team and legacy paths writes artifact-id titles and markers', () => {
-	for (const mode of ['team', 'legacy'] as const) {
+test('tracker-auto in team mode and individual mode writes artifact-id titles and markers', () => {
+	for (const mode of ['team', 'individual'] as const) {
 		const fx = seed();
 		try {
 			const t = fakeTracker();
@@ -141,7 +141,7 @@ test('tracker-auto on the team and legacy paths writes artifact-id titles and ma
 });
 
 test('an issue created earlier is adopted by its unit label or an exact artifact-id title', () => {
-	for (const mode of ['team', 'legacy'] as const) {
+	for (const mode of ['team', 'individual'] as const) {
 		const fx = seed();
 		try {
 			// the Epic issue is found by its artifact-id title alone (no labels at all); the Story issue has the unit label and an old title
@@ -164,11 +164,11 @@ test('a Task issue found by its title alone is adopted, and a Story with two uni
 	const titleOnly = seed();
 	try {
 		const t = fakeTracker([{ ref: 'acme/demo#8', spec: { title: `${TASK_ID} — Add the input`, body: 'x', labels: [] } as IssueSpec }]);
-		const results = pushAll(titleOnly, t, 'legacy');
+		const results = pushAll(titleOnly, t, 'individual');
 		assert.equal(results[2]!.status, 'already-exists', JSON.stringify(results[2]));
 		assert.equal(t.issues.filter(i => i.spec.title.startsWith(`${TASK_ID} — `)).length, 1, 'no second Task issue');
 	} finally { titleOnly.cleanup(); }
-	for (const mode of ['team', 'legacy'] as const) {
+	for (const mode of ['team', 'individual'] as const) {
 		const twice = seed();
 		try {
 			const labels = ['insrc:story', `epic:${SLUG}`, unitLabel(story(twice.repo))];
@@ -185,7 +185,7 @@ test('a Task issue found by its title alone is adopted, and a Story with two uni
 });
 
 test('two Epic issues carrying the Epic labels are refused on both paths and nothing is created', () => {
-	for (const mode of ['team', 'legacy'] as const) {
+	for (const mode of ['team', 'individual'] as const) {
 		const fx = seed();
 		try {
 			const labels = ['insrc:epic', `epic:${SLUG}`, unitLabel(epic(fx.repo))];
@@ -200,12 +200,12 @@ test('two Epic issues carrying the Epic labels are refused on both paths and not
 	}
 });
 
-test('a failed Epic label lookup on the legacy path creates no Epic issue', () => {
+test('a failed Epic label lookup in individual mode creates no Epic issue', () => {
 	const fx = seed();
 	try {
 		const t = fakeTracker();
 		(t.port as unknown as { findIssue: () => PortResult<IssueRef | null> }).findIssue = () => ({ ok: false, reason: 'gh timed out', kind: 'unreachable' });
-		const results = pushAll(fx, t, 'legacy');
+		const results = pushAll(fx, t, 'individual');
 		assert.equal(results[0]!.status, 'failed', JSON.stringify(results[0]));
 		assert.equal(t.issues.length, 0, 'nothing was created');
 	} finally { fx.cleanup(); }
@@ -228,7 +228,7 @@ test('s10 is never matched for s1 and t10 never for t1, several matches and a fa
 	} finally { longer.cleanup(); }
 
 	// several issues carry the Story's title: nothing is created, on both paths
-	for (const mode of ['team', 'legacy'] as const) {
+	for (const mode of ['team', 'individual'] as const) {
 		const dup = seed();
 		try {
 			const epicIssue: Issue = { ref: 'acme/demo#7', spec: { title: `${EPIC_ID} — the epic`, body: 'x', labels: ['insrc:epic', `epic:${SLUG}`, unitLabel(epic(dup.repo))] } as IssueSpec };
@@ -245,7 +245,7 @@ test('s10 is never matched for s1 and t10 never for t1, several matches and a fa
 	}
 
 	// a failed title lookup creates nothing, on both paths and through ensureUnitIssueDetailed
-	for (const mode of ['team', 'legacy'] as const) {
+	for (const mode of ['team', 'individual'] as const) {
 		const lost = seed();
 		try {
 			const t = fakeTracker([], { failTitle: true });

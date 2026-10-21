@@ -201,15 +201,15 @@ test('pushTasks: re-push is idempotent (adopts taskRefs, no new issues)', () => 
 	} finally { s.cleanup(); }
 });
 
-test('pushTasks: skips when the Story issue does not exist yet', () => {
+test('pushTasks: makes the Epic and Story issues first when they do not exist yet, then the Tasks', () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup(true);
 	try {
-		// No epic/story push → no storyRef.
+		// No epic/story push yet: the plan push ensures both, then creates the Tasks under the Story.
 		const r = autoPushTasksOnPlan(s.planJson);
-		assert.equal(r.status, 'skipped');
-		assert.equal(r.status === 'skipped' && /Story not pushed/.test(r.reason), true);
-		assert.equal(gh.createCount(), 0);
+		assert.equal(r.status, 'created');
+		assert.equal(gh.createCount(), 4, 'the Epic, the Story and the two Tasks');
+		assert.deepEqual(Object.keys((r.status === 'created' ? r.taskRefs : {}) ?? {}).sort(), ['t1', 't2']);
 	} finally { s.cleanup(); }
 });

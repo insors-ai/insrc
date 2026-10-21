@@ -5,9 +5,8 @@
 
 /**
  * The approve-time pushes (the terminal approve fallback) in team mode and in
- * legacy mode. Team mode adopts the issues the draft hook made, creates the rest,
- * forces Task issues and runs each extra once; legacy mode (no policy, or
- * teamMode false) is today's behaviour.
+ * individual mode (no policy, or teamMode false). Both adopt the issues the draft hook made, create the rest, bind
+ * each unit and run each extra once; team mode forces Task issues, individual mode keeps the pushTasks setting.
  *
  * Run: npx tsx --test src/workflow/__tests__/approve-fallback-issues.test.ts
  */
@@ -109,7 +108,7 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 	} finally { part.cleanup(); }
 });
 
-test('with no policy the three pushes behave exactly as before', () => {
+test('with no policy, or teamMode off, the three pushes run the individual-mode path: one gh sequence, no per-unit record for an Epic or a Story, and a Task push skipped when pushTasks is off', () => {
 	const run = (policy: PolicyReader | undefined) => {
 		const calls: string[][] = [];
 		let n = 0;
@@ -135,6 +134,6 @@ test('with no policy the three pushes behave exactly as before', () => {
 		assert.deepEqual(r.masked, baseline.masked, 'the same gh command sequence');
 		assert.deepEqual(r.results.map(x => x.status), ['created', 'created', 'skipped'], 'pushTasks off still returns skipped');
 		assert.deepEqual(r.results, baseline.results);
-		for (const block of [r.hld, r.lld]) assert.equal('units' in block, false, 'no per-unit record in legacy mode');
+		for (const block of [r.hld, r.lld]) assert.equal('units' in block, false, 'no per-unit record: an Epic and a Story are bound on their artifacts');
 	}
 });

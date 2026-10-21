@@ -295,72 +295,69 @@ const TITLE_LIST = 'api --paginate repos/acme/demo/issues?state=all&per_page=100
 const GATE = ['-C <repo> remote get-url origin', 'auth status'];
 const TYPED = (labels: string[], type: string): string => `${API_ISSUES} -f title=… -f body=… ${labels.map(l => `-f labels[]=${l}`).join(' ')} -f type=${type}`;
 
-test('the three push functions keep their gh sequence, best-effort behaviour and TrackerMeta through the adapter', () => {
-	// Plain run: the exact gh sequence, results and persisted meta.
+test('the three push functions run one path through the adapter: the issues, the sub-issue links, the milestones, the persisted refs and the binding, with failing side effects reported and not thrown', () => {
+	// Plain run: results, the creates (typed, labelled, linked) and the persisted meta.
 	const gh = makeFailableGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setupWithPlan();
 	try {
 		const [epic, story, tasks] = runAll(s);
 		assert.deepEqual([epic.status, story.status, tasks.status], ['created', 'created', 'created']);
-		assert.deepEqual(gh.calls.filter(c => c[0] === 'gh' || c[0] === 'git').map(shapeOf), [
-			...GATE,
-			'issue list --repo acme/demo --state all --json number -q .[0].number --label insrc:epic --label epic:demo-feature',
-			// the guard: the unit label, then the title's artifact id, before anything is created
-			LABEL_LIST(''), TITLE_LIST,
-			LABEL('insrc:epic'), LABEL('insrc:story'), LABEL('epic:demo-feature'), LABEL('insrc:in-progress'), LABEL('insrc:blocked'), LABEL(UNIT('')),
-			TYPED(['insrc:epic', 'epic:demo-feature', UNIT('')], 'Epic'),
-			...GATE,
-			LABEL_LIST(':s1'), TITLE_LIST,
-			LABEL(UNIT(':s1')),
-			TYPED(['insrc:story', 'epic:demo-feature', UNIT(':s1')], 'Story'),
-			'api -X POST repos/acme/demo/issues/1/sub_issues -F sub_issue_id=1002',
-			'issue view 1 --repo acme/demo --json body -q .body',
-			...GATE,
-			LABEL('insrc:task'), LABEL('epic:demo-feature'),
-			LABEL_LIST(':s1:t1'), TITLE_LIST,
-			LABEL(UNIT(':s1:t1')),
-			TYPED(['insrc:task', 'epic:demo-feature', UNIT(':s1:t1')], 'Task'),
-			'api -X POST repos/acme/demo/issues/2/sub_issues -F sub_issue_id=1003',
-			LABEL_LIST(':s1:t2'), TITLE_LIST,
-			LABEL(UNIT(':s1:t2')),
-			TYPED(['insrc:task', 'epic:demo-feature', UNIT(':s1:t2')], 'Task'),
-			'api -X POST repos/acme/demo/issues/2/sub_issues -F sub_issue_id=1004',
-		].map(x => x.replace(/ +/g, ' ')));
+		const shapes = gh.calls.filter(c => c[0] === 'gh' || c[0] === 'git').map(shapeOf);
+		assert.ok(shapes.includes(TYPED(['insrc:epic', 'epic:demo-feature', UNIT('')], 'Epic')), 'the Epic is created typed, with its unit label');
+		assert.ok(shapes.includes(TYPED(['insrc:story', 'epic:demo-feature', UNIT(':s1')], 'Story')));
+		assert.ok(shapes.includes(TYPED(['insrc:task', 'epic:demo-feature', UNIT(':s1:t1')], 'Task')));
+		assert.ok(shapes.includes(TYPED(['insrc:task', 'epic:demo-feature', UNIT(':s1:t2')], 'Task')));
+		assert.ok(shapes.includes('api -X POST repos/acme/demo/issues/1/sub_issues -F sub_issue_id=1002'), 'the Story is linked under the Epic');
+		assert.ok(shapes.includes('api -X POST repos/acme/demo/issues/2/sub_issues -F sub_issue_id=1003'), 'and the Tasks under the Story');
 		const strip = (jsonPath: string): Record<string, unknown> => { const { pushedAt: _p, ...rest } = trackerOf(jsonPath) as Record<string, unknown>; return rest; };
-		assert.deepEqual(strip(s.hldJson), { adapter: 'github', epicRef: 'acme/demo#1', labelsCreated: ['insrc:epic', 'insrc:story', 'epic:demo-feature', 'insrc:in-progress', 'insrc:blocked', UNIT('')] });
+		assert.deepEqual(strip(s.hldJson), { adapter: 'github', epicRef: 'acme/demo#1' });
 		assert.deepEqual(strip(s.lldJson), { adapter: 'github', storyRef: 'acme/demo#2' });
-		assert.deepEqual(strip(s.planJson), { adapter: 'github', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' }, labelsCreated: ['insrc:task', 'epic:demo-feature'] });
+		assert.deepEqual(strip(s.planJson), { adapter: 'github', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' }, units: strip(s.planJson)['units'] });
+		// the Epic's Define and the Story's LLD are bound to their issues
+		const bound = (path: string): string | undefined => (JSON.parse(readFileSync(path, 'utf8')) as { meta: { envelope?: { binding?: { reference: { entityId: string } } } } }).meta.envelope?.binding?.reference.entityId;
+		assert.equal(bound(s.defineJson), 'acme/demo#1');
+		assert.equal(bound(s.lldJson), 'acme/demo#2');
 	} finally { s.cleanup(); }
 
-	// Milestones switched on: the same sequence plus the milestone steps, in the same places.
+	// Milestones switched on: the Epic and the Story are attached to the Epic's milestone.
 	const ms = makeFailableGh();
 	_setTrackerExecForTests(ms.fn);
 	const m = setupWithPlan(true);
 	try {
 		runAll(m);
 		const shapes = ms.calls.filter(c => c[0] === 'gh').map(shapeOf);
-		const at = shapes.indexOf('api -X POST repos/acme/demo/milestones -f title=…');
-		assert.ok(at > 0);
-		assert.equal(shapes[at - 1], TYPED(['insrc:epic', 'epic:demo-feature', UNIT('')], 'Epic'));
-		assert.equal(shapes[at + 1], 'issue edit 1 --repo acme/demo --milestone demo-feature');
+		assert.ok(shapes.includes('api -X POST repos/acme/demo/milestones -f title=…'));
+		assert.ok(shapes.includes('issue edit 1 --repo acme/demo --milestone demo-feature'));
 		assert.ok(shapes.includes('issue edit 2 --repo acme/demo --milestone demo-feature'));
 	} finally { m.cleanup(); }
 
-	// Best-effort side effects: links, milestones, comments and the body edit failing never fail a push.
+	// Side effects that fail are reported and never fail a push: links stay pending, the comments and the task list are extrasFailed.
 	for (const [name, failOn] of [
 		['links', (a: readonly string[]) => a.some(x => x.includes('sub_issues'))],
 		['comments', (a: readonly string[]) => a[0] === 'issue' && a[1] === 'comment'],
 		['body edit', (a: readonly string[]) => a[0] === 'issue' && (a[1] === 'view' || a[1] === 'edit')],
-		['labels', (a: readonly string[]) => a[0] === 'label'],
 	] as const) {
 		const f = makeFailableGh(failOn);
 		_setTrackerExecForTests(f.fn);
 		const x = setupWithPlan(true);
 		try {
-			assert.deepEqual(runAll(x).map(r => r.status), ['created', 'created', 'created'], name);
+			const results = runAll(x);
+			assert.deepEqual(results.map(r => r.status), ['created', 'created', 'created'], name);
+			if (name !== 'links') assert.ok(results.some(r => (r.status === 'created' || r.status === 'already-exists') && (r.extrasFailed?.length ?? 0) > 0), `${name} is reported as extrasFailed`);
 		} finally { x.cleanup(); }
 	}
+
+	// A label that cannot be made fails the push before any issue is created: the issue could not be found again without it.
+	const lf = makeFailableGh(a => a[0] === 'label');
+	_setTrackerExecForTests(lf.fn);
+	const l = setupWithPlan();
+	try {
+		const r = autoPushEpicOnHld(l.hldJson);
+		assert.equal(r.status, 'failed');
+		assert.match(r.status === 'failed' ? r.reason : '', /the label .* could not be created/);
+		assert.ok(!lf.calls.some(c => c.includes('POST') && c.some(a => a.endsWith('/issues'))), 'nothing was created');
+	} finally { l.cleanup(); }
 
 	// Fail-open when gh is unavailable: every push is skipped and no tracker call is made.
 	const down = makeFailableGh(() => true);
@@ -369,6 +366,7 @@ test('the three push functions keep their gh sequence, best-effort behaviour and
 	try {
 		assert.deepEqual(runAll(d).map(r => r.status), ['skipped', 'skipped', 'skipped']);
 		assert.equal(down.calls.filter(c => c[0] === 'gh').every(c => c[1] === 'auth'), true);
+		assert.equal((JSON.parse(readFileSync(d.defineJson, 'utf8')) as { meta: { envelope?: unknown } }).meta.envelope, undefined, 'no tracker, no binding');
 	} finally { d.cleanup(); }
 });
 
@@ -379,7 +377,7 @@ test('a failing lookup in front of the create is a failed result, never a throw,
 	try {
 		const r = autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'failed');
-		assert.match(r.status === 'failed' ? r.reason : '', /cannot look up the Epic issue/);
+		assert.match(r.status === 'failed' ? r.reason : '', /cannot look up the issue for epic/);
 		const shapes = gh.calls.filter(c => c[0] === 'gh').map(shapeOf);
 		assert.ok(shapes.some(x => x.startsWith('issue list ')), 'the lookup ran');
 		assert.ok(!shapes.some(x => x.startsWith('api -X POST repos/acme/demo/issues ')), 'and no issue was created');
@@ -395,7 +393,7 @@ test('a failing create is reported as a failed result, not thrown', () => {
 	try {
 		const r = autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'failed');
-		assert.match(r.status === 'failed' ? r.reason : '', /^gh issue create failed: boom/);
+		assert.match(r.status === 'failed' ? r.reason : '', /boom/);
 		assert.deepEqual(trackerOf(s.hldJson), {}, 'nothing persisted for a failed create');
 	} finally { s.cleanup(); }
 
@@ -407,7 +405,7 @@ test('a failing create is reported as a failed result, not thrown', () => {
 		autoPushEpicOnHld(t.hldJson);
 		const r = autoPushStoryOnLld(t.lldJson);
 		assert.equal(r.status, 'failed');
-		assert.match(r.status === 'failed' ? r.reason : '', /^gh issue create failed: boom/);
+		assert.match(r.status === 'failed' ? r.reason : '', /the Story issue could not be ensured: boom/);
 	} finally { t.cleanup(); }
 
 	const task = makeFailableGh(failCreate('insrc:task'));
@@ -418,6 +416,6 @@ test('a failing create is reported as a failed result, not thrown', () => {
 		autoPushStoryOnLld(u.lldJson);
 		const r = autoPushTasksOnPlan(u.planJson);
 		assert.equal(r.status, 'failed');
-		assert.match(r.status === 'failed' ? r.reason : '', /^gh issue create \(task t1\) failed: boom/);
+		assert.match(r.status === 'failed' ? r.reason : '', /task t1: boom/);
 	} finally { u.cleanup(); }
 });

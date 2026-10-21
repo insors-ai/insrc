@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1792579651082-9vtkzq",
+    "runId": "cr-1792580841558-bf1b9u",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-10-21T10:47:34.498Z",
+    "createdAt": "2026-10-21T11:07:25.072Z",
     "model": "claude:opus",
-    "elapsedMs": 145388,
+    "elapsedMs": 161875,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "2f27754d4ad00b8e",
@@ -35,6 +35,7 @@
         "src/daemon/lifecycle-registry.ts",
         "src/daemon/steps/build-step/__tests__/build-start.test.ts",
         "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+        "src/daemon/steps/build-step/__tests__/validate-anchor.test.ts",
         "src/daemon/steps/build-step/phases/implement.ts",
         "src/daemon/steps/build-step/phases/validate.ts",
         "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts",
@@ -104,23 +105,30 @@
           {
             "dimension": "adherence",
             "severity": "LOW",
-            "location": "src/daemon/workflow-review-rpc.ts:102",
-            "message": "workflowReviewStart now passes the repository's LifecycleService to reviewArtifactFile, but it does not pass an actor. The LLD says ReviewArtifactOpts \"carries lifecycle and actor, which workflowReviewStart now always sets\". The daemon review path therefore records its lifecycle review under whatever default reviewArtifactFile picks, not an actor this caller supplies.",
-            "expectationRef": "LLD contractDetails.api reviewArtifactFile / workflowReviewStart: \"Carries lifecycle and actor, which workflowReviewStart now always sets\""
-          },
-          {
-            "dimension": "adherence",
-            "severity": "LOW",
-            "location": "src/workflow/artifact-core/sidecar-store.ts:130",
-            "message": "When two frames repeat an (artifactId, entry id) with different content, readRecords raises HistoryReadError naming only the second frame's line (`where`). The LLD requires the error to name both lines. The first frame's line number is not kept in `seen`, so it cannot be reported.",
-            "expectationRef": "LLD errorPaths: \"different content raises HistoryReadError naming both lines\"; SidecarIo.readRecords errors: \"the file and line number are named\""
-          },
-          {
-            "dimension": "adherence",
-            "severity": "LOW",
             "location": "src/workflow/artifact-core/sidecar-store.ts:150",
-            "message": "When .gitattributes or .gitignore cannot be written, ensureLines only logs a warning, and it lists every wanted line rather than only the missing ones. The failure is not reported in the daemon's status as the LLD error path requires.",
-            "expectationRef": "LLD errorPaths (.gitattributes rules cannot be written): \"logged as a warning naming the missing lines and reported in the daemon's status\""
+            "message": "When .gitattributes or .gitignore cannot be written, ensureLines only logs a warning. Nothing reaches the daemon's status. The warning also lists every wanted line, not just the missing ones.",
+            "expectationRef": "LLD errorPaths: '.gitattributes rules or the ignore entry cannot be written' → 'logged as a warning naming the missing lines and reported in the daemon's status'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/sidecar-store.ts:132",
+            "message": "A repeated (artifactId, entry id) with different content raises a HistoryReadError that names only the second line (`where`). The line of the first frame it kept is not recorded or reported.",
+            "expectationRef": "LLD errorPaths: 'Two frames carry the same artifact id and entry id with different content' → 'different content raises HistoryReadError naming both lines'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/types.ts:226",
+            "message": "s4 adds a new member, 'head-changed-after-stage', to IntegrityReason, the reason type of the sc4 Integrity contract that s3 owns. The approved design says s4 uses those reasons as they are and does not extend them.",
+            "expectationRef": "LLD interactionWithShared sc4: 'Consumes checkIntegrity's reasons unchanged'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/journal.ts:34",
+            "message": "priorHeadHash is a required string, and a create is marked with an 'absent' sentinel hash instead of leaving the field out. isStagedOperation also refuses a journal file that has no priorHeadHash, where the design validates it only when present.",
+            "expectationRef": "LLD dataModelChanges StagedOperation: '+ readonly priorHeadHash?: string | undefined' ('absent for a create'); errorPaths: pending checks '... and, when present, priorHeadHash'"
           }
         ]
       },
@@ -130,33 +138,33 @@
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/daemon/workflow-approve.ts:42",
-            "message": "`let actor;` is declared with no type annotation and gets its type from a later assignment inside the try block (an evolving `any`). The touched modules otherwise annotate deferred locals; the line above declares `let lifecycle: LifecycleService`. Annotate it as `let actor: Actor;`.",
-            "expectationRef": "strict-optional-indexed",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "conventions",
-            "severity": "LOW",
             "location": "src/daemon/workflow-approve.ts:37",
-            "message": "The comment line `// The repository whose store holds the artifact...` starts at column 0, but its continuation line and the code around it are tab-indented inside the function body. This breaks the module's indentation idiom.",
-            "expectationRef": "module-idiom:indentation",
+            "message": "The comment line '// The repository whose store holds the artifact: …' has no leading tab, while the rest of the function body is tab-indented. Its continuation line on the next row is indented. Indent it to match the surrounding block.",
+            "expectationRef": "module-idiom: tab indentation",
             "confidence": "observation"
           },
           {
             "dimension": "conventions",
             "severity": "LOW",
             "location": "src/daemon/lifecycle-registry.ts:14",
-            "message": "`realpathSync` is imported from 'node:fs' in a second import statement, directly below `import { existsSync, statSync } from 'node:fs'`. The touched modules merge named imports from the same module into one statement.",
-            "expectationRef": "module-idiom:import-grouping",
+            "message": "`realpathSync` is imported in a second `import … from 'node:fs'` statement instead of joining the existing `existsSync, statSync` import. The ARTIFACTS_DIR import from storage.js also sits between the artifact-core imports. The touched modules use one import per module specifier, so merge them.",
+            "expectationRef": "module-idiom: one import per module",
             "confidence": "observation"
           },
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/workflow/artifact-core/sidecar-store.ts:47",
-            "message": "`decodeFrame` reads the regex capture with `m[2] as string`, a cast that skips the `T | undefined` handling noUncheckedIndexedAccess asks for. The group always exists once the match succeeds, so the risk is low, but a `?? ''` fallback or an explicit check would keep it within the rule.",
-            "expectationRef": "strict-optional-indexed",
+            "location": "src/workflow/runners/build/round-writer.ts:35",
+            "message": "Two JSDoc blocks are stacked above `hasReadableHead`. The first ('A round record is regenerable … Returns true when one was removed.') describes `discardUnreadableHead`, which is declared below it with no doc comment. `discardUnreadableHead` also repeats the decode check that `hasReadableHead` already does. Move the comment onto the function it describes, and consider having discardUnreadableHead call hasReadableHead.",
+            "expectationRef": "module-idiom: doc comment placement",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/__tests__/round-recording.test.ts:19",
+            "message": "`mkdtempSync` gets a second import from 'node:fs', and `persistStandaloneBuildRecord` gets a second import from '../../runners/build/standalone-record.js'. Both modules are already imported earlier in the file, and the sibling tests import each module once. Merge each pair into one import.",
+            "expectationRef": "module-idiom: one import per module",
             "confidence": "observation"
           }
         ]
@@ -167,49 +175,49 @@
           {
             "dimension": "coverage",
             "severity": "MED",
-            "location": "src/daemon/steps/build-step/phases/validate.ts:633",
-            "message": "Not covered: the validate turn now puts a BUILD persist failure into the verdict's evidence as `buildRecordNote`, and no test in the changed set or the test record exercises that branch. No test makes `persistBuildRecord` throw a non-MissingAnchorError and then checks that `verdict.evidence.buildRecordNote` names the error while `passed` stays the same. `build-step.test.ts` was changed but is not listed in the test record, so whether it passes is unverified too.",
-            "expectationRef": "validate.ts runValidateTurn buildRecordNote (BUILD persist failure named in the verdict evidence)",
+            "location": "src/daemon/steps/build-step/__tests__/validate-anchor.test.ts:135",
+            "message": "Present but unverified. The new test 'a BUILD record that cannot be stored through the service is named in the verdict's evidence, and the verdict stands' covers the new buildRecordNote path in validate.ts, but validate-anchor.test.ts does not appear in the test record. Its pass-state is not confirmed.",
+            "expectationRef": "src/daemon/steps/build-step/phases/validate.ts buildRecordNote",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/artifact-core/__tests__/round-recording.test.ts:196",
+            "message": "Present but unverified. Two tests are missing from the latest recorded run of round-recording.test.ts (t11): 'the first BUILD round of a Trivial standalone build ... is created through the registry store on the record's own time' and 'an unreadable BUILD head is replaced by a round that keeps the time the build gave it'. Together they cover codecs.ts rootKinds, the isFirst createdAt/epicCreatedAt carry-over in persistBuildRecord, and the implement.ts roundWriterFor wiring. The file's recorded state is passing, but neither title has a recorded result.",
+            "expectationRef": "codecs.ts creationContextProvider rootKinds; standalone-record.ts persistBuildRecord isFirst; implement.ts handleStandaloneImplement",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
             "severity": "LOW",
-            "location": "src/workflow/artifact-core/__tests__/round-recording.test.ts:198",
-            "message": "Present but not verified: the test 'the first BUILD round of a Trivial standalone build, with no earlier record in the work item, is created through the registry store on the record's own time' is in the file but not in the test record. The record's latest run of round-recording.test.ts lists only the other four titles. This test is the only one that exercises `rootKinds` in codecs.ts, the `isFirst` createdAt/epicCreatedAt restore in `persistBuildRecord`, and `roundWriterFor` on the Trivial path that implement.ts now takes.",
-            "expectationRef": "codecs.ts creationContextProvider rootKinds; standalone-record.ts persistBuildRecord isFirst branch; implement.ts handleStandaloneImplement roundWriterFor",
+            "location": "src/daemon/__tests__/lifecycle-wiring.test.ts:134",
+            "message": "Present but unverified. The test 'one registry entry per repository however its path is written, and a single-artifact approval uses the repository the artifact sits in' was added after the recorded t8 run and is not among the file's recorded titles. It covers the realpath normalisation in lifecycleFor and the repoOfArtifactPath routing in handleWorkflowApprove.",
+            "expectationRef": "lifecycle-registry.ts lifecycleFor realpath; workflow-approve.ts repoOfArtifactPath",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
             "severity": "LOW",
-            "location": "src/daemon/__tests__/lifecycle-wiring.test.ts:133",
-            "message": "Present but not verified: the round-1 test 'one registry entry per repository however its path is written, and a single-artifact approval uses the repository the artifact sits in, not the environment's' is not in the test record. The record's run of lifecycle-wiring.test.ts (t8, before the review-round fixes) lists only the first test. That leaves the realpath normalisation in `lifecycleFor` and `repoOfArtifactPath` in `handleWorkflowApprove` with no confirmed result.",
-            "expectationRef": "lifecycle-registry.ts lifecycleFor path normalisation; repoOfArtifactPath; workflow-approve.ts repoForStore",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "LOW",
-            "location": "src/workflow/artifact-core/__tests__/history-order.test.ts:35",
-            "message": "Present but not verified: the round-1 test 'openFeedback compares instants, not their spelling' is not in the test record. The record's history-order.test.ts run (t4) lists only the first test, so whether `compareEntries`/`timeOf` handle stamps with and without milliseconds correctly is unconfirmed.",
-            "expectationRef": "sidecar-store.ts compareEntries/timeOf (instant comparison)",
+            "location": "src/workflow/artifact-core/__tests__/history-order.test.ts:36",
+            "message": "Present but unverified. The test 'openFeedback compares instants, not their spelling' (covering compareEntries' Date.parse ordering) is not among the recorded titles of the t4 run of history-order.test.ts.",
+            "expectationRef": "sidecar-store.ts compareEntries",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
             "severity": "LOW",
             "location": "src/workflow/runners/build/own-files.ts:44",
-            "message": "Not verified: `storyWorkflowFiles` now also lists the BUILD/TESTS line files, and `ensureBuildRecordOnCompletion` now delegates to `persistBuildRecord(…, through)`. The tests that check this (completion-record.test.ts, build-step.test.ts, build-record.test.ts, test-record.test.ts and the other migrated persist tests) were changed but are not in the test record. These tests exist, but their pass state cannot be confirmed from the record.",
-            "expectationRef": "own-files.ts storyWorkflowFiles sidecar entries; completion-record.ts ensureBuildRecordOnCompletion through RoundWriter",
+            "message": "Unverified. The new sidecar line files in storyWorkflowFiles are asserted in completion-record.test.ts, and the async migrations are asserted in build-record, test-record, build-step and other suites. None of those files appear in the test record, so their pass-state is not confirmed by the gate.",
+            "expectationRef": "own-files.ts storyWorkflowFiles",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
             "severity": "LOW",
             "location": "src/daemon/lifecycle-registry.ts:1",
-            "message": "Grounding caveat: this review ran on degraded (diff-only) grounding. Every changed entry is a file-level diff with an empty `testsReaching`, test files included, so empty edges are not evidence of missing coverage, and I have not reported them as HIGH breaches. Instead I checked coverage against the test record. All 21 promised tests are present and passing there: the sidecar, journal, history-order, merge, lifecycle-update-outcome, lifecycle-wiring, verdicts-lifecycle, round-recording and inventory tests. The record predates the round-1 and round-2 fix commits (latest run 10:22, t12), so it does not confirm the fixes made in those commits (verdicts inspect-before-read, head-changed-after-stage reason).",
-            "expectationRef": "all changed production files (empty testsReaching under diff grounding)",
+            "message": "The grounding is diff-only (degraded). Every changed entity, test files included, has an empty testsReaching list, so the graph cannot show which code is exercised. This is not reported as a set of HIGH not-exercised gaps: all 21 promised tests are present and passing in the test record, and they reach the changed production files directly (lifecycle-wiring for workflow-approve, approval-actor and review-decision; round-recording for code-review-rpc, the code-review handler, round-writer and the round persisters; verdicts-lifecycle for verdicts.ts; journal-recovery-durable for store.ts and journal.ts). Coverage here is judged from the test record, not from graph edges.",
+            "expectationRef": "hollow diff grounding",
             "confidence": "observation"
           }
         ]
@@ -220,30 +228,51 @@
           {
             "dimension": "quality",
             "severity": "MED",
-            "location": "src/workflow/runners/build/standalone-record.ts:362",
-            "message": "`isFirst` is computed as `!existsSync(jsonPath)` before `storeRound`, but `storeRound` (via `discardUnreadableHead`) also deletes an existing head it cannot read and lets the store create a fresh one on its own clock. In that case `isFirst` is false, so the code that restores the build's own `createdAt`/`epicCreatedAt` is skipped. The second `prepareBuildRecord` then merges onto the store-created head, where the prior `createdAt` wins, so the record takes the store's clock instead of the time the build gave it. That differs from the true first-write path and can re-date the record. Take the 'first' signal from `discardUnreadableHead`'s return value as well as from `existsSync`.",
+            "location": "src/workflow/runners/build/round-writer.ts:45",
+            "message": "discardUnreadableHead removes any head the store cannot decode, with no journal entry and no check of why it failed to decode. A BUILD/TESTS/CR head left with git conflict markers after a merge does not decode, so it is deleted and recreated from this round. That loses the stamps mergeWithPrior would otherwise keep (approvedAt, reviewOverride, rejection stamps) and hides a merge conflict that the rest of s4 says a person must resolve. Only replace a head that is not JSON at all and has no conflict markers, or refuse with LifecycleConflictError the way the store does for a head that moved on.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/runners/build/own-files.ts:45",
+            "message": "The new sidecar block calls FileSidecarStore.filesOf, which throws InvalidArtifactKeyError when the id does not parse. The call sits outside the try that the lines just above use to tolerate 'an identity the path scheme cannot place'. An epicHash/storyId the scheme rejects now makes storyWorkflowFiles throw instead of skipping, and that fails the caller's whole BUILD persist (in validate it becomes a buildRecordNote; in completion-record the record is not written). Put it under the same guard.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/steps/build-step/phases/implement.ts:182",
+            "message": "The Trivial implement path now awaits persistStandaloneBuildRecord through roundWriterFor(repoPath) with no error handling. A registry failure, or a store refusal such as hash-mismatch or log-ahead-of-head on a hand-edited or merged BUILD head, rejects the whole implement turn. The validate path handles the same failure fail-open and names it in buildRecordNote, so the two paths now treat one ledger write differently. Catch the error here and attach a note in the same way, or document that implement fails on a BUILD head conflict.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/workflow/artifact-core/journal.ts:83",
-            "message": "The same try { return Promise.resolve(...) } catch (err) { return Promise.reject(err instanceof Error ? err : new Error(String(err))) } wrapper is written out three times here (stage/pending/clear) and twice more in FileSidecarStore.appendRecord/readRecords. `async` arrow functions or methods would give the same reject-on-throw behaviour without the boilerplate.",
-            "counterpartRef": "FileSidecarStore.appendRecord",
+            "location": "src/daemon/steps/review-step/phases/verdicts.ts:128",
+            "message": "With a service, the verdicts phase runs updateContent, then the meta-only review stamp, then lifecycle.apply('review'), then the markdown write, as separate steps. A failure part-way leaves the head partly reviewed (fix and stamp written, lifecycle review and markdown missing), and the error does not say so. Section 8 of the plan doc already records this; noted here so it stays tracked for s9.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/daemon/lifecycle-registry.ts:14",
-            "message": "`node:fs` is imported on two separate lines (existsSync/statSync, then realpathSync). Merge them into one import. Style only.",
+            "location": "src/workflow/runners/build/round-writer.ts:39",
+            "message": "discardUnreadableHead repeats hasReadableHead's exists/decode test instead of calling it. Also, the doc comment that describes discardUnreadableHead ('Returns true when one was removed') sits above hasReadableHead, so hasReadableHead carries two stacked doc blocks.",
+            "counterpartRef": "hasReadableHead",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/approval-actor.ts:21",
+            "message": "approvalActorOf records any well-formed namespaced id as kind 'person', including ids in insrc's own namespace such as 'insrc:approval' or 'insrc:build'. A client can therefore send an approval that the log attributes to a system actor id while recording it as a person. Consider refusing the reserved insrc: namespace for request-supplied actors.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
             "location": "src/daemon/workflow-approve.ts:37",
-            "message": "The comment line '// The repository whose store holds the artifact…' has lost its leading tab, so it is out of line with the block it describes. Style only.",
+            "message": "The comment line '// The repository whose store holds the artifact' is missing its leading tab indentation (a layout issue only).",
             "confidence": "observation"
           }
         ]
@@ -252,8 +281,8 @@
     "verdict": "warn",
     "counts": {
       "high": 0,
-      "med": 2,
-      "low": 15
+      "med": 5,
+      "low": 16
     }
   }
 }

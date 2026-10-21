@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 30 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -208,13 +208,16 @@ Run at 2026-10-21T09:51:47.347Z on commit `9ca3872c`. Tests check: **passed**. 3
 
 ## t10
 
-Run at 2026-10-21T10:14:59.888Z on commit `a18861fa`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-21T11:12:15.661Z on commit `22c90db9`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: round-recording.test.ts: persistBuildRecord and persistTestRecordTask with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | persistBuildRecord and persistTestRecordTask with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log | `src/workflow/artifact-core/__tests__/round-recording.test.ts` |
+| pass | the first BUILD round of a Trivial standalone build, with no earlier record in the work item, is created through the registry store on the record's own time | `src/workflow/artifact-core/__tests__/round-recording.test.ts` |
+| pass | an unreadable BUILD head is replaced by a round that keeps the time the build gave it, not the store's clock | `src/workflow/artifact-core/__tests__/round-recording.test.ts` |
+| pass | a round head with merge conflict markers or a meta the store cannot read is refused untouched, and one with nothing in it is replaced | `src/workflow/artifact-core/__tests__/round-recording.test.ts` |
 
 **integration: round-recording.test.ts: a TESTS persist whose markdown fails after the content was stored keeps the committed content and entry, and the next persist renders the markdown**
 
@@ -227,12 +230,14 @@ Run at 2026-10-21T10:14:59.888Z on commit `a18861fa`. Tests check: **passed**. 3
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so the next approval is not refused | `src/workflow/artifact-core/__tests__/round-recording.test.ts` |
+| pass | a BUILD record that cannot be stored through the service is named in the verdict's evidence, and the verdict stands | `src/daemon/steps/build-step/__tests__/validate-anchor.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/artifact-core/__tests__/round-recording.test.ts` | 0 | 4 | 1.3 s |  |
+| `src/daemon/steps/build-step/__tests__/validate-anchor.test.ts` | 0 | 4 | 5.3 s |  |
+| `src/workflow/artifact-core/__tests__/round-recording.test.ts` | 0 | 8 | 4.3 s |  |
 
 ## t11
 

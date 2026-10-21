@@ -4,7 +4,7 @@
     "epicHash": "2f27754d4ad00b8e",
     "storyId": "s4",
     "createdAt": "2026-10-21T09:28:45.059Z",
-    "updatedAt": "2026-10-21T10:22:30.559Z",
+    "updatedAt": "2026-10-21T11:12:15.661Z",
     "epicCreatedAt": "2026-10-19T09:22:37.764Z",
     "epicSlug": "one-common-model-every-artifact"
   },
@@ -689,8 +689,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "a18861fa",
-        "ranAt": "2026-10-21T10:14:59.888Z",
+        "commit": "22c90db9",
+        "ranAt": "2026-10-21T11:12:15.661Z",
         "testsPassed": true,
         "tests": [
           {
@@ -701,6 +701,21 @@
               {
                 "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
                 "title": "persistBuildRecord and persistTestRecordTask with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+                "title": "the first BUILD round of a Trivial standalone build, with no earlier record in the work item, is created through the registry store on the record's own time",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+                "title": "an unreadable BUILD head is replaced by a round that keeps the time the build gave it, not the store's clock",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+                "title": "a round head with merge conflict markers or a meta the store cannot read is refused untouched, and one with nothing in it is replaced",
                 "result": "pass"
               }
             ],
@@ -728,6 +743,11 @@
                 "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
                 "title": "a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so the next approval is not refused",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validate-anchor.test.ts",
+                "title": "a BUILD record that cannot be stored through the service is named in the verdict's evidence, and the verdict stands",
+                "result": "pass"
               }
             ],
             "files": []
@@ -735,10 +755,35 @@
         ],
         "files": [
           {
+            "file": "src/daemon/steps/build-step/__tests__/validate-anchor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5287,
+            "titles": [
+              {
+                "title": "the first headless validate call writes TESTS first, a failing judge leaves the evidence, and a retry on a later day files BUILD in the same folder",
+                "result": "pass"
+              },
+              {
+                "title": "the first headless validate call with an injected TESTS write failure and a successful judge returns the verdict and writes a stamped BUILD",
+                "result": "pass"
+              },
+              {
+                "title": "a read-intent MissingAnchorError returns the missing-anchor error and an ordinary ledger write failure still returns the verdict",
+                "result": "pass"
+              },
+              {
+                "title": "a BUILD record that cannot be stored through the service is named in the verdict's evidence, and the verdict stands",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1296,
+            "durationMs": 4272,
             "titles": [
               {
                 "title": "persistBuildRecord and persistTestRecordTask with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log",
@@ -750,6 +795,22 @@
               },
               {
                 "title": "a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so the next approval is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview with a RoundWriter stores the content through the service and logs the round on the daemon route and the controller route, and a failed store replaces no record",
+                "result": "pass"
+              },
+              {
+                "title": "the first BUILD round of a Trivial standalone build, with no earlier record in the work item, is created through the registry store on the record's own time",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable BUILD head is replaced by a round that keeps the time the build gave it, not the store's clock",
+                "result": "pass"
+              },
+              {
+                "title": "a round head with merge conflict markers or a meta the store cannot read is refused untouched, and one with nothing in it is replaced",
                 "result": "pass"
               },
               {

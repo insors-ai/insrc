@@ -36,12 +36,12 @@
           "ref": "coverage-of-intent",
           "item": "coverage-of-intent",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "A Story with no trailered commits has an empty committed set and cannot inherit another Story's work.",
-          "evidence": "The upstream ISSUE requires: 'A Story with no attributable change has nothing to review'. However, storyChangeSet uses `const byTrailer = scan !== undefined && scan.carrying.size > 0`; when false, it includes ordinary first-parent commits regardless of their trailers. If only another Story committed since the base, the proposed reuse includes that Story's files. The all-uncommitted edge case contradicts the preserved legacy fallback. [files: docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/workflow/runners/build/story-commits.ts]",
-          "action": "Specify how to distinguish legacy untrailered work from a range containing only other Stories' commits, and test the zero-matching-trailer case.",
+          "severity": "LOW",
+          "premise": "The design addresses the upstream defect across review subjects, diff grounding, and BUILD records.",
+          "evidence": "The approved ISSUE requires trailer-scoped commits, inclusion of uncommitted edits only to attributable files, and reporting unrelated edits as excluded. These correspond to contracts 2.1\u20132.5. Reading the implementation confirms that these consumers currently derive their scope through the affected seams. [files: docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Retain this scope while correcting the implementation gaps below.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "current-behaviour.1",
@@ -49,9 +49,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Current review derivation prefers dirty working-tree files and falls back to less constrained derivations on failure.",
-          "evidence": "changedFiles returns `kept` with attribution 'working-tree' before consulting base. resolveCodeReviewSubject attempts 'range base + ledger exclusion', 'ledger exclusion only', then 'plain working-tree derivation'. assembleDiffCodeReviewGrounding likewise reads workingTreeDiff first and uses lastCommitDiff without a base. [files: src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
-          "action": "Retain these as the verified baseline for regression tests.",
+          "premise": "Current change derivation prioritizes dirty working-tree files and review paths fall back to broader derivations.",
+          "evidence": "changedFiles returns immediately when `kept.length > 0`, reporting 'working-tree'. subject.ts explicitly attempts 'ledger exclusion only' and 'plain working-tree derivation' after the anchored attempt. Grounding reads workingTreeDiff first and uses lastCommitDiff without a base. [files: src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Remove these fallback paths as proposed.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -61,9 +61,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The existing Story attribution seam supports per-unit trailer diffs and a first-parent fallback.",
-          "evidence": "storyChangeSet returns units with `from`, `to`, and `paths`, plus attribution and sharedWithExcluded. changedFiles already diffs each trailer-selected unit separately and filters its first-parent range result through `set.paths`. The new work can reuse these structures. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/changed-files.ts]",
-          "action": "Reuse the existing seam, while explicitly addressing its fallback and error semantics.",
+          "premise": "Existing attribution structures and synchronous Story-unit derivation can support the proposed reuse.",
+          "evidence": "storyChangeSet is synchronous and returns units with ref/from/to/paths, attribution, and sharedWithExcluded. changedFiles already diffs trailer-selected units separately. strict and excludedUncommitted are absent today, so they are genuine additions. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/changed-files.ts]",
+          "action": "Reuse these structures and explicitly specify changes to the legacy diff consumer.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -73,9 +73,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Both production diff-only callers already pass the range base, ledger exclusions, and Story key.",
-          "evidence": "Both calls pass `base: resolveStoryRangeBase(...)`, `excludeGlobs: LEDGER_EXCLUDE_GLOBS`, and `storyKey` formed from epicHash/storyId. Their subject reconstruction currently forwards attribution and sharedWithExcluded, providing the identified sites for excludedFromScope propagation. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/grounding.ts]",
-          "action": "Extend both reconstruction paths and DiffGroundingResult with excludedFromScope.",
+          "premise": "Both production diff-only callers already pass the Story key and resolved range base.",
+          "evidence": "The RPC degraded branch and beginDiffOnlyReview both pass resolveStoryRangeBase(...), LEDGER_EXCLUDE_GLOBS, and `${epicHash}/${storyId}` to the assembler. Both explicitly copy attribution fields into the review subject, matching the proposed propagation sites. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Add excludedFromScope to both copies and to DiffGroundingResult.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -84,10 +84,22 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "The design specifies the contracts needed to move typecheck project selection onto the shared Story set.",
-          "evidence": "`withTypecheckProjects(repoPath, plan, base?): ValidationCheckPlan` is synchronous, accepts no Story key, and calls a separate synchronous changedFiles helper. validate.ts calls it synchronously. The proposed shared changedFiles returns a Promise, but the design supplies no replacement signature, await propagation, or policy for the existing union with `plan.testFiles`. [files: src/daemon/steps/build-step/validation-checks.ts, src/daemon/steps/build-step/phases/validate.ts]",
-          "action": "Design the validation-checks.ts contract and validate.ts caller changes explicitly, including Story identity, async handling, missing-base behavior, and preservation of test-file project coverage.",
+          "severity": "HIGH",
+          "premise": "Filtering legacy units while preserving the current first-parent diff algorithm is sufficient to exclude another Story's changes.",
+          "evidence": "storyRangeDiff uses `set.attribution === 'story-trailer' ? set.paths : set.sharedPaths`, then reads `{ from: base, paths: plain }` for remaining files. sharedWithExcluded is not considered. After the proposed legacy filtering, an untrailered commit and an excluded other-Story commit editing the same file still produce a net diff containing both Stories' hunks. changedFiles likewise uses a net range filtered by own paths, so another Story reverting the legacy change can remove the file entirely. [files: src/workflow/code-review/grounding.ts, src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts]",
+          "action": "Explicitly update storyRangeDiff and changedFiles for filtered legacy ranges: derive retained changes from retained units, including shared-with-excluded and reverted files. Add same-file interleaving and reversion tests.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Replacing trivialCheckPlan's listing with Story-unit paths preserves runnable test selection.",
+          "evidence": "trivialCheckPlan currently uses `--diff-filter=d`, explicitly to omit deleted tests. storyChangeSet collects diff-tree paths without that filter and unions paths across units, including deleted tests and tests added then removed. Taking test paths directly from that set would ask the gate to run nonexistent files. The existing test 'a trivial build that deletes a test file does not ask to run it' confirms this required behavior. [files: src/daemon/steps/build-step/validation-checks.ts, src/workflow/runners/build/story-commits.ts, src/daemon/steps/build-step/__tests__/validation-checks.test.ts]",
+          "action": "Specify filtering attributable test paths against files that remain runnable in the current checkout, and extend the deletion regression to the storyKey route.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -97,9 +109,45 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Keeping working-tree in the attribution union and adding optional review-subject fields preserves the existing TypeScript record shape.",
-          "evidence": "ChangeSetAttribution already includes 'working-tree'. CodeReviewBody.subject already makes attribution and sharedWithExcluded optional, and runner.ts conditionally serializes them. An optional excludedFromScope follows this existing additive pattern without requiring historical records to acquire a value. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts]",
-          "action": "Keep the new persisted field optional and add an old-record regression fixture.",
+          "premise": "Optional review-subject metadata can be added without rewriting existing review records.",
+          "evidence": "CodeReviewBody.subject currently has optional attribution metadata; ChangeSetAttribution includes 'working-tree'. The runner's artifact validation checks dimensions, counts, verdict, and grounding consistency without requiring new subject metadata. Keeping excludedFromScope optional and retaining the old attribution value preserves these existing shapes. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts]",
+          "action": "Keep the persisted field optional and test an older record without it.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Returning an empty collected changeLog ensures an existing BUILD record contains no changeLog when its base is unavailable.",
+          "evidence": "Both writers use `...(changeLog.length > 0 ? { changeLog } : {})`. persistBuildRecord calls mergeWithPrior, whose body is `{ ...prior.body, ...rec.body, ... }`. Consequently an empty collection omits the new field and preserves a previous changeLog, including unrelated files recorded by the old behavior. The promised 'record carries no changeLog' does not follow from the proposed collector change. [files: src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/runners/build/standalone-record.ts]",
+          "action": "Define explicit clearing semantics for an authoritatively empty Story scope, update both writers/persistence accordingly, and test rewriting a previously contaminated BUILD record.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.3",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "All clean-tree committed-range results remain byte-for-byte unchanged.",
+          "evidence": "The existing trailer test creates an untrailered src/a.ts commit and another Story's src/b.ts commit, then asserts `none.paths` equals `['src/a.ts', 'src/b.ts']` when the requested Story has no carrying commit. Contract 2.2 intentionally removes src/b.ts. The clean-tree compatibility invariant and its proposed blanket regression therefore contradict the required new behavior. [files: src/workflow/runners/build/__tests__/story-commits-trailer.test.ts, src/workflow/runners/build/story-commits.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
+          "action": "Limit the preservation guarantee to unaffected ranges; explicitly document and test changes to mixed and other-Story-only legacy ranges.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This is a standalone bugfix without a parent HLD's shared contracts.",
+          "evidence": "The approved ISSUE metadata declares standalone:true and magnitude:'sized'. The LLD metadata declares standalone:true, sizeClass:'bugfix', and no HLD amendments. Its proposed changes concern internal scope derivation and existing consumers. [files: .insrc/artifacts/ISSUE-b97752e9c7cee6fe.json, .insrc/artifacts/LLD-06f196a7ff528143-S001.json]",
+          "action": "Keep the work within this bugfix's attribution and consumer contracts.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -108,34 +156,10 @@
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "A trailer-scan failure propagates as NoBuildChangesError and therefore causes the proposed review decline.",
-          "evidence": "scanTrailers catches the git error, logs 'could not read commit trailers; using the first-parent range', and returns undefined. storyChangeSet then proceeds with first-parent attribution. Removing fallbacks in the subject and grounding assembler does not remove this inner fallback. [files: src/workflow/runners/build/story-commits.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
-          "action": "Add an explicit strict failure policy to the attribution seam for anchored reviews and BUILD collection, and test a failed trailer scan independently of rev-list failure.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Passing storyKey from the BUILD writers guarantees that no BUILD record uses the working-tree-only path when its base is unavailable.",
-          "evidence": "Both BUILD writers conditionally include base only when resolveStoryRangeBase returns a value: `...(base !== undefined ? { base } : {})` or the equivalent rangeBase expression. The resolver explicitly returns undefined when no base can be established. The design preserves changedFiles' working-tree behavior without a base; adding storyKey alone does not change that branch. [files: src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/runners/build/range-base.ts, src/workflow/runners/build/changed-files.ts]",
-          "action": "Specify and implement a missing-base guard for Story BUILD collection, returning an empty change log or another explicit non-working-tree outcome, and cover both writers.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "error-paths.3",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
           "severity": "LOW",
-          "premise": "BUILD change-log collection already swallows derivation failures.",
-          "evidence": "collectBuildChangeLog wraps `await listChanged(repoPath, opts)` in a catch, logs the failure, and returns `[]`. [files: src/workflow/runners/build/changed-files.ts]",
-          "action": "Preserve this behavior when adding strict anchored derivation.",
+          "premise": "The proposed strict trailer scan closes an existing silent widening path, with compatible error handling seams.",
+          "evidence": "scanTrailers currently catches git failure, logs that it is using the first-parent range, and returns undefined. The git helper already throws NoBuildChangesError. The subject recognizes that error, collectBuildChangeLog catches derivation failures, and the real rangeDiff wraps Story derivation failures in DiffUnavailableError. These support the proposed strict propagation and decline behavior. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Implement strict propagation at every anchored consumer and retain lenient newestStoryCommit behavior as specified.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -144,22 +168,22 @@
           "ref": "tests",
           "item": "tests",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "The proposed tests cover the promised typecheck project-selection behavior.",
-          "evidence": "The test plan names file-set, subject, grounding, record, and smoke assertions, but none asserts typecheckProjects. Existing validation-checks.test.ts explicitly expects projects from uncommitted and untracked files, including `withTypecheckProjects(repo, plan(), afterPlugin).typecheckProjects`. Those expectations conflict with the proposed Story-only selection. [files: src/daemon/steps/build-step/__tests__/validation-checks.test.ts, src/daemon/steps/build-step/validation-checks.ts, src/daemon/steps/build-step/phases/validate.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
-          "action": "Add validation-checks and validate-phase tests proving unrelated projects are excluded, Story projects remain included, and explicitly named test-file projects retain the intended coverage.",
+          "severity": "LOW",
+          "premise": "The planned tests cover the principal upstream scoping requirements through existing test seams.",
+          "evidence": "The real-git attribution suites exercise subjects, per-file hunks, and persisted attribution; diff-attribution.test.ts also exercises both production callers. validation-checks.test.ts covers project selection and trivial plans. The proposed mappings add dirty-tree exclusion, own-file edits, missing-base refusal, BUILD propagation, strict scanning, and installed-daemon reproduction. These are planned tests, not verified passing implementations. [files: src/workflow/code-review/__tests__/subject-attribution.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts, src/workflow/runners/build/__tests__/story-commits-trailer.test.ts, src/daemon/steps/build-step/__tests__/validation-checks.test.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
+          "action": "Retain these mappings and add regressions for filtered legacy shared-file hunks, deleted tests, and clearing a prior BUILD changeLog identified above.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         }
       ],
       "counts": {
         "high": 3,
-        "med": 2,
-        "low": 5,
+        "med": 1,
+        "low": 8,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-21T05:05:05.185Z",
+      "reviewedAt": "2026-10-21T05:07:54.471Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
     }
@@ -224,7 +248,8 @@
             "With a base, the result never contains a working-tree path outside the Story's committed set, whatever the working tree holds.",
             "The order no longer depends on whether the tree is dirty: the Story's units are always read first.",
             "onAttribution reports attribution ('story-trailer' | 'first-parent-range'), sharedWithExcluded and excludedUncommitted (the working-tree paths left out, sorted).",
-            "When opts.storyKey is given, storyChangeSet is called with strict: true, so a failed trailer scan fails the derivation instead of widening it to the first-parent range."
+            "When opts.storyKey is given, storyChangeSet is called with strict: true, so a failed trailer scan fails the derivation instead of widening it to the first-parent range.",
+            "The anchored read selects per-unit diffs by set.perUnit, not by attribution === 'story-trailer': a filtered legacy range reads each kept unit's own diff, so a file another Story also edited (or later reverted) carries only this Story's change."
           ]
         },
         {
@@ -258,7 +283,7 @@
           ],
           "returns": {
             "type": "AttributedStoryChangeSet",
-            "meaning": "With commits carrying the Story's trailer: those units ('story-trailer'), as today. With a storyKey and NO commit carrying it: the first-parent commits that carry NO Insrc-Story line at all ('first-parent-range', the legacy pre-trailer Story); a commit carrying another Story's trailer is left out and its paths count as excluded (sharedWithExcluded). When every commit in the range belongs to another Story, the set is empty. Without a storyKey: unchanged."
+            "meaning": "With commits carrying the Story's trailer: those units ('story-trailer'), as today. With a storyKey and NO commit carrying it: the first-parent commits that carry NO Insrc-Story line at all ('first-parent-range', the legacy pre-trailer Story); a commit carrying another Story's trailer is left out and its paths count as excluded (sharedWithExcluded). When every commit in the range belongs to another Story, the set is empty. Without a storyKey: unchanged. The result gains perUnit: boolean \u2014 true for 'story-trailer' and for a legacy range from which at least one other-Story commit was left out; false only for an unfiltered legacy range."
           },
           "errors": [
             {
@@ -271,7 +296,29 @@
           ],
           "postconditions": [
             "With a storyKey, the set never contains a unit from a commit carrying another Story's Insrc-Story trailer.",
-            "With strict: true, the attribution is never widened by a git failure."
+            "With strict: true, the attribution is never widened by a git failure.",
+            "perUnit is false exactly when the result equals today's unfiltered first-parent range, so the net-range read stays valid only there."
+          ]
+        },
+        {
+          "name": "storyRangeDiff",
+          "signature": "storyRangeDiff(repoPath: string, base: string, set: StoryChangeSet & { readonly attribution?: StoryAttribution | undefined; readonly perUnit?: boolean | undefined }, excludeGlobs: readonly string[] | undefined, run?: (repoPath: string, input: Record<string, unknown>) => Promise<DiffResult>): Promise<DiffResult>",
+          "parameters": [
+            {
+              "name": "set",
+              "type": "StoryChangeSet & { attribution?, perUnit? }",
+              "purpose": "The Story's change set; perUnit decides the read.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<DiffResult>",
+            "meaning": "With set.perUnit true, every path is read from the kept units' own diffs (today's 'story-trailer' branch: shared = set.paths); otherwise unchanged (net base..HEAD for plain paths, per-unit for sharedPaths)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A filtered legacy range never grounds on another Story's hunks of a file both changed, nor loses this Story's change to a later revert by another Story."
           ]
         },
         {
@@ -368,7 +415,8 @@
           "preconditions": [],
           "postconditions": [
             "The completion record and the validate phase pass the Story's storyKey, so an unrelated uncommitted file never enters a BUILD record's changeLog.",
-            "With ctx.storyKey and no ctx.base (resolveStoryRangeBase returned undefined), the seam refuses (NoBuildChangesError) and the swallow yields an empty changeLog: a Story's BUILD record never falls back to the working tree."
+            "With ctx.storyKey and no ctx.base (resolveStoryRangeBase returned undefined), the seam refuses (NoBuildChangesError) and the swallow yields an empty changeLog: a Story's BUILD record never falls back to the working tree.",
+            "Both writers (completion-record.ts and validate.ts) write changeLog whenever they pass a storyKey, even when it is empty, instead of omitting an empty one: mergeWithPrior's { ...prior.body, ...rec.body } then replaces a prior changeLog (including one contaminated by the old working-tree derivation) rather than keeping it. The md renderer already omits the ## Changes section for an empty changeLog."
           ]
         },
         {
@@ -424,12 +472,13 @@
           ],
           "returns": {
             "type": "ValidationCheckPlan",
-            "meaning": "With a storyKey and a base, the test files are those in the Story's set (storyChangeSet with strict: true) instead of every file in base..HEAD; with a storyKey and no base, the listing fails as 'no range base' (listError), failing the tests check rather than running the HEAD commit's tests. Without a storyKey: unchanged."
+            "meaning": "With a storyKey and a base, the test files are those in the Story's set (storyChangeSet with strict: true) that still exist in the checkout, instead of every file in base..HEAD (the existence filter keeps today's --diff-filter=d rule: a deleted test, or one added then removed, is never asked to run); with a storyKey and no base, the listing fails as 'no range base' (listError), failing the tests check rather than running the HEAD commit's tests. Without a storyKey: unchanged."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "A trivial build never runs another Story's tests as its own."
+            "A trivial build never runs another Story's tests as its own.",
+            "A test file the Story deleted is never in the plan."
           ]
         }
       ]
@@ -544,11 +593,19 @@
         {
           "input": "The validate gate runs with unrelated uncommitted or untracked TypeScript files in another project.",
           "expected": "That project is not added to typecheckProjects; the projects of the Story's files and of plan.testFiles are."
+        },
+        {
+          "input": "A legacy (untrailered) commit of this Story and another Story's trailered commit edit the same file, or the other Story later reverts this Story's change.",
+          "expected": "The kept unit's own diff is read (perUnit): only this Story's hunks are grounded and the file stays in its set; the file is reported in sharedWithExcluded."
+        },
+        {
+          "input": "A Story's BUILD record from before this fix carries a changeLog with unrelated files, and it is written again.",
+          "expected": "The new write carries the Story-scoped changeLog (possibly empty), which replaces the old one in the merged record."
         }
       ],
       "invariantsToPreserve": [
         {
-          "text": "A clean tree's change set is byte-for-byte today's committed-range result, including the per-unit diff for trailer units and the own-paths filter for first-parent ranges.",
+          "text": "A clean tree's change set is byte-for-byte today's committed-range result for a range with trailer units, and for a legacy range in which no commit carries another Story's trailer. A legacy range holding another Story's trailered commits changes deliberately: those commits are left out (the existing story-commits-trailer.test.ts expectation of ['src/a.ts', 'src/b.ts'] for a Story with no carrying commit becomes ['src/a.ts']).",
           "source": "c1"
         },
         {
@@ -583,7 +640,10 @@
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range'",
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a storyKey without a base is refused, and collectBuildChangeLog turns it into an empty changeLog, never the working tree'",
             "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files'",
-            "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests'"
+            "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests'",
+            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a Story with no carrying commit keeps its untrailered commits and leaves out another Story's, so the range of src/a.ts and src/b.ts gives src/a.ts'",
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a filtered legacy range reads each kept unit's own diff: a file another Story also edited, or later reverted, carries only this Story's change'",
+            "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, a trivial build that deletes a test file does not ask to run it'"
           ],
           "fixturesNeeded": [
             "a git repository with a base commit, two commits carrying the Story's Insrc-Story trailer, one carrying another Story's, and unstaged, staged and untracked-then-added changes inside and outside the Story's files",
@@ -598,7 +658,9 @@
             "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree'",
             "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit'",
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change'",
-            "src/workflow/code-review/__tests__/runner.test.ts: 'the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were'"
+            "src/workflow/code-review/__tests__/runner.test.ts: 'the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were'",
+            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited'",
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included'"
           ],
           "fixturesNeeded": [
             "the same repository fixture, with approved LLD and PLAN artifacts for the Story"
@@ -623,14 +685,16 @@
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'with a base, an uncommitted change to a file no Story commit touched is left out and reported as excludedUncommitted, whatever else the tree holds'",
             "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree'",
             "src/workflow/code-review/__tests__/runner.test.ts: 'the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were'",
-            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with a storyKey and no commit carrying it, a commit carrying another Story's trailer is left out, and a range of only other Stories' commits gives an empty set'"
+            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with a storyKey and no commit carrying it, a commit carrying another Story's trailer is left out, and a range of only other Stories' commits gives an empty set'",
+            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a Story with no carrying commit keeps its untrailered commits and leaves out another Story's, so the range of src/a.ts and src/b.ts gives src/a.ts'"
           ]
         },
         {
           "criterionId": "ac2",
           "provingTests": [
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'an uncommitted edit to a file the Story's commits changed is part of the Story's set'",
-            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike'"
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike'",
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a filtered legacy range reads each kept unit's own diff: a file another Story also edited, or later reverted, carries only this Story's change'"
           ]
         },
         {
@@ -647,7 +711,10 @@
             "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit'",
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change'",
             "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files'",
-            "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests'"
+            "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests'",
+            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited'",
+            "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, a trivial build that deletes a test file does not ask to run it'",
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included'"
           ]
         },
         {
@@ -664,7 +731,7 @@
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Change the shared seam's order for callers that pass a base: anchor on the Story's units, then add working-tree paths already in the set, and report the rest; add excludedUncommitted to the attribution report. storyChangeSet gains strict and, with a storyKey but no carrying commit, leaves out commits carrying another Story's trailer; changedFiles refuses a storyKey without a base.",
+          "action": "Change the shared seam's order for callers that pass a base: anchor on the Story's units, then add working-tree paths already in the set, and report the rest; add excludedUncommitted to the attribution report. storyChangeSet gains strict and, with a storyKey but no carrying commit, leaves out commits carrying another Story's trailer; changedFiles refuses a storyKey without a base. It also returns perUnit, which changedFiles uses to choose per-unit diffs.",
           "rollbackable": true
         },
         {
@@ -674,7 +741,7 @@
         },
         {
           "order": 3,
-          "action": "Apply the same rule in the diff-only grounding (Story units plus own-file working-tree hunks; no working-tree-first or last-commit step) and in both diff-only callers.",
+          "action": "Apply the same rule in the diff-only grounding (Story units plus own-file working-tree hunks; no working-tree-first or last-commit step) and in both diff-only callers. storyRangeDiff selects per-unit reads by set.perUnit.",
           "rollbackable": true
         },
         {
@@ -684,7 +751,7 @@
         },
         {
           "order": 5,
-          "action": "Pass the Story's storyKey from the BUILD completion writer and the validate phase (an unresolved base then yields an empty changeLog), and pass it to withTypecheckProjects and trivialCheckPlan (both stay synchronous, through storyChangeSet with strict) at both validate.ts call sites.",
+          "action": "Pass the Story's storyKey from the BUILD completion writer and the validate phase (an unresolved base then yields an empty changeLog), and pass it to withTypecheckProjects and trivialCheckPlan (both stay synchronous, through storyChangeSet with strict) at both validate.ts call sites. Both writers write the changeLog even when empty, so a re-write replaces a contaminated prior one; trivialCheckPlan keeps only Story test files that still exist.",
           "rollbackable": true
         },
         {
@@ -693,7 +760,7 @@
           "rollbackable": true
         }
       ],
-      "backwardCompat": "No IPC payload or public signature changes: changedFiles, resolveCodeReviewSubject, assembleDiffCodeReviewGrounding and collectBuildChangeLog keep their signatures (one optional ctx field, storyKey, is added to collectBuildChangeLog). New record fields (excludedFromScope, excludedUncommitted) are optional and absent when nothing is excluded, so existing records validate. 'working-tree' stays in the ChangeSetAttribution type so older records still parse. Behaviour change by design: a review that used to judge a dirty tree now judges the Story's commits and lists the rest; a review with no resolvable base now declines.",
+      "backwardCompat": "No IPC payload or public signature changes: changedFiles, resolveCodeReviewSubject, assembleDiffCodeReviewGrounding and collectBuildChangeLog keep their signatures (one optional ctx field, storyKey, is added to collectBuildChangeLog). New record fields (excludedFromScope, excludedUncommitted) are optional and absent when nothing is excluded, so existing records validate. 'working-tree' stays in the ChangeSetAttribution type so older records still parse. Behaviour change by design: a review that used to judge a dirty tree now judges the Story's commits and lists the rest; a review with no resolvable base now declines. Deliberate behaviour change for legacy ranges containing other Stories' trailered commits; the affected trailer-test expectation is updated.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },

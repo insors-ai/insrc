@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-21T10:30:47.316Z  ·  **Updated:** 2026-10-21T10:31:49.155Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-21T10:30:47.316Z  ·  **Updated:** 2026-10-21T10:42:01.378Z
 
-**Commit:** 6fe771a0
+**Commit:** 98d296dd
 
 ## Scope
 
@@ -26,5 +26,7 @@ modelDimensionAdapter's material() is built on the first read and returned to ev
 
 ## Changes
 
-- `src/workflow/review-pipeline/__tests__/code-review-material.test.ts` — **insrc-build** (2026-10-21T10:31:49.155Z)
-- `src/workflow/review-pipeline/code-review.ts` — **insrc-build** (2026-10-21T10:31:49.155Z)
+- `src/workflow/review-pipeline/__tests__/code-review-material.test.ts` — **insrc-build** (2026-10-21T10:42:01.378Z)
+- `src/workflow/review-pipeline/code-review.ts` — **insrc-build** (2026-10-21T10:42:01.378Z)
+- `.insrc/artifacts/CR-2f4cb54c0df2e9e0-S001.json` — **insrc-build** (2026-10-21T10:42:01.378Z)
+- `docs/standalone/build-each-review-adapter-s-material-E202610212f4cb54c/S001/CR.md` — **insrc-build** (2026-10-21T10:42:01.378Z)

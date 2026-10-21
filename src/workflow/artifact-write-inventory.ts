@@ -82,6 +82,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/daemon/steps/review-step/phases/verdicts.ts', class: 'mixed', via: 'both', sites: [{ fn: 'handleVerdicts', kind: 'content|meta-only' }], note: 'auto-fixes change the body; a report-only review changes only meta' },
 
 	// --- store: the artifact store itself ------------------------------------------
+	{ file: 'src/workflow/artifact-core/lifecycle-service.ts', class: 'meta-only', via: 'injected', note: 'applies lifecycle operations through ArtifactStore.update: the content is never changed, so no revision is minted, and the store logs each operation' },
 	{ file: 'src/workflow/artifact-core/store.ts', class: 'store', via: 'injected', note: 'ArtifactStore.write prepares the head with prepareArtifactWrite (the one revision rule) and replaces it with writeAtomic, after staging the operation in the journal and appending its change log entry' },
 
 	// --- record: a change request, not a claim unit or a signoff-covered stage artifact ---
@@ -145,17 +146,19 @@ export interface WriterScan {
 	readonly values: readonly WriterValue[];
 	readonly usesWriteArtifact: boolean;
 	readonly rawCalls: readonly WriterCall[];
-	/** Calls of `.write(...)` on a value in a file that imports the artifact store (it mints revisions). */
+	/** Calls of `.write(...)` or `.update(...)` on a value in a file that imports the artifact store (it mints revisions). */
 	readonly storeWrites: readonly number[];
 }
 
-/** An import specifier that names the artifact store module. */
+/** An import specifier that names the artifact store module; inside artifact-core itself that is `./store.js`. */
 const STORE_MODULE = /(?:^|\/)artifact-core\/store(?:\.js)?$/;
+const SIBLING_STORE = /^\.\/store(?:\.js)?$/;
+const IN_ARTIFACT_CORE = /(?:^|\/)artifact-core\//;
 
 /** Find the writers a source file calls, passes on as a value, or aliases. Syntax-aware:
  *  it follows `import { writeAtomic as save }`, `const w = writeAtomic`, namespace
  *  imports (`fs.writeFileSync`) and writers passed as arguments or defaults. */
-export function scanWriters(source: string): WriterScan {
+export function scanWriters(source: string, file = ''): WriterScan {
 	const sf = ts.createSourceFile('scan.ts', source, ts.ScriptTarget.Latest, true);
 	const original = source.split('\n');
 	const lineOf = (node: ts.Node): number => sf.getLineAndCharacterOfPosition(node.getStart(sf)).line;
@@ -168,7 +171,7 @@ export function scanWriters(source: string): WriterScan {
 	// imports: a renamed writer keeps its meaning, and the original name stops standing for it
 	sf.forEachChild(function visitImports(node) {
 		if (ts.isImportDeclaration(node)) {
-			if (ts.isStringLiteral(node.moduleSpecifier) && STORE_MODULE.test(node.moduleSpecifier.text)) importsStore = true;
+			if (ts.isStringLiteral(node.moduleSpecifier) && (STORE_MODULE.test(node.moduleSpecifier.text) || (SIBLING_STORE.test(node.moduleSpecifier.text) && IN_ARTIFACT_CORE.test(file)))) importsStore = true;
 			const clause = node.importClause;
 			if (clause?.name !== undefined) namespaces.add(clause.name.text);
 			const nb = clause?.namedBindings;
@@ -210,7 +213,7 @@ export function scanWriters(source: string): WriterScan {
 			let name: WriterName | undefined;
 			if (ts.isIdentifier(callee)) name = names.get(callee.text);
 			else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression) && namespaces.has(callee.expression.text) && isWriter(callee.name.text)) name = callee.name.text;
-			if (importsStore && ts.isPropertyAccessExpression(callee) && callee.name.text === 'write') storeWrites.push(lineOf(node) + 1);
+			if (importsStore && ts.isPropertyAccessExpression(callee) && (callee.name.text === 'write' || callee.name.text === 'update')) storeWrites.push(lineOf(node) + 1);
 			if (name !== undefined) {
 				seenCallees.add(callee);
 				const line = lineOf(node);
@@ -274,8 +277,8 @@ export function writeKindsIn(body: string): Set<'content' | 'meta-only'> {
  * The rule violations of one source file against its inventory entry (or the
  * lack of one). Empty means the file is in order.
  */
-export function checkInventoryEntry(source: string, entry: InventoryEntry | undefined): string[] {
-	const scan = scanWriters(source);
+export function checkInventoryEntry(source: string, entry: InventoryEntry | undefined, file: string = entry?.file ?? ''): string[] {
+	const scan = scanWriters(source, file);
 	const problems: string[] = [];
 	if (entry === undefined) {
 		if (writesAnything(scan)) problems.push('writes artifacts or passes a writer on but has no inventory entry');

@@ -46,7 +46,7 @@ test('every writer file is inventoried, annotated and classified as the design s
 	const files = productionFiles(join(ROOT, 'src'));
 	const problems: string[] = [];
 	for (const file of files) {
-		for (const p of checkInventoryEntry(read(file), byFile.get(file))) problems.push(`${file}: ${p}`);
+		for (const p of checkInventoryEntry(read(file), byFile.get(file), file)) problems.push(`${file}: ${p}`);
 	}
 	// an entry for a file that does not exist is also stale
 	for (const e of ARTIFACT_WRITE_INVENTORY) if (!files.includes(e.file)) problems.push(`${e.file}: the entry names a file that does not exist`);
@@ -177,4 +177,17 @@ test('the detector reports appendFileSync in every form, an unlisted appendSidec
 		assert.ok(byFile.has(f), `${f} has an inventory entry`);
 		assert.ok(scanWriters(read(f)).calls.some(c => c.name === 'appendFileSync'), `${f} calls appendFileSync`);
 	}
+});
+
+test('the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised', () => {
+	const none = undefined;
+	// the store's update is a store write too, and inside artifact-core the store is './store.js'
+	const update = "import type { ArtifactStore } from './store.js';\nexport async function f(s: ArtifactStore, by: object) { await s.update('x', by, () => undefined); }\n";
+	assert.match(checkInventoryEntry(update, none, 'src/workflow/artifact-core/x.ts').join(), /no inventory entry/, 'store update');
+	assert.deepEqual(checkInventoryEntry(update, none, 'src/workflow/other/x.ts'), [], "a './store.js' outside artifact-core is another store");
+	const metaOnlyEntry = { file: 'src/workflow/artifact-core/x.ts', class: 'meta-only', via: 'injected', note: 'control' } as InventoryEntry;
+	assert.deepEqual(checkInventoryEntry(update, metaOnlyEntry), [], 'the store mints the revision, so a meta-only file may use update');
+	// the lifecycle service has its entry and really calls update
+	assert.equal(byFile.get('src/workflow/artifact-core/lifecycle-service.ts')?.class, 'meta-only');
+	assert.ok(scanWriters(read('src/workflow/artifact-core/lifecycle-service.ts'), 'src/workflow/artifact-core/lifecycle-service.ts').storeWrites.length > 0, 'the service calls update');
 });

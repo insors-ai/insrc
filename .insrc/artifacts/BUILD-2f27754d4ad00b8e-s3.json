@@ -1,0 +1,355 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s3",
+    "createdAt": "2026-10-21T05:22:31.620Z",
+    "updatedAt": "2026-10-21T08:06:53.751Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact",
+    "approvedAt": "2026-10-21T08:06:58.782Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
+      }
+    ],
+    "summary": "Added LifecycleConflictError (artifactId, reason), IllegalTransitionError, TerminalArtifactError, ReviewRequiredError and UnreadableChildError (unreadable ids) and the IntegrityReason type to src/workflow/artifact-core/types.ts; the exports test in types-contract.test.ts now pins exactly the eleven error classes, and a new test checks the five classes' names, reasons and ids.",
+    "testRecord": {
+      "md": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S003/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S003/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S003/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/core-data-model.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/artifact-write-inventory.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/docs-s3-follow-ups.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/gates-lifecycle-guard.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/gates-lifecycle-service.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/prepare-lifecycle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/codec-create.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/content-hash.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/decode.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-ac7.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-errors.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-integrity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-kit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-members.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-reconcile.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-table.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-transition.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/pass-through-codecs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/store-children-strict.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/store-lifecycle-write.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/store-update.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/store-write.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/types-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/codecs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/completion-evidence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/lifecycle-service.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-write-inventory.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/gates.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/run-artifact.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/completion-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/standalone-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/storage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T08:06:53.751Z"
+      }
+    ],
+    "commit": "b310ff9c"
+  }
+}

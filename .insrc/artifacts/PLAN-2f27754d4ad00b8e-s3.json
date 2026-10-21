@@ -1,0 +1,577 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792559660201-f7c5v7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T05:17:48.874Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 208644,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s3",
+    "lldRunId": "wf-1792557860113-nm31as",
+    "lldEffectiveHash": "f964e89a61197d748acab26761e672d7c490606b3c4b15ad3d8258467273d9e8",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-21T05:20:55.751Z",
+    "rangeBase": "86ddd28498aa87d5eaa2bd739803aced1cc2c319"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build lays the lifecycle in small steps: the error classes, then the pure rules module, then the one reconcile inside prepareArtifactWrite so every writer keeps the hash in step, the missing codecs, the store's write, update and strict child listing, the roll-up with its evidence, the service with its inventory entry, the gate guards placed before the BUILD hook, the optional service on the approval and review paths, and the follow-ups. Every task keeps the existing s2 and gate tests green and leaves a head with no lifecycle exactly as it is."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the lifecycle error classes",
+        "summary": "Add LifecycleConflictError (carrying the Integrity reason and artifact id), IllegalTransitionError, TerminalArtifactError, ReviewRequiredError and UnreadableChildError (carrying the unreadable ids) to src/workflow/artifact-core/types.ts and extend the exports test that pins that module's runtime exports.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "the five classes are exported, are Errors and carry their name, and LifecycleConflictError and UnreadableChildError expose the reason and the ids",
+          "the exports test lists exactly the existing six classes plus these five and the repository type-checks"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-errors.test.ts: the five lifecycle error classes carry their name, reason and ids, and the module exports exactly eleven error classes"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the pure lifecycle rules module",
+        "summary": "Add src/workflow/artifact-core/lifecycle.ts with the closed LIFECYCLE_TABLE and assertLegalStatusChange, contentHash with its canonical JSON that honours toJSON, ContentView, TransitionDetail, Integrity, checkHeadIntegrity, checkIntegrity (a log with no revision-bearing entry is no history, an empty stored hash has nothing to compare), reconcileLifecycle, the canonical-hash content-changed test, and transition. Nothing calls it yet.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "every one of the thirteen lifecycle operations from every one of the ten statuses either lands where the table says or throws IllegalTransitionError",
+          "contentHash is equal for equal content in any key order, differs for a description, body or citations change, and ignores references, parent, attachments, binding and lifecycle",
+          "reconcileLifecycle keeps approval, review and signoff at their original revision numbers after a content change that returns the status to draft, leaves the revision alone for an identical rewrite of a head with an empty stored hash, refuses a content change on a terminal artifact and a create that is not draft",
+          "checkHeadIntegrity and checkIntegrity report each reason and treat an empty stored hash and a log with no revision-bearing entry as ok"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/content-hash.test.ts: contentHash ignores key order and everything but the description and payload"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-table.test.ts: every lifecycle operation from every status lands where the closed table says or throws IllegalTransitionError"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-transition.test.ts: transition sets approval, review, signoff and stale as the table says and refuses a missing detail"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-transition.test.ts: approve on a DEF, HLD or LLD needs a review bound to the current revision or an override, and a PLAN, ISSUE or SPEC needs none"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-reconcile.test.ts: a create, an identical rewrite, a head with an empty stored hash, a description-only change, a reference-only change and a forged revision"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-reconcile.test.ts: reconcileLifecycle after a content change to an approved artifact with a review and a signoff"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-reconcile.test.ts: a content change on a terminal artifact and a create that is not draft are refused"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-integrity.test.ts: checkHeadIntegrity and checkIntegrity report every reason and treat unhashed and unlogged heads as ok"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Reconcile meta.lifecycle inside prepareArtifactWrite",
+        "summary": "Make prepareArtifactWrite call reconcileLifecycle for a head that carries meta.lifecycle, taking the actor and time from new optional opts (defaulting to insrc:system and the clock). For such a head the canonical description/body/citations hash decides whether a content write mints a revision, so metadata, lifecycle fields and key order cannot; a head without meta.lifecycle keeps the legacy comparison. Binding requirements 3 and 4.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "a content write to a head with meta.lifecycle reconciles hash, number and the fall-back to draft, and a meta-only write leaves them",
+          "a metadata-only or key-order-only change to a lifecycle-bearing head, written as content, does not mint a revision",
+          "a head without meta.lifecycle is prepared byte for byte as before and the existing storage, artifact-writer and prepare-artifact-write tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/prepare-lifecycle.test.ts: prepareArtifactWrite reconciles meta.lifecycle for a content write, leaves it for a meta-only write, mints no revision for a metadata-only or key-order-only change, and prepares a head without meta.lifecycle as before"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Register pass-through codecs for the five missing kinds",
+        "summary": "Register pass-through codecs for EPIC, STORY, TASKS, TASK and DIAG in src/workflow/artifact-core/codecs.ts (body and citations opaque, identity meta from the creation context) and update the s2 assertions that pinned the old registry: the registeredKinds list in codec-create.test.ts and the unknown-kind checks for TASK and STORY in store-write.test.ts.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "registeredKinds lists all sixteen kinds and codecFor no longer throws for any id kind",
+          "a TASK, STORY, EPIC, TASKS and DIAG head can be encoded, decoded and written through the store, and a TASK write with a wrong parent still fails on its parent first",
+          "the other s2 tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/pass-through-codecs.test.ts: a TASK, STORY, EPIC, TASKS and DIAG head is written, read, listed and given a status through the store, and registeredKinds lists sixteen kinds"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Teach ArtifactStore.write the lifecycle rules",
+        "summary": "In src/workflow/artifact-core/store.ts make write take WriteOptions (operation, outcome, references, addresses), rely on the lifecycle prepareArtifactWrite computed instead of the canonical() content test, enforce the closed table with assertLegalStatusChange, put status {from, to} on the log entry when the status changed while every entry keeps revision {number, contentHash}, and refuse an ordinary write on a hash-conflicted head while allowing outcome.result 'conflict-resolved' to adopt the head's content.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "a lifecycle operation is logged with its real operation and status {from, to}, mark-stale and ack-stale log no status, and the s2 log-revision assertion still holds",
+          "a status change outside the table is refused and an ordinary write on a conflicted head throws LifecycleConflictError while a conflict-resolved write adopts the head's content and logs an update",
+          "the s2 store, journal and recovery tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/store-lifecycle-write.test.ts: write logs a lifecycle operation with status {from, to}, keeps revision on every entry, and refuses a step outside the table"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/store-lifecycle-write.test.ts: an ordinary write on a conflicted head is refused and a conflict-resolved write adopts the content"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Add ArtifactStore.update and childrenOfStrict",
+        "summary": "Add update(id, by, mutate, options) whose mutate may be async and which holds the per-artifact queue across the read, the mutate and the write, recovering any pending journal operation under the queue before it reads the head or the history; add childrenOfStrict returning the readable children and the unreadable heads. Binding requirements 2 and 6.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "two competing lifecycle-only operations through update both land in order and neither is lost, an async mutate is awaited under the queue, and a mutate that throws writes nothing",
+          "a head replace that fails after the log append is finished by the next update before it reads, and the retry is logged once",
+          "childrenOfStrict returns an unreadable child that childrenOf skips"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/store-update.test.ts: update runs read, mutate and write inside the queue, awaits an async mutate, keeps two competing operations in order and writes nothing when mutate throws"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/store-update.test.ts: a head replace that failed after the log append is finished before update reads, and the retry is logged once"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/store-children-strict.test.ts: childrenOfStrict returns an unreadable child that childrenOf skips"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Add rollUp, unit membership and the completion evidence",
+        "summary": "Add rollUp and the unit membership helper to lifecycle.ts over ChildStatusReader (childrenOfStrict plus a status read) and CompletionEvidence, and the default evidence in src/workflow/artifact-core/completion-evidence.ts: the Task side from the BUILD record's per-task results and the Story code review as structured CodeReviewEvidence mapped from enforceCodeReviewGate, where an advisory warn is blocked unless override evidence makes it overridden: an explicit override reason carried by the approval wins, otherwise the stored meta.reviewOverride of the CR or BUILD record. A unit is never its own member. Binding requirements 1 and 5.",
+        "size": "L",
+        "order": 7,
+        "dependsOn": [
+          "t2",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "rollUp follows the Task, Story and Epic rules, ignores TASKS and DIAG children and withdrawn and superseded Tasks, and throws UnreadableChildError for an unreadable child",
+          "storyCodeReview maps pass and a non-advisory warn to clean, an advisory warn to blocked, overridden and an explicit override over an advisory warn to overridden with the reason, blocked to blocked and no-review to missing, and a stored reviewOverride is used when the approval carries none",
+          "a Story's members are its fixed-id heads plus its STORY, TASKS and DIAG heads with each DIAG sequence kept, never the unit itself, and an Epic's are EPIC, DEF and HLD"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts: the Task, Story and Epic roll-up rules, the evidence mapping and the unreadable child"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts: storyCodeReview maps the gate, an explicit override wins over a stored one and an advisory warn is blocked without an override"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-members.test.ts: a Story's members keep each DIAG sequence and never include the unit itself"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Add the LifecycleService and its inventory entry",
+        "summary": "Add src/workflow/artifact-core/lifecycle-service.ts with apply and completeIfRolledUp built on ArtifactStore.update: the integrity check against the last revision-bearing entry, the completed-once check, transition and the write with the real operation; complete cascades to the members first with their own updates and records the unit's own entry last through the outer update only; reopen reopens the members and is refused while the parent is completed. Extend the write inventory detector to recognise update as a store write and add the service file's entry in the same task.",
+        "size": "L",
+        "order": 8,
+        "dependsOn": [
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "approve, review and complete on a head with each Integrity reason write and log nothing, and a head with no stored hash or no revision-bearing entry is approved normally",
+          "after a content change an approved artifact reads draft with its earlier approval and review at the older revision and a log that replays to the same status",
+          "complete is recorded once, the Story completes members first and itself last, completeIfRolledUp walks up to the Epic once, a failure part-way is finished by a retry, and reopen reopens the frozen members",
+          "the write inventory test passes with the service entered and a caller of update is recognised"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-ac7.test.ts: after a content change to an approved artifact the status is draft, the revision moved, and the earlier approval and review keep their original revision numbers (unit, then through LifecycleService and readWithHistory, then through writeArtifact)"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts: apply refuses approve, review and complete on each Integrity reason and writes nothing, while unhashed and unlogged heads are approved normally"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts: completeIfRolledUp records the Story once, members first and the unit last, and the Epic follows"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts: a completion that fails part-way is finished by a retry, and reopen reopens the frozen members and is refused while the Epic is completed"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Guard the gates against a hash conflict before the BUILD hook",
+        "summary": "In src/workflow/gates.ts call checkHeadIntegrity at the top of approveArtifactByJsonPath and, in both branches of approveWorkflowTarget, before ensureBuildRecordOnCompletion; call it at the start of reviewArtifactFile in src/workflow/review/run-artifact.ts. A conflicted target goes to skipped[] on the workflow path and raises LifecycleConflictError elsewhere; a head with no stored hash behaves as today.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "a BUILD target whose stored hash differs from its content comes back in skipped[] in both branches and its record bytes are unchanged by ensureBuildRecordOnCompletion",
+          "approveArtifactByJsonPath and reviewArtifactFile raise LifecycleConflictError before any stamp, and approveArtifactByJsonPath stays synchronous",
+          "the existing gates, plan-gate, admit-build, review and build-step tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/gates-lifecycle-guard.test.ts: approveWorkflowTarget refuses a conflicted BUILD target in both branches before ensureBuildRecordOnCompletion rewrites it"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/gates-lifecycle-guard.test.ts: approveArtifactByJsonPath and reviewArtifactFile refuse a conflicted head before any stamp and an unhashed head is unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Wire the optional LifecycleService into the approval and review paths",
+        "summary": "Add the optional lifecycle?: LifecycleService field to WorkflowApproveRequest and reviewArtifactFile's arguments: with it the full log-tail check runs, the approval is applied through LifecycleService.apply, completeIfRolledUp is called after a BUILD record approval, and when a service is supplied ensureBuildRecordOnCompletion's persist and reviewArtifactFile's auto-fix write through the service's ArtifactStore (a content update that appends the revision-bearing entry) instead of writeArtifact so the log stays in step; without a service they keep writeArtifact and behaviour is as after t9. The legacy meta.approvedAt stamp still follows. Binding requirement 3.",
+        "size": "L",
+        "order": 10,
+        "dependsOn": [
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "with a service, an explicit override over an advisory-blocked code review completes the Story through a real approval and the override reason is on the complete entry",
+          "with a service, a review auto-fix or BUILD hook rewrite on a head with existing history leaves the next service approval ok, not head-ahead-of-log",
+          "without a service the approval and review paths behave as after t9 and the legacy meta.approvedAt is still stamped"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/gates-lifecycle-service.test.ts: with a service, an explicit override over an advisory-blocked code review completes the Story through a real approval and the reason is on the complete entry"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/gates-lifecycle-service.test.ts: with a service, a review auto-fix or BUILD hook rewrite keeps the log in step so the next approval is not head-ahead-of-log"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/gates-lifecycle-service.test.ts: without a service the approval and review paths behave as before and meta.approvedAt is still stamped"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Record the s3 follow-ups",
+        "summary": "Record in docs/plans/core-data-model.md what s3 leaves for other Stories: s4 wires a durable LifecycleService into the daemon and the approval path (AMD-8), the gates keep the legacy meta fields until s9 retires them, the pass-through codecs are refined by s7 and s9, and s7 replaces the Task side of CompletionEvidence.",
+        "size": "S",
+        "order": 11,
+        "dependsOn": [
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "the plans doc lists the four hand-offs from this Story"
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/docs-s3-follow-ups.test.ts: the plans doc lists the four hand-offs from the lifecycle Story"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "contentHash gives equal hashes for equal description and payload in any key order, and different hashes when the description, the body or the citations change; references, parent, attachments, binding, lifecycle and a Date value that persists the same do not change it, and two different Dates do",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "LIFECYCLE_TABLE: every one of the thirteen lifecycle operations from every one of the ten statuses either lands on the status the table names or throws IllegalTransitionError, and content operations are refused by transition",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "transition sets approval {revision, by, at, override?} for the current revision, records a review and returns the status to draft, appends a signoff and moves the latest one to changes-requested or completed, sets and clears stale without changing status, and refuses each operation whose required detail is missing",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "transition approve on a DEF, HLD or LLD without a review bound to the current revision, or with a block verdict, throws ReviewRequiredError unless detail.override carries a reason, and a PLAN, ISSUE or SPEC needs no review",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileLifecycle on a create, on an identical rewrite (including a prior head with an empty stored hash, which fills the hash and keeps the number), on a description-only change, on a reference-only change, and on a forged revision number and hash supplied by the caller",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileLifecycle after a content change to an approved artifact with a review and a signoff: the revision number and hash move, the status is draft, and approval, review and signoff keep their original revision numbers",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileLifecycle refuses a content change on a completed, withdrawn or superseded artifact (TerminalArtifactError) and a create with a status other than draft",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "checkHeadIntegrity and checkIntegrity: ok, an empty stored hash is ok, hash-mismatch, head-ahead-of-log, log-ahead-of-head, a log with no revision-bearing entry is ok, the same number with a different non-empty hash, and an older log entry with an empty hash",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "rollUp for a Task from CompletionEvidence; for a Story with counted Tasks all completed, one unfinished, one rejected, withdrawn and superseded ones that do not count, TASKS and DIAG children that are ignored, no Tasks at all, and each code-review evidence kind (clean, overridden, blocked, missing); for an Epic over its Stories; an unreadable child makes rollUp throw UnreadableChildError",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "storyCodeReview maps the gate: pass and a non-advisory warn to clean, an advisory warn to blocked, overridden to overridden with its reason, blocked to blocked, no-review to missing",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "prepareArtifactWrite on a head that carries meta.lifecycle (through writeArtifact, as the BUILD record hook and the review auto-fix call it): a content write reconciles hash, number and the fall-back to draft, a meta-only write leaves them, a head with no meta.lifecycle is prepared exactly as before, and the existing artifact-writer and prepare-artifact-write tests pass unchanged",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "ArtifactStore.write with a lifecycle operation logs that operation with status {from, to}, every entry still carries revision {number, contentHash}, mark-stale and ack-stale log no status, a status change outside the table is refused, an ordinary write on a conflicted head is refused and a write with outcome.result 'conflict-resolved' adopts the head's content and logs it",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "pass-through codecs: a TASK, STORY, EPIC, TASKS and DIAG head is written, read, listed by childrenOfStrict and given a status through the store, and registeredKinds lists sixteen kinds",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "ArtifactStore.update runs read, mutate and write inside the queue: two competing lifecycle-only operations (approve and open-signoff, or two complete calls) both land in order and neither is lost, and a mutate that throws writes nothing",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "ArtifactStore.childrenOfStrict returns an unreadable child that childrenOf skips, and a corrupt unfinished Task makes the Story's roll-up throw instead of completing",
+        "coveredByTaskIds": [
+          "t6",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "LifecycleService.apply end to end for ac7: approve an artifact, change its content through the store, and read it back with readWithHistory to see draft status, the new revision, the earlier approval and review at the older revision, and a log that replays to the same status",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "LifecycleService.apply refuses approve, review and complete on a head with each Integrity reason and writes and logs nothing, while a head with no stored hash and a head with no revision-bearing log entry are approved normally",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Story completion for ac9 over a temporary repository of EPIC, STORY, TASK, TASKS, DIAG (two), LLD, PLAN, BUILD, CR, TESTS and EXT heads: completeIfRolledUp after the last Task completes the Task, then the Story with its members first and itself last, records it once, then completes the Epic when its Stories have; withdrawn and superseded Tasks are ignored, an advisory-blocked or missing code review withholds it, an overridden one completes it with the reason on the entry, and a failure part-way is finished by a retry",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "reopen of a completed Story reopens the members its completion froze and is refused while its Epic is completed",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "approveWorkflowTarget in both branches refuses a conflicted BUILD target in skipped[] BEFORE ensureBuildRecordOnCompletion rewrites it (the record's bytes are unchanged), with a service it applies the approval through LifecycleService and triggers completeIfRolledUp after a BUILD approval, and without a service it behaves as today",
+        "coveredByTaskIds": [
+          "t9",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "approveArtifactByJsonPath and reviewArtifactFile refuse a head whose stored hash differs from its content with LifecycleConflictError before any stamp, a review auto-fix on a head with meta.lifecycle keeps the hash consistent, and the existing gates, plan-gate, admit-build, review and build-step tests pass unchanged",
+        "coveredByTaskIds": [
+          "t9",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "the write inventory test over the real src tree: the lifecycle service file has an entry and a caller of ArtifactStore.write or update is recognised",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "the Lifecycle, Integrity, ContentView, TransitionDetail and WriteOptions types accept the sc4 sketch and the declared additions",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the s2 assertions that change intentionally (registeredKinds, TASK and STORY no longer unknown kinds) are updated and the log-revision assertion in store-write.test.ts stays as it is",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 1: the lifecycle error classes"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 2: the pure lifecycle rules module"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 3: reconcile meta.lifecycle in prepareArtifactWrite"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 4: pass-through codecs for the five missing kinds"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 5: ArtifactStore write, update and childrenOfStrict"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 6: rollUp, unit membership and the completion evidence"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 7: the LifecycleService and its inventory entry"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 8: the gate guards and the optional service on the approval and review paths"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 9: the follow-ups and final checks"
+    }
+  ]
+}

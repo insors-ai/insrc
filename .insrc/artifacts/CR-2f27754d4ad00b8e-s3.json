@@ -1,0 +1,465 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792565328755-jpm4wb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T06:48:51.575Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 146058,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s3",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s3",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "declined"
+    },
+    "subject": {
+      "changedFiles": [
+        "docs/plans/core-data-model.md",
+        "src/workflow/__tests__/artifact-write-inventory.test.ts",
+        "src/workflow/__tests__/docs-s3-follow-ups.test.ts",
+        "src/workflow/__tests__/gates-lifecycle-guard.test.ts",
+        "src/workflow/__tests__/gates-lifecycle-service.test.ts",
+        "src/workflow/__tests__/prepare-lifecycle.test.ts",
+        "src/workflow/artifact-core/__tests__/codec-create.test.ts",
+        "src/workflow/artifact-core/__tests__/completion-evidence.test.ts",
+        "src/workflow/artifact-core/__tests__/content-hash.test.ts",
+        "src/workflow/artifact-core/__tests__/decode.test.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-ac7.test.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-errors.test.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-integrity.test.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-kit.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-members.test.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-reconcile.test.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-table.test.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-transition.test.ts",
+        "src/workflow/artifact-core/__tests__/pass-through-codecs.test.ts",
+        "src/workflow/artifact-core/__tests__/store-children-strict.test.ts",
+        "src/workflow/artifact-core/__tests__/store-lifecycle-write.test.ts",
+        "src/workflow/artifact-core/__tests__/store-update.test.ts",
+        "src/workflow/artifact-core/__tests__/store-write.test.ts",
+        "src/workflow/artifact-core/__tests__/types-contract.test.ts",
+        "src/workflow/artifact-core/codecs.ts",
+        "src/workflow/artifact-core/completion-evidence.ts",
+        "src/workflow/artifact-core/lifecycle-service.ts",
+        "src/workflow/artifact-core/lifecycle.ts",
+        "src/workflow/artifact-core/store.ts",
+        "src/workflow/artifact-core/types.ts",
+        "src/workflow/artifact-write-inventory.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/review/run-artifact.ts",
+        "src/workflow/runners/build/completion-record.ts",
+        "src/workflow/runners/build/standalone-record.ts",
+        "src/workflow/storage.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/lifecycle-service.ts:97",
+            "message": "Member completion/reopening runs before nextLifecycle validates the unit's transition. Completing a withdrawn Story whose roll-up passes can freeze its documents and then throw when transitioning the Story. Validate the unit transition before mutating members.",
+            "expectationRef": "LLD LifecycleService.apply postconditions and illegal-transition error path: an illegal operation writes and appends nothing."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/workflow/gates.ts:1015",
+            "message": "The legacy approval stamp is written before service approval, and failure restores an earlier whole-file snapshot. This exposes approval before the lifecycle accepts it and can erase a review mirrored by the service or a concurrent update while leaving its log entry intact. Apply service approval first, then write the legacy stamp.",
+            "expectationRef": "PLAN t10 and LLD approveWorkflowTarget postconditions: approval is applied through LifecycleService.apply; the legacy meta.approvedAt stamp follows."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/workflow/artifact-core/lifecycle-service.ts:125",
+            "message": "apply releases the update queue before rereading the lifecycle and selecting the last log entry. A competing operation can run between those steps, so an approve call can return another operation's lifecycle and entry. Capture this operation's result while its update remains serialized.",
+            "expectationRef": "LLD LifecycleService.apply return contract: returns the stored lifecycle and its log entry; concurrent operations run serially under ArtifactStore.update."
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/core-data-model.md:307",
+            "message": "The supplied changed entity has empty testsReaching: a not-exercised gap under the required coverage rule.",
+            "expectationRef": "docs/plans/core-data-model.md",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/artifact-write-inventory.test.ts:49",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/docs-s3-follow-ups.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/docs-s3-follow-ups.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/gates-lifecycle-guard.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/gates-lifecycle-guard.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/gates-lifecycle-service.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/gates-lifecycle-service.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/prepare-lifecycle.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/prepare-lifecycle.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/codec-create.test.ts:85",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/codec-create.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/content-hash.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/content-hash.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/decode.test.ts:96",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/decode.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/lifecycle-ac7.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/lifecycle-ac7.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/lifecycle-errors.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/lifecycle-errors.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/lifecycle-integrity.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/lifecycle-integrity.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/lifecycle-kit.ts:1",
+            "message": "The supplied changed entity has empty testsReaching: no test-reaching edge establishes exercise of this helper file.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/lifecycle-kit.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/lifecycle-members.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/lifecycle-members.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/lifecycle-reconcile.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/lifecycle-reconcile.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/lifecycle-table.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/lifecycle-table.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/lifecycle-transition.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/lifecycle-transition.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/pass-through-codecs.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/pass-through-codecs.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/store-children-strict.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/store-children-strict.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/store-lifecycle-write.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/store-lifecycle-write.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/store-update.test.ts:1",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/store-update.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/store-write.test.ts:20",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/store-write.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/__tests__/types-contract.test.ts:27",
+            "message": "The supplied changed entity has empty testsReaching. Its passing test record does not establish a reaching edge.",
+            "expectationRef": "src/workflow/artifact-core/__tests__/types-contract.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/codecs.ts:104",
+            "message": "Empty testsReaching establishes a not-exercised gap for the changed codec registrations under the required coverage rule.",
+            "expectationRef": "src/workflow/artifact-core/codecs.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/completion-evidence.ts:1",
+            "message": "Empty testsReaching establishes a not-exercised gap for the new completion-evidence behavior under the required coverage rule.",
+            "expectationRef": "src/workflow/artifact-core/completion-evidence.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/lifecycle-service.ts:1",
+            "message": "Empty testsReaching establishes a not-exercised gap for the new lifecycle service under the required coverage rule.",
+            "expectationRef": "src/workflow/artifact-core/lifecycle-service.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/lifecycle.ts:1",
+            "message": "Empty testsReaching establishes a not-exercised gap for the new lifecycle rules under the required coverage rule.",
+            "expectationRef": "src/workflow/artifact-core/lifecycle.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/store.ts:116",
+            "message": "Empty testsReaching establishes a not-exercised gap for the changed store behavior under the required coverage rule.",
+            "expectationRef": "src/workflow/artifact-core/store.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-core/types.ts:221",
+            "message": "Empty testsReaching establishes a not-exercised gap for the added lifecycle errors under the required coverage rule.",
+            "expectationRef": "src/workflow/artifact-core/types.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-write-inventory.ts:85",
+            "message": "Empty testsReaching establishes a not-exercised gap for the changed writer inventory and detection behavior under the required coverage rule.",
+            "expectationRef": "src/workflow/artifact-write-inventory.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/gates.ts:597",
+            "message": "Empty testsReaching establishes a not-exercised gap for the changed approval guards and service integration under the required coverage rule.",
+            "expectationRef": "src/workflow/gates.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/review/run-artifact.ts:89",
+            "message": "Empty testsReaching establishes a not-exercised gap for the changed review guards and service integration under the required coverage rule.",
+            "expectationRef": "src/workflow/review/run-artifact.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/runners/build/completion-record.ts:97",
+            "message": "Empty testsReaching establishes a not-exercised gap for the changed BUILD content writer integration under the required coverage rule.",
+            "expectationRef": "src/workflow/runners/build/completion-record.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/runners/build/standalone-record.ts:307",
+            "message": "Empty testsReaching establishes a not-exercised gap for the changed BUILD record preparation under the required coverage rule.",
+            "expectationRef": "src/workflow/runners/build/standalone-record.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/storage.ts:167",
+            "message": "Empty testsReaching establishes a not-exercised gap for the changed lifecycle reconciliation during artifact writes under the required coverage rule. All 30 promised tests have corresponding passing results; those results do not supply the missing test-reaching edges.",
+            "expectationRef": "src/workflow/storage.ts",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/artifact-core/lifecycle-service.ts:98",
+            "message": "Correctness: member mutations occur before nextLifecycle validates the unit's transition. Completing a withdrawn Story whose roll-up passes can freeze its members and then throw, leaving members completed under a withdrawn Story. Validate the unit transition before cascading.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/artifact-core/store.ts:249",
+            "message": "Avoidable complexity: cascading completion temporarily substitutes the prior status, reconciles and serializes that artificial state, then reparses and patches the serialized status. This creates a second transition path that must stay synchronized with lifecycle validation. Pass cascade context into reconciliation so it validates and prepares the actual final state directly.",
+            "counterpartRef": "",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/storage.ts:194",
+            "message": "Duplication: reconcileLifecycleOf hashes both payloads to determine whether content changed, then reconcileLifecycle immediately repeats those hashes and the comparison. Each write therefore repeats recursive JSON normalization and hashing, adding avoidable CPU and allocation costs for large artifacts. Let reconciliation determine both the content change and revision number.",
+            "counterpartRef": "reconcileLifecycle",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/gates.ts:1019",
+            "message": "Error handling: restoreStamp restores the entire pre-service head, although mirrorLegacyReview may already have committed a review and appended its history entry before approval fails. Restoring those bytes removes the committed lifecycle review without undoing its log entry. Restore only legacy stamp fields through the queued store, preserving committed lifecycle changes and pending recovery.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 41,
+      "med": 5,
+      "low": 0
+    }
+  }
+}

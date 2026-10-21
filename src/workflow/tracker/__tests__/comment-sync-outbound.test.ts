@@ -111,3 +111,15 @@ describe('comment-sync-outbound', () => {
 		} finally { s.done(); }
 	});
 });
+
+describe('comment sync concurrency', () => {
+	it('two syncs of one artifact at once post a feedback entry once', async () => {
+		const s = await syncKit();
+		try {
+			const t = fakeTracker();
+			await s.feedback.add(TASK, { id: 'f1', text: 'looks good', kind: 'comment' }, alice);
+			await Promise.all([syncUnitComments(s.task, t.port, s.deps), syncUnitComments(s.task, t.port, s.deps)]);
+			assert.equal(t.posts.length, 1);
+		} finally { s.done(); }
+	});
+});

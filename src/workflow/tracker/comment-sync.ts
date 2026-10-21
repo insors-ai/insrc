@@ -93,16 +93,26 @@ function locate(unit: UnitRef): { artifactId: string; issue: string } | string {
 	return issue === undefined ? `${artifactId} is not bound to an issue` : { artifactId, issue };
 }
 
+/** The sync in progress for each artifact: a second call waits for it, so two syncs never both find a feedback entry unposted and post it twice. */
+const running = new Map<string, Promise<unknown>>();
+
 /** Read the unit's issue comments into feedback (inbound), then post feedback entered here once (outbound). */
 export async function syncUnitComments(unit: UnitRef, port: TrackerPort, deps: CommentSyncDeps): Promise<CommentSyncResult> {
 	const out = empty();
 	try {
 		const where = locate(unit);
 		if (typeof where === 'string') return { ...out, note: where };
-		const result: CommentSyncResult = { ...out, artifactId: where.artifactId, issue: where.issue };
-		await readInbound(where.artifactId, where.issue, port, deps, result);
-		await postOutbound(where.artifactId, where.issue, port, deps, result);
-		return result;
+		const before = running.get(where.artifactId) ?? Promise.resolve();
+		const turn = before.then(async () => {
+			const result: CommentSyncResult = { ...out, artifactId: where.artifactId, issue: where.issue };
+			await readInbound(where.artifactId, where.issue, port, deps, result);
+			await postOutbound(where.artifactId, where.issue, port, deps, result);
+			return result;
+		});
+		const settled = turn.catch(() => undefined);
+		running.set(where.artifactId, settled);
+		try { return await turn; }
+		finally { if (running.get(where.artifactId) === settled) running.delete(where.artifactId); }
 	} catch (err) {
 		log.warn({ err: (err as Error).message }, 'comment-sync: the sync failed');
 		return { ...out, failed: [{ step: 'sync', reason: (err as Error).message }] };

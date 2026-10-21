@@ -93,8 +93,9 @@ export async function handleImplement(
 		log.info({ storyId: ref.storyId, err: e instanceof Error ? e.message : String(e) }, 'insrc_build_step[implement]: LLD unreadable for resolved decisions');
 	}
 
-	const prompt = renderImplementPrompt(repoPath, ref, resolvedDecisions);
+	// Sync first, so feedback this turn reads from the issue is already recorded when the prompt is built.
 	const commentSync = await runTaskCommentSync(repoPath, ref.epicHash, ref.storyId, ref.taskId);
+	const prompt = renderImplementPrompt(repoPath, ref, resolvedDecisions);
 	log.info({ taskId: ref.taskId, storyId: ref.storyId, workflowId: ref.workflowId }, 'insrc_build_step[implement]: emitting prompt');
 	return {
 		next:       'implement',

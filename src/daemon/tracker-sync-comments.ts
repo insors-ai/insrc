@@ -33,6 +33,7 @@ export async function handleTrackerSyncComments(params: unknown, repoEnv: string
 	const repoPath = p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv;
 	if (repoPath === undefined || repoPath.length === 0) return { error: 'repo is required (or set INSRC_REPO)' };
 	if (typeof p.epicHash !== 'string' || p.epicHash.length === 0) return { error: 'epicHash is required' };
+	if (p.unit !== undefined && p.unit !== 'epic' && p.unit !== 'story' && p.unit !== 'task') return { error: 'unit must be epic, story or task' };
 	const unit = p.unit ?? (p.taskId !== undefined ? 'task' : p.storyId !== undefined ? 'story' : 'epic');
 	if (unit !== 'epic' && (typeof p.storyId !== 'string' || p.storyId.length === 0)) return { error: `storyId is required for a ${unit} unit` };
 	if (unit === 'task' && (typeof p.taskId !== 'string' || p.taskId.length === 0)) return { error: 'taskId is required for a task unit' };

@@ -61,7 +61,9 @@ export async function syncKit(): Promise<SyncKit> {
 	await k.store.write(artifact(LLD), alice);
 	if (!bindArtifact(k.repo, TASK, ISSUE).ok || !bindArtifact(k.repo, LLD, 'acme/demo#2').ok) throw new Error('the fixtures could not be bound');
 	const history = new History(k.sidecar);
-	const feedback = new FeedbackService({ history, store: k.store, now: () => new Date('2026-10-22T12:00:00.000Z') });
+	// each entry a millisecond after the last, so entries sort in the order they were made
+	let tick = 0;
+	const feedback = new FeedbackService({ history, store: k.store, now: () => new Date(Date.parse('2026-10-22T12:00:00.000Z') + tick++) });
 	return {
 		k, history, feedback, deps: { feedback, history, store: k.store },
 		task:  { unit: 'task', repoPath: k.repo, epicHash: H, storyId: 's1', taskId: 't1' },

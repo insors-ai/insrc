@@ -698,6 +698,8 @@ FileSidecarStore appends every record to .insrc/history/log.jsonl or .insrc/hist
   - **resolved**: Optional request actor with fallback — Recommended: person attribution in s4 while preserving existing approvals; live tracker identity stays with s5. _(2026-10-21T09:17:31.996Z)_
 - `qcfedb02f` — Making persistBuildRecord, persistStandaloneBuildRecord, persistTestRecordTask and handleVerdicts async touches many existing tests; should the tests be moved to the async forms in the same tasks as the writers, or kept on a thin synchronous test-only wrapper?
   - **resolved**: Migrate tests with writers — Recommended: tests exercise the real async interfaces. _(2026-10-21T09:18:05.123Z)_
+- `q76f06eb7` — ep3: the invariants name the capability ids c1 to c4 whose citations point at the s1 bundles, but they do not quote the bundle text
+  - **resolved**: Keep citation-only references — The citations point at the s1 bundles; this is a documentation gap, not a design one, covered by the LLD approval override. _(2026-10-21T09:18:35.088Z)_
 
 ## Citations
 

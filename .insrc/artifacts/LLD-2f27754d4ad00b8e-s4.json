@@ -169,6 +169,13 @@
         "choice": "Migrate tests with writers",
         "rationale": "Recommended: tests exercise the real async interfaces.",
         "resolvedAt": "2026-10-21T09:18:05.123Z"
+      },
+      "q76f06eb7": {
+        "question": "ep3: the invariants name the capability ids c1 to c4 whose citations point at the s1 bundles, but they do not quote the bundle text",
+        "status": "resolved",
+        "choice": "Keep citation-only references",
+        "rationale": "The citations point at the s1 bundles; this is a documentation gap, not a design one, covered by the LLD approval override.",
+        "resolvedAt": "2026-10-21T09:18:35.088Z"
       }
     }
   },

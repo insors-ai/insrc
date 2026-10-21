@@ -73,7 +73,7 @@ function writeDesign(r: ReturnType<typeof tempRepo>, kind: 'HLD' | 'LLD' | 'PLAN
 	return md;
 }
 
-test('HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one folder on the epic route and on the standalone route, including delivery grouping', () => {
+test('HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one folder on the epic route and on the standalone route, including delivery grouping', async () => {
 	// three routes: an epic (DEF head), a standalone feature headed by its stamped LLD, and a standalone fix headed by an ISSUE
 	for (const route of ['epic', 'standalone-lld-head', 'standalone-issue-head'] as const) {
 		const standalone = route !== 'epic';
@@ -97,8 +97,8 @@ test('HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one 
 			design.push(dirname(dirname(writeDesign(r, 'PLAN', D3, standalone))));
 
 			// the ledger records: TESTS on D4, BUILD on D5, the code review on D6
-			const tests = persistTestRecordTask(r.repo, { epicHash: HASH, storyId: 's1', now: D4, ...(standalone ? { standalone: true } : {}) }, task(D4));
-			const build = persistBuildRecord(r.repo, buildRec(D5, standalone));
+			const tests = await persistTestRecordTask(r.repo, { epicHash: HASH, storyId: 's1', now: D4, ...(standalone ? { standalone: true } : {}) }, task(D4));
+			const build = await persistBuildRecord(r.repo, buildRec(D5, standalone));
 			const cr = codeReviewArtifactPaths(
 				r.repo, HASH, 's1',
 				codeReviewSubjectPathArgs({ repoPath: r.repo, epicHash: HASH, storyId: 's1', changedFiles: [], approvedLld: null, approvedPlan: null, buildRecord: null }).epicCreatedAt,

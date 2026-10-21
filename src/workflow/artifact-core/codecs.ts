@@ -129,6 +129,8 @@ export function creationContextProvider(
 		readonly epicSlug?:   string | undefined;
 		readonly standalone?: boolean | undefined;
 		readonly extraMeta?:  Readonly<Record<string, unknown>> | undefined;
+		/** Kinds that may be the first record of a work item (the BUILD of a Trivial standalone build): with no anchor stamped yet, their own clock is the anchor. */
+		readonly rootKinds?:  readonly ArtifactIdKind[] | undefined;
 	} = {},
 ): CreationContextProvider {
 	return key => {
@@ -136,7 +138,7 @@ export function creationContextProvider(
 		// A Define, or a standalone LLD (the first head of a feature with no Epic), keeps an anchor already stamped for its hash. A SPEC or ISSUE is keyed by its own run hash,
 		// has no earlier head, and starts the work item, so its own clock is the anchor. Every other kind reads
 		// the stamp.
-		const isRoot = key.kind === 'DEF' || (key.kind === 'LLD' && opts.standalone === true);
+		const isRoot = key.kind === 'DEF' || (key.kind === 'LLD' && opts.standalone === true) || (opts.rootKinds?.includes(key.kind) ?? false);
 		const epicCreatedAt = isRoot ? stampRootAnchor(repoPath, key.epicHash, createdAt)
 			: key.kind === 'SPEC' || key.kind === 'ISSUE' ? createdAt
 			: requireEpicAnchor(repoPath, key.epicHash);

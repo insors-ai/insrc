@@ -65,7 +65,7 @@ const planRec = (tasks: { id: string; passed?: boolean }[], at: string): BuildRe
 
 test('persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists', async () => {
 	await withRepo(async (repo) => {
-		const { json, md } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
+		const { json, md } = await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		assert.equal(json, artifactJsonPath(repo, buildArtifactId(HASH, 's1')));
 		const rec = readJson(json);
 		assert.equal(rec.meta['standalone'], false);
@@ -83,8 +83,8 @@ test('persistBuildRecord writes a fresh standalone:false record at buildArtifact
 
 test('a second validate UNIONS tasks by id, preserves createdAt, refreshes updatedAt (one record, not N)', async () => {
 	await withRepo(async (repo) => {
-		persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
-		const { json } = persistBuildRecord(repo, planRec([{ id: 't2', passed: false }], '2026-02-02T00:00:00.000Z'));
+		await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
+		const { json } = await persistBuildRecord(repo, planRec([{ id: 't2', passed: false }], '2026-02-02T00:00:00.000Z'));
 		const rec = readJson(json);
 		assert.deepEqual(rec.body['tasks'], [{ id: 't1', passed: true }, { id: 't2', passed: false }], 'both tasks, unioned');
 		assert.equal(rec.meta['createdAt'], '2026-01-01T00:00:00.000Z', 'original createdAt preserved');
@@ -94,8 +94,8 @@ test('a second validate UNIONS tasks by id, preserves createdAt, refreshes updat
 
 test('re-validating the same task refreshes its passed without duplicating the row', async () => {
 	await withRepo(async (repo) => {
-		persistBuildRecord(repo, planRec([{ id: 't1', passed: false }], '2026-01-01T00:00:00.000Z'));
-		const { json } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-02T00:00:00.000Z'));
+		await persistBuildRecord(repo, planRec([{ id: 't1', passed: false }], '2026-01-01T00:00:00.000Z'));
+		const { json } = await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-02T00:00:00.000Z'));
 		assert.deepEqual(readJson(json).body['tasks'], [{ id: 't1', passed: true }], 'single row, passed refreshed');
 	});
 });
@@ -106,14 +106,14 @@ test('re-validating the same task refreshes its passed without duplicating the r
 
 test('an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upsert (never un-complete a story)', async () => {
 	await withRepo(async (repo) => {
-		const { json } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
+		const { json } = await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		// Simulate the approval gate stamping the record.
 		const stamped = readJson(json);
 		stamped.meta['approvedAt'] = '2026-01-05T00:00:00.000Z';
 		stamped.meta['reviewOverride'] = { reason: 'manual', at: '2026-01-05T00:00:00.000Z' };
 		writeFileSync(json, JSON.stringify(stamped, null, 2) + '\n');
 		// A later re-validate must not clobber the completion stamps.
-		persistBuildRecord(repo, planRec([{ id: 't2', passed: true }], '2026-01-06T00:00:00.000Z'));
+		await persistBuildRecord(repo, planRec([{ id: 't2', passed: true }], '2026-01-06T00:00:00.000Z'));
 		const rec = readJson(json);
 		assert.equal(rec.meta['approvedAt'], '2026-01-05T00:00:00.000Z', 'approvedAt preserved');
 		assert.deepEqual(rec.meta['reviewOverride'], { reason: 'manual', at: '2026-01-05T00:00:00.000Z' });
@@ -128,7 +128,7 @@ test('a malformed prior record is treated as absent (fail-open fresh write), not
 	await withRepo(async (repo) => {
 		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
 		writeFileSync(json, '{ not valid json');
-		assert.doesNotThrow(() => persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z')));
+		await assert.doesNotReject(async () => await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z')));
 		const rec = readJson(json);
 		assert.equal(rec.meta['standalone'], false);
 		assert.deepEqual(rec.body['tasks'], [{ id: 't1', passed: true }], 'fresh record from the current write');
@@ -157,7 +157,7 @@ test('persistStandaloneBuildRecord writes standalone:true json + the SAME md via
 			meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
 			body: { focus: 'Add a --json flag to the status subcommand.', producesLld: false },
 		};
-		const { json, md } = persistStandaloneBuildRecord(repo, rec);
+		const { json, md } = await persistStandaloneBuildRecord(repo, rec);
 		// json is byte-identical to a plain stringify of the record (no prior, no merge
 		// additions) plus the folder anchor it is filed under (ISSUE-764b88ed: a
 		// Trivial build with no LLD anchors on its own createdAt and has no label).
@@ -186,7 +186,7 @@ test('persistStandaloneBuildRecord writes standalone:true json + the SAME md via
 
 test('approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)', async () => {
 	await withRepo(async (repo) => {
-		const { json } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
+		const { json } = await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		stampOtherPartyReview(json);   // completion requires an other-party code review
 		// enforce off → the code-review gate is advisory; completion proceeds + stamps approvedAt.
 		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: json }, { enforce: false });
@@ -204,13 +204,13 @@ test('S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps 
 			meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T23:59:59.000Z' },
 			body: { focus: 'f', producesLld: false },
 		};
-		const p1 = persistStandaloneBuildRecord(repo, first);
+		const p1 = await persistStandaloneBuildRecord(repo, first);
 		// A re-run the next UTC day mints a FRESH createdAt (as implement.ts does).
 		const rerun: StandaloneBuildRecord = {
 			...first,
 			meta: { ...first.meta, createdAt: '2026-01-02T00:00:01.000Z' },
 		};
-		const p2 = persistStandaloneBuildRecord(repo, rerun);
+		const p2 = await persistStandaloneBuildRecord(repo, rerun);
 		// The merge preserves the original createdAt, and the folder is keyed on the
 		// merged record — so the md path is unchanged (no orphaned day-2 folder).
 		assert.equal(p2.md, p1.md, 'the re-run resolves to the same md folder as the first build');
@@ -239,10 +239,10 @@ const standaloneRec = (at: string): BuildRecord => ({
 });
 
 test('a prior-only meta field SURVIVES a later write that omits it (sizeClass + triageRationale were silently deleted)', async () => {
-	await withRepo((repo) => {
-		persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
+	await withRepo(async (repo) => {
+		await persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
 		// The validate write, verbatim in shape: it mentions neither field.
-		persistBuildRecord(repo, planRec([{ id: 's1', passed: true }], '2026-02-02T00:00:00.000Z'));
+		await persistBuildRecord(repo, planRec([{ id: 's1', passed: true }], '2026-02-02T00:00:00.000Z'));
 
 		const rec = readJson(artifactJsonPath(repo, buildArtifactId(HASH, 's1')));
 		assert.equal(rec.meta['sizeClass'], 'trivial', 'sizeClass survives a write that omits it');
@@ -251,9 +251,9 @@ test('a prior-only meta field SURVIVES a later write that omits it (sizeClass + 
 });
 
 test('the new write still WINS on a meta field it DOES supply (preservation must not become prior-always-wins)', async () => {
-	await withRepo((repo) => {
-		persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
-		persistBuildRecord(repo, planRec([{ id: 's1', passed: true }], '2026-02-02T00:00:00.000Z'));
+	await withRepo(async (repo) => {
+		await persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
+		await persistBuildRecord(repo, planRec([{ id: 's1', passed: true }], '2026-02-02T00:00:00.000Z'));
 
 		const rec = readJson(artifactJsonPath(repo, buildArtifactId(HASH, 's1')));
 		// standalone: prior true, new write supplies false → the NEW value wins.
@@ -269,8 +269,8 @@ test('the new write still WINS on a meta field it DOES supply (preservation must
 // keyed on the merged value. Both halves are pinned here.
 
 test('t9: a write that OMITS standalone keeps the prior true (the carry-forward the shared validate persist now relies on)', async () => {
-	await withRepo((repo) => {
-		persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
+	await withRepo(async (repo) => {
+		await persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
 		// The post-t9 validate write, verbatim in shape: no `standalone` key at all.
 		const { meta: _drop, ...rest } = planRec([{ id: 's1', passed: true }], '2026-02-02T00:00:00.000Z');
 		const omitting: BuildRecord = {
@@ -280,7 +280,7 @@ test('t9: a write that OMITS standalone keeps the prior true (the carry-forward 
 				createdAt: '2026-02-02T00:00:00.000Z', updatedAt: '2026-02-02T00:00:00.000Z',
 			},
 		};
-		const paths = persistBuildRecord(repo, omitting);
+		const paths = await persistBuildRecord(repo, omitting);
 
 		const rec = readJson(artifactJsonPath(repo, buildArtifactId(HASH, 's1')));
 		assert.equal(rec.meta['standalone'], true,
@@ -293,9 +293,9 @@ test('t9: a write that OMITS standalone keeps the prior true (the carry-forward 
 });
 
 test('the PRIOR-wins exceptions are untouched: createdAt and all four completion/rejection stamps still beat the new write', async () => {
-	await withRepo((repo) => {
+	await withRepo(async (repo) => {
 		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
-		persistBuildRecord(repo, {
+		await persistBuildRecord(repo, {
 			meta: {
 				...standaloneRec('2026-01-01T00:00:00.000Z').meta,
 				approvedAt: '2026-01-05T00:00:00.000Z',
@@ -306,7 +306,7 @@ test('the PRIOR-wins exceptions are untouched: createdAt and all four completion
 			body: standaloneRec('2026-01-01T00:00:00.000Z').body,
 		});
 		// A later write that tries to overwrite every prior-wins field.
-		persistBuildRecord(repo, {
+		await persistBuildRecord(repo, {
 			meta: {
 				workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1',
 				createdAt: '2026-09-09T00:00:00.000Z', updatedAt: '2026-09-09T00:00:00.000Z',
@@ -328,23 +328,23 @@ test('the PRIOR-wins exceptions are untouched: createdAt and all four completion
 });
 
 test('BYTE-IDENTITY: a new write that supplies every field the record already carried produces the SAME json and md as a fresh write', async () => {
-	await withRepo((repo) => {
+	await withRepo(async (repo) => {
 		const rec = planRec([{ id: 't1', passed: true }], '2026-03-03T00:00:00.000Z');
 		// Fresh write, captured.
-		const first = persistBuildRecord(repo, rec);
+		const first = await persistBuildRecord(repo, rec);
 		const freshJson = readFileSync(first.json, 'utf8');
 		const freshMd   = readFileSync(first.md, 'utf8');
 		// Re-write the IDENTICAL record — now going through the merge path.
-		const second = persistBuildRecord(repo, rec);
+		const second = await persistBuildRecord(repo, rec);
 		assert.equal(readFileSync(second.json, 'utf8'), freshJson, 'json is byte-identical through the merge');
 		assert.equal(readFileSync(second.md, 'utf8'), freshMd, 'md is byte-identical through the merge');
 	});
 });
 
 test('a meta field can no longer be cleared by OMITTING it — the documented trade-off, pinned so it is a decision and not a surprise', async () => {
-	await withRepo((repo) => {
-		persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
-		persistBuildRecord(repo, planRec([{ id: 's1', passed: true }], '2026-02-02T00:00:00.000Z'));
+	await withRepo(async (repo) => {
+		await persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
+		await persistBuildRecord(repo, planRec([{ id: 's1', passed: true }], '2026-02-02T00:00:00.000Z'));
 		const rec = readJson(artifactJsonPath(repo, buildArtifactId(HASH, 's1')));
 		// This is the cost of the fix, stated as an assertion: omission no longer
 		// deletes. A future caller needing to genuinely unset a field must do it
@@ -397,7 +397,7 @@ test('BYTE-IDENTITY golden 3 (PATHOLOGICAL): REPAIRED at t8 — every defect t2 
 });
 
 test('FORWARD COMPAT: a record written entirely before this Story still parses, merges via mergeWithPrior and renders without error', async () => {
-	await withRepo((repo) => {
+	await withRepo(async (repo) => {
 		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
 		// Seed the real pre-fix plan-driven record as the PRIOR, under this repo's ids.
 		const prior = {
@@ -406,7 +406,7 @@ test('FORWARD COMPAT: a record written entirely before this Story still parses, 
 		} as BuildRecord;
 		writeFileSync(json, JSON.stringify(prior, null, 2) + '\n');
 		// A later validate write must merge onto it without throwing...
-		assert.doesNotThrow(() => persistBuildRecord(repo, planRec([{ id: 't3', passed: true }], '2026-10-10T00:00:00.000Z')));
+		await assert.doesNotReject(async () => await persistBuildRecord(repo, planRec([{ id: 't3', passed: true }], '2026-10-10T00:00:00.000Z')));
 		const merged = readJson(json);
 		// ...preserving what the old record carried (summary + changeLog are body
 		// keys; sizeClass-style meta retention is covered by the ISSUE-013e8162 tests).
@@ -445,14 +445,14 @@ async function withGitRepo(fn: (repo: string, head: string) => void | Promise<vo
 }
 
 test('t7 WRITE SIDE: body.commit is populated from HEAD on BOTH routes, identically', async () => {
-	await withGitRepo((repo, head) => {
+	await withGitRepo(async (repo, head) => {
 		// plan-driven
-		const { json: planJson } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
+		const { json: planJson } = await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		assert.equal(readJson(planJson).body['commit'], head, 'plan-driven route records HEAD');
 	});
-	await withGitRepo((repo, head) => {
+	await withGitRepo(async (repo, head) => {
 		// standalone — same producer, because it lives in the single persist entry point
-		const { json } = persistStandaloneBuildRecord(repo, {
+		const { json } = await persistStandaloneBuildRecord(repo, {
 			meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
 			body: { focus: 'F', producesLld: false },
 		});
@@ -462,8 +462,8 @@ test('t7 WRITE SIDE: body.commit is populated from HEAD on BOTH routes, identica
 
 test('t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD cannot be read', async () => {
 	// A bare tmpdir: not a git repo, so `git rev-parse` fails.
-	await withRepo((repo) => {
-		const { json } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
+	await withRepo(async (repo) => {
+		const { json } = await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		const body = readJson(json).body;
 		assert.ok(!('commit' in body),
 			'ABSENT, not present-and-empty: a falsy commit would render an empty `**Commit:**` line, which is worse than no line');
@@ -471,10 +471,10 @@ test('t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD
 });
 
 test('t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist REFRESHES to HEAD (the specified "at persist time" semantics)', async () => {
-	await withGitRepo((repo, head) => {
+	await withGitRepo(async (repo, head) => {
 		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
 		// A caller that knows the commit can supply it, and it beats HEAD.
-		persistBuildRecord(repo, {
+		await persistBuildRecord(repo, {
 			meta: { workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
 			body: { tasks: [{ id: 't1', passed: true }], commit: 'deadbee' },
 		});
@@ -485,7 +485,7 @@ test('t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later 
 		// LLD says `body.commit` comes "from git HEAD at persist time", so a later
 		// write that supplies none refreshes it. Pinned as the specified semantics
 		// rather than quietly changing the code to match the wrong expectation.
-		persistBuildRecord(repo, planRec([{ id: 't2', passed: true }], '2026-02-02T00:00:00.000Z'));
+		await persistBuildRecord(repo, planRec([{ id: 't2', passed: true }], '2026-02-02T00:00:00.000Z'));
 		assert.equal(readJson(json).body['commit'], head,
 			'a later persist supplying no commit records HEAD at THAT persist time');
 	});
@@ -517,8 +517,8 @@ test('t7: the three hand-filled records prove the gap was real — and are now w
 		const rec = JSON.parse(readFileSync(join('.insrc', 'artifacts', `BUILD-${h}-S001.json`), 'utf8')) as { body: { commit?: string } };
 		assert.equal(typeof rec.body.commit, 'string', `BUILD-${h} carries a hand-filled commit`);
 	}
-	await withGitRepo((repo, head) => {
-		const { json } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
+	await withGitRepo(async (repo, head) => {
+		const { json } = await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		assert.equal(readJson(json).body['commit'], head, 'and a build now records it automatically');
 	});
 });
@@ -655,10 +655,10 @@ function t4Repo(): { repo: string; cleanup: () => void } {
 	return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
-test('t4 — a record carrying standalone true is placed under docs/standalone', () => {
+test('t4 — a record carrying standalone true is placed under docs/standalone', async () => {
 	const r = t4Repo();
 	try {
-		const { md } = persistBuildRecord(r.repo, {
+		const { md } = await persistBuildRecord(r.repo, {
 			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 's1', createdAt: T4_CREATED, updatedAt: T4_CREATED, standalone: true },
 			body: { tasks: [] },
 		});
@@ -667,11 +667,11 @@ test('t4 — a record carrying standalone true is placed under docs/standalone',
 	} finally { r.cleanup(); }
 });
 
-test('t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the flag, and the markdown does not move', () => {
+test('t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the flag, and the markdown does not move', async () => {
 	const r = t4Repo();
 	try {
 		// First write: the flag is true, so the record is placed as standalone.
-		const first = persistBuildRecord(r.repo, {
+		const first = await persistBuildRecord(r.repo, {
 			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 's1', createdAt: T4_CREATED, updatedAt: T4_CREATED, standalone: true },
 			body: { tasks: [] },
 		});
@@ -680,7 +680,7 @@ test('t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the f
 		// Second write OMITS the flag entirely — the shape every completion-hook
 		// write takes when the definition artifact is unreadable. mergeWithPrior
 		// must carry the prior true forward.
-		const second = persistBuildRecord(r.repo, {
+		const second = await persistBuildRecord(r.repo, {
 			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 's1', createdAt: T4_CREATED, updatedAt: T4_CREATED },
 			body: { tasks: [], summary: 'second write' },
 		});
@@ -694,10 +694,10 @@ test('t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the f
 	} finally { r.cleanup(); }
 });
 
-test('t4 — an omitted flag on a FIRST write still reads as epic, so nothing is manufactured', () => {
+test('t4 — an omitted flag on a FIRST write still reads as epic, so nothing is manufactured', async () => {
 	const r = t4Repo();
 	try {
-		const { md } = persistBuildRecord(r.repo, {
+		const { md } = await persistBuildRecord(r.repo, {
 			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 's1', createdAt: T4_CREATED, updatedAt: T4_CREATED },
 			body: { tasks: [] },
 		});
@@ -740,13 +740,13 @@ test('t5 — the render keys on sizeClass, so it survives a record whose flag is
 // ---------------------------------------------------------------------------
 
 test('43d72766 — persistBuildRecord files an UNFLAGGED record beside its standalone story, not under docs/epics/', async () => {
-	await withRepo((repo) => {
+	await withRepo(async (repo) => {
 		// The story's only upstream: a standalone LLD. No DEF, no ISSUE.
 		writeFileSync(join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`), JSON.stringify({
 			meta: { createdAt: '2026-10-04T05:42:00.000Z', epicSlug: 'lock-insrc-chat', standalone: true },
 		}));
 		// Written by a caller that could not say what route it serves: no flag at all.
-		const { md } = persistBuildRecord(repo, {
+		const { md } = await persistBuildRecord(repo, {
 			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: '2026-10-04T08:50:00.000Z', updatedAt: '2026-10-04T08:50:00.000Z' },
 			body: { tasks: [{ id: 's1', passed: true }] },
 		});
@@ -756,14 +756,14 @@ test('43d72766 — persistBuildRecord files an UNFLAGGED record beside its stand
 });
 
 test('43d72766 — an epic-parented record is still filed under docs/epics/ (the story says nothing, so nothing widens)', async () => {
-	await withRepo((repo) => {
+	await withRepo(async (repo) => {
 		writeFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HASH}.json`), JSON.stringify({
 			meta: { createdAt: '2026-07-18T00:00:00.000Z', epicSlug: 'tag-filtering' },
 		}));
 		writeFileSync(join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`), JSON.stringify({
 			meta: { createdAt: '2026-07-19T00:00:00.000Z', epicSlug: 'tag-filtering' },
 		}));
-		const { md } = persistBuildRecord(repo, planRec([{ id: 's1/t1', passed: true }], '2026-07-20T00:00:00.000Z'));
+		const { md } = await persistBuildRecord(repo, planRec([{ id: 's1/t1', passed: true }], '2026-07-20T00:00:00.000Z'));
 		assert.equal(md, join(repo, 'docs', 'epics', `tag-filtering-E20260718${HASH.slice(0, 8)}`, 'S001', 'BUILD.md'));
 	});
 });
@@ -790,18 +790,18 @@ test('a build record with testRecord renders a line that links to TESTS.md, carr
 	assert.equal(renderBuildRecordMd(PLAN_DRIVEN_RECORD as unknown as BuildRecord), PLAN_DRIVEN_GOLDEN);
 
 	await withRepo(async (repo) => {
-		const { json, md } = persistBuildRecord(repo, linked);
+		const { json, md } = await persistBuildRecord(repo, linked);
 		assert.deepEqual(readJson(json).body['testRecord'], { md: 'docs/epics/x-E20260101abc123de/S001/TESTS.md' });
 		assert.ok(readFileSync(md, 'utf8').includes(line));
 		// A later write that omits the link keeps it (json and document).
-		persistBuildRecord(repo, planRec([{ id: 't2', passed: false }], '2026-01-02T00:00:00.000Z'));
+		await persistBuildRecord(repo, planRec([{ id: 't2', passed: false }], '2026-01-02T00:00:00.000Z'));
 		assert.deepEqual(readJson(json).body['testRecord'], { md: 'docs/epics/x-E20260101abc123de/S001/TESTS.md' });
 		assert.ok(readFileSync(md, 'utf8').includes(line));
 		assert.deepEqual((readJson(json).body['tasks'] as { id: string }[]).map(t => t.id), ['t1', 't2']);
 	});
 	// A record that never had one stays without it.
 	await withRepo(async (repo) => {
-		const { json, md } = persistBuildRecord(repo, plain);
+		const { json, md } = await persistBuildRecord(repo, plain);
 		assert.ok(!('testRecord' in readJson(json).body));
 		assert.ok(!readFileSync(md, 'utf8').includes('**Tests:**'));
 	});
@@ -815,8 +815,8 @@ test('with a test record on disk and no build record, a first build record writt
 
 	// 1. The validate turn's write (the general writer), on a Story with no other anchor.
 	await withRepo(async (repo) => {
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, testTask);
-		const build = persistBuildRecord(repo, { meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: LATER, updatedAt: LATER }, body: { tasks: [{ id: 's1', passed: true }] } });
+		const tests = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, testTask);
+		const build = await persistBuildRecord(repo, { meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: LATER, updatedAt: LATER }, body: { tasks: [{ id: 's1', passed: true }] } });
 		assert.equal(readJson(build.json).meta['createdAt'], T0);
 		assert.equal(readJson(build.json).meta['standalone'], true, 'the route flag is taken when the write states none');
 		assert.equal(readJson(build.json).meta['updatedAt'], LATER);
@@ -826,14 +826,14 @@ test('with a test record on disk and no build record, a first build record writt
 	});
 	// 2. The implement turn of the trivial route (the standalone wrapper).
 	await withRepo(async (repo) => {
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, testTask);
-		const build = persistStandaloneBuildRecord(repo, { meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: LATER }, body: { focus: 'x', producesLld: false } });
+		const tests = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, testTask);
+		const build = await persistStandaloneBuildRecord(repo, { meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: LATER }, body: { focus: 'x', producesLld: false } });
 		assert.equal(readJson(build.json).meta['createdAt'], T0);
 		assert.equal(folderOf(build.md), folderOf(tests.md));
 	});
 	// 3. The completion path.
 	await withRepo(async (repo) => {
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, testTask);
+		const tests = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, testTask);
 		const build = await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' }, async () => []);
 		assert.ok(build !== undefined);
 		assert.equal(readJson(build.json).meta['createdAt'], T0);
@@ -842,14 +842,14 @@ test('with a test record on disk and no build record, a first build record writt
 	// An explicit flag on the write is not overridden, and a build record that
 	// already exists is not re-anchored by a test record written after it.
 	await withRepo(async (repo) => {
-		persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, { ...testTask, taskId: 't1' });
-		const build = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], LATER));
+		await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, { ...testTask, taskId: 't1' });
+		const build = await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], LATER));
 		assert.equal(readJson(build.json).meta['standalone'], false);
 	});
 	await withRepo(async (repo) => {
-		const build = persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, epicHash: HASH, storyId: 's1', createdAt: LATER, updatedAt: LATER }, body: { tasks: [] } });
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, testTask);
-		persistBuildRecord(repo, { meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: T0, updatedAt: T0 }, body: { tasks: [] } });
+		const build = await persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, epicHash: HASH, storyId: 's1', createdAt: LATER, updatedAt: LATER }, body: { tasks: [] } });
+		const tests = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, testTask);
+		await persistBuildRecord(repo, { meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: T0, updatedAt: T0 }, body: { tasks: [] } });
 		assert.equal(readJson(build.json).meta['createdAt'], LATER);
 		assert.equal(folderOf(tests.md), folderOf(build.md));
 	});

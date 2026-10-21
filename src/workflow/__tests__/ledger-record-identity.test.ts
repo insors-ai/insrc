@@ -51,8 +51,8 @@ function derivedFrom(json: string, kind: ArtifactKind, repo: string): string {
 }
 
 test('764b88ed — a BUILD record stores the label, anchor and kind it was filed under', async () => {
-	await withItem((repo) => {
-		const { json, md } = persistBuildRecord(repo, {
+	await withItem(async (repo) => {
+		const { json, md } = await persistBuildRecord(repo, {
 			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: LATER, epicCreatedAt: LATER },
 			body: { tasks: [{ id: 't1', passed: true }] },
 		});
@@ -64,8 +64,8 @@ test('764b88ed — a BUILD record stores the label, anchor and kind it was filed
 });
 
 test('764b88ed — a TESTS record stores the label, anchor and kind it was filed under', async () => {
-	await withItem((repo) => {
-		const { json, md } = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: LATER }, {
+	await withItem(async (repo) => {
+		const { json, md } = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: LATER }, {
 			taskId: 't1', commit: 'abc1234', ranAt: LATER, testsPassed: true, tests: [], files: [],
 		});
 		assert.equal(md, join(repo, FOLDER, 'TESTS.md'));

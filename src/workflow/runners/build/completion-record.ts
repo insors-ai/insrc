@@ -19,26 +19,14 @@
  */
 
 import { storyWorkflowFiles } from './own-files.js';
-import { buildRecordBody, persistBuildRecord, type BuildRecord } from './standalone-record.js';
+import { persistBuildRecord, type BuildRecord } from './standalone-record.js';
 import { resolveStoryRangeBase } from './range-base.js';
 import { buildArtifactId, inheritedStoryStandalone } from '../../storage.js';
-import { ArtifactNotFoundError } from '../../artifact-core/types.js';
-import type { Actor } from '../../artifact-core/types.js';
-import type { ContentWriteOptions } from '../../artifact-core/lifecycle-service.js';
-import type { HeadPayload } from '../../artifact-core/codecs.js';
+import type { RoundWriter } from './round-writer.js';
 import { collectBuildChangeLog } from './changed-files.js';
 import { getLogger } from '../../../shared/logger.js';
 
-/** Where the record's content goes first when a lifecycle service is in play: its artifact store, so the change log stays in step. */
-export interface BuildContentWriter {
-	updateContent(id: string, by: Actor, payload: HeadPayload, opts?: ContentWriteOptions): Promise<boolean>;
-}
-
-/** What a round persister (BUILD, TESTS, code review) takes to store its content through the lifecycle service: the writer and who is acting. */
-export interface RoundWriter {
-	readonly writer: BuildContentWriter;
-	readonly actor:  Actor;
-}
+export type { BuildContentWriter, RoundWriter } from './round-writer.js';
 
 /**
  * Ensure a BUILD ledger record exists for a completing story, mirroring the
@@ -106,16 +94,7 @@ export async function ensureBuildRecordOnCompletion(
 			...base,
 			body: { ...base.body, changeLog },
 		};
-		if (through !== undefined) {
-			// The content of an existing record goes through the store (staged, logged, revisioned); the persist below then
-			// finds the content unchanged and only refreshes the meta and the rendered markdown. A first write has no head to update.
-			try {
-				await through.writer.updateContent(buildArtifactId(ref.epicHash, ref.storyId), through.actor, { body: buildRecordBody(repoPath, rec) as unknown as HeadPayload['body'], citations: [] });
-			} catch (err) {
-				if (!(err instanceof ArtifactNotFoundError)) throw err;
-			}
-		}
-		return persistBuildRecord(repoPath, rec);
+		return await persistBuildRecord(repoPath, rec, through);
 	} catch (err) {
 		getLogger('completion-record').warn(
 			{ epicHash: ref.epicHash, storyId: ref.storyId, err: err instanceof Error ? err.message : String(err) },

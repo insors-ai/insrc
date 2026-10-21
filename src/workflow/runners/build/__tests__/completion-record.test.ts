@@ -27,6 +27,7 @@ import { buildRecordPathsFor, persistBuildRecord, persistStandaloneBuildRecord, 
 import { persistTestRecordTask } from '../test-record.js';
 import { artifactJsonPath, buildArtifactId } from '../../../storage.js';
 import { parseBuildArtifactRef } from '../../../gates.js';
+import { seedSidecarRules } from '../../../artifact-core/__tests__/seed-rules.js';
 
 const HASH = 'e2c6705fd105d4ac';
 
@@ -172,7 +173,7 @@ test('parse round-trip: buildArtifactId round-trips through parseBuildArtifactRe
 test('CR-2: completing a STANDALONE Story keeps meta.standalone true and leaves BUILD.md in docs/standalone/ — no second, divergent record', async () => {
 	await withRepo(async (repo) => {
 		// The implement-phase write: a real trivial standalone record.
-		const first = persistStandaloneBuildRecord(repo, {
+		const first = await persistStandaloneBuildRecord(repo, {
 			meta: {
 				workflow: 'build', standalone: true, sizeClass: 'trivial',
 				triageRationale: 'one-line mechanical edit',
@@ -265,6 +266,7 @@ test("completion of a Story whose only dirty files are its BUILD and TESTS recor
 	await withRepo(async (repo) => {
 		const g = (...args: string[]): string => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
 		g('init', '-q');
+		seedSidecarRules(repo);
 		g('config', 'user.email', 'test@example.com');
 		g('config', 'user.name', 'Test');
 		writeFileSync(join(repo, 'README.md'), 'seed\n');
@@ -282,9 +284,9 @@ test("completion of a Story whose only dirty files are its BUILD and TESTS recor
 
 		// The validate turn has written both records; nothing else is dirty.
 		const at = '2026-03-01T10:00:00.000Z';
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: at }, { taskId: 't1', ranAt: at, testsPassed: true, tests: [], files: [] });
+		const tests = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: at }, { taskId: 't1', ranAt: at, testsPassed: true, tests: [], files: [] });
 		const rec: BuildRecord = { meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: at, updatedAt: at }, body: { tasks: [{ id: 't1', passed: true }] } };
-		const build = persistBuildRecord(repo, rec);
+		const build = await persistBuildRecord(repo, rec);
 		const dirty = g('status', '--porcelain', '--untracked-files=all').split('\n').map(l => l.slice(3)).sort();
 		const rel = (p: string): string => p.slice(repo.length + 1);
 		assert.deepEqual(dirty, [rel(build.json), rel(tests.json), buildStartRelPath(HASH, 's1'), rel(build.md), rel(tests.md)].sort(),
@@ -292,7 +294,13 @@ test("completion of a Story whose only dirty files are its BUILD and TESTS recor
 
 		// The ONE list both writers use names exactly those files.
 		const own = buildRecordPathsFor(repo, rec, { kind: 'write', root: { createdAt: rec.meta.createdAt } });
-		assert.deepEqual(storyWorkflowFiles(repo, rec, { kind: 'write', root: { createdAt: rec.meta.createdAt } }), [own.json, own.md, tests.json, tests.md, buildStartRelPath(HASH, 's1')]);
+		assert.deepEqual(storyWorkflowFiles(repo, rec, { kind: 'write', root: { createdAt: rec.meta.createdAt } }), [
+			own.json, own.md, tests.json, tests.md,
+			// the change log and feedback line files the store keeps beside each record
+			join(repo, `.insrc/artifacts/BUILD-${HASH}-s1.log.jsonl`), join(repo, `.insrc/artifacts/BUILD-${HASH}-s1.feedback.jsonl`),
+			join(repo, `.insrc/artifacts/TESTS-${HASH}-s1.log.jsonl`), join(repo, `.insrc/artifacts/TESTS-${HASH}-s1.feedback.jsonl`),
+			buildStartRelPath(HASH, 's1'),
+		]);
 
 		// Completion, with the REAL change-set derivation: the committed range, not the records.
 		const out = await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' });

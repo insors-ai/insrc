@@ -111,16 +111,16 @@ test('t4/t6c: a legacy record (body without the S002 keys) re-renders byte-ident
 // ---------------------------------------------------------------------------
 
 test('t6a: a re-validate that omits changeLog KEEPS the prior changeLog + out-of-band feedback', () => {
-	withRepo((repo) => {
+	withRepo(async (repo) => {
 		// First validate: persist a record carrying a change-log.
-		const { json } = persistBuildRecord(repo, {
+		const { json } = await persistBuildRecord(repo, {
 			meta: { workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
 			body: { tasks: [{ id: 't1', passed: true }], changeLog: CHANGELOG },
 		});
 		// Out-of-band: a reviewer appends feedback directly onto the BUILD json.
 		appendFeedback({ artifactPath: json, entry: { author: 'rev', comment: 'edge case', target: { file: 'src/a.ts' } } });
 		// A LATER re-validate whose body omits changeLog (and knows nothing of feedback).
-		persistBuildRecord(repo, {
+		await persistBuildRecord(repo, {
 			meta: { workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1', createdAt: '2026-02-02T00:00:00.000Z', updatedAt: '2026-02-02T00:00:00.000Z' },
 			body: { tasks: [{ id: 't2', passed: true }] },
 		});
@@ -137,8 +137,8 @@ test('t6a: a re-validate that omits changeLog KEEPS the prior changeLog + out-of
 // ---------------------------------------------------------------------------
 
 test('t6b: appendFeedback on a written BUILD json with a source-file target → body.feedback + a rendered ## Feedback section', () => {
-	withRepo((repo) => {
-		const { json } = persistBuildRecord(repo, {
+	withRepo(async (repo) => {
+		const { json } = await persistBuildRecord(repo, {
 			meta: { workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
 			body: { tasks: [{ id: 't1', passed: true }], changeLog: CHANGELOG },
 		});

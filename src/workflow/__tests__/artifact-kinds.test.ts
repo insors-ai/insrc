@@ -70,8 +70,8 @@ function seedRepo(): { repo: string; cleanup: () => void } {
 }
 
 /** Write the Story's test record with the real writer. */
-function addTestRecord(repo: string): { json: string; md: string } {
-	return persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: '2026-03-01T10:00:00.000Z' }, {
+async function addTestRecord(repo: string): Promise<{ json: string; md: string }> {
+	return await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: '2026-03-01T10:00:00.000Z' }, {
 		taskId: 't1', commit: 'abc1234', ranAt: '2026-03-01T10:00:00.000Z', testsPassed: true,
 		tests: [{ name: 'n', level: 'unit', source: 'mapping', files: [], cases: [{ file: 'src/a/__tests__/x.test.ts', title: 't', result: 'pass' }] }],
 		files: [{ file: 'src/a/__tests__/x.test.ts', exitCode: 0, timedOut: false, durationMs: 5, otherFailures: [], titles: [{ title: 't', result: 'pass' }] }],
@@ -103,7 +103,7 @@ function readAll(repo: string): Record<string, unknown> {
 	};
 }
 
-test("with a TESTS record in the artifacts directory, each reader of that directory (the delivery view, for which both its records and its load failures are compared, the pending list, the ownership scan, the question scan, the Epic catalogue, the tracker's resolver, the CLI's workflow service, the amendment staleness scan, both scans of the amendment store, the path walk, the id parser) returns what it returned without it, and none throws", () => {
+test("with a TESTS record in the artifacts directory, each reader of that directory (the delivery view, for which both its records and its load failures are compared, the pending list, the ownership scan, the question scan, the Epic catalogue, the tracker's resolver, the CLI's workflow service, the amendment staleness scan, both scans of the amendment store, the path walk, the id parser) returns what it returned without it, and none throws", async () => {
 	const r = seedRepo();
 	try {
 		const before = readAll(r.repo);
@@ -124,7 +124,7 @@ test("with a TESTS record in the artifacts directory, each reader of that direct
 		}
 		const mdBefore = listArtifactMdPaths(r.repo, listWorkItems(r.repo)[0]!);
 
-		const { json, md } = addTestRecord(r.repo);
+		const { json, md } = await addTestRecord(r.repo);
 		assert.ok(existsSync(json) && existsSync(md));
 		assert.equal(md, join(r.repo, ROOT, 'S001', 'TESTS.md'));
 
@@ -141,7 +141,7 @@ test("with a TESTS record in the artifacts directory, each reader of that direct
 test("approval of a TESTS record by its md path and by its json path through the approval tool's route comes back in skipped[] with a reason that begins 'not-approvable:' and with no code-review outcome, also for a Story whose code review blocks with enforcement on; the TUI service's approve and reject throw NotApprovableError; the batch for its Epic does not stamp it; and the record is unchanged (mutations: put the kind check in the approval tool's route only; make it after the code-review gate)", async () => {
 	const r = seedRepo();
 	try {
-		const { json, md } = addTestRecord(r.repo);
+		const { json, md } = await addTestRecord(r.repo);
 		const jsonBefore = readFileSync(json, 'utf8');
 		const mdBefore = readFileSync(md, 'utf8');
 		const unchanged = (): void => {

@@ -41,23 +41,23 @@ function blockDocument(md: string): void {
 }
 
 test('a second persisted mapping bumps the revision, a rollback restores bytes and revision, and a failed restore is reported as inconsistent', () => {
-	withRepo(repo => {
-		const { json, md } = persistTestRecordTask(repo, ident('2026-10-02T00:00:00.000Z'), task('t1', 'aaa1111'));
+	withRepo(async repo => {
+		const { json, md } = await persistTestRecordTask(repo, ident('2026-10-02T00:00:00.000Z'), task('t1', 'aaa1111'));
 		assert.equal(revisionOf(json), 1, 'the first record is revision 1');
-		persistTestRecordTask(repo, ident('2026-10-03T00:00:00.000Z'), task('t2', 'bbb2222'));
+		await persistTestRecordTask(repo, ident('2026-10-03T00:00:00.000Z'), task('t2', 'bbb2222'));
 		assert.equal(revisionOf(json), 2, 'a second mapping mints the next revision');
 
 		// the document write fails, the restore succeeds: bytes and revision are as before
 		const before = readFileSync(json, 'utf8');
 		blockDocument(md);
-		assert.throws(() => persistTestRecordTask(repo, ident('2026-10-04T00:00:00.000Z'), task('t3', 'ccc3333')), (e: unknown) => !(e instanceof TestRecordInconsistentError));
+		await assert.rejects(async () => await persistTestRecordTask(repo, ident('2026-10-04T00:00:00.000Z'), task('t3', 'ccc3333')), (e: unknown) => !(e instanceof TestRecordInconsistentError));
 		assert.equal(readFileSync(json, 'utf8'), before, 'the json bytes are put back');
 		assert.equal(revisionOf(json), 2, 'and so is the revision');
 
 		// the document write fails and the restore fails too: the caller is told
 		let caught: unknown;
 		try {
-			persistTestRecordTask(repo, ident('2026-10-05T00:00:00.000Z'), task('t4', 'ddd4444'), { restore: () => { throw new Error('disk gone'); } });
+			await persistTestRecordTask(repo, ident('2026-10-05T00:00:00.000Z'), task('t4', 'ddd4444'), { restore: () => { throw new Error('disk gone'); } });
 		} catch (e) { caught = e; }
 		assert.ok(caught instanceof TestRecordInconsistentError, 'the failure names the possible inconsistency');
 		assert.match((caught as Error).message, /may be inconsistent/);

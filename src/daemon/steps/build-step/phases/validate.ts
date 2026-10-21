@@ -25,6 +25,7 @@ import type { StructuredSchema } from '../../../../shared/types.js';
 import { assertMayBuild } from '../../../../workflow/team/author-gate.js';
 import { mergeInProgressError, renderValidatePrompt, renderStandaloneValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import { storyWorkflowFiles } from '../../../../workflow/runners/build/own-files.js';
+import { roundWriterFor } from '../../../lifecycle-registry.js';
 import { headShortSha, persistBuildRecord, standaloneEpicHashFromFocus } from '../../../../workflow/runners/build/standalone-record.js';
 import { resolveStoryRangeBase } from '../../../../workflow/runners/build/range-base.js';
 import {
@@ -450,10 +451,12 @@ async function runValidateTurn(
 		: undefined;
 	if (identified && routeError === undefined) {
 		try {
-			(testRecordWriterOverride ?? persistTestRecordTask)(
+			await (testRecordWriterOverride ?? persistTestRecordTask)(
 				repoPath,
 				{ epicHash: ident.epicHash, storyId: ident.storyId, now, ...(routeFlag === true ? { standalone: true } : {}) },
 				toTestRecordTask(repoPath, ident.taskId, now, results.tests),
+				{},
+				roundWriterFor(repoPath),
 			);
 		} catch (e) {
 			if (e instanceof MissingAnchorError) throw e;
@@ -612,10 +615,10 @@ async function runValidateTurn(
 				});
 				// Written even when empty, so it replaces a prior changeLog that the
 				// old working-tree derivation filled with unrelated files.
-				persistBuildRecord(repoPath, {
+				await persistBuildRecord(repoPath, {
 					...rec,
 					body: { ...rec.body, changeLog },
-				});
+				}, roundWriterFor(repoPath));
 			} catch (err) {
 				if (err instanceof MissingAnchorError) throw err;
 				log.warn(

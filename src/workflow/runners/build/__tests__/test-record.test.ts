@@ -52,9 +52,9 @@ function task(taskId: string, over: Partial<TestRecordTask> = {}): TestRecordTas
 }
 
 test('the first write creates the record with one Task; a second Task is added; writing the first Task again replaces its entry only and keeps createdAt', async () => {
-	await withRepo((repo) => {
+	await withRepo(async (repo) => {
 		assert.equal(readTestRecord(repo, HASH, 's1'), null);
-		const first = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
+		const first = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
 		assert.equal(first.json, artifactJsonPath(repo, testsArtifactId(HASH, 's1')));
 		assert.equal(basename(first.json), `TESTS-${HASH}-s1.json`);
 		let rec = readTestRecord(repo, HASH, 's1')!;
@@ -65,14 +65,14 @@ test('the first write creates the record with one Task; a second Task is added; 
 		// Each Task's entry carries the commit and time of its run and testsPassed.
 		assert.deepEqual([rec.body.tasks[0]!.commit, rec.body.tasks[0]!.ranAt, rec.body.tasks[0]!.testsPassed], ['abc1234', T0, true]);
 
-		persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T1 }, task('t2', { ranAt: T1, commit: 'def5678' }));
+		await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T1 }, task('t2', { ranAt: T1, commit: 'def5678' }));
 		rec = readTestRecord(repo, HASH, 's1')!;
 		assert.deepEqual(rec.body.tasks.map(t => t.taskId), ['t1', 't2']);
 		assert.deepEqual([rec.meta.createdAt, rec.meta.updatedAt], [T0, T1]);
 
 		// The first Task again: its entry is replaced IN PLACE, the other is untouched.
 		const t2Before = JSON.stringify(rec.body.tasks[1]);
-		persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('t1', { ranAt: T2, commit: 'fff0000', testsPassed: false, tests: [] }));
+		await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('t1', { ranAt: T2, commit: 'fff0000', testsPassed: false, tests: [] }));
 		rec = readTestRecord(repo, HASH, 's1')!;
 		assert.deepEqual(rec.body.tasks.map(t => t.taskId), ['t1', 't2']);
 		assert.deepEqual([rec.body.tasks[0]!.commit, rec.body.tasks[0]!.ranAt, rec.body.tasks[0]!.testsPassed, rec.body.tasks[0]!.tests.length], ['fff0000', T2, false, 0]);
@@ -83,42 +83,42 @@ test('the first write creates the record with one Task; a second Task is added; 
 
 test("the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md in the same folder as the Story's BUILD.md, for an Epic's Story and for a standalone one (mutation: derive the folder from the record's own time)", async () => {
 	// An Epic's Story: the definition head names and dates the folder, not the record's own time.
-	await withRepo((repo) => {
+	await withRepo(async (repo) => {
 		writeArtifact(repo, `DEF-${HASH}`, { epicSlug: 'pay-things', createdAt: '2026-01-15T00:00:00.000Z' });
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
-		const build = persistBuildRecord(repo, { meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: T1, updatedAt: T1 }, body: { tasks: [{ id: 't1', passed: true }] } });
+		const tests = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
+		const build = await persistBuildRecord(repo, { meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: T1, updatedAt: T1 }, body: { tasks: [{ id: 't1', passed: true }] } });
 		assert.equal(basename(tests.json), `TESTS-${HASH}-s1.json`);
 		assert.equal(basename(tests.md), 'TESTS.md');
 		assert.equal(dirname(tests.md), dirname(build.md));
 		assert.match(tests.md, /docs\/epics\/pay-things-E20260115abc123de\/S001\/TESTS\.md$/);
 		// A later write of the record stays there.
-		assert.equal(persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('t2')).md, tests.md);
+		assert.equal((await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('t2'))).md, tests.md);
 		assert.equal(testRecordPaths(repo, HASH, 's1', { now: T2 }, { kind: 'write', root: { createdAt: T2 } }).md, tests.md);
 	});
 	// A standalone Story with a design: the LLD dates the folder.
-	await withRepo((repo) => {
+	await withRepo(async (repo) => {
 		writeArtifact(repo, `LLD-${HASH}-s1`, { standalone: true, epicSlug: 'small-thing', createdAt: '2026-02-10T00:00:00.000Z', epicCreatedAt: '2026-02-10T00:00:00.000Z' });
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, task('s1'));
-		const build = persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, epicHash: HASH, storyId: 's1', createdAt: T1, updatedAt: T1 }, body: { tasks: [{ id: 's1', passed: true }] } });
+		const tests = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, task('s1'));
+		const build = await persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, epicHash: HASH, storyId: 's1', createdAt: T1, updatedAt: T1 }, body: { tasks: [{ id: 's1', passed: true }] } });
 		assert.equal(dirname(tests.md), dirname(build.md));
 		assert.match(tests.md, /docs\/standalone\/small-thing-E20260210abc123de\/S001\/TESTS\.md$/);
 		assert.equal(readTestRecord(repo, HASH, 's1')!.meta.standalone, true);
 	});
 	// No build record and nothing else to anchor on: the folder comes from the
 	// test record's own persisted createdAt and flag, also on a later day ...
-	await withRepo((repo) => {
-		const first = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, task('s1'));
+	await withRepo(async (repo) => {
+		const first = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, task('s1'));
 		assert.match(first.md, /docs\/standalone\/[^/]*E20260301abc123de\/S001\/TESTS\.md$/);
-		const later = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('s1'));
+		const later = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('s1'));
 		assert.equal(later.md, first.md);
 		// ... and the shared derivation hands the same anchor to any other record writer.
 		const fa = storyRecordFolderArgs(repo, HASH, 's1', {}, { kind: 'write', root: { createdAt: T2 } });
 		assert.deepEqual([fa.epicCreatedAt, fa.workItemKind], [T0, 'standalone']);
 	});
 	// A build record that already exists stays the anchor, and the test record follows it.
-	await withRepo((repo) => {
-		const build = persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: T0, updatedAt: T0 }, body: { focus: 'x' } });
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('s1'));
+	await withRepo(async (repo) => {
+		const build = await persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: T0, updatedAt: T0 }, body: { focus: 'x' } });
+		const tests = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('s1'));
 		assert.equal(dirname(tests.md), dirname(build.md));
 	});
 });
@@ -159,8 +159,8 @@ test('the document shows totals, then per Task and per named test a table of res
 	at('The test record of an earlier run could not be read.');
 
 	// The written document carries the artifact id marker on its first line.
-	await withRepo((repo) => {
-		const { md: mdPath } = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
+	await withRepo(async (repo) => {
+		const { md: mdPath } = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
 		const written = readFileSync(mdPath, 'utf8');
 		assert.equal(written.split('\n')[0], `<!-- insrc:artifact TESTS-${HASH}-s1 -->`);
 		assert.ok(written.endsWith(renderTestRecordMd(readTestRecord(repo, HASH, 's1')!)));
@@ -169,14 +169,14 @@ test('the document shows totals, then per Task and per named test a table of res
 });
 
 test('the stored mapping of a Task is read back as the mapping that was supplied, and an unreadable or misshapen record reads as no stored mapping', async () => {
-	await withRepo((repo) => {
+	await withRepo(async (repo) => {
 		assert.equal(storedMappingFor(repo, HASH, 's1', 't1'), undefined);
 		const supplied = [
 			{ name: 'mapped', cases: [{ file: X, title: 'a' }, { file: Y, title: 'b' }] },
 			{ name: 'reported only', reported: { result: 'pass' as const, evidence: 'the log' } },
 			{ name: 'both', cases: [{ file: X, title: 'c' }], reported: { result: 'fail' as const, evidence: 'run 3' } },
 		];
-		persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1', { tests: [
+		await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1', { tests: [
 			{ name: 'mapped', level: 'unit', source: 'mapping', files: [], cases: [{ file: X, title: 'a', result: 'pass' }, { file: Y, title: 'b', result: 'not found' }] },
 			{ name: 'reported only', level: 'live', source: 'mapping', files: [], cases: [], reported: { result: 'pass', evidence: 'the log' } },
 			{ name: 'both', level: 'smoke', source: 'mapping', files: [], cases: [{ file: X, title: 'c', result: 'fail' }], reported: { result: 'fail', evidence: 'run 3' } },
@@ -187,7 +187,7 @@ test('the stored mapping of a Task is read back as the mapping that was supplied
 		assert.deepEqual(storedMappingFor(repo, HASH, 's1', 't1'), supplied);
 		// Another Task has none; a Task whose entry holds nothing mapped has none.
 		assert.equal(storedMappingFor(repo, HASH, 's1', 't2'), undefined);
-		persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T1 }, task('t2', { tests: [{ name: 'x.test.ts: p', source: 'prefix', files: [X], cases: [] }] }));
+		await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T1 }, task('t2', { tests: [{ name: 'x.test.ts: p', source: 'prefix', files: [X], cases: [] }] }));
 		assert.equal(storedMappingFor(repo, HASH, 's1', 't2'), undefined);
 
 		// Unreadable, then misshapen: no stored mapping, no throw; and a write still succeeds over it.
@@ -199,7 +199,7 @@ test('the stored mapping of a Task is read back as the mapping that was supplied
 			writeFileSync(json, JSON.stringify(misshapen));
 			assert.equal(storedMappingFor(repo, HASH, 's1', 't1'), undefined, JSON.stringify(misshapen));
 		}
-		persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('t1'));
+		await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('t1'));
 		assert.ok(existsSync(json));
 		assert.deepEqual(readTestRecord(repo, HASH, 's1')!.body.tasks.map(t => t.taskId), ['t1']);
 	});
@@ -210,30 +210,30 @@ test('the stored mapping of a Task is read back as the mapping that was supplied
 test('when the document cannot be written after the json was, the json is put back: a first write leaves no record, a later one leaves the earlier run', async () => {
 	const { mkdirSync: mk, rmSync: rm } = await import('node:fs');
 	// First write: the document's path is taken by a directory, so its write fails.
-	await withRepo((repo) => {
+	await withRepo(async (repo) => {
 		const paths = testRecordPaths(repo, HASH, 's1', { now: T0 }, { kind: 'write', root: { createdAt: T0 } });
 		mk(paths.md, { recursive: true });
-		assert.throws(() => persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1')));
+		await assert.rejects(async () => await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1')));
 		assert.equal(existsSync(paths.json), false, 'no json is left behind for a record whose document was never written');
 		assert.equal(readTestRecord(repo, HASH, 's1'), null);
 		assert.equal(storedMappingFor(repo, HASH, 's1', 't1'), undefined);
 	});
 	// A later write: the first run is on disk in both files, and stays there.
-	await withRepo((repo) => {
-		const paths = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
+	await withRepo(async (repo) => {
+		const paths = await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
 		const jsonBefore = readFileSync(paths.json, 'utf8');
 		const mdBefore = readFileSync(paths.md, 'utf8');
 		rm(paths.md);
 		mk(paths.md);
 		const other = task('t1', { ranAt: T2, testsPassed: false, tests: [{ name: 'a different mapping', source: 'mapping', files: [], cases: [{ file: Y, title: 'z', result: 'fail' }] }] });
-		assert.throws(() => persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, other));
+		await assert.rejects(async () => await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, other));
 		assert.equal(readFileSync(paths.json, 'utf8'), jsonBefore, 'the json is what it was before the failed write');
 		// The stored mapping is the first run's, not the one whose write failed.
 		assert.deepEqual(storedMappingFor(repo, HASH, 's1', 't1')!.map(e => e.name), ['the first named test']);
 		rm(paths.md, { recursive: true });
 		writeFileSync(paths.md, mdBefore);
 		// And the record is whole again on the next write.
-		persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, other);
+		await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, other);
 		assert.equal(readTestRecord(repo, HASH, 's1')!.body.tasks[0]!.ranAt, T2);
 		assert.match(readFileSync(paths.md, 'utf8'), /a different mapping/);
 	});
@@ -253,9 +253,9 @@ test('text that came from the builder is rendered on one line, so it cannot add 
 	assert.equal(md.split('\n').filter(l => l.startsWith('Run at ')).length, 1);
 	assert.ok(md.includes('Evidence: run 12 ## t9 Run at X. Tests check: **passed**.'));
 
-	await withRepo((repo) => {
+	await withRepo(async (repo) => {
 		assert.deepEqual(testRecordState(repo, HASH, 's1'), { kind: 'absent' });
-		persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
+		await persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
 		assert.equal(testRecordState(repo, HASH, 's1').kind, 'record');
 		const json = artifactJsonPath(repo, testsArtifactId(HASH, 's1'));
 		writeFileSync(json, '{ not json');

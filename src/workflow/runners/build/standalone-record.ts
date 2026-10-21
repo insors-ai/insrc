@@ -19,7 +19,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -30,6 +30,8 @@ import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bi
 import type { FileChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
 
 import { readTestRecord } from './test-record.js';
+import { storeRound, storedCitations } from './round-writer.js';
+import type { RoundWriter } from './round-writer.js';
 import { resolveStoryRangeBase } from './range-base.js';
 import { newestStoryCommit } from './story-commits.js';
 import type { PathIntent } from '../../artifact-ids.js';
@@ -341,10 +343,36 @@ export function buildRecordBody(repoPath: string, rec: BuildRecord): BuildRecord
 	return prepareBuildRecord(repoPath, rec).merged.body;
 }
 
-export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string } {
-	const { jsonPath, merged, intent } = prepareBuildRecord(repoPath, rec);
+/** The outcome a BUILD round carries in the change log: whether its Tasks passed. */
+export function buildRoundOutcome(body: BuildRecord['body']): { readonly result: string; readonly summary: string } {
+	const tasks = body.tasks ?? [];
+	const passed = tasks.filter(t => t.passed === true).length;
+	const failed = tasks.filter(t => t.passed === false).length;
+	return { result: failed > 0 ? 'failed' : tasks.length > 0 && passed === tasks.length ? 'passed' : 'recorded', summary: `BUILD round: ${passed} of ${tasks.length} Task(s) passed` };
+}
+
+/**
+ * Persist a BUILD record. With a {@link RoundWriter} the content is stored through the lifecycle service first (staged, logged with the
+ * round's outcome, revisioned; the first round is created through the store), and the raw write then only refreshes the meta and
+ * the rendered markdown. A failed store fails the persist and writes nothing.
+ */
+export async function persistBuildRecord(repoPath: string, rec: BuildRecord, through?: RoundWriter): Promise<{ md: string; json: string }> {
+	let prepared = prepareBuildRecord(repoPath, rec);
+	if (through !== undefined) {
+		const first = prepared;
+		const isFirst = !existsSync(first.jsonPath);
+		await storeRound(through, buildArtifactId(first.merged.meta.epicHash, first.merged.meta.storyId), first.jsonPath, first.merged.body, buildRoundOutcome(first.merged.body));
+		// The store changed the head's lifecycle, so the record the raw write refreshes is merged on the head as it is now.
+		prepared = prepareBuildRecord(repoPath, rec);
+		if (isFirst) {
+			// The store created the head on its own clock; the record keeps the time the build gave it (and the anchor its folder is dated by).
+			const { createdAt, epicCreatedAt } = first.merged.meta;
+			prepared = { ...prepared, intent: first.intent, merged: { ...prepared.merged, meta: { ...prepared.merged.meta, createdAt, ...(epicCreatedAt !== undefined ? { epicCreatedAt } : {}) } } };
+		}
+	}
+	const { jsonPath, merged, intent } = prepared;
 	// content: a BUILD record is regenerated, so each persist mints a revision.
-	writeArtifact(jsonPath, merged, 'content', { replaceUnreadable: true });   // a regenerable ledger record: an unreadable one is replaced
+	writeArtifact(jsonPath, through !== undefined ? { ...merged, ...storedCitations(jsonPath) } : merged, 'content', { replaceUnreadable: true });   // a regenerable ledger record: an unreadable one is replaced
 	const paths = pathsForMerged(repoPath, merged, intent);
 	// ONE renderer, every route — the former `meta.standalone` ternary is gone.
 	// The id marker is prepended HERE, not in the renderer, so the renderer's
@@ -362,8 +390,8 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 /** Persist the standalone (Trivial) BUILD record. Thin wrapper over
  *  {@link persistBuildRecord} (standalone:true) — the json + md output is
  *  byte-identical to before the S001 generalization. */
-export function persistStandaloneBuildRecord(repoPath: string, rec: StandaloneBuildRecord): { md: string; json: string } {
-	return persistBuildRecord(repoPath, rec);
+export function persistStandaloneBuildRecord(repoPath: string, rec: StandaloneBuildRecord, through?: RoundWriter): Promise<{ md: string; json: string }> {
+	return persistBuildRecord(repoPath, rec, through);
 }
 
 /** Read the prior record for an upsert. Returns null on a missing OR malformed

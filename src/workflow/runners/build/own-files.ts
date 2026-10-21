@@ -16,6 +16,10 @@
  * here, so that a file added to it is left out by both.
  */
 
+import { join } from 'node:path';
+
+import { FileSidecarStore } from '../../artifact-core/sidecar-store.js';
+import { buildArtifactId, testsArtifactId } from '../../storage.js';
 import { buildStartRelPath } from './range-base.js';
 import { buildRecordPathsFor, type BuildRecord } from './standalone-record.js';
 import { testRecordPaths } from './test-record.js';
@@ -23,8 +27,8 @@ import type { PathIntent } from '../../artifact-ids.js';
 
 /**
  * The paths to leave out of the change log of the Story `rec` belongs to: the
- * build record's json and md, the test record's json and md, and the Story's
- * build-start file. `rec` is the build record about to be written (its paths
+ * build record's json and md, the test record's json and md, their change log and
+ * feedback line files, and the Story's build-start file. `rec` is the build record about to be written (its paths
  * are derived through the same merge the write uses).
  */
 export function storyWorkflowFiles(repoPath: string, rec: BuildRecord, intent: PathIntent): readonly string[] {
@@ -36,6 +40,12 @@ export function storyWorkflowFiles(repoPath: string, rec: BuildRecord, intent: P
 		out.push(tests.json, tests.md);
 	} catch {
 		// An identity the path scheme cannot place has no test record to leave out.
+	}
+	// The change log and feedback line files the store keeps beside each record head.
+	const sidecar = new FileSidecarStore(repoPath);
+	for (const id of [buildArtifactId(epicHash, storyId), testsArtifactId(epicHash, storyId)]) {
+		const files = sidecar.filesOf(id);
+		out.push(join(repoPath, files.log), join(repoPath, files.feedback));
 	}
 	out.push(buildStartRelPath(epicHash, storyId));
 	return out;

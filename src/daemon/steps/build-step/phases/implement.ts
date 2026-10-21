@@ -30,6 +30,7 @@ import {
 	persistStandaloneBuildRecord,
 	standaloneEpicHashFromFocus,
 } from '../../../../workflow/runners/build/standalone-record.js';
+import { roundWriterFor } from '../../../lifecycle-registry.js';
 import { assertMayBuild } from '../../../../workflow/team/author-gate.js';
 import { mergeInProgressError, renderImplementPrompt, renderStandaloneImplementPrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import type {
@@ -117,10 +118,10 @@ function noteBuildStart(repoPath: string, epicHash: string, storyId: string): vo
 /** The no-plan standalone implement path. Small implements the approved
  *  standalone LLD directly; Trivial implements the scope statement and persists
  *  a standalone BUILD tracking record (its only ledger entry). */
-function handleStandaloneImplement(
+async function handleStandaloneImplement(
 	repoPath: string,
 	ctx:      BuildStandaloneContext,
-): BuildStepImplement | BuildStepRefused | BuildStepError {
+): Promise<BuildStepImplement | BuildStepRefused | BuildStepError> {
 	const sizeClass   = ctx.sizeClass ?? 'small';
 	const producesLld = sizeClass !== 'trivial';
 	const focus       = (ctx.focus ?? '').trim();
@@ -169,7 +170,7 @@ function handleStandaloneImplement(
 	if (!producesLld) {
 		// Trivial — no upstream artifact; persist the tracking record so the
 		// change is on the ledger.
-		persistStandaloneBuildRecord(repoPath, {
+		await persistStandaloneBuildRecord(repoPath, {
 			meta: {
 				workflow: 'build', standalone: true, sizeClass, epicHash, storyId,
 				createdAt: new Date().toISOString(),
@@ -178,7 +179,7 @@ function handleStandaloneImplement(
 				...(ctx.triageRationale !== undefined ? { triageRationale: ctx.triageRationale } : {}),
 			},
 			body: { focus: specFocus, producesLld: false },
-		});
+		}, roundWriterFor(repoPath));
 	}
 
 	const prompt = renderStandaloneImplementPrompt({

@@ -25,10 +25,12 @@ import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests
 import type { ValidationCheckPlan, ValidationCheckResults } from '../validation-checks.js';
 import { ReviewSessionTimeoutError } from '../../../../agent/providers/cli-provider.js';
 import { approveArtifactByJsonPath, jsonPathForMd } from '../../../../workflow/gates.js';
-import { ARTIFACTS_DIR, buildArtifactPaths, lldArtifactId, planArtifactId } from '../../../../workflow/storage.js';
+import { ARTIFACTS_DIR, buildArtifactId, buildArtifactPaths, lldArtifactId, planArtifactId } from '../../../../workflow/storage.js';
 import { ensureBuildRecordOnCompletion } from '../../../../workflow/runners/build/completion-record.js';
 import { resolveStoryRangeBase } from '../../../../workflow/runners/build/range-base.js';
 import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import { lifecycleFor } from '../../../lifecycle-registry.js';
+import { seedSidecarRules } from '../../../../workflow/artifact-core/__tests__/seed-rules.js';
 
 /** The judge's structured verdict, with the fields a test does not care about filled in. */
 function judgeVerdict(over: Record<string, unknown>): Record<string, unknown> {
@@ -536,6 +538,7 @@ function mkCleanGitRepo(): string {
 	const repo = mkRepo();
 	const git = (...args: string[]): void => { execFileSync('git', args, { cwd: repo, stdio: 'ignore' }); };
 	git('init', '-q');
+	seedSidecarRules(repo);
 	git('config', 'user.email', 'test@insrc.local');
 	git('config', 'user.name', 'insrc-test');
 	writeFileSync(join(repo, 'shipped.ts'), 'export const v = 1;\n');
@@ -707,6 +710,7 @@ function mkDirtyGitRepo(): string {
 	const repo = mkRepo();
 	const git = (...args: string[]): void => { execFileSync('git', args, { cwd: repo, stdio: 'ignore' }); };
 	git('init', '-q');
+	seedSidecarRules(repo);
 	git('config', 'user.email', 'test@insrc.local');
 	git('config', 'user.name', 'insrc-test');
 	writeFileSync(join(repo, 'shipped.ts'), 'export const v = 1;\n');
@@ -896,7 +900,8 @@ test('t4: the validate writer EXCLUDES its own json + md from its own change-log
 function mkStampedRepo(extraCommits: readonly string[] = []): { repo: string; base: string; git: (...a: string[]) => string } {
 	const repo = mkRepo();
 	const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' }).trim();
-	git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't');
+	git('init', '-q');
+	seedSidecarRules(repo); git('config', 'user.email', 't@t'); git('config', 'user.name', 't');
 	writeFileSync(join(repo, 'before.ts'), 'export const b = 1;\n');
 	git('add', '-A'); git('commit', '-qm', 'before the Story');
     const base = git('rev-parse', 'HEAD');
@@ -981,10 +986,11 @@ test("the validate phase's changeLog leaves out another Story's commit and repla
 		assert.deepEqual(source(first), ['shipped.ts'], "the Story's own commit, not the other Story's");
 
 		// A changeLog the old working-tree derivation wrote is replaced, not kept.
+		// (written through the store: a head edited behind it no longer matches its stored hash, and the store refuses to write over that)
 		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
 		const stale = JSON.parse(readFileSync(json, 'utf8')) as { body: Record<string, unknown> };
 		stale.body['changeLog'] = [{ target: { file: 'docs/ontology.md' }, author: 'insrc-build', timestamp: '2026-10-20T00:00:00.000Z' }];
-		writeFileSync(json, JSON.stringify(stale));
+		await lifecycleFor(repo).service.updateContent(buildArtifactId(HASH, 's1'), { id: 'insrc:build', kind: 'system', properties: {} }, { body: stale.body, citations: [] });
 		const second = await validateOnce(repo);
 		assert.deepEqual(source(second), ['shipped.ts']);
 		assert.ok(!changeFiles(second).includes('docs/ontology.md'), 'the stale entry is gone');
@@ -1002,7 +1008,8 @@ test('t6: an UNRESOLVABLE base still WRITES the record, keeps the verdict, and s
 	const repo = mkRepo();
 	try {
 		const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' }).trim();
-		git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't');
+		git('init', '-q');
+		seedSidecarRules(repo); git('config', 'user.email', 't@t'); git('config', 'user.name', 't');
 		writeFileSync(join(repo, 'one.ts'), '1\n'); git('add', '-A'); git('commit', '-qm', 'one');
 		writeFileSync(join(repo, 'two.ts'), '2\n'); git('add', '-A'); git('commit', '-qm', 'two');
 		seedDef(repo);                      // DEF only — no PLAN, no LLD to anchor on
@@ -1475,6 +1482,7 @@ test('implement and validate return merge-in-progress while a merge is uncommitt
 	const git = (...args: string[]): void => { execFileSync('git', args, { cwd: repo, stdio: 'ignore' }); };
 	try {
 		git('init', '-q', '-b', 'main');
+		seedSidecarRules(repo);
 		git('config', 'user.email', 'test@insrc.local');
 		git('config', 'user.name', 'insrc-test');
 		git('config', 'commit.gpgsign', 'false');
@@ -1549,6 +1557,7 @@ function mappedRepo(tests: readonly { level: string; name: string }[] = [{ level
 	}
 	const git = (...args: string[]): void => { execFileSync('git', args, { cwd: repo, stdio: 'ignore' }); };
 	git('init', '-q');
+	seedSidecarRules(repo);
 	git('config', 'user.email', 'test@insrc.local');
 	git('config', 'user.name', 'insrc-test');
 	git('add', '.');
@@ -1792,8 +1801,8 @@ test("a validate turn with a mapping writes the test record, the build record li
 		assert.deepEqual(readTests(repo).body.tasks.map(t => t.taskId), ['t1', 't2']);
 		assert.equal(JSON.stringify(readTests(repo).body.tasks[0]), t1Before);
 		const dirty = execFileSync('git', ['status', '--porcelain'], { cwd: repo, encoding: 'utf8' }).split('\n').filter(l => l.length > 0).map(l => l.slice(3)).sort();
-		assert.deepEqual(dirty, [`.insrc/artifacts/BUILD-${HASH}-s1.json`, `.insrc/artifacts/TESTS-${HASH}-s1.json`, `${TR_ROOT}/BUILD.md`, `${TR_ROOT}/TESTS.md`].sort(),
-			'precondition: all four record files are dirty tracked files');
+		assert.deepEqual(dirty, [`.insrc/artifacts/BUILD-${HASH}-s1.json`, `.insrc/artifacts/BUILD-${HASH}-s1.log.jsonl`, `.insrc/artifacts/TESTS-${HASH}-s1.json`, `.insrc/artifacts/TESTS-${HASH}-s1.log.jsonl`, `${TR_ROOT}/BUILD.md`, `${TR_ROOT}/TESTS.md`].sort(),
+			'precondition: the record files and their change log files are dirty tracked files');
 		assert.deepEqual(changeFiles(readBuildRecord(repo)), ['src/filter.ts']);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
@@ -2065,7 +2074,8 @@ test("on the standalone routes: a wrong mapping on a small build is refused with
 		mkdirSync(join(repo, 'src', 'a', '__tests__'), { recursive: true });
 		writeFileSync(join(repo, FILTER_TEST), "import { test } from 'node:test';\ntest('narrows by one tag', () => {});\n");
 		const git = (...args: string[]): void => { execFileSync('git', args, { cwd: repo, stdio: 'ignore' }); };
-		git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't'); git('add', '.'); git('commit', '-qm', 'baseline');
+		git('init', '-q');
+		seedSidecarRules(repo); git('config', 'user.email', 't@t'); git('config', 'user.name', 't'); git('add', '.'); git('commit', '-qm', 'baseline');
 
 		const SMALL = { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' };
 		const standalone = async (input: Record<string, unknown>): Promise<Turn> => turn(repo, { target: 's1', ...input }, { judge: () => judgeVerdict({ taskId: 's1', passed: true }) });

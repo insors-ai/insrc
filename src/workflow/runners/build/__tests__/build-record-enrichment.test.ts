@@ -98,20 +98,20 @@ function mkRepoWithDef(): string {
 	return repo;
 }
 
-test('persist: a record with body.summary -> the json carries it and the .md renders `## Summary` (ac1)', () => {
+test('persist: a record with body.summary -> the json carries it and the .md renders `## Summary` (ac1)', async () => {
 	const repo = mkRepoWithDef();
 	try {
-		const { json, md } = persistBuildRecord(repo, planRecord({ summary: 'Enriched the BUILD record with a summary.' }));
+		const { json, md } = await persistBuildRecord(repo, planRecord({ summary: 'Enriched the BUILD record with a summary.' }));
 		const rec = JSON.parse(readFileSync(json, 'utf8')) as BuildRecord;
 		assert.equal(rec.body.summary, 'Enriched the BUILD record with a summary.');
 		assert.match(readFileSync(md, 'utf8'), /## Summary/);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('appendFeedback: build-cycle feedback accretes on the persisted BUILD json and renders `## Feedback` (ac2)', () => {
+test('appendFeedback: build-cycle feedback accretes on the persisted BUILD json and renders `## Feedback` (ac2)', async () => {
 	const repo = mkRepoWithDef();
 	try {
-		const { json } = persistBuildRecord(repo, planRecord({ summary: 'A summary.' }));
+		const { json } = await persistBuildRecord(repo, planRecord({ summary: 'A summary.' }));
 		const res = appendFeedback({
 			artifactPath: json,
 			entry: { author: 'reviewer', comment: 'The summary reads well.', target: { file: 'src/workflow/runners/build/standalone-record.ts' } },
@@ -128,21 +128,21 @@ test('appendFeedback: build-cycle feedback accretes on the persisted BUILD json 
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('persist upsert: a re-validate that omits body.summary PRESERVES the prior summary', () => {
+test('persist upsert: a re-validate that omits body.summary PRESERVES the prior summary', async () => {
 	const repo = mkRepoWithDef();
 	try {
-		persistBuildRecord(repo, planRecord({ summary: 'The original narrative.' }));
+		await persistBuildRecord(repo, planRecord({ summary: 'The original narrative.' }));
 		// Re-persist WITHOUT a summary (a later per-task validate).
-		const { json } = persistBuildRecord(repo, planRecord({ tasks: [{ id: 't2', passed: true }] }));
+		const { json } = await persistBuildRecord(repo, planRecord({ tasks: [{ id: 't2', passed: true }] }));
 		const rec = JSON.parse(readFileSync(json, 'utf8')) as BuildRecord;
 		assert.equal(rec.body.summary, 'The original narrative.', 'the prior summary survives an omitting re-validate');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('persist: a record with neither summary nor feedback -> the .md has no new sections (ac3/k4)', () => {
+test('persist: a record with neither summary nor feedback -> the .md has no new sections (ac3/k4)', async () => {
 	const repo = mkRepoWithDef();
 	try {
-		const { md } = persistBuildRecord(repo, planRecord({}));
+		const { md } = await persistBuildRecord(repo, planRecord({}));
 		const text = readFileSync(md, 'utf8');
 		assert.doesNotMatch(text, /## Summary/);
 		assert.doesNotMatch(text, /## Feedback/);

@@ -37,6 +37,7 @@ import { ARTIFACTS_DIR, buildArtifactId, codeReviewArtifactId, lldArtifactId, pl
 import { ensureBuildRecordOnCompletion } from '../../../../workflow/runners/build/completion-record.js';
 import { buildStartRelPath, readBuildStart, resolveStoryRangeBase } from '../../../../workflow/runners/build/range-base.js';
 import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import { seedSidecarRules } from '../../../../workflow/artifact-core/__tests__/seed-rules.js';
 
 /** The judge's structured verdict, with the fields a test does not care about filled in. */
 function judgeVerdict(over: Record<string, unknown>): Record<string, unknown> {
@@ -60,7 +61,8 @@ interface Fx { repo: string; git: (...a: string[]) => string; cleanup: () => voi
 function mkGit(): Fx {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-build-start-'));
 	const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-	git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't'); git('config', 'commit.gpgsign', 'false');
+	git('init', '-q');
+	seedSidecarRules(repo); git('config', 'user.email', 't@t'); git('config', 'user.name', 't'); git('config', 'commit.gpgsign', 'false');
 	writeFileSync(join(repo, 'before.ts'), 'export const b = 1;\n');
 	git('add', '-A'); git('commit', '-qm', 'before any Story');
 	return { repo, git, cleanup: () => rmSync(repo, { recursive: true, force: true }) };

@@ -23,7 +23,7 @@ import { stampBuildStart } from '../range-base.js';
 
 const EPIC = 'b47dadc7cf0cccb1';
 
-function withRepo(fn: (repo: string, git: (...a: string[]) => string) => void): void {
+async function withRepo(fn: (repo: string, git: (...a: string[]) => string) => void | Promise<void>): Promise<void> {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-record-commit-'));
 	const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' }).trim();
 	try {
@@ -32,7 +32,7 @@ function withRepo(fn: (repo: string, git: (...a: string[]) => string) => void): 
 		writeFileSync(join(repo, 'seed.ts'), 'seed\n');
 		git('add', '-A'); git('commit', '-qm', 'seed');
 		assert.equal(stampBuildStart(repo, EPIC, 's1'), 'stamped', 'the range base is the seed commit');
-		fn(repo, git);
+		await fn(repo, git);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 }
 
@@ -48,31 +48,31 @@ const record = (commit?: string): BuildRecord => ({
 	body: { tasks: [{ id: 't1', passed: true }], ...(commit !== undefined ? { commit } : {}) },
 });
 
-const persistedCommit = (repo: string): unknown =>
-	(JSON.parse(readFileSync(persistBuildRecord(repo, record()).json, 'utf8')) as { body: Record<string, unknown> }).body['commit'];
+const persistedCommit = async (repo: string): Promise<unknown> =>
+	(JSON.parse(readFileSync((await persistBuildRecord(repo, record())).json, 'utf8')) as { body: Record<string, unknown> }).body['commit'];
 
-test("a BUILD record persisted after another Story's commits names the Story's newest trailered commit", () => {
-	withRepo((repo, git) => {
+test("a BUILD record persisted after another Story's commits names the Story's newest trailered commit", async () => {
+	await withRepo(async (repo, git) => {
 		commit(repo, git, 'a.ts', `feat(build): S001/t1 a\n\nInsrc-Story: ${EPIC}/s1`);
 		const newest = commit(repo, git, 'b.ts', `feat(build): S001/t2 b\n\nInsrc-Story: ${EPIC}/s1`);
 		commit(repo, git, 'c.ts', 'feat(build): s3/t1 another Story\n\nInsrc-Story: c2ba6fa6aaaaaaaa/s3');
 		const head = commit(repo, git, 'd.ts', 'chore: untrailed');
 
 		assert.notEqual(head, newest);
-		assert.equal(persistedCommit(repo), newest);
+		assert.equal(await persistedCommit(repo), newest);
 	});
 });
 
 test('with no trailered commit the record names HEAD, and an explicit commit wins', () => {
-	withRepo((repo, git) => {
+	withRepo(async (repo, git) => {
 		commit(repo, git, 'a.ts', 'feat(build): S001/t1 untrailed');
 		const head = commit(repo, git, 'b.ts', `feat(build): S001/t2 a different Story\n\nInsrc-Story: 748edb69bd23f767/s1`);
-		assert.equal(persistedCommit(repo), head);
+		assert.equal(await persistedCommit(repo), head);
 
 		// An explicit value wins even over a trailered commit of this Story.
 		const trailered = commit(repo, git, 'c.ts', `feat(build): S001/t3 c\n\nInsrc-Story: ${EPIC}/s1`);
-		assert.equal(persistedCommit(repo), trailered);
-		const json = persistBuildRecord(repo, record('deadbee')).json;
+		assert.equal(await persistedCommit(repo), trailered);
+		const json = (await persistBuildRecord(repo, record('deadbee'))).json;
 		assert.equal((JSON.parse(readFileSync(json, 'utf8')) as { body: Record<string, unknown> }).body['commit'], 'deadbee');
 	});
 });

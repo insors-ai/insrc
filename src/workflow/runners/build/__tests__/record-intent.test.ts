@@ -82,17 +82,17 @@ test('read intent raises MissingAnchorError and write intent uses the root, pref
 	} finally { r.done(); }
 });
 
-test('the first TESTS write stamps the anchor and a later BUILD files in the same folder', () => {
+test('the first TESTS write stamps the anchor and a later BUILD files in the same folder', async () => {
 	const r = tempRepo();
 	try {
 		// no head, no LLD: the first headless validate turn writes the test record first
 		const task = { taskId: 't1', ranAt: T0, testsPassed: true, tests: [], files: [] };
-		const tests = persistTestRecordTask(r.repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, task);
+		const tests = await persistTestRecordTask(r.repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, task);
 		const testsJson = JSON.parse(readFileSync(tests.json, 'utf8')) as { meta: { epicCreatedAt?: string } };
 		assert.equal(testsJson.meta.epicCreatedAt, T0, 'the first write stamps the anchor');
 
 		// three days later the BUILD record is written: it reads the stamp, not its own day
-		const build = persistBuildRecord(r.repo, buildRecord(T3));
+		const build = await persistBuildRecord(r.repo, buildRecord(T3));
 		assert.equal(dirname(build.md), dirname(tests.md), 'BUILD.md and TESTS.md share one folder');
 		const buildJson = JSON.parse(readFileSync(build.json, 'utf8')) as { meta: { epicCreatedAt?: string } };
 		assert.equal(buildJson.meta.epicCreatedAt, T0);

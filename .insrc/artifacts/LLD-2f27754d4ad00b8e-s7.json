@@ -247,6 +247,13 @@
         "choice": "createFromPlan applies approve through LifecycleService.apply as the plan's approving actor after writing each head; an edit later returns the Task to draft (recommended)",
         "rationale": "Approved with the LLD (owner chose A, recommended answers).",
         "resolvedAt": "2026-10-21T17:23:21.736Z"
+      },
+      "q4d2e8779": {
+        "question": "recordBuildRound is a log entry that moves no revision (a build round is not content, so k3 forbids a revision move). The store has no log-only method; the contract says it is appended to the Task's log. Resolve: append a revision-less entry with History.appendLog under ArtifactStore.exclusive, which the integrity check already skips when it looks for the log tail with a revision (recommended), or add a log-only write to ArtifactStore (a change to s2's store).",
+        "status": "resolved",
+        "choice": "Append a revision-less entry with History.appendLog under ArtifactStore.exclusive (recommended)",
+        "rationale": "Approved with the LLD (owner chose A, recommended answers).",
+        "resolvedAt": "2026-10-21T17:23:59.335Z"
       }
     }
   },

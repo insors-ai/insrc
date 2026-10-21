@@ -376,6 +376,8 @@ The TASKS head's body carries the ordered Task rows, each with its status, revis
 
 - `qd6a1430f` — A Task head is written in draft status by createFromPlan (contract postcondition), but a Task whose edit 'returns to draft' and 'needs re-approval' (ac21) and whose build is admitted by the plan's approval must start approved. Resolve: after writing each head, createFromPlan applies the approve operation through LifecycleService.apply as the plan's approving actor, so a new Task is approved on the plan's approval and an edit later returns it to draft (recommended), or leave new Tasks in draft and add a separate Task approval step before build (a change to the build admission gate).
   - **resolved**: createFromPlan applies approve through LifecycleService.apply as the plan's approving actor after writing each head; an edit later returns the Task to draft (recommended) — Approved with the LLD (owner chose A, recommended answers). _(2026-10-21T17:23:21.736Z)_
+- `q4d2e8779` — recordBuildRound is a log entry that moves no revision (a build round is not content, so k3 forbids a revision move). The store has no log-only method; the contract says it is appended to the Task's log. Resolve: append a revision-less entry with History.appendLog under ArtifactStore.exclusive, which the integrity check already skips when it looks for the log tail with a revision (recommended), or add a log-only write to ArtifactStore (a change to s2's store).
+  - **resolved**: Append a revision-less entry with History.appendLog under ArtifactStore.exclusive (recommended) — Approved with the LLD (owner chose A, recommended answers). _(2026-10-21T17:23:59.335Z)_
 
 ## Citations
 

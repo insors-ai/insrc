@@ -1,0 +1,1791 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792557860113-nm31as",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T04:50:52.258Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 392136,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1792406752203-whj6zi",
+    "hldEffectiveHash": "f964e89a61197d748acab26761e672d7c490606b3c4b15ad3d8258467273d9e8",
+    "hldAmendmentsApplied": [
+      "AMD-2f27754d4ad00b8e-5",
+      "AMD-2f27754d4ad00b8e-6",
+      "AMD-2f27754d4ad00b8e-7"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The proposed completion evidence can recognize a user's code-review override and satisfy ac9.",
+          "evidence": "DEF ac9 explicitly permits completion when the build was 'approved by the user over the review's findings'. enforceCodeReviewGate reads only body.verdict/counts and returns overridden only from opts.overrideReview; it does not read persisted meta.reviewOverride. It also returns advisory warn before inspecting the override when enforcement is off. The proposed storyCodeReview(epicHash, storyId) contract supplies neither override nor enforcement context, so mapping its result cannot preserve the approval request's override. [files: .insrc/artifacts/DEF-2f27754d4ad00b8e.json, src/workflow/code-review/gate.ts, src/workflow/gates.ts]",
+          "action": "Define how revision-bound override evidence reaches roll-up, including enforcement-off behavior. Exercise the real gate through approval and completion with an explicit override.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Current store writes serialize only writes, preserve caller-supplied lifecycle hashes, and record create/update; raw preparation does not reconcile lifecycle.",
+          "evidence": "ArtifactStore.write queues writeUnlocked. That function compares description/body/citations, copies a.lifecycle while replacing revision.number, and logs operation 'create' or 'update' with a.lifecycle.revision.contentHash. prepareArtifactWrite adjusts meta.revision and tracker fields without inspecting meta.lifecycle. [files: src/workflow/artifact-core/store.ts, src/workflow/storage.ts]",
+          "action": "Use this verified baseline when specifying the replacement behavior.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The five proposed codecs are missing, and the existing codec abstraction supports pass-through payloads with generated identity metadata.",
+          "evidence": "CODECS registers eleven kinds and excludes EPIC, STORY, TASKS, TASK and DIAG. The existing codec helper decodes 'body: head.body, citations: head.citations ?? []' and encodes using identityMeta(key, ctx). codecFor throws UnknownArtifactKindError for unregistered kinds. [files: src/workflow/artifact-core/codecs.ts, src/workflow/artifact-core/decode.ts]",
+          "action": "Extend the existing codec helper and registry as proposed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The declared ArtifactStore.update callback can perform the complete LifecycleService operation while holding the queue.",
+          "evidence": "The design declares mutate as a synchronous callback returning {next, options} or undefined, but transition and rollUp return Promises, and completion awaits member updates. Existing store reads, history reads and writeUnlocked are asynchronous. The declared callback cannot await these operations within its stated return type. [files: src/workflow/artifact-core/store.ts, src/workflow/artifact-core/history.ts, docs/epics/one-common-model-every-artifact-E202610192f27754d/HLD.md]",
+          "action": "Allow an asynchronous mutation callback and explicitly await it while holding the queue. Specify recovery and member-operation ordering within that contract.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Reconciling hashes in prepareArtifactWrite is sufficient to make BUILD-hook and review auto-fix writes compatible with full log-tail integrity checks.",
+          "evidence": "writeArtifact calls prepareArtifactWrite followed by writeAtomic and appends no History entry. persistBuildRecord and reviewArtifactFile use this raw writer for content changes. Only ArtifactStore.writeUnlocked appends the revision-bearing log entry. Consequently, after a tracked head's BUILD-hook rewrite or review auto-fix advances its revision, the proposed service check sees head-ahead-of-log even though the hash was reconciled correctly. [files: src/workflow/storage.ts, src/workflow/artifact-core/store.ts, src/workflow/runners/build/completion-record.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/review/run-artifact.ts]",
+          "action": "Route these content mutations through a history-aware transaction when a LifecycleService is supplied, or specify another atomic head/log synchronization mechanism. Test a real content change on a head with existing history before service approval/review.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Keeping the existing revision-minting rule and subsequently reconciling lifecycle guarantees that only description/payload changes advance revisions.",
+          "evidence": "prepareArtifactWrite determines unchanged content with sameApartFromRevision, which compares JSON.stringify of the entire head after deleting only meta.revision. Metadata changes, lifecycle fields and key ordering therefore affect this comparison. The store currently avoids metadata bumps by choosing meta-only using its separate canonical comparison. The design removes that comparison but passes an already-minted revisionNumber into reconcileLifecycle; reconciliation cannot undo the incorrectly minted number under its stated contract. [files: src/workflow/storage.ts, src/workflow/artifact-core/store.ts, src/workflow/artifact-core/__tests__/store-write.test.ts]",
+          "action": "For lifecycle-bearing heads, make the canonical description/body/citations comparison determine revision minting inside prepareArtifactWrite itself. Specify how meta-only calls with changed content are handled, while retaining the legacy algorithm for heads without lifecycle.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The handoff requiring s4 to wire LifecycleService is an accepted upstream contract dependency.",
+          "evidence": "The HLD lists s4 as depending on sc1, sc2 and sc3, with physical sidecar storage as its scope. AMD-8 proposes adding s4 as an sc4 consumer and explicitly assigns durable LifecycleService wiring to it, but its stored status is 'pending'. The design also leaves acceptance of the sc2 changes open. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/HLD.md, .insrc/artifacts/AMD-2f27754d4ad00b8e-8.json, src/daemon/index.ts]",
+          "action": "Resolve AMD-8 and the sc2 ownership questions before treating the production wiring and shared-store changes as agreed delivery scope.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Completing every listed member inside the unit's update lock safely records the unit last.",
+          "evidence": "The proposed member list includes the STORY head when completing that Story and EPIC when completing that Epic. It says each member uses its own ArtifactStore.update while the outer apply holds the unit's update queue. The existing WRITE_QUEUES mechanism chains a same-id operation behind the current operation. Awaiting an update of the unit itself would therefore wait on its own unfinished operation; writing it separately would also contradict unit-last recording. [files: src/workflow/artifact-core/store.ts]",
+          "action": "Exclude the unit itself from dependent-member updates. Record its lifecycle and complete entry only through the outer update, and explicitly prohibit same-id queue re-entry.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Keeping existing recovery placement permits a failed completion to succeed on retry through update.",
+          "evidence": "writeUnlocked calls completePending before reading the prior head. A failed head replacement can leave the new log entry appended and the old head on disk. The proposed update reads history and performs integrity checks before invoking the existing write implementation. That retry would throw log-ahead-of-head before reaching completePending, preventing the documented automatic recovery. [files: src/workflow/artifact-core/store.ts, src/workflow/artifact-core/journal.ts]",
+          "action": "Recover pending journal operations under the queue before update reads the head/history or invokes mutate. Add a retry test that fails head replacement after append, then retries LifecycleService.apply.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The acceptance mapping explicitly covers all four upstream s3 criteria.",
+          "evidence": "The stored DEF assigns s3 ac7 revision advancement/draft fallback/older decision retention, ac8 unchanged-content revision stability, ac9 once-only Story/Epic completion with dependent records, and ac10 conflict refusal. The proposed test mapping names tests for each, including ac7's retained decision bindings rather than only revision advancement. This verifies planned coverage, not passing implementation. [files: .insrc/artifacts/DEF-2f27754d4ad00b8e.json, docs/epics/one-common-model-every-artifact-E202610192f27754d/HLD.md, src/workflow/artifact-core/__tests__/store-write.test.ts]",
+          "action": "Retain the mapping and add the concrete override, history synchronization, queue re-entry and journal-retry cases identified above.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 6,
+        "med": 0,
+        "low": 4,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-21T04:51:00.960Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-21T04:56:36.239Z",
+    "reviewOverride": {
+      "reason": "Approved by the owner on explicit yes (2026-10-21) over the daemon review block (6 HIGH after two authoring passes; first pass 9 HIGH, 1 MED). The six remaining findings are recorded as binding requirements for the s3 plan and build in docs/plans/core-data-model.md (s3 LLD approved with an override).",
+      "at": "2026-10-21T04:56:36.237Z"
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "s3 adds the lifecycle rules as a pure module (src/workflow/artifact-core/lifecycle.ts: the closed transition table, the content hash, the revision and draft fall-back, the integrity check and the roll-up) and a LifecycleService that applies one operation at a time. The one revision rule in prepareArtifactWrite now also keeps meta.lifecycle in step for every writer, so the BUILD hook and the review auto-fix cannot leave a stale hash; ArtifactStore gains update (read, change and write under one lock), WriteOptions and a strict child listing; the five kinds that had no codec get pass-through codecs. The approval path takes an optional LifecycleService: with it approve, review and complete check the log tail, are applied through the service and trigger Story and Epic completion once; without it (production until s4 supplies a durable History) the gates run a synchronous head-only guard placed before the BUILD record hook and otherwise behave as today."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework (a1): a shared artifact envelope with typed payloads, stored as a head file plus two append-only sidecar files whose lines carry the owning artifact id, behind a single identity module, with one upfront conversion and no compatibility code. The envelope carries identity, description, parent, references, a typed lifecycle (revision, approval, review, signoffs, staleness, status) and a tracker binding or attachments; the change log and feedback are separate append-only line files; each existing artifact type shrinks to a payload codec and a renderer. Tracker comment reading and attaching are added to the port and implemented for the GitHub adapter only.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "Lifecycle",
+          "purpose": "The typed lifecycle structures, the ten statuses and their transitions, the revision and content-hash rule, the completion roll-up and the conflict check against the log tail.",
+          "interfaceSketch": "type Status = 'draft'|'pending-review'|'approved'|'in-signoff'|'changes-requested'|'signed-off'|'rejected'|'completed'|'withdrawn'|'superseded';\ninterface Revision { number: number; contentHash: string; at: string; by: Actor }\ninterface Approval { revision: number; by: Actor; at: string; override?: { reason: string } }\ninterface Review { revision: number; reviewer: Actor; party: 'controller'|'daemon'; verdict: 'pass'|'warn'|'block'; counts: Record<string, number>; at: string; report?: Reference }\ninterface Signoff { revision: number; request: Reference; state: 'open'|'changes-requested'|'completed'; actors: Actor[]; at: string }\ninterface Staleness { upstream: Reference; upstreamRevision: number; since: string }\ninterface Lifecycle { status: Status; revision: Revision; approval?: Approval; review?: Review; signoffs: Signoff[]; stale?: Staleness }\ntype Integrity = { ok: true } | { ok: false; reason: 'hash-mismatch'|'head-ahead-of-log'|'log-ahead-of-head' }\ninterface LifecycleRules { transition(a: Artifact<unknown>, op: Operation, by: Actor): Promise<Lifecycle>; checkIntegrity(a: Artifact<unknown>, logTail: ChangeLogEntry | undefined): Integrity; rollUp(id: string): Promise<Status | undefined> }",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ArtifactIdScheme",
+          "purpose": "The single place artifact ids are made and recognised: the existing hierarchical typed ids extended for Epic, Story, Task, the Tasks file and diagrams, one story and task form, the folder-name date source, and the functional-requirement id helpers that live in id.ts today.",
+          "interfaceSketch": "type ArtifactKind = 'DEF'|'HLD'|'LLD'|'PLAN'|'BUILD'|'CR'|'TESTS'|'EXT'|'AMD'|'SPEC'|'ISSUE'|'EPIC'|'STORY'|'TASK'|'TASKS'|'DIAG';\ninterface ArtifactKey { kind: ArtifactKind; epicHash: string; story?: string; task?: string; seq?: number }\ninterface ArtifactIds { make(key: ArtifactKey): string; parse(id: string): ArtifactKey | undefined; parentOf(key: ArtifactKey): ArtifactKey | undefined }\ninterface RequirementIds { mint(epicHash: string, createdAt: string, ordinal: number, storyId?: string): string; parse(id: string): { epicHash: string; ordinal: number; storyId?: string } | undefined; isRequirementId(s: string): boolean }\n  // + RequirementIds.parse result: { date: string; hash8: string; story?: number | undefined; fr: number } | undefined;  // SUPERSEDES the return type of RequirementIds.parse declared in this sketch ({ epicHash; ordinal; storyId? }): a stored requirement id carries only the date and the first 8 hash characters, so parse returns these parts, story and fr as numbers (amend:AMD-2f27754d4ad00b8e-5)",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "ArtifactEnvelope",
+          "purpose": "The common shape of every stored entity and the one reader and writer for it, with References and namespaced Actors.",
+          "interfaceSketch": "interface Actor { id: string; kind: 'person'|'agent'|'system'; name?: string; properties: Record<string, unknown> }\ninterface Reference { entityId: string; type: string; relation: 'derived-from'|'depends-on'|'tracked-by'|'supersedes'|'documents'|'implements'|'cites'|'reviews'; fragment?: string; quote?: string }\ninterface Artifact<P> { id: string; description: string; parent?: Reference; references: Reference[]; lifecycle: Lifecycle; binding?: TrackerBinding; attachments: Attachment[]; payload: P }\ninterface ArtifactStore { read(id: string): Promise<Artifact<unknown>>; write(a: Artifact<unknown>, by: Actor): Promise<void>; childrenOf(id: string): Promise<string[]> }\n  // + readWithHistory(id: string): Promise<Artifact<unknown> & { changeLog: ChangeLogEntry[]; feedback: Feedback[] }>;  // A read that exposes the artifact together with its change log and feedback in one shape, as DEF ac4 requires; read stays the cheap head-only read. (amend:AMD-2f27754d4ad00b8e-7)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "HistoryRecords",
+          "purpose": "The change log entry and the Feedback entry shapes, the persisted sidecar record that carries the owning artifact id, and the append and read API, including how an update says which feedback it addressed.",
+          "interfaceSketch": "type Operation = 'create'|'update'|'delete'|'reparent'|'request-review'|'review'|'approve'|'reject'|'open-signoff'|'signoff-changes'|'signed-off'|'complete'|'reopen'|'withdraw'|'supersede'|'mark-stale'|'ack-stale';\ninterface ChangeLogEntry { id: string; actor: Actor; timestamp: string; operation: Operation; revision?: { number: number; contentHash: string }; status?: { from: string; to: string }; outcome?: { result: string; summary: string; data?: unknown }; references?: Reference[]; addresses?: 'all' | string[] }\ninterface Feedback { id: string; text: string; actor: Actor; timestamp: string; feedback: Feedback[]; kind: 'comment'|'suggestion'|'revision-request'; anchor?: { quote?: string; section?: string; lines?: [number, number] }; revision?: number; source?: { system: string; externalId: string; url?: string }; batchId?: string }\ninterface SidecarRecord<E> { artifactId: string; entry: E }\ninterface History { appendLog(id: string, e: ChangeLogEntry): Promise<void>; appendFeedback(id: string, f: Feedback): Promise<void>; log(id: string): Promise<ChangeLogEntry[]>; logTail(id: string): Promise<ChangeLogEntry | undefined>; feedback(id: string): Promise<Feedback[]>; openFeedback(id: string): Promise<Feedback[]> }",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "The lifecycle rules: status transitions, the revision and content-hash computation, the staleness record, the completion roll-up and the integrity check against the log tail on approve, review and complete. Private to this Story are the hash canonicalisation and how a roll-up is cached or recomputed."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The id module and its removal of the second scheme: the folder-name formatter moved into the path scheme, the date source fixed to the epic's creation time, the functional-requirement id helpers and their callers moved with stored FR ids staying valid, issue titles switched to the artifact id, and the delivery module's ordinals. The old issue-body marker is not read. Private to this Story are the exact text of the issue title and the relocation of the helpers."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2",
+            "sc3",
+            "sc8"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The envelope model, the one reader and writer, the History API and the sidecar record shape as a contract, and the repository version marker. Private to this Story are the head-file schema, the per-type payload codec registry and how the old per-type read functions delegate to the reader."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The physical sidecar storage: file layout, the merge attributes for the line files, per-artifact filtering, read-time ordering and de-duplication, and the write order of log entry before head with the repair of a log that is ahead of its head. Private to this Story are the line format and the file naming beside a head."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5"
+          ],
+          "internal": "People-facing feedback: adding feedback and replies from a client, listing open feedback, the addresses rule at revision time, and the per-user identity declaration with alias linking. Private to this Story are the identity file format and the display of linked identities."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The typed binding and attachments, the tracker port additions implemented for GitHub, the retry of pending links and posts, and the switch of unit-issue bookkeeping to the binding. Private to this Story are the permalink construction and the retry bookkeeping."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6"
+          ],
+          "internal": "Task artifacts: creation of the Tasks file and the Task issues at plan approval, direct edits of a Task's own content with local re-approval, refusal of structural edits, and the re-plan reconciliation. Private to this Story are the diff of a Task against the new plan and the build-round recording in a Task's history."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Comment sync: reading human comments into feedback at implement, validate or on request, classifying a revision request or a suggestion from the first line, and posting feedback once. Private to this Story are the first-line commands, the derived since point and the filter for the framework's own posts."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7",
+            "sc8"
+          ],
+          "internal": "The conversion command: previews, repeats, back-fills history, renames standalone S001 to s1 rewriting the references it can with no alias, creates Epic, Story and Task artifacts for what exists, verifies through the delivery reader, and sets the repository version. Private to this Story are the per-type conversion mappings and the verification report."
+        }
+      ],
+      "rolloutPhase": "Phase B — lifecycle and sidecar storage",
+      "nonFunctional": {
+        "performance": "Reading an artifact reads its head; the log tail is read only on approve, review and complete, and counts, open feedback and status are computed on read. The delivery loader still reads each artifact once. Loading a repository of about a thousand artifacts must stay within twice today's load time on the same machine.",
+        "security": "Gates use the live tracker identity only; declared aliases are never trusted for a decision. The identity file is local and read for attribution. Tracker comments are read through the existing gh path of the GitHub adapter, with no new credential and no direct REST call.",
+        "observability": "Every state change appends a change log entry with actor, operation and, where relevant, revision and status; a conflict, a log-ahead-of-head repair, a failed attach and a pending link are logged and surfaced in the unit's result, not hidden.",
+        "durability": "Heads are replaced atomically as today; sidecar lines are append-only and de-duplicated by (artifactId, entry id) so a repeated append is harmless; a write appends its log entry before it replaces the head so a failure between the two leaves a detectable, repairable gap; the conversion is one commit, repeatable, and reverts with one git revert."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "LifecycleRules.transition",
+          "signature": "transition(a: Artifact<unknown>, op: Operation, by: Actor, detail?: TransitionDetail): Promise<Lifecycle>",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "Artifact<unknown>",
+              "purpose": "The artifact as read from the store; only a.id, a.lifecycle and a.references are used.",
+              "optional": false
+            },
+            {
+              "name": "op",
+              "type": "Operation",
+              "purpose": "One of the thirteen lifecycle operations (request-review, review, approve, reject, open-signoff, signoff-changes, signed-off, complete, reopen, withdraw, supersede, mark-stale, ack-stale); create, update, delete and reparent are content operations and are refused here.",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "Who performs it; recorded in approval.by, signoff actors and the log entry.",
+              "optional": false
+            },
+            {
+              "name": "detail",
+              "type": "TransitionDetail",
+              "purpose": "What the operation carries: the Review for review, the override reason for approve, the request Reference for open-signoff, the upstream Staleness for mark-stale, the superseding Reference for supersede, a reason for reject, withdraw and ack-stale, and cascade:true when a unit's completion freezes a dependent record.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<Lifecycle>",
+            "meaning": "The next lifecycle: pure, nothing is written."
+          },
+          "errors": [
+            {
+              "type": "IllegalTransitionError",
+              "condition": "the operation is not in the closed table for the current status, or a required detail is missing or malformed"
+            },
+            {
+              "type": "ReviewRequiredError",
+              "condition": "op is approve on a DEF, HLD or LLD with no review bound to the current revision or with a block verdict, and detail.override is absent"
+            }
+          ],
+          "preconditions": [
+            "a.lifecycle is the stored lifecycle of the current head"
+          ],
+          "postconditions": [
+            "request-review: draft to pending-review; review: draft or pending-review to draft, storing review {revision: current number, reviewer, party, verdict, counts, at, report?}; approve: draft to approved, storing approval {revision: current number, by, at, override?}; open-signoff: approved to in-signoff, appending a Signoff {revision, request, state: open, actors: [], at}; signoff-changes: in-signoff to changes-requested; signed-off: in-signoff to signed-off; reject: draft, approved or in-signoff to rejected; complete: approved or signed-off (any non-terminal when detail.cascade) to completed; reopen: completed to draft; withdraw and supersede: any non-terminal to withdrawn or superseded; mark-stale and ack-stale: any non-terminal, status unchanged, setting or clearing stale {upstream, upstreamRevision, since}",
+            "approval, review and signoffs of an older revision are never removed or edited: each keeps the revision number it was made at",
+            "the integrity check is not made here: the service checks before it calls transition"
+          ]
+        },
+        {
+          "name": "LifecycleRules.checkIntegrity",
+          "signature": "checkIntegrity(a: Artifact<unknown>, logTail: ChangeLogEntry | undefined): Integrity",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "Artifact<unknown>",
+              "purpose": "The artifact read from its head.",
+              "optional": false
+            },
+            {
+              "name": "logTail",
+              "type": "ChangeLogEntry | undefined",
+              "purpose": "The last change log entry that carries a revision. Every entry the store writes carries one, so this is the last entry the store wrote; undefined when the log has no revision-bearing entry.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Integrity",
+            "meaning": "{ ok: true } or { ok: false, reason }: hash-mismatch when the head's non-empty stored contentHash differs from contentHash of its own description and payload, or when its number equals the log's and both hashes are non-empty and differ; head-ahead-of-log when the log has a revision-bearing entry whose number is below the head's; log-ahead-of-head when it is above."
+          },
+          "errors": [],
+          "preconditions": [
+            "a was decoded by decodeArtifactHead"
+          ],
+          "postconditions": [
+            "a head with an empty stored hash has nothing to compare and is { ok: true }",
+            "a log with no revision-bearing entry is no history: it is { ok: true }, never head-ahead-of-log (s9 back-fills history)",
+            "an older log entry with an empty hash and the same number does not conflict with a newer head hash (the hash baseline entry follows it)"
+          ]
+        },
+        {
+          "name": "LifecycleRules.rollUp",
+          "signature": "rollUp(id: string): Promise<Status | undefined>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "A TASK, STORY or EPIC artifact id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Status | undefined>",
+            "meaning": "'completed' when the unit's completion condition is true now, otherwise undefined. Reads only; records nothing."
+          },
+          "errors": [
+            {
+              "type": "InvalidArtifactKeyError",
+              "condition": "id is not an artifact id"
+            },
+            {
+              "type": "UnreadableChildError",
+              "condition": "childrenOfStrict reports an unreadable child head; the error names them and nothing is rolled up"
+            }
+          ],
+          "preconditions": [
+            "the ports are supplied by the LifecycleService"
+          ],
+          "postconditions": [
+            "a Task: completed when CompletionEvidence.taskBuildPassed(id) is true",
+            "a Story: completed when at least one counted Task child exists, every counted Task is completed, and CompletionEvidence.storyCodeReview gives clean or overridden; withdrawn and superseded Task children are not counted, rejected and unfinished ones are; TASKS and DIAG children are not Tasks and are ignored",
+            "an Epic: completed when at least one counted Story child exists and every counted Story is completed",
+            "any other kind returns undefined"
+          ]
+        },
+        {
+          "name": "contentHash",
+          "signature": "contentHash(description: string, payload: { body: unknown; citations: unknown }): string",
+          "parameters": [
+            {
+              "name": "description",
+              "type": "string",
+              "purpose": "The artifact description.",
+              "optional": false
+            },
+            {
+              "name": "payload",
+              "type": "{ body: unknown; citations: unknown }",
+              "purpose": "The head payload.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "sha-256 hex of the canonical JSON of {description, body, citations}."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "canonical JSON is the JSON.parse(JSON.stringify(x)) form with object keys sorted and undefined removed, so toJSON values hash by what they persist as",
+            "references, parent, attachments, binding, lifecycle and the change log are not hashed"
+          ]
+        },
+        {
+          "name": "reconcileLifecycle",
+          "signature": "reconcileLifecycle(prior: ContentView | undefined, next: ContentView, revisionNumber: number, by: Actor, at: string): { lifecycle: Lifecycle; contentChanged: boolean }",
+          "parameters": [
+            {
+              "name": "prior",
+              "type": "ContentView | undefined",
+              "purpose": "The stored head's description, payload and lifecycle, or undefined on a create.",
+              "optional": false
+            },
+            {
+              "name": "next",
+              "type": "ContentView",
+              "purpose": "What is being written; next.lifecycle carries the approval, review, signoffs, stale and status the caller set.",
+              "optional": false
+            },
+            {
+              "name": "revisionNumber",
+              "type": "number",
+              "purpose": "The revision prepareArtifactWrite minted (the existing meta.revision rule).",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "Recorded as revision.by when content changed.",
+              "optional": false
+            },
+            {
+              "name": "at",
+              "type": "string",
+              "purpose": "ISO time recorded as revision.at when content changed.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ lifecycle: Lifecycle; contentChanged: boolean }",
+            "meaning": "The lifecycle to store. contentChanged compares contentHash of prior's own description and payload with next's, never the stored hash."
+          },
+          "errors": [
+            {
+              "type": "TerminalArtifactError",
+              "condition": "content changed and prior.lifecycle.status is completed, withdrawn or superseded"
+            },
+            {
+              "type": "IllegalTransitionError",
+              "condition": "a create with a status other than draft, or a status change without a content change that is not a step in the closed table"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "revision.contentHash is always contentHash of next's description and payload and revision.number is revisionNumber; revision.at and by are the prior's when content did not change",
+            "on a content change a non-terminal status other than draft becomes draft and approval, review, signoffs and stale are carried over unchanged",
+            "an identical rewrite of a head with an empty stored hash returns contentChanged false and the filled hash, same number"
+          ]
+        },
+        {
+          "name": "prepareArtifactWrite",
+          "signature": "prepareArtifactWrite(path: string, next: unknown, kind: WriteKind, opts?: { replaceUnreadable?: boolean; by?: Actor; at?: string }): PreparedArtifactWrite",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "purpose": "The head file.",
+              "optional": false
+            },
+            {
+              "name": "next",
+              "type": "unknown",
+              "purpose": "The head object being written, an unchanged input.",
+              "optional": false
+            },
+            {
+              "name": "kind",
+              "type": "WriteKind",
+              "purpose": "content or meta-only, unchanged.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ replaceUnreadable?: boolean; by?: Actor; at?: string }",
+              "purpose": "by and at are recorded on the revision when a lifecycle-carrying head's content changed; they default to the insrc:system actor and the clock.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "PreparedArtifactWrite",
+            "meaning": "Unchanged: bytes, revision, contentChanged."
+          },
+          "errors": [
+            {
+              "type": "TerminalArtifactError",
+              "condition": "as for reconcileLifecycle"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "a head with no meta.lifecycle is prepared exactly as today",
+            "a head that carries meta.lifecycle gets lifecycle.revision {number, contentHash, at, by} and the fall-back to draft from reconcileLifecycle, so every writeArtifact caller (the BUILD record hook, the review auto-fix, the gates) keeps the hash in step; this is the one implementation of the revision rule and ArtifactStore.write relies on it",
+            "a meta-only write never changes the hash or number"
+          ]
+        },
+        {
+          "name": "checkHeadIntegrity",
+          "signature": "checkHeadIntegrity(a: ContentView): Integrity",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "ContentView",
+              "purpose": "A decoded head's description, payload and lifecycle.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Integrity",
+            "meaning": "{ ok: false, reason: 'hash-mismatch' } when the stored non-empty contentHash differs from contentHash of the head's own description and payload, else { ok: true }. Synchronous, reads nothing."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "this is the part of checkIntegrity that needs no History"
+          ]
+        },
+        {
+          "name": "LifecycleService.apply",
+          "signature": "apply(id: string, op: Operation, by: Actor, detail?: TransitionDetail): Promise<{ lifecycle: Lifecycle; entry: ChangeLogEntry; recorded: boolean }>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            },
+            {
+              "name": "op",
+              "type": "Operation",
+              "purpose": "A lifecycle operation.",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The actor.",
+              "optional": false
+            },
+            {
+              "name": "detail",
+              "type": "TransitionDetail",
+              "purpose": "As for transition.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ lifecycle: Lifecycle; entry: ChangeLogEntry; recorded: boolean }>",
+            "meaning": "The stored lifecycle and its log entry; recorded is false when op was complete and a complete entry already stands."
+          },
+          "errors": [
+            {
+              "type": "LifecycleConflictError",
+              "condition": "approve, review or complete on an artifact whose checkIntegrity is not ok; the error carries the reason"
+            },
+            {
+              "type": "IllegalTransitionError",
+              "condition": "as for transition, or complete on a Task, Story or Epic whose rollUp is not true"
+            },
+            {
+              "type": "UnreadableChildError",
+              "condition": "as for rollUp"
+            },
+            {
+              "type": "ArtifactNotFoundError",
+              "condition": "no head"
+            }
+          ],
+          "preconditions": [
+            "the service was built with an ArtifactStore, its History, a clock and the CompletionEvidence port"
+          ],
+          "postconditions": [
+            "the whole of read with history, integrity check, completed-once check, transition and write runs inside ArtifactStore.update, so competing operations on one artifact cannot interleave",
+            "the write carries WriteOptions {operation: op, outcome, references}, so the log entry has the real operation and status {from, to}",
+            "complete on a Story or Epic first completes its members with cascade:true (a Story: its LLD, PLAN, BUILD, CR, TESTS and EXT heads, its STORY head, and the TASKS and DIAG heads found with childrenOf, each DIAG keeping its parsed sequence; an Epic: EPIC, DEF and HLD), skipping a member already terminal or without a head, and records the unit's own complete entry last, so a failure part-way leaves the unit not completed and a retry finishes it",
+            "complete is recorded once: a complete entry with no later reopen makes the call return recorded:false; the outcome carries the code-review override reason when the evidence was overridden",
+            "reopen of a Story or Epic reopens the members its completion froze and is refused while its parent is completed",
+            "writes nothing and appends nothing when it throws before the write"
+          ]
+        },
+        {
+          "name": "LifecycleService.completeIfRolledUp",
+          "signature": "completeIfRolledUp(id: string, by: Actor): Promise<{ completed: string[] }>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact whose last step was just recorded (a Task, or a Story whose BUILD was approved).",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The actor recorded on the completion entries.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ completed: string[] }>",
+            "meaning": "The ids completed by this call, from the unit upward."
+          },
+          "errors": [
+            {
+              "type": "UnreadableChildError",
+              "condition": "as for rollUp"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "starting at id it asks rollUp and, when true and the unit is not completed, applies complete; it then moves to the parent (ArtifactIds.parentOf) and repeats until a unit's rollUp is not true",
+            "a unit whose rollUp is not true is left alone and is not an error",
+            "this is the trigger for ac9: the last recorded step completes the Story and then the Epic, once each"
+          ]
+        },
+        {
+          "name": "ArtifactStore.update",
+          "signature": "update(id: string, by: Actor, mutate: (current: Artifact<HeadPayload> & { changeLog: ChangeLogEntry[] }) => { next: Artifact<HeadPayload>; options?: WriteOptions } | undefined): Promise<boolean>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The actor for the log entry.",
+              "optional": false
+            },
+            {
+              "name": "mutate",
+              "type": "(current) => { next; options? } | undefined",
+              "purpose": "Receives the artifact read with its change log inside the per-artifact queue and returns the artifact to store, or undefined for nothing to do.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<boolean>",
+            "meaning": "true when a write was made."
+          },
+          "errors": [
+            {
+              "type": "ArtifactNotFoundError",
+              "condition": "no head"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "the per-artifact queue is held across the read, mutate and write, so no other write to this artifact interleaves; the write itself is the same code as write, without re-entering the queue",
+            "if mutate throws, nothing is written"
+          ]
+        },
+        {
+          "name": "ArtifactStore.write",
+          "signature": "write(a: Artifact<HeadPayload>, by: Actor, options?: WriteOptions): Promise<void>",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "Artifact<HeadPayload>",
+              "purpose": "The whole envelope to store.",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "As before.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "WriteOptions",
+              "purpose": "operation (the log operation; default create or update as today), outcome, references and addresses to put on the change log entry.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "As before."
+          },
+          "errors": [
+            {
+              "type": "IllegalTransitionError",
+              "condition": "a status change that is not a step in the closed table"
+            },
+            {
+              "type": "TerminalArtifactError",
+              "condition": "content change on a completed, withdrawn or superseded artifact"
+            },
+            {
+              "type": "LifecycleConflictError",
+              "condition": "an ordinary write on a head whose checkHeadIntegrity is hash-mismatch; a write with options.outcome.result 'conflict-resolved' is the explicit resolution"
+            },
+            {
+              "type": "ArtifactShapeError",
+              "condition": "options.operation is a content operation other than create or update"
+            }
+          ],
+          "preconditions": [
+            "as before"
+          ],
+          "postconditions": [
+            "the lifecycle stored is the one prepareArtifactWrite computed with reconcileLifecycle; the s2 write order, queue, journal and recovery are unchanged",
+            "every log entry still carries revision {number, contentHash} with the stored values, plus status {from, to} when the status differs from the prior head's, so the s2 assertion on log revisions stays valid",
+            "a conflict-resolved write adopts the content now in the head, recomputes the hash and logs an update"
+          ]
+        },
+        {
+          "name": "ArtifactStore.childrenOfStrict",
+          "signature": "childrenOfStrict(id: string): Promise<{ children: string[]; unreadable: string[] }>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The parent artifact id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ children: string[]; unreadable: string[] }>",
+            "meaning": "The readable children and the ids of heads that could not be read or decoded."
+          },
+          "errors": [
+            {
+              "type": "InvalidArtifactKeyError",
+              "condition": "id is not an artifact id"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "childrenOf keeps its skip-and-log behaviour; childrenOfStrict returns what it skipped so roll-up can refuse",
+            "an unreadable head whose parent link cannot be read is reported as unreadable, not dropped"
+          ]
+        },
+        {
+          "name": "codecFor",
+          "signature": "codecFor(kind: ArtifactIdKind): KindCodec",
+          "parameters": [
+            {
+              "name": "kind",
+              "type": "ArtifactIdKind",
+              "purpose": "An artifact kind.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "KindCodec",
+            "meaning": "The codec; EPIC, STORY, TASKS, TASK and DIAG now have pass-through codecs."
+          },
+          "errors": [
+            {
+              "type": "UnknownArtifactKindError",
+              "condition": "no codec (none of the sixteen id kinds remains without one)"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "a pass-through codec decodes body and citations unchanged and builds the identity meta from the creation context like the others; s7 and s9 give those payloads their meaning",
+            "registeredKinds lists all sixteen kinds"
+          ]
+        },
+        {
+          "name": "approveWorkflowTarget",
+          "signature": "approveWorkflowTarget(req: WorkflowApproveRequest, opts?: { readonly enforce?: boolean }): Promise<WorkflowApproveResult>",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "WorkflowApproveRequest",
+              "purpose": "Unchanged plus an optional lifecycle?: LifecycleService field.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ readonly enforce?: boolean }",
+              "purpose": "Unchanged.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<WorkflowApproveResult>",
+            "meaning": "Unchanged; a conflicted target comes back in skipped[] with the integrity reason."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "in both the artifactPath and the epicHash branch the integrity check runs BEFORE ensureBuildRecordOnCompletion, so a conflicted BUILD record is never rewritten",
+            "without req.lifecycle the check is checkHeadIntegrity and everything else is as today",
+            "with req.lifecycle the check is the full checkIntegrity against the log tail, the approval is applied through LifecycleService.apply, and after a BUILD record approval completeIfRolledUp is called for its Story; the legacy meta.approvedAt stamp still follows, for the delivery board"
+          ]
+        },
+        {
+          "name": "approveArtifactByJsonPath",
+          "signature": "approveArtifactByJsonPath(jsonPath: string, opts?: { readonly overrideReview?: string }): ApprovalResult",
+          "parameters": [
+            {
+              "name": "jsonPath",
+              "type": "string",
+              "purpose": "The artifact head file.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ readonly overrideReview?: string }",
+              "purpose": "Unchanged.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ApprovalResult",
+            "meaning": "Unchanged."
+          },
+          "errors": [
+            {
+              "type": "LifecycleConflictError",
+              "condition": "checkHeadIntegrity is hash-mismatch, raised before the team gate, the review checks and any write"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "stays synchronous; a head with no meta.lifecycle or an empty stored hash is approved exactly as today",
+            "still writes meta.approvedAt with writeArtifact meta-only; a meta-only write never touches the hash"
+          ]
+        },
+        {
+          "name": "reviewArtifactFile",
+          "signature": "reviewArtifactFile(...args: ReviewArtifactFileArgs): Promise<ReviewArtifactResult>",
+          "parameters": [
+            {
+              "name": "args",
+              "type": "ReviewArtifactFileArgs",
+              "purpose": "Unchanged plus an optional lifecycle?: LifecycleService field.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ReviewArtifactResult>",
+            "meaning": "Unchanged."
+          },
+          "errors": [
+            {
+              "type": "LifecycleConflictError",
+              "condition": "the head guard (or, with a service, the full check) is not ok, raised before the review pipeline runs or anything is stamped"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "its content-changing auto-fix write goes through writeArtifact and therefore prepareArtifactWrite, so a head carrying meta.lifecycle gets its hash, number and fall-back to draft reconciled in that write",
+            "an artifact with no stored hash is reviewed as today"
+          ]
+        },
+        {
+          "name": "CompletionEvidence.storyCodeReview",
+          "signature": "storyCodeReview(epicHash: string, storyId: string): Promise<CodeReviewEvidence>",
+          "parameters": [
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "The Epic hash.",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "The s<n> story id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<CodeReviewEvidence>",
+            "meaning": "{ kind: 'clean' | 'overridden' | 'blocked' | 'missing', overrideReason?: string } read from enforceCodeReviewGate: pass and a warn without advisory are clean; a warn with advisory:true (a block verdict with enforcement off) is blocked; overridden keeps its overrideReason; no-review is missing; blocked is blocked."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "only clean and overridden allow a Story to complete; the override reason goes on the complete entry's outcome",
+            "it reads the gate and never changes the gate's behaviour or its fail-open semantics"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Lifecycle (sc4 structures)",
+        "change": "invariant-change",
+        "details": "The structures are exactly the HLD's. What becomes true after s3: for every head that carries meta.lifecycle and was written by any writer, revision.contentHash is the contentHash of its description and payload, revision.number equals meta.revision, a content change returns a non-terminal status to draft while approval.revision, review.revision and signoff.revision keep the number they were made at, and a status changes only by a step in the closed table. A head with no meta.lifecycle is unchanged. Current behaviour it must not break: the one revision rule and an identical rewrite keeping the revision (storage.ts, c2) and a head with no lifecycle decoding as draft (decode.ts, c1).",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts",
+          "src/workflow/artifact-core/decode.ts",
+          "src/workflow/storage.ts"
+        ]
+      },
+      {
+        "entity": "LIFECYCLE_TABLE and assertLegalStatusChange",
+        "change": "new",
+        "details": "A frozen map from the thirteen lifecycle operations to {from: Status[], to: Status | 'same'}, plus TERMINAL = completed, withdrawn, superseded. assertLegalStatusChange(from, to, op) answers whether a step is allowed and is used by transition, reconcileLifecycle and ArtifactStore.write.",
+        "schemaDiff": "type Step = { from: readonly Status[]; to: Status | 'same' }; const LIFECYCLE_TABLE: Readonly<Record<LifecycleOperation, Step>>",
+        "callSites": [
+          "src/workflow/artifact-core/lifecycle.ts"
+        ]
+      },
+      {
+        "entity": "ContentView",
+        "change": "new",
+        "details": "{ description: string; payload: { body: unknown; citations: unknown }; lifecycle: Lifecycle }, the part of a head the lifecycle rules read. prepareArtifactWrite builds one from a raw head (meta.envelope.description, body, citations, meta.lifecycle) and ArtifactStore builds one from an Artifact, so the rules run on raw heads and on decoded artifacts alike.",
+        "callSites": [
+          "src/workflow/storage.ts",
+          "src/workflow/artifact-core/store.ts",
+          "src/workflow/artifact-core/decode.ts"
+        ]
+      },
+      {
+        "entity": "TransitionDetail",
+        "change": "new",
+        "details": "{ review?: Review (without revision), override?: { reason }, request?: Reference, signoffActors?: Actor[], upstream?: Staleness fields, supersededBy?: Reference, reason?: string, cascade?: boolean }; each operation reads only its own fields.",
+        "callSites": [
+          "src/workflow/artifact-core/lifecycle.ts"
+        ]
+      },
+      {
+        "entity": "WriteOptions",
+        "change": "new",
+        "details": "{ operation?: Operation; outcome?: ChangeLogEntry['outcome']; references?: Reference[]; addresses?: 'all' | string[] }, an optional trailing parameter of ArtifactStore.write and the options of update; s5 uses addresses, s3 uses operation and outcome.",
+        "callSites": [
+          "src/workflow/artifact-core/store.ts"
+        ]
+      },
+      {
+        "entity": "Integrity",
+        "change": "new",
+        "details": "The HLD's union { ok: true } | { ok: false; reason: 'hash-mismatch' | 'head-ahead-of-log' | 'log-ahead-of-head' }.",
+        "callSites": [
+          "src/workflow/artifact-core/lifecycle.ts"
+        ]
+      },
+      {
+        "entity": "CompletionEvidence and CodeReviewEvidence",
+        "change": "new",
+        "details": "CompletionEvidence { taskBuildPassed(taskId): Promise<boolean>; storyCodeReview(epicHash, storyId): Promise<CodeReviewEvidence> } with CodeReviewEvidence { kind: 'clean' | 'overridden' | 'blocked' | 'missing'; overrideReason?: string }. The default implementation reads the BUILD record's per-task results and enforceCodeReviewGate; s7 replaces the Task side with the Task artifact's own build rounds.",
+        "callSites": [
+          "src/workflow/code-review/gate.ts",
+          "src/workflow/runners/build/standalone-record.ts"
+        ]
+      },
+      {
+        "entity": "Codec registry (five pass-through kinds)",
+        "change": "field-modify",
+        "details": "registeredKinds grows from eleven to sixteen: EPIC, STORY, TASKS, TASK and DIAG get codecs whose decode returns body and citations unchanged and whose encode builds the identity meta from the creation context. Current behaviour changed on purpose: the s2 assertions that these kinds are unknown change.",
+        "callSites": [
+          "src/workflow/artifact-core/codecs.ts",
+          "src/workflow/artifact-core/decode.ts"
+        ]
+      },
+      {
+        "entity": "WorkflowApproveRequest.lifecycle and the review arguments",
+        "change": "field-add",
+        "details": "An optional lifecycle?: LifecycleService field. Absent means today's behaviour.",
+        "callSites": [
+          "src/workflow/gates.ts",
+          "src/workflow/review/run-artifact.ts"
+        ]
+      },
+      {
+        "entity": "Error classes",
+        "change": "new",
+        "details": "LifecycleConflictError (carries the Integrity reason and artifact id), IllegalTransitionError, TerminalArtifactError, ReviewRequiredError and UnreadableChildError (carries the unreadable ids), beside the s2 classes in types.ts.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts"
+        ]
+      },
+      {
+        "entity": "ChangeLogEntry usage rules",
+        "change": "invariant-change",
+        "details": "sc3 shape unchanged. Every store log entry carries revision {number, contentHash} (s2 behaviour, kept); an entry also carries status {from, to} whenever the status changed; review and completion entries carry outcome {result, summary, data?} with the verdict and counts or the override reason. Replaying the log rebuilds the status.",
+        "callSites": [
+          "src/workflow/artifact-core/store.ts",
+          "src/workflow/artifact-core/history.ts"
+        ]
+      },
+      {
+        "entity": "meta.approvedAt, rejectedAt, rejectReason, staleAckedAt, review, reviewOverride (existing)",
+        "change": "invariant-change",
+        "details": "Untouched by s3. The gates keep writing them; the delivery board and review currency read them (c4). A head can carry both representations; s9 back-fills lifecycle.approval and review from them. Whether they are retired is the owner's decision.",
+        "callSites": [
+          "src/workflow/gates.ts",
+          "src/workflow/delivery/currency.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "Implements transition, checkIntegrity and rollUp with the HLD's names and return types; transition gains an optional trailing detail parameter. The structures are used as declared in artifact-core/types.ts."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Uses ArtifactStore.read, readWithHistory and childrenOf unchanged. Adds update, childrenOfStrict, the options parameter of write, the five pass-through codecs and the lifecycle reconcile inside prepareArtifactWrite; all additive and call-compatible, raised as open questions for the sc2 owner."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Uses History.log and the closed Operation set through readWithHistory; adds no operation and no entry field."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Uses ArtifactIds.parse and parentOf for the roll-up chain and ArtifactIds.make with the same hash and story for a unit's fixed members; DIAG members keep the sequence they were parsed with."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A head's stored contentHash no longer matches the hash of its own description and payload (a hand edit, or two clones that bumped to the same number with different content and merged silently)",
+          "detection": "checkHeadIntegrity recomputes contentHash from the decoded head and compares it with lifecycle.revision.contentHash when that is non-empty; the gates call it before anything else, the service calls the full checkIntegrity",
+          "response": "approve, review and complete throw LifecycleConflictError {reason: 'hash-mismatch'} before the team gate, the review checks, ensureBuildRecordOnCompletion or any write; the workflow path reports it in skipped[]. A person resolves it by an explicit ArtifactStore.write with options.outcome.result 'conflict-resolved', which adopts the content now in the head, recomputes the hash and logs an update; an ordinary write on a conflicted head throws the same error, so nothing picks a side silently",
+          "userImpact": "The artifact cannot be approved, reviewed or completed until someone confirms which content stands; other artifacts are unaffected",
+          "recoverable": true
+        },
+        {
+          "scenario": "The change log and the head disagree about the revision number (head below or above the last revision-bearing entry)",
+          "detection": "LifecycleService reads the log inside ArtifactStore.update and passes the last revision-bearing entry to checkIntegrity, which compares numbers and, when equal, the non-empty hashes",
+          "response": "head-ahead-of-log (the log has revision entries below the head's number) or log-ahead-of-head throws LifecycleConflictError with that reason and writes nothing; a log with no revision-bearing entry is no history and is not a conflict",
+          "userImpact": "Approval is withheld until the log and head agree; the message names the reason",
+          "recoverable": true
+        },
+        {
+          "scenario": "An operation that the closed table does not allow from the current status, or an operation missing its required detail",
+          "detection": "assertLegalStatusChange in transition, reconcileLifecycle and ArtifactStore.write",
+          "response": "Throw IllegalTransitionError naming the status and the operation; nothing is staged, logged or written",
+          "userImpact": "The call fails with the allowed operations listed; the artifact is unchanged",
+          "recoverable": true
+        },
+        {
+          "scenario": "Approving a DEF, HLD or LLD with no review bound to the current revision, or with a block verdict, and no override",
+          "detection": "transition compares lifecycle.review.revision with lifecycle.revision.number and the verdict for the review-required kinds",
+          "response": "Throw ReviewRequiredError; with detail.override.reason the approval is recorded with approval.override and the log entry's outcome carries the reason",
+          "userImpact": "Same as the existing ReviewBlockedError: resolve the findings or approve with a reason",
+          "recoverable": true
+        },
+        {
+          "scenario": "A content change is written to a completed, withdrawn or superseded artifact, by any writer",
+          "detection": "reconcileLifecycle (called from prepareArtifactWrite) sees contentChanged and a terminal prior status",
+          "response": "Throw TerminalArtifactError before the file is touched; the caller reopens (completed only) and writes again",
+          "userImpact": "A finished unit's documents cannot be edited by accident, through the store or through writeArtifact",
+          "recoverable": true
+        },
+        {
+          "scenario": "complete on a Task, Story or Epic whose roll-up is not true yet",
+          "detection": "LifecycleService.apply calls rollUp(id) for TASK, STORY and EPIC",
+          "response": "Throw IllegalTransitionError naming the first unmet condition (an unfinished Task, no counted Task, a code review that is blocked or missing); nothing is written",
+          "userImpact": "The unit stays as it is; the result says what is outstanding",
+          "recoverable": true
+        },
+        {
+          "scenario": "A child head of the unit cannot be read or decoded while rolling up",
+          "detection": "childrenOfStrict returns it in unreadable, instead of dropping it as childrenOf does",
+          "response": "rollUp throws UnreadableChildError naming the ids and the service writes nothing; an unreadable child is never counted as completed or as absent",
+          "userImpact": "Completion is withheld and the corrupt child is named",
+          "recoverable": true
+        },
+        {
+          "scenario": "Two operations on the same artifact at once (approve and a content write, two lifecycle-only operations, two complete calls)",
+          "detection": "LifecycleService runs its read, integrity check, completed-once check, transition and write inside ArtifactStore.update, which holds the per-artifact queue",
+          "response": "The operations run one after the other, each reading the head the previous one left; the second complete finds the first one's complete entry and returns recorded:false; no lost update",
+          "userImpact": "No overwrite of another operation's approval, review or signoff and no duplicate complete entry within one process (cross-process safety is s4)",
+          "recoverable": true
+        },
+        {
+          "scenario": "A Story or Epic completion cascade fails part-way (a member write fails)",
+          "detection": "Each member is its own ArtifactStore.update with its own journal staging; a thrown error aborts the loop",
+          "response": "Members are completed first and the unit's own complete entry last, so a failure leaves the unit not completed; a retry skips members already terminal, finishes the rest and then records the unit once",
+          "userImpact": "A retry of the same call completes the unit; nothing reads as completed that is not",
+          "recoverable": true
+        },
+        {
+          "scenario": "ack-stale on an artifact that is not stale, or mark-stale or any lifecycle operation on a terminal artifact",
+          "detection": "transition checks lifecycle.stale and the terminal set",
+          "response": "Throw IllegalTransitionError",
+          "userImpact": "No entry is logged for a no-op",
+          "recoverable": true
+        },
+        {
+          "scenario": "A create is written with a status other than draft, or with a hand-made revision number and hash",
+          "detection": "reconcileLifecycle on a create",
+          "response": "A non-draft status throws IllegalTransitionError; a supplied revision.number and contentHash are overwritten with the minted number and computed hash, never trusted",
+          "userImpact": "A caller cannot forge an approved or already-hashed artifact",
+          "recoverable": true
+        },
+        {
+          "scenario": "The code review's block verdict comes back as an advisory warn because enforcement is off",
+          "detection": "storyCodeReview reads gate.status 'warn' with advisory:true",
+          "response": "The evidence is blocked unless the user overrode it; the Story does not complete and the result says the review is advisory-blocked",
+          "userImpact": "Completion needs a clean review or an explicit override even when gate enforcement is off",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An identical rewrite of an artifact whose head has no stored hash (every head before s9) that carries meta.lifecycle",
+          "expected": "The comparison hashes the prior head's own content, so the revision does not move (ac8); the write fills the hash and logs an update whose entry carries the same revision number and the new hash, so the log agrees with the head; the hash-baseline follows an older entry with an empty hash without conflict"
+        },
+        {
+          "input": "A head with no meta.lifecycle is rewritten by writeArtifact, approved or reviewed",
+          "expected": "Nothing about lifecycle is added or checked: prepareArtifactWrite leaves it as today, and the head guard sees an empty hash and passes"
+        },
+        {
+          "input": "Only the description changes",
+          "expected": "The hash changes, so the revision moves and the status returns to draft (the description is content)"
+        },
+        {
+          "input": "A payload whose object keys are reordered, or whose nested value has a toJSON (a Date)",
+          "expected": "The canonical JSON sorts keys and uses the persisted form, so reordering is no change and two different dates are a change"
+        },
+        {
+          "input": "A reference, attachment, binding, parent or lifecycle-only change (approval, review, signoff, stale)",
+          "expected": "The hash is unchanged, the revision does not move and the status does not fall back (ac8)"
+        },
+        {
+          "input": "A content change to an approved artifact that also has a review and a signoff",
+          "expected": "number and contentHash move, status becomes draft, and approval.revision, review.revision and signoff.revision keep the older number (ac7, binding requirement 6)"
+        },
+        {
+          "input": "The BUILD record hook rewrites a BUILD head that carries meta.lifecycle",
+          "expected": "prepareArtifactWrite reconciles the lifecycle in that content write, so the hash and number stay right; the guard ran before the hook, so a conflicted record was never rewritten"
+        },
+        {
+          "input": "reviewArtifactFile applies an auto-fix to an LLD that carries meta.lifecycle",
+          "expected": "The 'content' write reconciles the hash, moves the number and returns the status to draft, so the review's own fix does not make the head conflict with itself"
+        },
+        {
+          "input": "A Story whose Tasks are all withdrawn or superseded, or that has no Task children",
+          "expected": "rollUp returns undefined: at least one counted Task is needed"
+        },
+        {
+          "input": "A Task child that is rejected or still draft",
+          "expected": "It counts as unfinished and blocks the Story, unlike a withdrawn or superseded Task"
+        },
+        {
+          "input": "A Story with two diagrams DIAG-<hash>-s1-1 and DIAG-<hash>-s1-2",
+          "expected": "Both are found through childrenOf(STORY id), keep their parsed sequence and are completed with the Story; a DIAG or TASKS child is never counted as a Task"
+        },
+        {
+          "input": "The Story's code review is overridden by the user over a block verdict",
+          "expected": "storyCodeReview gives overridden, the Story completes and its complete entry's outcome carries the override reason"
+        },
+        {
+          "input": "complete is requested twice, or after a reopen",
+          "expected": "The second call returns recorded:false; after a reopen the old complete entry no longer counts and the unit can complete again"
+        },
+        {
+          "input": "reopen of a Story whose Epic is completed",
+          "expected": "Refused with IllegalTransitionError: the Epic is reopened first; reopening a unit also reopens the members its completion froze"
+        },
+        {
+          "input": "The s2 tests that assert the old registry",
+          "expected": "registeredKinds now lists sixteen kinds and TASK, STORY, TASKS, EPIC and DIAG decode and write through pass-through codecs; the assertion on log revisions in store-write.test.ts (create 1, update 1, update 1, update 2) stays as it is"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The revision rule has one implementation, prepareArtifactWrite: meta.revision rises only for a changed 'content' write and an identical rewrite keeps it; ArtifactStore.write keeps meta.revision and lifecycle.revision.number equal",
+          "source": "c2"
+        },
+        {
+          "text": "ArtifactStore.write keeps its write order (stage, append the log entry, replace the head, clear), its per-artifact queue, idempotent recovery and its refusal to stage an entry the log would reject; every store log entry carries revision {number, contentHash}",
+          "source": "c1"
+        },
+        {
+          "text": "A head with no meta.lifecycle still decodes (draft, revision from meta.revision) and is written, approved and reviewed as it is today; no stored data is converted by s3",
+          "source": "c1"
+        },
+        {
+          "text": "approveArtifactByJsonPath stays synchronous with the same return shape and keeps the team gate, the review gate, the other-party review rule, the write-once rangeBase and the meta-only write; approveWorkflowTarget keeps its skipped[] and codeReview outcomes and its order of events except that the guard comes first",
+          "source": "c3"
+        },
+        {
+          "text": "The code-review gate's outcomes (no-review, pass, warn with or without advisory, blocked, overridden) and its fail-open behaviour are unchanged; the lifecycle reads them and does not redefine them",
+          "source": "c3"
+        },
+        {
+          "text": "The delivery board and review currency read meta.approvedAt, rejectedAt and the review fields, not a lifecycle status, and keep doing so",
+          "source": "c5"
+        },
+        {
+          "text": "childrenOf keeps skipping and logging an unreadable head, derives children from each head's parent link, works for every kind and stores nothing on the parent",
+          "source": "c4"
+        },
+        {
+          "text": "Any file that writes artifacts through the store or appends a history line needs an entry in the write inventory, and the new lifecycle service file is entered with the task that creates it",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run with npx tsx --test; tests sit in __tests__ beside the code, and the artifact-core tests reuse the temporary-repository kit (store-kit.ts) with its memory sidecar, memory journal and injectable faults",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The pure rules, with no disk and no clock: hash, table, transitions, reconcile, integrity, roll-up, evidence mapping.",
+          "subjects": [
+            "contentHash gives equal hashes for equal description and payload in any key order, and different hashes when the description, the body or the citations change; references, parent, attachments, binding, lifecycle and a Date value that persists the same do not change it, and two different Dates do",
+            "LIFECYCLE_TABLE: every one of the thirteen lifecycle operations from every one of the ten statuses either lands on the status the table names or throws IllegalTransitionError, and content operations are refused by transition",
+            "transition sets approval {revision, by, at, override?} for the current revision, records a review and returns the status to draft, appends a signoff and moves the latest one to changes-requested or completed, sets and clears stale without changing status, and refuses each operation whose required detail is missing",
+            "transition approve on a DEF, HLD or LLD without a review bound to the current revision, or with a block verdict, throws ReviewRequiredError unless detail.override carries a reason, and a PLAN, ISSUE or SPEC needs no review",
+            "reconcileLifecycle on a create, on an identical rewrite (including a prior head with an empty stored hash, which fills the hash and keeps the number), on a description-only change, on a reference-only change, and on a forged revision number and hash supplied by the caller",
+            "reconcileLifecycle after a content change to an approved artifact with a review and a signoff: the revision number and hash move, the status is draft, and approval, review and signoff keep their original revision numbers",
+            "reconcileLifecycle refuses a content change on a completed, withdrawn or superseded artifact (TerminalArtifactError) and a create with a status other than draft",
+            "checkHeadIntegrity and checkIntegrity: ok, an empty stored hash is ok, hash-mismatch, head-ahead-of-log, log-ahead-of-head, a log with no revision-bearing entry is ok, the same number with a different non-empty hash, and an older log entry with an empty hash",
+            "rollUp for a Task from CompletionEvidence; for a Story with counted Tasks all completed, one unfinished, one rejected, withdrawn and superseded ones that do not count, TASKS and DIAG children that are ignored, no Tasks at all, and each code-review evidence kind (clean, overridden, blocked, missing); for an Epic over its Stories; an unreadable child makes rollUp throw UnreadableChildError",
+            "storyCodeReview maps the gate: pass and a non-advisory warn to clean, an advisory warn to blocked, overridden to overridden with its reason, blocked to blocked, no-review to missing"
+          ],
+          "fixturesNeeded": [
+            "artifact fixtures built with the artifact() helper of store-kit.ts",
+            "in-memory ChildStatusReader and CompletionEvidence"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The store, prepareArtifactWrite, the service and the gates against a temporary repository with real head files.",
+          "subjects": [
+            "prepareArtifactWrite on a head that carries meta.lifecycle (through writeArtifact, as the BUILD record hook and the review auto-fix call it): a content write reconciles hash, number and the fall-back to draft, a meta-only write leaves them, a head with no meta.lifecycle is prepared exactly as before, and the existing artifact-writer and prepare-artifact-write tests pass unchanged",
+            "ArtifactStore.write with a lifecycle operation logs that operation with status {from, to}, every entry still carries revision {number, contentHash}, mark-stale and ack-stale log no status, a status change outside the table is refused, an ordinary write on a conflicted head is refused and a write with outcome.result 'conflict-resolved' adopts the head's content and logs it",
+            "pass-through codecs: a TASK, STORY, EPIC, TASKS and DIAG head is written, read, listed by childrenOfStrict and given a status through the store, and registeredKinds lists sixteen kinds",
+            "ArtifactStore.update runs read, mutate and write inside the queue: two competing lifecycle-only operations (approve and open-signoff, or two complete calls) both land in order and neither is lost, and a mutate that throws writes nothing",
+            "ArtifactStore.childrenOfStrict returns an unreadable child that childrenOf skips, and a corrupt unfinished Task makes the Story's roll-up throw instead of completing",
+            "LifecycleService.apply end to end for ac7: approve an artifact, change its content through the store, and read it back with readWithHistory to see draft status, the new revision, the earlier approval and review at the older revision, and a log that replays to the same status",
+            "LifecycleService.apply refuses approve, review and complete on a head with each Integrity reason and writes and logs nothing, while a head with no stored hash and a head with no revision-bearing log entry are approved normally",
+            "Story completion for ac9 over a temporary repository of EPIC, STORY, TASK, TASKS, DIAG (two), LLD, PLAN, BUILD, CR, TESTS and EXT heads: completeIfRolledUp after the last Task completes the Task, then the Story with its members first and itself last, records it once, then completes the Epic when its Stories have; withdrawn and superseded Tasks are ignored, an advisory-blocked or missing code review withholds it, an overridden one completes it with the reason on the entry, and a failure part-way is finished by a retry",
+            "reopen of a completed Story reopens the members its completion froze and is refused while its Epic is completed",
+            "approveWorkflowTarget in both branches refuses a conflicted BUILD target in skipped[] BEFORE ensureBuildRecordOnCompletion rewrites it (the record's bytes are unchanged), with a service it applies the approval through LifecycleService and triggers completeIfRolledUp after a BUILD approval, and without a service it behaves as today",
+            "approveArtifactByJsonPath and reviewArtifactFile refuse a head whose stored hash differs from its content with LifecycleConflictError before any stamp, a review auto-fix on a head with meta.lifecycle keeps the hash consistent, and the existing gates, plan-gate, admit-build, review and build-step tests pass unchanged"
+          ],
+          "fixturesNeeded": [
+            "a temporary repository with .insrc/artifacts",
+            "heads written with and without meta.lifecycle and with a stored hash that is right and wrong",
+            "the store-kit memory sidecar, journal and fault switches"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The shapes, the registry and the write inventory stay in step with the contract.",
+          "subjects": [
+            "the write inventory test over the real src tree: the lifecycle service file has an entry and a caller of ArtifactStore.write or update is recognised",
+            "the Lifecycle, Integrity, ContentView, TransitionDetail and WriteOptions types accept the sc4 sketch and the declared additions",
+            "the s2 assertions that change intentionally (registeredKinds, TASK and STORY no longer unknown kinds) are updated and the log-revision assertion in store-write.test.ts stays as it is"
+          ],
+          "fixturesNeeded": [
+            "the type-fixture and negative-control files pattern of types-contract.test.ts"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "src/workflow/artifact-core/__tests__/lifecycle-ac7.test.ts: after a content change to an approved artifact the status is draft, the revision moved, and the earlier approval and review keep their original revision numbers (unit, then through LifecycleService and readWithHistory, then through writeArtifact)",
+            "src/workflow/artifact-core/__tests__/lifecycle-reconcile.test.ts: reconcileLifecycle after a content change to an approved artifact with a review and a signoff"
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "src/workflow/artifact-core/__tests__/lifecycle-reconcile.test.ts: an identical rewrite, a head with an empty stored hash, a reference-only change and a lifecycle-only change leave the revision where it is",
+            "src/workflow/artifact-core/__tests__/content-hash.test.ts: contentHash ignores key order and everything but the description and payload"
+          ]
+        },
+        {
+          "criterionId": "ac9",
+          "provingTests": [
+            "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts: the Task, Story and Epic roll-up rules, the evidence mapping and the unreadable child",
+            "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts: completeIfRolledUp records the Story once, members first and the unit last, and the Epic follows"
+          ]
+        },
+        {
+          "criterionId": "ac10",
+          "provingTests": [
+            "src/workflow/artifact-core/__tests__/lifecycle-integrity.test.ts: checkHeadIntegrity and checkIntegrity for every reason, and the service and the gates refuse approve, review and complete on a conflict before the BUILD record hook"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "prepareArtifactWrite (src/workflow/storage.ts) is the one revision rule but knows nothing about meta.lifecycle, so a writeArtifact caller that rewrites a head carrying meta.lifecycle would leave its number, hash and status stale. ArtifactStore.write (src/workflow/artifact-core/store.ts) stores a.lifecycle as the caller supplies it except revision.number, decides content versus meta-only with a sorted-key canonical() comparison, logs every write as create or update with the supplied contentHash, and holds the per-artifact queue only around write. childrenOf skips and logs unreadable heads. decodeArtifactHead and write require a codec, and EPIC, STORY, TASKS, TASK and DIAG have none. The gates (approveArtifactByJsonPath, rejectArtifactByJsonPath, ackStaleArtifact, approveWorkflowTarget in src/workflow/gates.ts) and reviewArtifactFile write meta.approvedAt, rejectedAt, staleAckedAt and meta.review directly, never touch meta.lifecycle, and approveWorkflowTarget calls ensureBuildRecordOnCompletion before approving a BUILD target in both branches; reviewArtifactFile may write a content-changing auto-fix. Nothing computes a content hash or reads the log tail on approve. The only History and WriteJournal implementations are in memory until s4.",
+      "stateAfter": "A pure lifecycle module (src/workflow/artifact-core/lifecycle.ts) holds the closed table, contentHash, ContentView, reconcileLifecycle, transition, checkIntegrity, checkHeadIntegrity and rollUp. prepareArtifactWrite calls reconcileLifecycle for any head that carries meta.lifecycle, so every writer keeps the hash, number and fall-back to draft in step and ArtifactStore.write relies on it. The registry holds pass-through codecs for the five missing kinds. ArtifactStore gains update (read, mutate and write under the queue), childrenOfStrict and the WriteOptions parameter, and refuses a status change outside the table and an ordinary write on a conflicted head. A LifecycleService (src/workflow/artifact-core/lifecycle-service.ts) applies one operation at a time inside update, records complete once with members first and the unit last, and walks the parent chain with completeIfRolledUp. approveWorkflowTarget and reviewArtifactFile check integrity before the BUILD record hook; with an optional lifecycle service they use the full log-tail check, apply the approval through the service and trigger roll-up, and without one they run the synchronous head-only guard and behave as today. The gates still write the legacy meta fields for the delivery board.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add LifecycleConflictError, IllegalTransitionError, TerminalArtifactError, ReviewRequiredError and UnreadableChildError to src/workflow/artifact-core/types.ts and extend the exports test that pins the module's runtime exports.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add src/workflow/artifact-core/lifecycle.ts with the pure parts only: LIFECYCLE_TABLE and assertLegalStatusChange, contentHash with its canonical JSON, ContentView, TransitionDetail, Integrity, checkHeadIntegrity, checkIntegrity, reconcileLifecycle and transition, with unit tests for each; nothing calls it yet.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 1"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "Make prepareArtifactWrite call reconcileLifecycle for a head that carries meta.lifecycle, taking the actor and time from new optional opts (defaulting to the insrc:system actor and the clock); a head with no meta.lifecycle is untouched. The existing storage, artifact-writer, prepare-artifact-write and BUILD-record tests must pass unchanged.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 2"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Register pass-through codecs for EPIC, STORY, TASKS, TASK and DIAG in src/workflow/artifact-core/codecs.ts. Update the s2 assertions that pin the old registry: the registeredKinds list and the unknown-kind checks for TASK and STORY in codec-create.test.ts and store-write.test.ts (the write of a TASK with a wrong parent still fails on its parent first), and the children and decode tests that use TASK ids only through the head file stay valid.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 1"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Change ArtifactStore: write takes WriteOptions and relies on the lifecycle prepareArtifactWrite computed (dropping the canonical() content test), enforces the closed table, refuses an ordinary write on a conflicted head and allows outcome.result 'conflict-resolved'; add update, which holds the queue across read, mutate and write, and childrenOfStrict. The s2 store tests, including the log-revision assertion, must pass unchanged.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 3",
+            "step 4"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "Add rollUp and the unit membership helper to lifecycle.ts over ChildStatusReader (childrenOfStrict plus a status read) and CompletionEvidence, and add the default evidence in src/workflow/artifact-core/completion-evidence.ts (Task from the BUILD record's per-task results; Story code review as the structured CodeReviewEvidence mapped from enforceCodeReviewGate with the advisory warn as blocked). The evidence file only reads, so it needs no inventory entry.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 2",
+            "step 5"
+          ]
+        },
+        {
+          "order": 7,
+          "action": "Add src/workflow/artifact-core/lifecycle-service.ts with apply and completeIfRolledUp, built on ArtifactStore.update, and add its inventory entry in the same task, since the inventory test rejects a store caller with no entry and an entry for a file that does not exist.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 5",
+            "step 6"
+          ]
+        },
+        {
+          "order": 8,
+          "action": "In src/workflow/gates.ts call the integrity check at the top of approveArtifactByJsonPath and, in both branches of approveWorkflowTarget, before ensureBuildRecordOnCompletion; add the optional lifecycle field to WorkflowApproveRequest and to reviewArtifactFile's arguments, using the full log-tail check, LifecycleService.apply and completeIfRolledUp when it is supplied and checkHeadIntegrity when it is not. The existing gates, plan-gate, admit-build, review and build-step tests must pass unchanged.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 2",
+            "step 7"
+          ]
+        },
+        {
+          "order": 9,
+          "action": "Record the follow-ups in docs/plans/core-data-model.md: s4 wires a durable LifecycleService into the daemon and the approval path, the legacy meta fields stay until the owner retires them, the pass-through codecs are refined by s7 and s9, and s7 replaces the Task side of CompletionEvidence. Run the workflow, mcp and daemon subsets once and the build.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 8"
+          ]
+        }
+      ],
+      "backwardCompat": "No stored data changes and no signature is broken: ArtifactStore.write, transition, prepareArtifactWrite and reviewArtifactFile gain optional trailing parameters, WorkflowApproveRequest gains an optional field, and the gates keep their synchronous or async shapes and return values. A head with no meta.lifecycle or with an empty contentHash is read, written, approved and reviewed exactly as today, and an identical rewrite of such a head does not move its revision because the comparison hashes the prior head's own content. Heads that carry meta.lifecycle, and only those, now have their hash, number and status kept in step by every writer, a hash mismatch refuses approve, review and complete, a status change outside the table is refused, and a content change to a completed, withdrawn or superseded artifact is refused until reopen. The five new pass-through codecs change the s2 assertions that listed them as unknown kinds; no production code relied on that. The old meta.approvedAt, rejectedAt, staleAckedAt and review fields stay the truth for the delivery board and the existing readers.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Injected LifecycleService, one reconcile in prepareArtifactWrite, pass-through codecs, update() under the queue",
+        "oneLineSummary": "Pure lifecycle rules plus a LifecycleService that the async approval path takes as an optional parameter; prepareArtifactWrite reconciles meta.lifecycle for every writer; the five missing kinds get pass-through codecs; ArtifactStore.update holds the queue across read, mutate and write.",
+        "approach": "Add src/workflow/artifact-core/lifecycle.ts (pure: closed table, contentHash, reconcileLifecycle, transition, checkIntegrity, checkHeadIntegrity, rollUp over ports) and call reconcileLifecycle from prepareArtifactWrite when the head carries meta.lifecycle, so writeArtifact, the BUILD record hook, the review auto-fix and ArtifactStore.write all keep hash, number and the draft fall-back in step through one implementation. Register pass-through codecs for EPIC, STORY, TASKS, TASK and DIAG so the store, the service and rollUp work for them. Add ArtifactStore.update(id, by, mutate, options) (queue held across read, mutate and write), WriteOptions (operation, outcome, references, addresses) and childrenOfStrict. Add LifecycleService (apply, completeIfRolledUp) with structured CompletionEvidence. approveWorkflowTarget and the review step take an optional lifecycle service on their request: with it they run the guard before ensureBuildRecordOnCompletion, run the full integrity check against the log tail, apply the operation and walk up the parents to record a Story or Epic completion once; without it they run the synchronous head-only guard and behave as today. The gates keep writing meta.approvedAt, rejectedAt, staleAckedAt and meta.review for the board.",
+        "pros": [
+          "Closes every finding of the first review: production triggers, one revision rule for all writers, working no-codec kinds, a guard in front of the BUILD hook, atomic read-mutate-write",
+          "No global state: the service is passed to the paths that use it, so tests and s4's daemon wiring are explicit",
+          "Without a service nothing changes, so the 2000-test workflow suite stays valid"
+        ],
+        "cons": [
+          "Largest alternative: lifecycle module, prepareArtifactWrite change, store changes, five codecs, service and two gate paths",
+          "Touches three adjacent files (storage.ts, store.ts, codecs.ts) built by s2, and gates.ts",
+          "The service is only exercised in production once s4 wires a durable History into the daemon"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Rules, reconcile in prepareArtifactWrite and the head-only guard; service built and tested but not wired",
+        "oneLineSummary": "The same pure rules, the single reconcile and the head-only gate guard, with the LifecycleService delivered and tested against the memory ports but with no gate or review parameter to receive it.",
+        "approach": "Everything in a1 except the optional service parameter on approveWorkflowTarget and the review step and the parent walk-up trigger: the service exists and is covered by tests, and s4's LLD is told to add the wiring and the roll-up trigger. The gates call only checkHeadIntegrity (before ensureBuildRecordOnCompletion) and stay synchronous.",
+        "pros": [
+          "Smaller regression surface: gates.ts changes by one guard call",
+          "Needs no decision on how the service reaches the approval path"
+        ],
+        "cons": [
+          "Does not answer the coverage finding: the last recorded step triggers no roll-up and the log-tail check never runs in production, so ac9 and the HLD's 'read the log tail on every call' stay unmet until another Story acts",
+          "Pushes work into s4 that is not in s4's boundary text"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Smaller, but leaves ac9, ac10 and k8 only partly met and moves unscoped work into s4."
+      },
+      {
+        "id": "a3",
+        "name": "A process-wide registered LifecycleService",
+        "oneLineSummary": "As a1, but the service is registered once at daemon start in a module-level slot that the gates read, instead of being passed on the request.",
+        "approach": "lifecycle-service exports setLifecycleService and getLifecycleService; approveWorkflowTarget, the review step and the Task completion path call getLifecycleService() and use it when set. s4's daemon start sets it. All other parts as a1.",
+        "pros": [
+          "No new field on WorkflowApproveRequest or the review step arguments",
+          "Every caller in the daemon benefits without being edited"
+        ],
+        "cons": [
+          "Hidden global state: test order and parallel tests can leak a service into unrelated tests, the same class of problem as the flaky hangs already seen in the suite",
+          "The owner's no-compatibility and explicitness preferences, and CLAUDE.md's DI style (providers and ports are passed in), argue against it"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Meets the criteria like a1 but adds a hidden process-wide slot that leaks between tests and callers, against the project's explicit dependency passing."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "sbdry5: the build edits s2's store, codecs and prepareArtifactWrite (update, childrenOfStrict, the options parameter of write, five pass-through codecs and the lifecycle reconcile) and adds an optional field to the gate request; confirm with the sc2 owner (s2, already built) that these additions are accepted and whether they need an HLD amendment like readWithHistory did (AMD-7)",
+      "sbdry3: transition gains an optional detail parameter and ArtifactStore gains update, childrenOfStrict and an options parameter that the HLD sketch does not show; only the storyBoundary.addConsumer making s4 a consumer of sc4 is proposed as an amendment, so decide whether the others need one (contentHash is also not in the sketch)",
+      "The gates keep writing meta.approvedAt, rejectedAt, staleAckedAt and meta.review for the delivery board, so a head can carry both representations until s9 back-fills; decide whether and when those fields and their readers are retired (the owner's no-compatibility ruling disfavours keeping both indefinitely)",
+      "The service reaches production only when s4 wires a durable History and WriteJournal into the daemon and passes the service on the approval request; confirm that handoff and the addConsumer amendment with s4",
+      "The Task side of CompletionEvidence reads the BUILD record's per-task results because no Task head has a payload yet; s7 replaces it with the Task artifact's own build rounds, so confirm that handoff",
+      "cd1/cd2/dm1/dm2: new helper names (contentHash, reconcileLifecycle, checkHeadIntegrity, LifecycleService, update, childrenOfStrict, CompletionEvidence) are not in s1 or the HLD, the reviewArtifactFile arguments are given as a placeholder type, and not every invariant-change entry cites its current-behaviour invariant (the invariantsToPreserve cite c1 to c6)"
+    ],
+    "erDefinition": {
+      "id": "s3-lifecycle",
+      "narrative": "How a lifecycle, its decisions and its change log relate: every decision names the revision it covers, the log entry explains each status change, and the completion roll-up reads the statuses of an artifact's children.",
+      "classes": {
+        "Artifact": {
+          "description": "An envelope; here only its lifecycle and its children matter.",
+          "attributes": {
+            "id": {
+              "description": "Artifact id.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "lifecycle": {
+              "description": "Exactly one lifecycle.",
+              "range": "Lifecycle",
+              "required": true
+            },
+            "parent": {
+              "description": "The artifact above it (a Task's Story, a Story's Epic).",
+              "range": "Artifact"
+            }
+          }
+        },
+        "Lifecycle": {
+          "description": "The current answer: status plus the current revision and the latest decisions.",
+          "attributes": {
+            "id": {
+              "description": "The owning artifact's id; a lifecycle has no key of its own.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "status": {
+              "description": "One of the ten statuses.",
+              "range": "string",
+              "required": true
+            },
+            "revision": {
+              "description": "The current revision.",
+              "range": "Revision",
+              "required": true
+            },
+            "approval": {
+              "description": "The current approval, bound to a revision.",
+              "range": "Approval"
+            },
+            "review": {
+              "description": "The current review, bound to a revision.",
+              "range": "Review"
+            },
+            "signoffs": {
+              "description": "Signoff requests over time.",
+              "range": "Signoff",
+              "multivalued": true
+            },
+            "stale": {
+              "description": "Present while an upstream moved.",
+              "range": "Staleness"
+            }
+          }
+        },
+        "Revision": {
+          "description": "The revision a content change produced.",
+          "attributes": {
+            "id": {
+              "description": "Artifact id plus number.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "number": {
+              "description": "Moves only when the content hash changes.",
+              "range": "integer",
+              "required": true
+            },
+            "contentHash": {
+              "description": "Hash of description, body and citations.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "Approval": {
+          "description": "A local approval of one revision.",
+          "attributes": {
+            "id": {
+              "description": "Artifact id plus revision.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "revision": {
+              "description": "The revision number approved.",
+              "range": "integer",
+              "required": true
+            },
+            "overrideReason": {
+              "description": "Present when approved over a blocked review.",
+              "range": "string"
+            }
+          }
+        },
+        "Review": {
+          "description": "The other party's review of one revision.",
+          "attributes": {
+            "id": {
+              "description": "Artifact id plus revision.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "revision": {
+              "description": "The revision number reviewed.",
+              "range": "integer",
+              "required": true
+            },
+            "verdict": {
+              "description": "pass, warn or block.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "Signoff": {
+          "description": "A third-party signoff request for one revision.",
+          "attributes": {
+            "id": {
+              "description": "Artifact id plus request.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "revision": {
+              "description": "The revision number requested.",
+              "range": "integer",
+              "required": true
+            },
+            "state": {
+              "description": "open, changes-requested or completed.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "Staleness": {
+          "description": "An upstream artifact moved after this was made.",
+          "attributes": {
+            "id": {
+              "description": "Artifact id plus upstream id.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "upstreamRevision": {
+              "description": "The upstream revision it is stale against.",
+              "range": "integer",
+              "required": true
+            }
+          }
+        },
+        "ChangeLogEntry": {
+          "description": "One logged operation; a status change carries from and to, every store entry carries the revision and hash.",
+          "attributes": {
+            "id": {
+              "description": "Operation id.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "operation": {
+              "description": "One of the closed operations.",
+              "range": "string",
+              "required": true
+            },
+            "statusFrom": {
+              "description": "Status before, when it changed.",
+              "range": "string"
+            },
+            "statusTo": {
+              "description": "Status after, when it changed.",
+              "range": "string"
+            }
+          }
+        }
+      }
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S003/er-model.html",
+        "title": "ER model"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-core/store.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/storage.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/gates.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-ids.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/team/gate.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-core/__tests__/store-kit.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/plans/core-data-model.md#gap-2-payload-and-lifecycle-on-the-base-settled"
+    }
+  ]
+}

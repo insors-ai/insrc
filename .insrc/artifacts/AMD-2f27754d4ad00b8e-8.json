@@ -1,0 +1,21 @@
+{
+  "id": "AMD-2f27754d4ad00b8e-8",
+  "epicHash": "2f27754d4ad00b8e",
+  "epicSlug": "one-common-model-every-artifact",
+  "hldBaseRunId": "wf-1792406752203-whj6zi",
+  "amendment": {
+    "type": "storyBoundary.addConsumer",
+    "contractId": "sc4",
+    "consumer": "s4"
+  },
+  "rationale": "The HLD requires approve, review and complete to read the log tail on every call and ac9 needs completion recorded when the last step is recorded. Both need a LifecycleService with a durable History and WriteJournal, which only s4 provides, so s4 consumes sc4 and its LLD must wire a durable LifecycleService into the daemon and the approval path.",
+  "citations": [],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1792557860113-nm31as",
+    "storyId": "s3",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-10-21T04:50:52.507Z",
+  "status": "pending"
+}

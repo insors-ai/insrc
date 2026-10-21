@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-21T12:22:47.167Z  ·  **Updated:** 2026-10-21T12:29:25.733Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-21T12:22:47.167Z  ·  **Updated:** 2026-10-21T12:58:31.926Z
 
-**Commit:** f71c59ae
+**Commit:** b5b56e92
 
 ## Scope
 
@@ -26,7 +26,9 @@ runCodex now returns the LAST codex agent message, so a tool-using run that narr
 
 ## Changes
 
-- `src/agent/providers/__tests__/cli-subprocess.test.ts` — **insrc-build** (2026-10-21T12:29:25.733Z)
-- `src/agent/providers/cli-provider.ts` — **insrc-build** (2026-10-21T12:29:25.733Z)
-- `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts` — **insrc-build** (2026-10-21T12:29:25.733Z)
-- `src/workflow/review-pipeline/driver.ts` — **insrc-build** (2026-10-21T12:29:25.733Z)
+- `src/agent/providers/__tests__/cli-subprocess.test.ts` — **insrc-build** (2026-10-21T12:58:31.926Z)
+- `src/agent/providers/cli-provider.ts` — **insrc-build** (2026-10-21T12:58:31.926Z)
+- `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts` — **insrc-build** (2026-10-21T12:58:31.926Z)
+- `src/workflow/review-pipeline/driver.ts` — **insrc-build** (2026-10-21T12:58:31.926Z)
+- `.insrc/artifacts/CR-d3a6b651962959a9-S001.json` — **insrc-build** (2026-10-21T12:58:31.926Z)
+- `docs/standalone/read-codex-s-last-agent-message-E20261021d3a6b651/S001/CR.md` — **insrc-build** (2026-10-21T12:58:31.926Z)

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -89,3 +89,43 @@ Run at 2026-10-21T15:18:51.724Z on commit `ce92f270`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/channel.test.ts` | 0 | 2 | 0.6 s |  |
+
+## t4
+
+Run at 2026-10-21T15:20:58.413Z on commit `b2c89fda`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target | `src/daemon/threads/__tests__/registry-board.test.ts` |
+
+**unit: a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op | `src/daemon/threads/__tests__/registry-board.test.ts` |
+
+**unit: StatusBoard keeps the latest status per thread and snapshots empty as specified**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | StatusBoard keeps the latest status per thread and snapshots empty as specified | `src/daemon/threads/__tests__/registry-board.test.ts` |
+
+**unit: publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing | `src/daemon/threads/__tests__/registry-board.test.ts` |
+
+**integration: a status published from a worker appears in a main-thread snapshot**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a status published from a worker appears in a main-thread snapshot | `src/daemon/threads/__tests__/registry-board.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/registry-board.test.ts` | 0 | 5 | 0.5 s |  |

@@ -215,6 +215,28 @@ test('Workflows pane lists epics and opens the chain detail', async () => {
 	unmount();
 });
 
+test('Workflows pane: a approves the focused item through the async approve service, toasts the result, and toasts a refusal', async () => {
+	const svc = fakeServices();
+	svc.workflow.listEpics = () => [{ epicHash: 'a3f4b8c9d1e2f3a4', epicSlug: 'add-tag-filter' }];
+	svc.workflow.chain = () => CHAIN;
+	const approved: string[] = [];
+	svc.workflow.approve = async (path: string) => { approved.push(path); return { approval: { workflow: 'design.epic', path, approvedAt: '' } }; };
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write('3'); await settle();   // → Workflows pane
+	stdin.write('\r'); await settle();  // open the epic
+	stdin.write('a'); await settle();   // approve the focused item
+	assert.equal(approved.length, 1);
+	assert.match(approved[0] ?? '', /HLD-add-tag-filter/);
+	assert.match(lastFrame() ?? '', /approved design\.epic/);
+
+	// a refusal from the awaited call is a toast, not a crash
+	svc.workflow.approve = async () => { throw new Error('blocked by review'); };
+	stdin.write('a'); await settle();
+	assert.match(lastFrame() ?? '', /blocked by review/);
+	unmount();
+});
+
 test('Setup pane renders system + recommendation without crashing', async () => {
 	const svc = fakeServices();
 	svc.setup.detect = () => ({

@@ -83,14 +83,15 @@ export async function followOnTasksSync(approved: WorkflowApproveResult['approve
  * turned into an error by it.
  */
 export async function recordTaskRound(repoPath: string, epicHash: string, storyId: string, rowId: string, round: BuildRound): Promise<string | undefined> {
-	const head = taskHeadIdOf(repoPath, epicHash, storyId, rowId);
-	if (head === undefined) return undefined;
+	let head: string | undefined;
 	try {
+		head = taskHeadIdOf(repoPath, epicHash, storyId, rowId);
+		if (head === undefined) return undefined;
 		const entry = lifecycleFor(repoPath);
 		await new TaskSets({ repoPath, store: entry.store, service: entry.service, history: new History(createFileSidecarStore(repoPath)) }).recordBuildRound(head, round, BUILD_ACTOR);
 		return undefined;
 	} catch (err) {
-		const note = `the build round was not recorded on ${head} (${err instanceof Error ? err.message : String(err)})`;
+		const note = `the build round was not recorded on ${head ?? `the Task of ${rowId}`} (${err instanceof Error ? err.message : String(err)})`;
 		return note;
 	}
 }

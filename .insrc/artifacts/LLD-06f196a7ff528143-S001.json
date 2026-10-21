@@ -37,9 +37,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design covers the upstream ISSUE's requested scope: Story-attributed review, diff-only grounding, BUILD change logs, and reporting excluded edits.",
-          "evidence": "The ISSUE's Fix intent explicitly names those three consumers and exclusion reporting. Inspected implementations anchor the subject and diff grounding on the Story key; both BUILD writers forward that key; the review runner persists excludedFromScope. [files: docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/workflow/code-review/runner.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
-          "action": "Preserve this scope while completing the remaining amendments.",
+          "premise": "The design covers the upstream request's three consumers and exclusion reporting.",
+          "evidence": "The ISSUE's Fix intent names review, diff-only grounding, BUILD records, and reporting excluded changes. The inspected subject resolver, grounding assembler, both BUILD writers, and review-record builder implement the corresponding propagation described by the design. [files: docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/workflow/code-review/runner.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
+          "action": "Retain this scope.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -49,11 +49,23 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The migration amendment correctly distinguishes implemented scoping from the remaining legacy-end, stable-commit, and rename-parser work.",
-          "evidence": "changedFiles already reads storyChangeSet before working-tree diffs. storyChangeSet still enumerates 'base..HEAD' without a recorded-end bound. persistBuildRecord computes 'rec.body.commit ?? storyCommit(...) ?? headShortSha(repoPath)'. buildStatArgv lacks '-z', and parseNumstat splits lines and matches ' => '. These match the amendment's stated remaining work. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/standalone-record.ts, src/daemon/tools/builtins/git/diff.ts]",
-          "action": "Keep the historical State before text distinct from the current implementation status.",
+          "premise": "The amendment correctly distinguishes the implemented scoping changes from the remaining legacy-end and rename work.",
+          "evidence": "changedFiles already reads Story units before working-tree changes and uses strict trailer scanning. storyChangeSet already excludes foreign commits and returns perUnit, but does not resolve a recorded end. persistBuildRecord still falls back directly to headShortSha. git_diff still parses newline-delimited numstat. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/standalone-record.ts, src/daemon/tools/builtins/git/diff.ts]",
+          "action": "Keep the historical 'State before' clearly distinguished from the current implementation.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "An empty changedFiles result is already treated by the review pipeline as nothing to judge.",
+          "evidence": "resolveCodeReviewSubject returns 'ok: true' after deriving an empty list. runCodeReview then unconditionally executes 'for (const slot of judges)', folds a verdict, and calls 'deps.write(paths.json, ...)'. Neither review entry point guards an empty subject; the controller can divert empty grounding into a degraded review. Thus an empty Story scope can still produce a review verdict and record. [files: src/workflow/code-review/subject.ts, src/workflow/code-review/runner.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts]",
+          "action": "Specify an explicit empty-scope outcome and its handling in both review entry points. Add a test proving that no judges or misleading verdict record are produced if 'nothing to review' is the intended behavior.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "new-versus-reuse.1",
@@ -61,9 +73,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The legacy-end amendment can reuse existing BUILD identity and persistence infrastructure while adding a distinct range-end resolver.",
-          "evidence": "range-base.ts already reads BUILD JSON through ARTIFACTS_DIR and buildArtifactId, and provides synchronous, non-throwing range-base resolution. Its full implementation contains no range-end resolver; repository search found no resolveStoryRangeEnd. standalone-record.ts already centralizes both writers through persistBuildRecord and has a prior-record reader. [files: src/workflow/runners/build/range-base.ts, src/workflow/runners/build/standalone-record.ts]",
-          "action": "Reuse the existing identity and read helpers; preserve the proposed non-throwing resolver contract.",
+          "premise": "The design reuses the existing attribution and diff seams, while resolveStoryRangeEnd supplies a capability those seams currently lack.",
+          "evidence": "storyChangeSet already exposes strict, attribution, sharedWithExcluded, and perUnit; storyRangeDiff already supports per-unit reads. range-base.ts resolves the start through build-start stamps and upstream artifacts, but contains no BUILD-commit end resolver. A source search found no resolveStoryRangeEnd implementation. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/range-base.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Implement the end resolver beside the existing base resolver and reuse the current per-unit machinery.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -73,23 +85,11 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The identified production callers supply Story identity to degraded grounding and validation selection.",
-          "evidence": "Both code-review-rpc.ts and beginDiffOnlyReview pass base, LEDGER_EXCLUDE_GLOBS, and storyKey to the grounding assembler. validate.ts has one withTypecheckProjects call in runValidateSession and one trivialCheckPlan call in the standalone branch, both forwarding the Story key. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/daemon/steps/build-step/phases/validate.ts, src/daemon/steps/build-step/validation-checks.ts]",
-          "action": "Retain both degraded-review callers and both validation selection sites in regression coverage.",
+          "premise": "The listed production consumers pass the Story identity through the intended seams.",
+          "evidence": "Both diff-grounding callers supply base, LEDGER_EXCLUDE_GLOBS, and storyKey. Completion and validate both pass storyKey to collectBuildChangeLog and persist changeLog even when empty. validate.ts contains the production calls to withTypecheckProjects and trivialCheckPlan and supplies the Story key. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/daemon/steps/build-step/validation-checks.ts]",
+          "action": "Preserve these arguments when adding the recorded-end behavior.",
           "fixability": "manual",
           "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Changing numstat to NUL-delimited literal paths is sufficient to make every reported path agree with the per-file hunk lookup, including paths containing tabs.",
-          "evidence": "splitDiffByFile still matches only '/^diff --git a\\/(.+?) b\\/(.+?)\\s*$/m'. Git quotes headers for tab-containing paths, such as 'diff --git \"a/src/a\\\\tb.ts\" \"b/src/a\\\\tb.ts\"'; a read-only evaluation confirmed this header does not match. buildDiffSymbols then substitutes '[no hunk text for ...]'. The proposed numstat parser fixes file identity but leaves these files without review hunks. [files: src/workflow/code-review/grounding.ts, src/daemon/tools/builtins/git/diff.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts]",
-          "action": "Extend the design to decode Git-quoted diff-header paths and use literal names consistently for hunk lookup. Add an end-to-end rename test with a tab-containing path and committed, staged, and unstaged hunks.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
         },
         {
           "claimId": "data-compatibility.1",
@@ -97,21 +97,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "An explicitly empty new BUILD changeLog replaces contaminated prior data, while the rendered Changes section remains absent.",
-          "evidence": "Both BUILD writers supply changeLog unconditionally. mergeWithPrior spreads '...prior.body, ...rec.body'. renderBuildRecordMd renders Changes through an omit-slot section. The inspected rewrite test asserts both an empty stored changeLog and absence of '## Changes'. [files: src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/__tests__/changed-files.test.ts]",
-          "action": "Preserve unconditional writes of empty changeLog values.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Review-record exclusion metadata is additive, and legacy working-tree attribution remains representable.",
-          "evidence": "CodeReviewSubject and CodeReviewBody.subject declare excludedFromScope optional. ChangeSetAttribution retains 'working-tree'. The runner includes excludedFromScope only when its length is positive; the inspected runner test checks JSON persistence and omission for both undefined and empty arrays. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts, src/workflow/code-review/__tests__/runner.test.ts]",
-          "action": "Keep the optional field and legacy attribution union.",
+          "premise": "Optional review-record fields preserve older record shapes, and an explicitly empty changeLog replaces a stale prior value.",
+          "evidence": "CodeReviewBody.subject declares excludedFromScope optional, and ChangeSetAttribution retains 'working-tree'. The record builder omits excludedFromScope when empty. mergeWithPrior constructs the body with '...prior.body, ...rec.body', so changeLog: [] replaces the previous array. The renderer delegates empty Changes content to an omit-slot. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
+          "action": "Retain optional persisted fields and unconditional changeLog replacement.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -121,9 +109,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The change belongs to a standalone Story and extends existing shared implementations without introducing a separate IPC scoping contract.",
-          "evidence": "The persisted LLD metadata marks the work standalone. The inspected production paths reuse changedFiles, storyChangeSet, the grounding assembler, and persistBuildRecord. Story identity already travels through the existing code-review and validate entry points; the proposed helpers and options are internal. [files: .insrc/artifacts/LLD-06f196a7ff528143-S001.json, src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/build-step/phases/validate.ts]",
-          "action": "Keep attribution logic centralized in the existing shared derivation.",
+          "premise": "This is standalone work using existing internal contracts rather than redesigning an HLD-owned Story boundary.",
+          "evidence": "The persisted LLD metadata marks standalone: true and sizeClass: 'bugfix'. The upstream ISSUE concerns these same review and BUILD consumers. Inspected entry points already carry epicHash/storyId; the proposed changes reuse that identity without requiring new RPC request fields. [files: .insrc/artifacts/LLD-06f196a7ff528143-S001.json, docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/daemon/code-review-rpc.ts, src/daemon/steps/build-step/phases/validate.ts]",
+          "action": "Keep the changes within the existing internal seams.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -133,9 +121,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Missing anchors and failed Git reads propagate through the stated refusal paths instead of widening scope.",
-          "evidence": "changedFiles rejects storyKey without base. Strict scanTrailers rethrows Git failures. resolveCodeReviewSubject returns no-build-record for missing base or NoBuildChangesError. Grounding wraps change-set failures as DiffUnavailableError; runDiff and collectDiff reject unsuccessful git_diff results. git_diff already rejects numstat failures. collectBuildChangeLog catches derivation failures and returns []. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/daemon/tools/builtins/git/diff.ts]",
-          "action": "Apply these same failure semantics to the remaining amendments.",
+          "premise": "Missing anchors and failed git derivations can propagate through the documented refusal and BUILD-log handling.",
+          "evidence": "changedFiles rejects storyKey without base. Strict scanTrailers rethrows git failures. The subject maps NoBuildChangesError to no-build-record; realDiffGroundingDeps wraps change-set failures in DiffUnavailableError, and both diff callers handle that error before running review. collectBuildChangeLog catches derivation failures and returns []. git_diff already returns success: false for stat.spawnError or nonzero stat.code. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/daemon/tools/builtins/git/diff.ts]",
+          "action": "Preserve these failure paths in the new end resolver and numstat parser.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -145,21 +133,33 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design maps ac1\u2013ac5 to concrete regression tests or a specified installed-daemon smoke.",
-          "evidence": "The mapping covers exclusion reporting, own-file edits, refusal paths, downstream consumers, and the observed daemon case. Inspected test bodies assert subject exclusions, strict-scan refusal, committed plus staged/unstaged hunks, filtered legacy diffs, empty changeLog replacement, and Story-scoped validation projects. Legacy-end and rename tests are proposed remaining work. Tests were inspected, not executed; the installed-daemon smoke is not established as passing. [files: docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md, src/workflow/runners/build/__tests__/changed-files.test.ts, src/workflow/runners/build/__tests__/story-commits-trailer.test.ts, src/workflow/code-review/__tests__/subject-attribution.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts, src/daemon/steps/build-step/__tests__/validation-checks.test.ts]",
-          "action": "Implement the remaining mapped tests and smoke, and add the quoted-path regression identified under change-sites. Test execution requires a writable environment because these suites create temporary repositories.",
+          "premise": "The acceptance mapping provides tests for scoping, own-file edits, refusal, downstream consumers, and the observed daemon case.",
+          "evidence": "The ac1\u2013ac5 mapping covers those behaviors. Inspected test bodies assert excluded subject paths, no-base refusal without calling the seam, strict-scan failure, both diff callers' persisted attribution, committed plus staged/unstaged hunks, Story-only typecheck projects, and deleted-test filtering. The legacy-end and rename cases are proposed tests; the daemon smoke remains planned. Tests were inspected, not executed. [files: src/workflow/code-review/__tests__/subject-attribution.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts, src/daemon/steps/build-step/__tests__/validation-checks.test.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
+          "action": "Complete the proposed amendment tests and installed-daemon smoke; add the empty-scope regression identified above.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The test migration inventory accounts for existing expectations invalidated by preserving the prior BUILD commit.",
+          "evidence": "build-record.test.ts contains 'an explicitly SUPPLIED commit wins for that write; a later persist REFRESHES to HEAD'. Its body persists commit: 'deadbee', persists again without commit, then asserts the stored commit equals HEAD. The proposed prior.body.commit precedence instead preserves 'deadbee'. The design names new stability tests but does not identify this existing contradictory expectation. [files: src/workflow/runners/build/__tests__/build-record.test.ts, src/workflow/runners/build/standalone-record.ts]",
+          "action": "Explicitly replace this refresh expectation with the new preservation contract, including the behavior of an unresolvable prior commit.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
         }
       ],
       "counts": {
         "high": 1,
-        "med": 0,
-        "low": 9,
+        "med": 1,
+        "low": 8,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-21T08:07:22.963Z",
+      "reviewedAt": "2026-10-21T08:10:23.446Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
     },
@@ -311,7 +311,8 @@
           "preconditions": [],
           "postconditions": [
             "Used only by storyChangeSet's legacy case; a trailered Story never reads it.",
-            "The end is stable across every rewrite (validate reruns, completion, approval): persistBuildRecord computes body.commit as `rec.body.commit ?? storyCommit(...) ?? prior.body.commit ?? headShortSha(repoPath)`, so once a pre-trailer Story's record names a commit it is never refreshed to a later HEAD. It advances only with evidence of new Story work: a commit carrying the Story's trailer, which also switches the Story to trailer attribution, where the end is not read. Checks, changeLog and the persisted record therefore all use the same end."
+            "The end is stable across every rewrite (validate reruns, completion, approval): persistBuildRecord computes body.commit as `rec.body.commit ?? storyCommit(...) ?? (prior.body.commit when it still resolves to a commit) ?? headShortSha(repoPath)` (an unresolvable prior value, such as a rewritten-away sha, falls back to HEAD as today), so once a pre-trailer Story's record names a commit it is never refreshed to a later HEAD. It advances only with evidence of new Story work: a commit carrying the Story's trailer, which also switches the Story to trailer attribution, where the end is not read. Checks, changeLog and the persisted record therefore all use the same end.",
+            "The existing case 'an explicitly SUPPLIED commit wins for that write; a later persist REFRESHES to HEAD' in src/workflow/runners/build/__tests__/build-record.test.ts is replaced: a later persist without a trailered commit KEEPS a prior commit that resolves, and refreshes to HEAD only when the prior one does not resolve."
           ]
         },
         {
@@ -366,6 +367,10 @@
             {
               "type": "{ ok: false, reason: 'no-build-record' }",
               "condition": "No range base resolves for the Story, or git fails on the anchored derivation: the review declines; the two working-tree fallbacks are removed, so a failure never turns into a review of the working tree."
+            },
+            {
+              "type": "{ ok: false, reason: 'no-build-record' }",
+              "condition": "Amendment: the anchored set is EMPTY (the Story has no attributable change: a pre-trailer Story bounded to nothing, or a range of only other Stories' work). Nothing is reviewed and no record is written; today an empty set runs every judge and writes a vacuous pass record (src/workflow/code-review/runner.ts runs `for (const slot of judges)` unconditionally)."
             }
           ],
           "preconditions": [
@@ -373,7 +378,8 @@
           ],
           "postconditions": [
             "changeSetAttribution is never 'working-tree' on a resolved subject.",
-            "The module header states the rule: the Story's commits decide its scope; the working tree only adds edits of its own files."
+            "The module header states the rule: the Story's commits decide its scope; the working tree only adds edits of its own files.",
+            "A resolved subject always has at least one changed file. The existing case 'resolveCodeReviewSubject: empty diff is a valid trivial subject (not an error)' in src/workflow/code-review/__tests__/subject.test.ts is replaced by the decline."
           ]
         },
         {
@@ -407,7 +413,8 @@
             "Callers pass the Story's base and storyKey (both callers already do)."
           ],
           "postconditions": [
-            "The diff-only review never grounds on a working-tree hunk of a file outside the Story's committed set, nor on another Story's last commit."
+            "The diff-only review never grounds on a working-tree hunk of a file outside the Story's committed set, nor on another Story's last commit.",
+            "Amendment: both diff-only callers treat an empty changedFiles as the same 'nothing to review' outcome \u2014 src/daemon/code-review-rpc.ts ends the stream with an error whose reason is 'no-build-record', and src/daemon/steps/code-review-step/handler.ts returns errorResult('no-build-record', ...) \u2014 before any judge runs or any record is written. The assembler itself still returns an empty grounding (a valid value), so its own tests are unchanged."
           ]
         },
         {
@@ -662,6 +669,13 @@
           "response": "The tool returns success: false; collectDiff throws NoBuildChangesError and runDiff rejects, so the review declines with 'no-build-record' (DiffUnavailableError on the diff-only path) and a BUILD changeLog is empty.",
           "userImpact": "A partial git failure can no longer pass as 'the Story changed nothing'.",
           "recoverable": true
+        },
+        {
+          "scenario": "The Story's anchored change set is empty.",
+          "detection": "resolveCodeReviewSubject's changedFiles, or the diff-only grounding's changedFiles, has no entry.",
+          "response": "Decline with 'no-build-record' (the diff-only callers end with that reason); no judge runs and no record is written.",
+          "userImpact": "A Story with nothing attributable gets no vacuous pass verdict.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -671,7 +685,7 @@
         },
         {
           "input": "A Story whose work is all uncommitted (no commit carries its trailer yet).",
-          "expected": "Its committed set is empty, so every working-tree path is excluded and reported; the subject resolves with an empty changedFiles, which today's review already treats as nothing to judge."
+          "expected": "Its committed set is empty, so every working-tree path is excluded and the review declines with 'no-build-record' (graph and diff-only paths alike): no judge runs and no record is written."
         },
         {
           "input": "A clean working tree.",
@@ -807,7 +821,8 @@
             "src/workflow/runners/build/__tests__/build-record.test.ts: 'a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it'",
             "src/daemon/steps/build-step/__tests__/build-step.test.ts: 'the validate phase's changeLog leaves out another Story's commit and replaces a stale changeLog (ISSUE-b97752e9)'",
             "src/daemon/steps/build-step/__tests__/build-step.test.ts: 'CHARACTERISATION C (TRIVIAL route \u2014 NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section'",
-            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there'"
+            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there'",
+            "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record'"
           ],
           "fixturesNeeded": [
             "the same repository fixture, with approved LLD and PLAN artifacts for the Story"
@@ -860,7 +875,8 @@
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range'",
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a storyKey without a base is refused, and collectBuildChangeLog turns it into an empty changeLog, never the working tree'",
             "src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'when the diff body command succeeds and the numstat command fails, git_diff returns success: false naming the stat failure'",
-            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a git_diff result that fails its stat read makes the anchored derivation refuse, never return an empty set'"
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a git_diff result that fails its stat read makes the anchored derivation refuse, never return an empty set'",
+            "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record'"
           ]
         },
         {
@@ -932,6 +948,11 @@
         },
         {
           "order": 9,
+          "action": "Decline an empty anchored set with 'no-build-record' in resolveCodeReviewSubject and both diff-only callers; replace the 'empty diff is a valid trivial subject' and 'later persist REFRESHES to HEAD' expectations.",
+          "rollbackable": true
+        },
+        {
+          "order": 10,
           "action": "Update the tests (including validation-checks.test.ts's uncommitted/untracked expectations, now only without a storyKey) that asserted working-tree-first scoping; rebuild and update the installed daemon; re-run the observed case (a review with unrelated uncommitted files) on it.",
           "rollbackable": true
         }

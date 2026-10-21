@@ -1,10 +1,11 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { appendSidecarLine, frameSidecarLine, MAX_SIDECAR_ENTRY_BYTES } from '../sidecar.js';
+import { FileSidecarStore } from '../sidecar-store.js';
 import { HistoryEntryError } from '../types.js';
 
 const ID = 'LLD-0123456789abcdef-s4';
@@ -50,16 +51,22 @@ describe('sidecar-append', () => {
 		});
 	});
 
-	it('a torn append, a later append, a re-read and a journal retry leave the entry once and the file readable', () => {
-		withDir(dir => {
-			// The reader that makes this true is t2's; here the file shape it relies on is fixed.
-			const path = join(dir, 'a.log.jsonl');
-			writeFileSync(path, '');
-			appendSidecarLine(path, { artifactId: ID, entry: { id: 'e1' } });
-			appendSidecarLine(path, { artifactId: ID, entry: { id: 'e1' } });
-			const complete = readFileSync(path, 'utf8').split('\n').filter(l => l !== '');
-			assert.equal(complete.length, 2);
-			assert.equal(complete[0], complete[1], 'a retry appends an identical frame the reader collapses');
-		});
+	it('a torn append, a later append, a re-read and a journal retry leave the entry once and the file readable', async () => {
+		const dir = mkdtempSync(join(tmpdir(), 'sidecar-append-'));
+		try {
+			const store = new FileSidecarStore(dir);
+			const path = join(dir, store.filesOf(ID).log);
+			const e1 = { id: 'e1', timestamp: '2026-01-01' };
+			const e2 = { id: 'e2', timestamp: '2026-01-02' };
+			await store.appendRecord('log', { artifactId: ID, entry: e1 });
+			// The process died part-way through the next append.
+			appendFileSync(path, '77\t{"artifactId":"LLD');
+			await store.appendRecord('log', { artifactId: ID, entry: e2 });
+			assert.deepEqual(await store.readRecords('log', ID), [e1, e2]);
+			// A re-read changes nothing; a journal retry appends the same entry again and it still counts once.
+			assert.deepEqual(await store.readRecords('log', ID), [e1, e2]);
+			await store.appendRecord('log', { artifactId: ID, entry: e2 });
+			assert.deepEqual(await store.readRecords('log', ID), [e1, e2]);
+		} finally { rmSync(dir, { recursive: true, force: true }); }
 	});
 });

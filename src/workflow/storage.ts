@@ -42,6 +42,9 @@ import { dirname, join } from 'node:path';
 import { PATHS } from '../shared/paths.js';
 import { ArtifactIds, MissingAnchorError, type PathIntent } from './artifact-ids.js';
 import { fileSeg, resolveArtifactMdPath, type WorkItemKind } from './path-scheme.js';
+import { reconcileLifecycle } from './artifact-core/lifecycle.js';
+import type { ContentView } from './artifact-core/lifecycle.js';
+import type { Actor, Lifecycle } from './artifact-core/types.js';
 
 // ---------------------------------------------------------------------------
 // Repo-relative dir constants
@@ -160,6 +163,22 @@ export function writeArtifact(path: string, next: unknown, kind: WriteKind, opts
 	return prepared.revision;
 }
 
+const DEFAULT_ACTOR: Actor = { id: 'insrc:system', kind: 'system', properties: {} };
+
+/** The description, body and citations of a raw head, with the lifecycle it carries (a draft one when it has none). */
+function contentViewOf(head: Record<string, unknown>, revision: number): ContentView {
+	const meta = isRecord(head['meta']) ? head['meta'] : {};
+	const envelope = isRecord(meta['envelope']) ? meta['envelope'] : undefined;
+	const lifecycle = isRecord(meta['lifecycle'])
+		? meta['lifecycle'] as unknown as Lifecycle
+		: { status: 'draft', revision: { number: revision, contentHash: '', at: '', by: DEFAULT_ACTOR }, signoffs: [] } satisfies Lifecycle;
+	return {
+		description: typeof envelope?.['description'] === 'string' ? envelope['description'] : '',
+		payload:     { body: head['body'], citations: head['citations'] ?? [] },
+		lifecycle,
+	};
+}
+
 /** What a write would put on disk. */
 export interface PreparedArtifactWrite {
 	/** The exact file text. */
@@ -175,7 +194,10 @@ export interface PreparedArtifactWrite {
  * and returns the bytes, revision and whether content changed. Writes nothing.
  * Throws as `writeArtifact` does.
  */
-export function prepareArtifactWrite(path: string, next: unknown, kind: WriteKind, opts: { readonly replaceUnreadable?: boolean | undefined } = {}): PreparedArtifactWrite {
+export function prepareArtifactWrite(
+	path: string, next: unknown, kind: WriteKind,
+	opts: { readonly replaceUnreadable?: boolean | undefined; readonly by?: Actor | undefined; readonly at?: string | undefined } = {},
+): PreparedArtifactWrite {
 	if (!isRecord(next) || !isRecord(next['meta'])) {
 		throw new TypeError(`writeArtifact: ${path}: the artifact must be an object with a meta object`);
 	}
@@ -189,8 +211,22 @@ export function prepareArtifactWrite(path: string, next: unknown, kind: WriteKin
 		// A content write that changes nothing keeps the revision: the revision
 		// names the content, so rewriting identical content must not invalidate
 		// anything bound to it.
-		const unchanged = prior !== undefined && sameApartFromRevision(prior, { ...next, meta });
-		if (unchanged) {
+		// A head that carries meta.lifecycle is judged by the canonical hash of its description, body and
+		// citations instead, so metadata and key order cannot mint a revision.
+		const unchanged = !isRecord(meta['lifecycle']) && prior !== undefined && sameApartFromRevision(prior, { ...next, meta });
+		if (isRecord(meta['lifecycle'])) {
+			const priorRevision = readRevision(prior);
+			const reconciled = reconcileLifecycle(
+				prior === undefined ? undefined : contentViewOf(prior, priorRevision), contentViewOf({ ...next, meta }, priorRevision),
+				priorRevision + 1, opts.by ?? DEFAULT_ACTOR, opts.at ?? new Date().toISOString(),
+			);
+			meta['lifecycle'] = reconciled.lifecycle;
+			if (reconciled.contentChanged) {
+				meta['revision'] = priorRevision + 1;
+				contentChanged = true;
+			} else if (priorMeta !== undefined && 'revision' in priorMeta) meta['revision'] = priorMeta['revision'];
+			else delete meta['revision'];
+		} else if (unchanged) {
 			if (priorMeta !== undefined && 'revision' in priorMeta) meta['revision'] = priorMeta['revision'];
 			else delete meta['revision'];
 		} else {

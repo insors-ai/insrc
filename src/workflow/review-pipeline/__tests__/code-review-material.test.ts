@@ -237,3 +237,16 @@ test('ISSUE-e940023a: a material of 3000 atoms is built and every atom summarise
 	// The old code took over 1.6 s for 1000 atoms and grows with the square.
 	assert.ok(ms < 3000, `built and summarised 3000 atoms in ${ms} ms`);
 });
+
+test('ISSUE-e940023a: 50000 symbols sharing one name, each in its own directory and with no calls, build their material in well under the quadratic time', () => {
+	const g = { symbols: Array.from({ length: 50000 }, (_, i) => ({
+		entityId: `e${i}`, file: `d${i}/f.ts`, kind: 'function', name: 'same', signature: 's', callers: [], callees: [], testsReaching: [],
+	})) } as unknown as CodeReviewGrounding;
+	const started = Date.now();
+	const m = codeReviewMaterial(g);
+	const ms = Date.now() - started;
+	assert.deepEqual(m.relations, [], 'no shared file, directory or call');
+	// About 45 ms here; copying the name bucket per row took 3.6 s.
+	assert.ok(ms < 1500, `built 50000 same-named atoms in ${ms} ms`);
+});
+

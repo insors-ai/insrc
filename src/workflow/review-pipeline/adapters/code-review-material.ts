@@ -56,7 +56,8 @@ export function codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMateri
 
 	// Calls: B is among A's callees, or A among B's callers. A name matching several rows relates to each.
 	const idsByName = new Map<string, string[]>();
-	for (const row of grounding.symbols) idsByName.set(row.name, [...(idsByName.get(row.name) ?? []), row.entityId]);
+	// Appended in place: copying the bucket per row was quadratic in a repeated name.
+	for (const row of grounding.symbols) { const ids = idsByName.get(row.name); if (ids === undefined) idsByName.set(row.name, [row.entityId]); else ids.push(row.entityId); }
 	for (const row of grounding.symbols) {
 		for (const callee of row.callees) for (const id of idsByName.get(callee) ?? []) relate(row.entityId, id, 'calls');
 		for (const caller of row.callers) for (const id of idsByName.get(caller) ?? []) relate(id, row.entityId, 'calls');

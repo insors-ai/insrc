@@ -1,0 +1,197 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792587454518-1ot6nv",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T12:57:36.760Z",
+    "model": "claude:opus",
+    "elapsedMs": 125075,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s5",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s5",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "declined"
+    },
+    "subject": {
+      "changedFiles": [
+        "docs/plans/core-data-model.md",
+        "src/daemon/__tests__/artifact-feedback-handler-contract.test.ts",
+        "src/daemon/__tests__/feedback-wiring.test.ts",
+        "src/daemon/feedback-handlers.ts",
+        "src/daemon/index.ts",
+        "src/daemon/lifecycle-registry.ts",
+        "src/daemon/steps/review-step/phases/verdicts.ts",
+        "src/workflow/__tests__/artifact-write-inventory.test.ts",
+        "src/workflow/__tests__/review-decision.test.ts",
+        "src/workflow/artifact-core/__tests__/addresses-rule.test.ts",
+        "src/workflow/artifact-core/__tests__/automated-writers-addresses.test.ts",
+        "src/workflow/artifact-core/__tests__/feedback-reply-shape.test.ts",
+        "src/workflow/artifact-core/decode.ts",
+        "src/workflow/artifact-core/history.ts",
+        "src/workflow/artifact-core/lifecycle-service.ts",
+        "src/workflow/artifact-core/store.ts",
+        "src/workflow/artifact-core/types.ts",
+        "src/workflow/artifact-write-inventory.ts",
+        "src/workflow/feedback/__tests__/feedback-merge.test.ts",
+        "src/workflow/feedback/__tests__/feedback-service.test.ts",
+        "src/workflow/feedback/__tests__/feedback-storage.test.ts",
+        "src/workflow/feedback/__tests__/feedback-threads.test.ts",
+        "src/workflow/feedback/feedback-service.ts",
+        "src/workflow/feedback/legacy-anchor.ts",
+        "src/workflow/feedback/threads.ts",
+        "src/workflow/identity/__tests__/gate-identity.test.ts",
+        "src/workflow/identity/__tests__/identity-service.test.ts",
+        "src/workflow/identity/identity-service.ts",
+        "src/workflow/review-decision.ts",
+        "src/workflow/review/run-artifact.ts",
+        "src/workflow/runners/build/round-writer.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/workflow/review-decision.ts:215",
+            "message": "When no feedbackFor seam is given, handleReviewDecision now throws 'no feedback service is available to save the comments' and reports commentsError, saving nothing. The LLD postcondition says that without a FeedbackService the legacy body.feedback writer runs as before (tests only). The appendBatch seam and the appendFeedbackBatch fallback were removed, and the new test pins the refusal ('no feedback service').",
+            "expectationRef": "LLD contractDetails.api handleReviewDecision postcondition: 'with a FeedbackService the decision's comments are stored as Feedback entries …; without one the legacy body.feedback writer runs as before (tests only)'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/daemon/feedback-handlers.ts:101",
+            "message": "handleFeedbackAppend always overwrites actor.properties.name with the legacy author string, including when the request names an actor id (approvalActorOf(raw.actor)). The approved mapping says the author string becomes the actor name only when no actor id is given.",
+            "expectationRef": "LLD migration.backwardCompat / PLAN t8 summary: 'the author string becomes the actor name when no actor id is given'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/identity/identity-service.ts:118",
+            "message": "When the tracker's whoAmI does not answer (not ok, the tracker cannot be loaded, or it throws), the github lookup quietly returns 'unavailable'. currentActor then falls back to git or os without logging the fallback or why. The only log is in the outer catch, which runs when resolution itself throws.",
+            "expectationRef": "LLD errorPaths 'The tracker does not answer whoAmI': 'currentActor falls back to git:<email>, then os:<user>@<host>; the fallback and the reason are logged'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/__tests__/addresses-rule.test.ts:18",
+            "message": "A stray doc comment (\"A moment just after the latest log entry…\") sits above `const body`, which it does not describe. The same comment appears again correctly above `after` at line 31. It looks like a copy-paste leftover; remove the first copy so the comment documents only the helper it belongs to.",
+            "expectationRef": "module-idiom: doc comments describe the following declaration",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/feedback-handlers.ts:7",
+            "message": "The module header lists the file's methods as `artifact.feedback.add`, `artifact.feedback.list`, `identity.show` and `identity.declare`. It leaves out `artifact.feedback.append` (`handleFeedbackAppend`), which this module also implements and which the daemon's handler map now delegates to. Elsewhere in the touched modules, the header comment lists the module's full surface.",
+            "expectationRef": "module-idiom: module header names the module's surface",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/index.ts:624",
+            "message": "The four new daemon registrations ('artifact.feedback.add', 'artifact.feedback.list', 'identity.show', 'identity.declare') are not checked by any test. feedback-wiring.test.ts calls the handler functions in feedback-handlers.ts directly and only mentions 'artifact.feedback.add' in an error-message regex. Nothing checks that index.ts registers these method names or that it passes process.env['INSRC_REPO'] as the repo fallback, so a renamed or dropped registration would still pass the suite. The re-pointed 'artifact.feedback.append' and 'workflow.reviewDecision' registrations are checked by source-match tests.",
+            "expectationRef": "src/daemon/index.ts: artifact.feedback.add / artifact.feedback.list / identity.show / identity.declare handler registrations",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/__tests__/artifact-feedback-handler-contract.test.ts:45",
+            "message": "This test file is changed (rewritten to check that index.ts delegates to handleFeedbackAppend and that feedback-handlers.ts uses coerceRequest and feedback.add), but the build gate's test record does not list it, so it is present but unverified in the record. A reviewer-side run outside the gate passed 4 of 4. It is not a promised test.",
+            "expectationRef": "artifact-feedback-handler-contract.test.ts (changed, not in test record)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/review-decision.ts:220",
+            "message": "The review decision now saves its comments one at a time through FeedbackService.add, and it passes no caller `id`. If a save fails part-way, `commentsError` is reported with `recorded` set to the number saved. When the client then retries the comments, the ones already saved are stored a second time under fresh random ids, so the artifact shows duplicate feedback. The service already supports an idempotent caller key (`FeedbackInput.id`, matched on the same fields). Deriving one per comment, for example batchId plus the comment's index, would make a retry safe. The LLD hand-off records the loss of all-or-nothing saving but not this duplication on retry.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/feedback-handlers.ts:106",
+            "message": "`artifact.feedback.append` still returns `total`, but it now counts only the `Feedback` lines from `feedback.entries(artifactId)`. Before s5 it counted every entry in `body.feedback`. On an artifact that already has pre-s5 entries, `total` drops (to 1 after the first new append), so any client that shows or checks it sees a lower count until s9 converts the old entries. The request and result shapes are unchanged, but this field's meaning has changed.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/feedback-handlers.ts:69",
+            "message": "`isOwnDocument` decides a target is the artifact's own document when the file's basename without its extension equals the artifact's kind (for example any `PLAN.md`), or when `resolve(file)` (resolved against the daemon's cwd, not the repo) equals the JSON path. A comment on a different artifact's `PLAN.md`/`LLD.md` mirror is therefore treated as the own document, and its file path is dropped from `anchor.section`.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/feedback-handlers.ts:100",
+            "message": "Two changed functions build the actor-with-display-name the same way: `{ ...base, properties: { ...base.properties, name: author } }`, where base is the request's actor or else the current actor. They are handleFeedbackAppend and handleReviewDecision. A small shared helper would keep the two attribution paths from drifting apart.",
+            "counterpartRef": "handleReviewDecision (src/workflow/review-decision.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/feedback-handlers.ts:108",
+            "message": "In the catch block, `err instanceof ArtifactFeedbackError ? err.message : (err as Error).message` gives the same value on both branches. The conditional can be collapsed into one expression.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/__tests__/addresses-rule.test.ts:18",
+            "message": "A stray copy of the doc comment `/** A moment just after the latest log entry ... */` sits above `const body` and does not describe it. The real comment is repeated above `after`.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "diagram",
+        "findings": [
+          {
+            "dimension": "diagram",
+            "severity": "LOW",
+            "location": "erDefinition:classes.IdentityFile",
+            "message": "class 'IdentityFile' declares no identifier slot (identifier:true) — the entity has no primary key",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 12
+    }
+  }
+}

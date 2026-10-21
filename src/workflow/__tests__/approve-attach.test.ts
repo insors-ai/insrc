@@ -13,7 +13,7 @@ import { dirname, join } from 'node:path';
 
 import { approve } from '../../cli/services/workflow.js';
 import { _setAutoPushDepsForTests } from '../tracker-auto.js';
-import { hldArtifactPaths, lldArtifactPaths } from '../storage.js';
+import { hldArtifactPaths, lldArtifactPaths, planArtifactPaths } from '../storage.js';
 import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
 import { handleTrackerAttach } from '../../daemon/tracker-attach.js';
 import { readAttachments } from '../tracker/binding.js';
@@ -61,7 +61,7 @@ test('approve() attaches the approved HLD, LLD and plan documents after its comm
 		_setAutoPushDepsForTests({ policy: teamPolicy, port: t.port });
 
 		// the fixtures' bodies are too thin to render; the rendered files are written as the renderer would leave them
-		for (const p of [hldArtifactPaths(fx.repo, HASH, CREATED, 'epic', SLUG).md, lldArtifactPaths(fx.repo, HASH, 's1', CREATED, 'epic', SLUG).md]) { mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, `# ${p}\n`); }
+		for (const p of [hldArtifactPaths(fx.repo, HASH, CREATED, 'epic', SLUG).md, lldArtifactPaths(fx.repo, HASH, 's1', CREATED, 'epic', SLUG).md, planArtifactPaths(fx.repo, HASH, 's1', CREATED, 'epic', SLUG).md]) { mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, `# ${p}\n`); }
 
 		// HLD approval: the document is committed first, then linked at that commit
 		stampOtherPartyReview(fx.hld);
@@ -85,6 +85,15 @@ test('approve() attaches the approved HLD, LLD and plan documents after its comm
 		const lldRel = lldArtifactPaths(fx.repo, HASH, 's1', CREATED, 'epic', SLUG).md.slice(fx.repo.length + 1);
 		assert.ok(story.attach !== undefined && 'attached' in story.attach && story.attach.attached.length === 1, JSON.stringify(story.attach));
 		assert.match(attachCalls.at(-1) ?? '', new RegExp(`/blob/[0-9a-f]{40}/${lldRel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`));
+
+		// plan approval links the plan to the Story's issue, at the commit that carries it
+		stampOtherPartyReview(fx.plan);
+		const planOut = approve(fx.plan);
+		const planRel = planArtifactPaths(fx.repo, HASH, 's1', CREATED, 'epic', SLUG).md.slice(fx.repo.length + 1);
+		const planSha = git(fx.repo, 'log', '-1', '--format=%H', '--', planRel);
+		assert.ok(planOut.attach !== undefined && 'attached' in planOut.attach, JSON.stringify(planOut.attach));
+		assert.deepEqual(planOut.attach.attached, [`https://github.com/acme/demo/blob/${planSha}/${planRel}`]);
+		assert.equal(git(fx.repo, 'status', '--porcelain', '--', planRel), '');
 
 		// a diagram companion is refused while uncommitted, then attached through tracker.attach once committed
 		const diagramRel = join(dirname(lldRel), 'sequence.html');

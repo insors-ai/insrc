@@ -11,9 +11,9 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { followOnTrackerAttach } from '../../daemon/tracker-attach.js';
+import { followOnTrackerAttach, handleTrackerAttach } from '../../daemon/tracker-attach.js';
 import { _setAutoPushDepsForTests } from '../tracker-auto.js';
-import { artifactJsonPath, buildArtifactId, buildArtifactPaths, codeReviewArtifactPaths, testsArtifactPaths } from '../storage.js';
+import { artifactJsonPath, buildArtifactId, buildArtifactPaths, codeReviewArtifactPaths, lldArtifactPaths, planArtifactPaths, testsArtifactPaths } from '../storage.js';
 import { ensureUnitIssueDetailed } from '../tracker/unit-issue.js';
 import { readAttachments } from '../tracker/binding.js';
 import type { TrackerPort } from '../tracker/port.js';
@@ -78,10 +78,18 @@ test('the design document, plan and build, review and test records are attached 
 	const { fx, links, mds, buildJson, rel } = setup();
 	try {
 		git(fx.repo, 'add', '--', rel(mds.build), rel(mds.review), rel(mds.tests)); git(fx.repo, 'commit', '-q', '-m', 'records');
+		// the design document and the plan go through the same attach, with scope 'documents'
+		const docs = [lldArtifactPaths(fx.repo, HASH, 's1', CREATED, 'epic', SLUG).md, planArtifactPaths(fx.repo, HASH, 's1', CREATED, 'epic', SLUG).md];
+		for (const p of docs) { mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, `# ${p}\n`); }
+		git(fx.repo, 'add', '--', ...docs.map(rel)); git(fx.repo, 'commit', '-q', '-m', 'design');
+		const d = handleTrackerAttach({ repo: fx.repo, epicHash: HASH, unit: 'story', storyId: 's1', scope: 'documents' }, undefined);
+		assert.ok('attached' in d && d.attached.length === 2, JSON.stringify(d));
+		links.length = 0;
+
 		followOnTrackerAttach(approvedOf(buildJson), fx.repo);
 		assert.equal(links.length, 3);
 		const first = readAttachments(fx.repo, `LLD-${HASH}-s1`);
-		assert.deepEqual(first.map(a => a.target.fragment).sort(), [rel(mds.build), rel(mds.review), rel(mds.tests)].sort());
+		assert.deepEqual(first.map(a => a.target.fragment).sort(), [...docs.map(rel), rel(mds.build), rel(mds.review), rel(mds.tests)].sort());
 
 		// a second approval of unchanged records posts nothing; a new revision of the build record gets its own link and keeps the first
 		followOnTrackerAttach(approvedOf(buildJson), fx.repo);

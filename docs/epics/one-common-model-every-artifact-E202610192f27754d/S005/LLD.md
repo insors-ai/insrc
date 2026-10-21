@@ -463,6 +463,8 @@ Keep the sc3 Feedback shape exactly as s2 shipped it. add() of a top-level entry
 
 - `q684a09a1` — A legacy review comment can target a companion file (target.file other than the artifact's own document, for example a diagram or mock) while the Feedback shape has an anchor but no file: should such a comment be stored on the companion's own DIAG artifact when one exists, kept on the parent artifact with the file path in anchor.section, or have its file dropped?
   - **resolved**: Keep on the parent artifact with the file path in anchor.section — No DIAG lookup; the file is not lost and the thread stays on the artifact the person reviewed. _(2026-10-21T11:51:00.707Z)_
+- `q937a3db7` — The legacy kind 'feedback' (a request to change the artifact) has no direct match: should it be stored as revision-request, as comment, or by the decision it came with (send-feedback to revision-request, approve and reject to comment)?
+  - **resolved**: By the decision that took effect (feedback to revision-request, approve and reject to comment) — A withheld approval records its comments under the feedback decision, which is a request to change the artifact; the legacy IPC kind feedback maps to revision-request. _(2026-10-21T11:51:36.440Z)_
 
 ## Citations
 

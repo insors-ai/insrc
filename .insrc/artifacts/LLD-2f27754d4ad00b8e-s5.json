@@ -234,6 +234,13 @@
         "choice": "Keep on the parent artifact with the file path in anchor.section",
         "rationale": "No DIAG lookup; the file is not lost and the thread stays on the artifact the person reviewed.",
         "resolvedAt": "2026-10-21T11:51:00.707Z"
+      },
+      "q937a3db7": {
+        "question": "The legacy kind 'feedback' (a request to change the artifact) has no direct match: should it be stored as revision-request, as comment, or by the decision it came with (send-feedback to revision-request, approve and reject to comment)?",
+        "status": "resolved",
+        "choice": "By the decision that took effect (feedback to revision-request, approve and reject to comment)",
+        "rationale": "A withheld approval records its comments under the feedback decision, which is a request to change the artifact; the legacy IPC kind feedback maps to revision-request.",
+        "resolvedAt": "2026-10-21T11:51:36.440Z"
       }
     }
   },

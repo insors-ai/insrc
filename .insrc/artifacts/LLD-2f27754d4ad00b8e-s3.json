@@ -172,7 +172,16 @@
       "at": "2026-10-21T04:56:36.237Z"
     },
     "staleAckedAt": "2026-10-21T04:58:56.533Z",
-    "staleAckedReason": "AMD-8 only adds s4 as a consumer of sc4; the s3 LLD does not change"
+    "staleAckedReason": "AMD-8 only adds s4 as a consumer of sc4; the s3 LLD does not change",
+    "questionResolutions": {
+      "q6f07234c": {
+        "question": "sbdry5: the build edits s2's store, codecs and prepareArtifactWrite (update, childrenOfStrict, the options parameter of write, five pass-through codecs and the lifecycle reconcile) and adds an optional field to the gate request; confirm with the sc2 owner (s2, already built) that these additions are accepted and whether they need an HLD amendment like readWithHistory did (AMD-7)",
+        "status": "resolved",
+        "choice": "Split acceptance by change",
+        "rationale": "Owner: covered additions are recorded; the rest are amended as AMD-7 was.",
+        "resolvedAt": "2026-10-21T05:09:56.116Z"
+      }
+    }
   },
   "body": {
     "summary": {

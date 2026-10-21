@@ -35,7 +35,7 @@ const log = getLogger('workflow:tasks');
 
 let entrySeq = 0;
 /** A log entry id that sorts in the order entries were made in this process: the history orders entries of one time by id, and a round must follow the one before it. */
-function orderedEntryId(): string {
+export function orderedEntryId(): string {
 	entrySeq = (entrySeq + 1) % 46656;
 	return `${Date.now().toString(36).padStart(10, '0')}${entrySeq.toString(36).padStart(3, '0')}-${randomUUID()}`;
 }

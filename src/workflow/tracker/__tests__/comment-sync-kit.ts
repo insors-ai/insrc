@@ -63,7 +63,7 @@ export async function syncKit(): Promise<SyncKit> {
 	const history = new History(k.sidecar);
 	const feedback = new FeedbackService({ history, store: k.store, now: () => new Date('2026-10-22T12:00:00.000Z') });
 	return {
-		k, history, feedback, deps: { feedback, history },
+		k, history, feedback, deps: { feedback, history, store: k.store },
 		task:  { unit: 'task', repoPath: k.repo, epicHash: H, storyId: 's1', taskId: 't1' },
 		story: { unit: 'story', repoPath: k.repo, epicHash: H, storyId: 's1' },
 		done: () => k.done(),

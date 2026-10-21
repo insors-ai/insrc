@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -152,3 +152,25 @@ Run at 2026-10-21T15:38:09.812Z on commit `e3731fb0`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/graph/__tests__/store-health-threads.test.ts` | 0 | 3 | 1.2 s |  |
+
+## t6
+
+Run at 2026-10-21T15:41:11.904Z on commit `a43e7eeb`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a Lance write in one thread is read from another with readConsistencyInterval 0 and missed with it unset**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a Lance write in one thread is read from another with readConsistencyInterval 0 and missed with it unset | `src/db/__tests__/cross-thread-stores.test.ts` |
+
+**integration: two threads' DuckDB queries run one after the other behind the one permit and both succeed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | two threads' DuckDB queries run one after the other behind the one permit and both succeed | `src/db/__tests__/cross-thread-stores.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/__tests__/cross-thread-stores.test.ts` | 0 | 2 | 1.8 s |  |

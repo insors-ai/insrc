@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s1",
     "createdAt": "2026-10-21T15:03:00.014Z",
-    "updatedAt": "2026-10-21T15:38:09.812Z",
+    "updatedAt": "2026-10-21T15:41:11.904Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -383,6 +383,59 @@
               },
               {
                 "title": "the full locks-lost record reaches the main thread and every other worker through the hub",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "a43e7eeb",
+        "ranAt": "2026-10-21T15:41:11.904Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a Lance write in one thread is read from another with readConsistencyInterval 0 and missed with it unset",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/cross-thread-stores.test.ts",
+                "title": "a Lance write in one thread is read from another with readConsistencyInterval 0 and missed with it unset",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "two threads' DuckDB queries run one after the other behind the one permit and both succeed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/cross-thread-stores.test.ts",
+                "title": "two threads' DuckDB queries run one after the other behind the one permit and both succeed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/cross-thread-stores.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1778,
+            "titles": [
+              {
+                "title": "a Lance write in one thread is read from another with readConsistencyInterval 0 and missed with it unset",
+                "result": "pass"
+              },
+              {
+                "title": "two threads' DuckDB queries run one after the other behind the one permit and both succeed",
                 "result": "pass"
               }
             ],

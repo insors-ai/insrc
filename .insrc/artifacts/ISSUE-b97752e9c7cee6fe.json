@@ -21,7 +21,11 @@
     "epicSlug": "scope-story-s-code-review-what",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-21T04:57:15.277Z",
+    "parentRef": {
+      "slug": "scope-story-s-code-review-what"
+    }
   },
   "body": {
     "title": "Scope a Story's code review to what the Story changed, never a blind working-tree diff",

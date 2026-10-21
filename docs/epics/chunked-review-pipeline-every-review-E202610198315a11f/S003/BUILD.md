@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s3
 
-**Standalone:** no  ·  **Created:** 2026-10-20T16:44:27.482Z  ·  **Updated:** 2026-10-20T18:40:12.120Z
+**Standalone:** no  ·  **Created:** 2026-10-20T16:44:27.482Z  ·  **Updated:** 2026-10-21T04:36:46.306Z
 
-**Commit:** 3bb5726b
+**Commit:** 6225fb6b
 
 ## Summary
 
-Quality's 'compare' and 'pair' stages (adapters/code-review-duplicates.ts), countAs 'relation', no single calls. After the first gate: every pair finding must name the other symbol of the pair as counterpartRef (a duplication), and the test records a reported duplicate (location, counterpartRef) as the pair stage's answer (3bb5726b). The unrelated docs/connection-management-prd.html that a1c3ae7d swept in by mistake is untracked again by 55a5a5ba (no Story trailer); it was not part of t6. Merging pair findings into the dimension's result is t7's (finish), as the plan orders.
+A divided code review finishes into today's DimensionResult: finish returns the chunks' own findings; gather.merge joins every part, keeps identical findings once and applies the dimension's toResult once (changed-set filter, known-FR filter, coverage normalised once). Daemon path: out-of-set findings dropped. Controller path: they are handed on in findings, and the controller step's handler splits them into outOfScope as today (it rebuilds outOfScope from the findings it gets); the tests run a divided result through that handler split (validateJudgements, now exported). merge never rewrites a location: a gather finding at an evidence note id, with or without line and column (file part = text before the first ':'), or anything not file:line, is re-asked then fails the review. Fixes after the first gate: 6225fb6b.
 
 ## Tasks validated
 
@@ -18,25 +18,18 @@ Quality's 'compare' and 'pair' stages (adapters/code-review-duplicates.ts), coun
 - ✓ `t4`
 - ✓ `t5`
 - ✓ `t6`
+- ✓ `t7`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-8315a11f29fd2812-s3.json` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/PLAN.md` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `src/workflow/code-review/dimensions/adherence.ts` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `src/workflow/code-review/dimensions/conventions.ts` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `src/workflow/code-review/dimensions/coverage.ts` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `src/workflow/code-review/dimensions/functional-coverage.ts` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `src/workflow/code-review/dimensions/quality.ts` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `src/workflow/review-pipeline/adapters/code-review-chunk.ts` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `src/workflow/review-pipeline/adapters/code-review-duplicates.ts` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `src/workflow/review-pipeline/adapters/code-review-gather.ts` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `src/workflow/review-pipeline/adapters/code-review-obligations.ts` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `src/workflow/review-pipeline/code-review.ts` — **insrc-build** (2026-10-20T18:40:12.120Z)
-- `src/workflow/review-pipeline/job.ts` — **insrc-build** (2026-10-20T18:40:12.120Z)
+- `docs/mocks/ontology-editor.html` — **insrc-build** (2026-10-21T04:36:46.306Z)
+- `docs/mocks/ontology-source/ontology.template.html` — **insrc-build** (2026-10-21T04:36:46.306Z)
+- `docs/mocks/ontology-source/render.mjs` — **insrc-build** (2026-10-21T04:36:46.306Z)
+- `docs/mocks/ontology-viewer.html` — **insrc-build** (2026-10-21T04:36:46.306Z)
+- `docs/ontology-builder-prd.html` — **insrc-build** (2026-10-21T04:36:46.306Z)
+- `docs/ontology-builder-prd.md` — **insrc-build** (2026-10-21T04:36:46.306Z)
 
 ## Feedback
 

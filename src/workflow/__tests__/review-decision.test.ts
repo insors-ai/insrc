@@ -417,17 +417,11 @@ test('daemon handlers: \'workflow.reviewDecision\' is registered and delegates t
 		`\t\t\t\tprocess.env['INSRC_REPO'],`,
 		`\t\t\t);`,
 	].join('\n'));
+	// s5 re-pointed the handler at the feedback service; it stays a one-call delegate and does not go through the new call.
 	assert.equal(handlerSource(src, 'artifact.feedback.append'), [
 		`\t\t'artifact.feedback.append': async (params) => {`,
-		`\t\t\tconst { appendFeedback, ArtifactFeedbackError } = await import('../workflow/artifacts/provenance/writer.js');`,
-		`\t\t\tconst { coerceRequest } = await import('../workflow/artifacts/provenance/tool.js');`,
-		`\t\t\ttry {`,
-		`\t\t\t\tconst req = coerceRequest((params ?? {}) as Record<string, unknown>);`,
-		`\t\t\t\treturn appendFeedback(req);`,
-		`\t\t\t} catch (err) {`,
-		`\t\t\t\tconst msg = err instanceof ArtifactFeedbackError ? err.message : (err as Error).message;`,
-		`\t\t\t\treturn { error: \`artifact.feedback.append: \${msg}\` };`,
-		`\t\t\t}`,
+		`\t\t\tconst { handleFeedbackAppend } = await import('./feedback-handlers.js');`,
+		`\t\t\treturn handleFeedbackAppend(params);`,
 	].join('\n'));
 	for (const method of ['workflow.approve', 'workflow.resolveComment', 'artifact.feedback.append']) {
 		assert.ok(!handlerSource(src, method).includes('review-decision'), `${method} does not go through the new call`);

@@ -89,6 +89,9 @@ export class FeedbackService {
 		});
 	}
 
+	/** Every stored entry of the artifact, roots and replies, in reader order. */
+	entries(artifactId: string): Promise<Feedback[]> { return this.deps.history.feedback(artifactId); }
+
 	/**
 	 * The artifact's feedback as threads, roots in reader order (timestamp, then id). With `open`, only threads whose root no
 	 * later update addressed; a reply is never listed on its own.

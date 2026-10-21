@@ -9,11 +9,17 @@
  * `{ error }` for a bad request rather than throwing.
  */
 
+import { basename, resolve } from 'node:path';
+
+import { ArtifactIds } from '../workflow/artifact-ids.js';
+import { ArtifactFeedbackError } from '../workflow/artifacts/provenance/writer.js';
+import { coerceRequest } from '../workflow/artifacts/provenance/tool.js';
+import type { AppendFeedbackRequest, AppendFeedbackResult } from '../workflow/artifacts/provenance/writer.js';
 import { approvalActorOf } from '../workflow/artifact-core/approval-actor.js';
 import type { Actor, Feedback } from '../workflow/artifact-core/types.js';
 import type { FeedbackThread } from '../workflow/feedback/threads.js';
 import type { IdentityFile, IdentityService } from '../workflow/identity/identity-service.js';
-import { identityService, lifecycleFor } from './lifecycle-registry.js';
+import { identityService, lifecycleFor, repoOfArtifactPath } from './lifecycle-registry.js';
 import type { RepoLifecycle } from './lifecycle-registry.js';
 
 export interface FeedbackHandlerDeps {
@@ -56,6 +62,64 @@ export async function handleFeedbackAdd(params: unknown, repoEnv: string | undef
 			id: optionalText(p['id']),
 		}, actor);
 	} catch (err) { return { error: `${method}: ${(err as Error).message}` }; }
+}
+
+/** Whether `file` is the artifact's own document (its JSON, its id or its kind's markdown mirror) and not a companion file. */
+function isOwnDocument(file: string, artifactId: string, artifactPath: string): boolean {
+	const name = basename(file).replace(/\.(json|md)$/, '');
+	return resolve(file) === artifactPath || name === artifactId || name === ArtifactIds.parse(artifactId)?.kind;
+}
+
+/** The legacy kind, or failing that the decision it came with, as a Feedback kind. */
+function kindOf(entry: AppendFeedbackRequest['entry']): Feedback['kind'] {
+	const legacy = entry.kind ?? (entry.decision === 'feedback' ? 'feedback' : undefined);
+	return legacy === 'feedback' ? 'revision-request' : legacy ?? 'comment';
+}
+
+/**
+ * `artifact.feedback.append`, the legacy request, stored as a Feedback line through the repository's FeedbackService. The
+ * request and the result keep their shapes ({ artifactPath, entryId, total }; { error } for a bad request). The author text
+ * becomes the actor's name unless the request names an actor id; a companion file's path rides in anchor.section; the
+ * request's timestamp is not used (the service stamps the time the line is stored).
+ */
+export async function handleFeedbackAppend(params: unknown, deps: FeedbackHandlerDeps = {}): Promise<AppendFeedbackResult | { error: string }> {
+	const method = 'artifact.feedback.append';
+	try {
+		const { artifactPath, entry } = coerceRequest((params ?? {}) as Record<string, unknown>);
+		const abs = resolve(artifactPath);
+		const repo = repoOfArtifactPath(abs);
+		const artifactId = basename(abs).replace(/\.json$/, '');
+		if (repo === undefined || ArtifactIds.parse(artifactId) === undefined) {
+			throw new ArtifactFeedbackError(`'${abs}' is not an artifact under a repo artifact root (.insrc/artifacts)`);
+		}
+		const author = entry.author.trim();
+		if (author.length === 0) throw new ArtifactFeedbackError('feedback entry requires a non-empty author');
+		const found = (deps.lifecycleFor ?? lifecycleFor)(repo);
+
+		const raw = (params ?? {}) as { actor?: unknown };
+		const base = raw.actor !== undefined && raw.actor !== null ? approvalActorOf(raw.actor) : await found.identity.currentActor(repo);
+		const actor: Actor = { ...base, properties: { ...base.properties, name: author } };
+
+		const a = entry.anchor;
+		const own = isOwnDocument(entry.target.file, artifactId, abs);
+		const section = own ? a?.sectionSlug : (a?.sectionSlug !== undefined ? `${entry.target.file}#${a.sectionSlug}` : entry.target.file);
+		const segment = entry.target.segment;
+		const anchor: Feedback['anchor'] = a !== undefined || !own || segment !== undefined
+			? {
+				...(a !== undefined ? { quote: a.quote } : {}),
+				...(a?.prefix !== undefined ? { prefix: a.prefix } : {}),
+				...(a?.suffix !== undefined ? { suffix: a.suffix } : {}),
+				...(section !== undefined ? { section } : {}),
+				...(segment !== undefined ? { lines: [segment.startLine, segment.endLine] as const } : {}),
+			}
+			: undefined;
+		const stored = await found.feedback.add(artifactId, {
+			text: entry.comment.trim(), kind: kindOf(entry), anchor, batchId: entry.batchId,
+		}, actor);
+		return { artifactPath: abs, entryId: stored.id, total: (await found.feedback.entries(artifactId)).length };
+	} catch (err) {
+		return { error: `${method}: ${err instanceof ArtifactFeedbackError ? err.message : (err as Error).message}` };
+	}
 }
 
 /** The threads of an artifact; with `open: true`, only those whose root no later update addressed. */

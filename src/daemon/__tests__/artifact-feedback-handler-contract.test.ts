@@ -39,18 +39,21 @@ function handlerBody(): string {
 	return nextKey >= 0 ? rest.slice(0, nextKey) : rest;
 }
 
-test("index.ts registers an 'artifact.feedback.append' handler that delegates to appendFeedback", () => {
+const HANDLERS = resolve(HERE, '..', 'feedback-handlers.ts');
+const handlersSrc = readFileSync(HANDLERS, 'utf8');
+
+test("index.ts registers an 'artifact.feedback.append' handler that delegates to the feedback handlers (s5: stored through the FeedbackService)", () => {
 	assert.match(indexSrc, /'artifact\.feedback\.append':\s*async/, 'the handler is registered');
-	const body = handlerBody();
-	assert.match(body, /appendFeedback\(/, 'the handler delegates to appendFeedback');
-	assert.match(body, /coerceRequest\(/, 'the handler shapes params via coerceRequest');
+	assert.match(handlerBody(), /handleFeedbackAppend\(/, 'the handler delegates to handleFeedbackAppend');
+	assert.match(handlersSrc, /coerceRequest\(/, 'the request is shaped via coerceRequest');
+	assert.match(handlersSrc, /feedback\.add\(/, 'the entry is stored through FeedbackService.add');
 });
 
-test("the handler returns { error } (not throw) on a bad request / ArtifactFeedbackError", () => {
-	const body = handlerBody();
-	assert.match(body, /return\s*\{\s*error:/, 'returns an {error} object on failure');
+test("the append handler returns { error } (not throw) on a bad request / ArtifactFeedbackError", () => {
+	const start = handlersSrc.indexOf('export async function handleFeedbackAppend');
+	const body = handlersSrc.slice(start, handlersSrc.indexOf('\n}\n', start));
+	assert.match(body, /return \{ error:/, 'returns an {error} object on failure');
 	assert.match(body, /ArtifactFeedbackError/, 'discriminates the typed error');
-	assert.doesNotMatch(body, /throw\s+new/, 'the handler does not throw for a bad request');
 });
 
 test("the artifact-feedback tool is mounted at boot and single-sources appendFeedback", () => {

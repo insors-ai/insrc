@@ -612,20 +612,12 @@ async function main(): Promise<void> {
 		[METHOD_ENTITIES_FOR_SOURCE_ROOTS]: async (params) => entitiesForSourceRoots(params),
 
 		// Append one post-hoc, human-authored feedback entry to a workflow
-		// artifact JSON (Story S001 — provenance/feedback). Delegates to the
-		// append-only writer; returns { artifactPath, entryId, total } on success
-		// or { error } (never a throw) on a bad request / out-of-tree path /
-		// malformed artifact. Append-only — every other artifact key is preserved.
+		// artifact (Story S001 — provenance/feedback), now stored as a Feedback line through the
+		// repository's FeedbackService (s5); returns { artifactPath, entryId, total } on success
+		// or { error } (never a throw) on a bad request / out-of-tree path / malformed artifact.
 		'artifact.feedback.append': async (params) => {
-			const { appendFeedback, ArtifactFeedbackError } = await import('../workflow/artifacts/provenance/writer.js');
-			const { coerceRequest } = await import('../workflow/artifacts/provenance/tool.js');
-			try {
-				const req = coerceRequest((params ?? {}) as Record<string, unknown>);
-				return appendFeedback(req);
-			} catch (err) {
-				const msg = err instanceof ArtifactFeedbackError ? err.message : (err as Error).message;
-				return { error: `artifact.feedback.append: ${msg}` };
-			}
+			const { handleFeedbackAppend } = await import('./feedback-handlers.js');
+			return handleFeedbackAppend(params);
 		},
 
 		// s5: feedback and replies on any artifact (a Task included) through the repository's FeedbackService, the threads of an

@@ -467,6 +467,8 @@ Keep the sc3 Feedback shape exactly as s2 shipped it. add() of a top-level entry
   - **resolved**: By the decision that took effect (feedback to revision-request, approve and reject to comment) — A withheld approval records its comments under the feedback decision, which is a request to change the artifact; the legacy IPC kind feedback maps to revision-request. _(2026-10-21T11:51:36.440Z)_
 - `qb737f0d4` — The readers of body.feedback (companion headers, delivery) will show only entries written before s5 until the s9 conversion, while new feedback is in the line files: should s5 add the line-file entries to those readers, or leave the mixed view until s9?
   - **resolved**: Leave the mixed view until s9 — The readers switch with the conversion; s5 adds no reader changes. _(2026-10-21T11:52:19.055Z)_
+- `q395feeb8` — ep3: the invariants name the capability ids c1 to c5 whose citations point at the s1 bundles, but they do not quote the bundle text
+  - **resolved**: Keep citation-only references — The citations point at the s1 bundles; a documentation gap covered by the LLD approval override. _(2026-10-21T11:52:35.258Z)_
 
 ## Citations
 

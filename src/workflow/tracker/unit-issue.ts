@@ -30,6 +30,10 @@ import { ArtifactIds, InvalidArtifactKeyError, type ArtifactKey } from '../artif
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId, readRevision } from '../storage.js';
 import { epicMembershipLabel, renderEpicBody, renderStoryBody, renderTaskBody } from './conventions.js';
 import type { IssueRef, PortFailureKind, PortResult, TrackerPort } from './port.js';
+import { bindArtifact, readBinding, recordPosted, setPendingLink, TRACKER_ISSUE_TYPE } from './binding.js';
+import type { PostedKind } from './binding.js';
+import { unitArtifactId } from './attach.js';
+import type { Reference } from '../artifact-core/types.js';
 import { patchTrackerMeta, readTrackerMeta, type TrackerMeta, type UnitIssue, type UnitRef } from './refs.js';
 
 const log = getLogger('workflow:unit-issue');
@@ -132,27 +136,59 @@ function mapEntry(map: Readonly<Record<string, string>> | undefined, id: string 
 	return map[id] ?? map[id.toLowerCase()] ?? Object.entries(map).find(([k]) => k.toLowerCase() === id.toLowerCase())?.[1];
 }
 
-/** Record the unit's issue on its own artifact (units + the older ref) and on the siblings that read it. */
-function recordUnit(unit: UnitRef, issue: IssueRef, now: string, pendingLink?: UnitIssue['pendingLink']): boolean {
+const issueRefOf = (ref: string): Reference => ({ entityId: ref, type: TRACKER_ISSUE_TYPE, relation: 'tracked-by' });
+
+/**
+ * Where a unit's issue record lives (s6). An Epic's is the binding on its Define and a Story's the binding on its LLD; a Task's
+ * stays under meta.tracker.units on the Plan until s7 creates Task artifacts. Every read and write of a record goes through here.
+ */
+function bindingHome(unit: UnitRef): { readonly repoPath: string; readonly artifactId: string } | undefined {
+	const artifactId = unitArtifactId(unit);
+	return artifactId === undefined ? undefined : { repoPath: unit.repoPath, artifactId };
+}
+
+/** The unit's recorded issue and its pending link, in the shape the retry reads (refs as `owner/repo#N`). */
+function readRecord(unit: UnitRef): { readonly issue: IssueRef; readonly pendingLink?: UnitIssue['pendingLink'] } | undefined {
+	const home = bindingHome(unit);
+	if (home === undefined) {
+		const record = readTrackerMeta(ownJson(unit))?.units?.[unitKey(unit)];
+		return record === undefined || !nonEmpty(record.issue) ? undefined : { issue: record.issue, ...(record.pendingLink !== undefined ? { pendingLink: record.pendingLink } : {}) };
+	}
+	const binding = readBinding(home.repoPath, home.artifactId);
+	if (binding === undefined) return undefined;
+	const p = binding.pendingLink;
+	return {
+		issue: binding.reference.entityId,
+		...(p !== undefined ? { pendingLink: { parent: p.parent.entityId, ...(p.childId !== undefined ? { childId: p.childId } : {}), ...(p.child !== undefined ? { child: p.child.entityId } : {}) } } : {}),
+	};
+}
+
+/** Keep (or with undefined clear) the unit's pending link on its record. False when it could not be written. */
+function writePendingLink(unit: UnitRef, link: UnitIssue['pendingLink']): boolean {
+	const home = bindingHome(unit);
+	if (home !== undefined) {
+		return setPendingLink(home.repoPath, home.artifactId, link === undefined ? undefined
+			: { parent: issueRefOf(link.parent), ...(link.childId !== undefined ? { childId: link.childId } : {}), ...(link.child !== undefined ? { child: issueRefOf(link.child) } : {}) });
+	}
+	const path = ownJson(unit);
+	const record = readTrackerMeta(path)?.units?.[unitKey(unit)];
+	if (record === undefined) return false;
+	if (link === undefined) { const { pendingLink: _done, ...settled } = record; patchTrackerMeta(path, { units: { [unitKey(unit)]: settled } }); return true; }
+	patchTrackerMeta(path, { units: { [unitKey(unit)]: { ...record, pendingLink: link } } });
+	return true;
+}
+
+/** The sibling refs the renderers and the chain report read (epicRef, storyRef, storyRefs, taskRefs, pushedAt): written alongside the record until s9. */
+function recordSiblings(unit: UnitRef, issue: IssueRef, now: string): boolean {
 	let ok = true;
-	const own = ownJson(unit);
-	const prior = readTrackerMeta(own)?.units?.[unitKey(unit)];
-	// The same issue again (a sibling ref repaired): keep the record's revision and extras marks.
-	const record: UnitIssue = prior !== undefined && prior.issue === issue
-		? prior
-		: { unit: unit.unit, unitId: unitId(unit), issue, createdAtRevision: revisionOfFile(own), ...(pendingLink !== undefined ? { pendingLink } : {}) };
-	const units = { [unitKey(unit)]: record };
 	const patches: Array<[string, Partial<TrackerMeta>]> = [];
 	if (unit.unit === 'epic') {
-		patches.push([defineJson(unit), { epicRef: issue, units, pushedAt: now }]);
+		patches.push([defineJson(unit), { epicRef: issue, pushedAt: now }]);
 		patches.push([hldJson(unit), { epicRef: issue }]);
 	} else if (unit.unit === 'story') {
-		patches.push([lldJson(unit), { storyRef: issue, units, pushedAt: now }]);
+		patches.push([lldJson(unit), { storyRef: issue, pushedAt: now }]);
 		const prior = readTrackerMeta(defineJson(unit))?.storyRefs ?? {};
 		patches.push([defineJson(unit), { storyRefs: { ...prior, [unit.storyId ?? '']: issue } }]);
-	} else {
-		const prior = readTrackerMeta(own)?.taskRefs ?? {};
-		patches.push([own, { taskRefs: { ...prior, [unit.taskId ?? '']: issue }, units, pushedAt: now }]);
 	}
 	for (const [path, patch] of patches) {
 		if (!fileHas(path)) { log.debug({ path }, 'unit-issue: no artifact to record on'); continue; }
@@ -162,23 +198,47 @@ function recordUnit(unit: UnitRef, issue: IssueRef, now: string, pendingLink?: U
 	return ok;
 }
 
+/** Record the unit's issue on its own artifact (the binding, or for a Task the Plan's units record) and on the siblings that read it. */
+function recordUnit(unit: UnitRef, issue: IssueRef, now: string, pendingLink?: UnitIssue['pendingLink']): boolean {
+	const home = bindingHome(unit);
+	if (home === undefined) {
+		// a Task: the Plan's record and taskRefs, as before s6
+		const own = ownJson(unit);
+		const prior = readTrackerMeta(own)?.units?.[unitKey(unit)];
+		const record: UnitIssue = prior !== undefined && prior.issue === issue
+			? prior
+			: { unit: unit.unit, unitId: unitId(unit), issue, createdAtRevision: revisionOfFile(own), ...(pendingLink !== undefined ? { pendingLink } : {}) };
+		const taskRefs = readTrackerMeta(own)?.taskRefs ?? {};
+		if (!fileHas(own)) { log.debug({ path: own }, 'unit-issue: no artifact to record on'); return true; }
+		try { patchTrackerMeta(own, { taskRefs: { ...taskRefs, [unit.taskId ?? '']: issue }, units: { [unitKey(unit)]: record }, pushedAt: now }); return true; }
+		catch (err) { log.warn({ path: own, err: (err as Error).message }, 'unit-issue: could not record the unit issue (its label finds it next time)'); return false; }
+	}
+	if (!fileHas(artifactJsonPath(home.repoPath, home.artifactId))) { log.debug({ artifactId: home.artifactId }, 'unit-issue: no artifact to bind'); return recordSiblings(unit, issue, now); }
+	const bound = bindArtifact(home.repoPath, home.artifactId, issue);
+	if (!bound.ok) { log.warn({ unit: unitKey(unit), why: bound.kind, reason: bound.reason }, 'unit-issue: could not bind the unit issue (its label finds it next time)'); return false; }
+	let ok = true;
+	if (pendingLink !== undefined && !writePendingLink(unit, pendingLink)) ok = false;
+	return recordSiblings(unit, issue, now) && ok;
+}
+
 // ---------------------------------------------------------------------------
 // Local resolution
 // ---------------------------------------------------------------------------
 
 /**
  * The unit's issue if any local record or older ref names it, else null. Makes
- * no tracker call and never throws. Order: the units record, then the older refs
- * (Epic: Define epicRef, HLD epicRef; Story: the LLD's own storyRef, then the
- * Define's storyRefs entry; Task: the plan's taskRefs entry). A hit writes the
- * missing record and sibling refs locally.
+ * no tracker call and never throws. Order: the record (the binding of an Epic's
+ * Define or a Story's LLD, the Plan's units record for a Task), then the older
+ * refs (Epic: Define epicRef, HLD epicRef; Story: the LLD's own storyRef, then
+ * the Define's storyRefs entry; Task: the plan's taskRefs entry). A unit with no
+ * binding is bound once from an older ref (a one-way rebind); a hit also writes
+ * the missing sibling refs locally.
  */
 export function resolveUnitIssueLocal(unit: UnitRef, now: () => string = () => new Date().toISOString()): IssueRef | null {
 	let hit: string | undefined;
 	try {
-		const key = unitKey(unit);
+		const recorded = readRecord(unit)?.issue;
 		const own = readTrackerMeta(ownJson(unit));
-		const recorded = own?.units?.[key]?.issue;
 		if (nonEmpty(recorded)) hit = recorded;
 		else if (unit.unit === 'epic') {
 			hit = [own?.epicRef, readTrackerMeta(hldJson(unit))?.epicRef].find(nonEmpty);
@@ -198,13 +258,12 @@ export function resolveUnitIssueLocal(unit: UnitRef, now: () => string = () => n
 
 /** Write whatever of the record and sibling refs is missing; never changes a ref that is present. */
 function reconcile(unit: UnitRef, issue: IssueRef, now: string): void {
-	const key = unitKey(unit);
 	const own = readTrackerMeta(ownJson(unit));
 	const siblings: boolean =
 		unit.unit === 'epic'  ? nonEmpty(readTrackerMeta(defineJson(unit))?.epicRef) && (!fileHas(hldJson(unit)) || nonEmpty(readTrackerMeta(hldJson(unit))?.epicRef)) :
 		unit.unit === 'story' ? nonEmpty(own?.storyRef) && nonEmpty(mapEntry(readTrackerMeta(defineJson(unit))?.storyRefs, unit.storyId)) :
 		nonEmpty(mapEntry(own?.taskRefs, unit.taskId));
-	if (own?.units?.[key] !== undefined && siblings) return;
+	if (readRecord(unit) !== undefined && siblings) return;
 	recordUnit(unit, issue, now);
 }
 
@@ -331,15 +390,20 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 			pendingLink = { parent: parentRef, childId: created.value.id };
 		}
 	}
-	const recorded = recordUnit(unit, issue, now(), pendingLink);
+	// The duplicate check comes first, so the unit is recorded once, with the issue that is kept.
+	const decided = decideKept(unit, port, label, issue);
+	const kept = decided.issue === issue;
+	const recorded = recordUnit(unit, decided.issue, now(), kept ? pendingLink : undefined);
+	if (!kept && recorded) closeDuplicate(port, label, issue, decided.issue);
 	// Without the record, adopting another issue could leave a local ref on a closed duplicate: keep this one.
-	return { ok: true, value: recorded ? tieBreak(unit, port, label, issue, now) : { issue, created: true, duplicateCheck: 'not-run' } };
+	if (!recorded) return { ok: true, value: { issue, created: true, duplicateCheck: 'not-run' } };
+	return { ok: true, value: { issue: decided.issue, created: kept, duplicateCheck: decided.check } };
 }
 
 /** True when the unit's record is on disk and nothing is left to retry (a pending link). */
 export function isUnitSettled(unit: UnitRef): boolean {
 	try {
-		const record = readTrackerMeta(ownJson(unit))?.units?.[unitKey(unit)];
+		const record = readRecord(unit);
 		return record !== undefined && record.pendingLink === undefined;
 	} catch { return false; }
 }
@@ -350,13 +414,11 @@ function lookUpIssueId(port: TrackerPort, ref: IssueRef): PortResult<number> {
 	return port.issueOps.resolveIssueId(ref);
 }
 
-/** Store the unit's pending link on its own record (the record keeps its revision and extras marks). */
+/** Store the unit's pending link on its own record (the record keeps its revision and marks). */
 function savePendingLink(unit: UnitRef, pendingLink: NonNullable<UnitIssue['pendingLink']>): void {
 	try {
-		const path = ownJson(unit);
-		const record = readTrackerMeta(path)?.units?.[unitKey(unit)];
-		if (record === undefined) { log.warn({ unit: unitKey(unit) }, 'unit-issue: no record to keep the pending link on'); return; }
-		patchTrackerMeta(path, { units: { [unitKey(unit)]: { ...record, pendingLink } } });
+		if (readRecord(unit) === undefined) { log.warn({ unit: unitKey(unit) }, 'unit-issue: no record to keep the pending link on'); return; }
+		if (!writePendingLink(unit, pendingLink)) log.warn({ unit: unitKey(unit) }, 'unit-issue: could not record the pending link');
 	} catch (err) { log.warn({ unit: unitKey(unit), err: (err as Error).message }, 'unit-issue: could not record the pending link'); }
 }
 
@@ -378,10 +440,8 @@ function linkAdopted(unit: UnitRef, port: TrackerPort, parent: IssueRef, child: 
 /** A link under the parent that failed earlier is retried; on success the record is cleared of it. A record that knows only the child ref looks its id up first. */
 function retryPendingLink(unit: UnitRef, port: TrackerPort, issue: IssueRef): void {
 	try {
-		const path = ownJson(unit);
-		const record = readTrackerMeta(path)?.units?.[unitKey(unit)];
-		const pending = record?.pendingLink;
-		if (record === undefined || pending === undefined) return;
+		const pending = readRecord(unit)?.pendingLink;
+		if (pending === undefined) return;
 		let childId = pending.childId;
 		if (childId === undefined) {
 			if (pending.child === undefined) { log.warn({ unit: unitKey(unit), issue }, 'unit-issue: the pending link names neither a child id nor a child ref'); return; }
@@ -396,36 +456,35 @@ function retryPendingLink(unit: UnitRef, port: TrackerPort, issue: IssueRef): vo
 			if (pending.childId === undefined) savePendingLink(unit, { parent: pending.parent, childId });
 			return;
 		}
-		const { pendingLink: _done, ...settled } = record;
-		patchTrackerMeta(path, { units: { [unitKey(unit)]: settled } });
+		if (!writePendingLink(unit, undefined)) log.warn({ unit: unitKey(unit), issue }, 'unit-issue: the pending link was made but its clearing was not written (it is retried; linking twice is harmless)');
 	} catch (err) { log.warn({ unit: unitKey(unit), err: (err as Error).message }, 'unit-issue: could not retry the pending link'); }
 }
 
 const issueNumber = (ref: IssueRef): number => Number(/#(\d+)$/.exec(ref)?.[1] ?? Number.MAX_SAFE_INTEGER);
 
 /**
- * Step 5, after the created issue is recorded: when two daemons both created, keep
- * the lowest-numbered issue, record it in place of this call's own, and comment on
- * and close the own one as a duplicate. A failed
- * listing, keeps the created issue (`not-run`); the issue is already recorded.
+ * Step 5, before the created issue is recorded: when two daemons both created, the lowest-numbered issue of the unit label is the
+ * unit's. It is recorded once (the binding refuses a second issue), and this call's own issue is commented on and closed as a
+ * duplicate when it is not the lowest. A failed listing keeps the created issue (`not-run`).
  */
-function tieBreak(unit: UnitRef, port: TrackerPort, label: string, own: IssueRef, now: () => string): EnsuredIssue {
-	const kept: EnsuredIssue = { issue: own, created: true, duplicateCheck: 'not-run' };
+function decideKept(unit: UnitRef, port: TrackerPort, label: string, own: IssueRef): { readonly issue: IssueRef; readonly check: DuplicateCheck } {
 	const list = port.findIssues([label]);
 	if (!list.ok) {
 		log.warn({ unit: unitKey(unit), reason: list.reason }, 'unit-issue: the duplicate check could not list the unit label (the created issue is kept)');
-		return kept;
+		return { issue: own, check: 'not-run' };
 	}
 	const lowest = [...list.value].sort((a, b) => issueNumber(a) - issueNumber(b))[0];
-	if (lowest === undefined || lowest === own || issueNumber(lowest) > issueNumber(own)) return { ...kept, duplicateCheck: 'clean' };
-
+	if (lowest === undefined || lowest === own || issueNumber(lowest) > issueNumber(own)) return { issue: own, check: 'clean' };
 	log.warn({ unit: unitKey(unit), own, lowest }, 'unit-issue: another daemon created this unit issue first; adopting the lowest and closing this call\'s own');
-	if (!recordUnit(unit, lowest, now())) return kept;
-	const said = port.issueOps.comment(own, `Duplicate of ${lowest}: the same unit (${label}) was created twice at once; ${lowest} is the one kept.`);
+	return { issue: lowest, check: 'adopted-other' };
+}
+
+/** Comment on and close this call's own issue as a duplicate of `kept`. */
+function closeDuplicate(port: TrackerPort, label: string, own: IssueRef, kept: IssueRef): void {
+	const said = port.issueOps.comment(own, `Duplicate of ${kept}: the same unit (${label}) was created twice at once; ${kept} is the one kept.`);
 	if (!said.ok) log.warn({ own, reason: said.reason }, 'unit-issue: could not comment on the duplicate');
 	const closed = port.issueOps.close(own);
 	if (!closed.ok) log.warn({ own, reason: closed.reason }, 'unit-issue: could not close the duplicate (it is adopted away from regardless)');
-	return { issue: lowest, created: false, duplicateCheck: 'adopted-other' };
 }
 
 /**
@@ -535,7 +594,26 @@ export interface ExtrasDeps {
 	readonly mark?: ((unit: UnitRef, name: ExtraName, at: string) => void) | undefined;
 }
 
+const POSTED_KIND: Readonly<Record<ExtraName, PostedKind>> = { milestone: 'milestone', taskList: 'task-list', designComment: 'design', reviewComment: 'review', planComment: 'plan' };
+
+/** The extras already posted for the unit, each with the time it was recorded: the binding's posted list for an Epic or Story. */
+function marksOf(unit: UnitRef): { readonly [K in ExtraName]?: string | undefined } {
+	const home = bindingHome(unit);
+	if (home === undefined) return readTrackerMeta(ownJson(unit))?.units?.[unitKey(unit)]?.extrasDone ?? {};
+	const out: { [K in ExtraName]?: string | undefined } = {};
+	for (const p of readBinding(home.repoPath, home.artifactId)?.posted ?? []) {
+		const name = (Object.keys(POSTED_KIND) as ExtraName[]).find(n => POSTED_KIND[n] === p.kind);
+		if (name !== undefined) out[name] = p.at;
+	}
+	return out;
+}
+
 function markExtra(unit: UnitRef, name: ExtraName, at: string): void {
+	const home = bindingHome(unit);
+	if (home !== undefined) {
+		if (!recordPosted(home.repoPath, home.artifactId, POSTED_KIND[name], undefined, () => at)) throw new Error(`no binding on ${home.artifactId} to mark`);
+		return;
+	}
 	const path = ownJson(unit);
 	const key = unitKey(unit);
 	const record = readTrackerMeta(path)?.units?.[key];
@@ -553,7 +631,7 @@ function markExtra(unit: UnitRef, name: ExtraName, at: string): void {
 export function runUnitExtras(unit: UnitRef, steps: readonly ExtraStep[], deps: ExtrasDeps = {}): ExtrasOutcome {
 	const now = deps.now ?? (() => new Date().toISOString());
 	const mark = deps.mark ?? markExtra;
-	const marks = readTrackerMeta(ownJson(unit))?.units?.[unitKey(unit)]?.extrasDone ?? {};
+	const marks = marksOf(unit);
 	const out: ExtrasOutcome = { done: [], skipped: [], failed: [] };
 	for (const step of steps) {
 		if (marks[step.name] !== undefined) { out.skipped.push(step.name); continue; }

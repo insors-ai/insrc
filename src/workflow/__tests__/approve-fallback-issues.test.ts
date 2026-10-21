@@ -151,7 +151,7 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 		assert.equal(via(t)(() => autoPushStoryOnLld(fx.lld)).status, 'already-exists');
 		assert.equal(via(t)(() => autoPushEpicOnHld(fx.hld)).status, 'already-exists');
 		assert.deepEqual({ comments: t.log.comments.length, writes: t.log.writeBodies }, before, 'a second approve posts nothing');
-		assert.deepEqual(Object.keys(trackerOf(fx.lld).units['story:s1'].extrasDone).sort(), ['designComment', 'reviewComment', 'taskList']);
+		assert.deepEqual((JSON.parse(readFileSync(fx.lld, 'utf8')).meta.envelope.binding.posted as Array<{ kind: string }>).map(p => p.kind).sort(), ['design', 'review', 'task-list'], 'the binding records what was posted');
 
 		// the draft hook also made both Task issues: the plan approve adopts them and creates none
 		for (const taskId of ['t1', 't2']) {

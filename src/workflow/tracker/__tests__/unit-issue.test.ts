@@ -23,144 +23,7 @@ import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, ty
 import type { UnitRef } from '../refs.js';
 import { ensureUnitIssue, ensureUnitIssueDetailed, isUnitSettled, resolveUnitIssueLocal, unitKey, unitLabel } from '../unit-issue.js';
 
-const HASH = 'a3f4b8c9d1e2f3a4';
-const CREATED = '2026-07-17T07:42:28.275Z';
-const SLUG = 'tag-filtering';
-const MEMBERSHIP = `epic:${SLUG}`;
-
-const CFG: ResolvedGithubConfig = {
-	type: 'github', owner: 'acme', repo: 'demo', epicLabel: 'epic', storyLabel: 'story', taskLabel: 'task',
-	useMilestones: false, pushTasks: false, commitArtifacts: false, taskIssueType: 'Task', epicIssueType: 'Epic', storyIssueType: 'Story', source: 'per-repo-config',
-};
-const deps = { readConfig: () => CFG, now: () => '2026-10-18T00:00:00.000Z' };
-
-// ---------------------------------------------------------------------------
-// An in-memory tracker
-// ---------------------------------------------------------------------------
-
-interface Issue { number: number; ref: IssueRef; spec: IssueSpec; state: 'open' | 'closed' }
-
-function fakeTracker(over: {
-	failFind?: boolean; failLabel?: string; failCreate?: boolean; commitThenFail?: boolean;
-	/** The additive sc1 listing (findIssues); off by default, as on today's real port. */
-	withListing?: boolean; failList?: boolean; failClose?: boolean; failLink?: number;
-	/** Answer this many findIssue calls with "not found" whatever exists (a stale read of two daemons). */
-	staleFinds?: number;
-	/** Answer every title lookup with "none" whatever exists (a lagging title index). */
-	staleTitle?: boolean;
-	/** Runs after a findIssue lookup with what it found (a file changing between the lookup and the record). */
-	afterFind?: (hit: IssueRef | null) => void;
-	/** Fail this many resolveIssueId calls (with `failResolveKind`), and leave resolveIssueId off the tracker altogether. */
-	failResolve?: number; failResolveKind?: 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected'; withoutResolve?: boolean;
-	/** Another daemon's issue, created just before this call's own, so it has the lower number. */
-	racer?: boolean;
-	/** Runs right after this fake's create commits an issue and before it returns (another daemon acting in between). */
-	afterCreate?: () => void;
-	/** Share the numbering and issues of another fake (two daemons, one tracker). */
-	shared?: { issues: Issue[]; next: { n: number } };
-} = {}) {
-	const issues: Issue[] = over.shared?.issues ?? [];
-	const calls = { find: 0, create: 0, list: 0, resolve: [] as string[], label: [] as string[], link: [] as Array<[string, number]>, comments: [] as Array<[string, string]>, closed: [] as string[] };
-	const counter = over.shared?.next ?? { n: 1 };
-	let stale = over.staleFinds ?? 0;
-	const find = (labels: string[]): PortResult<IssueRef | null> => {
-		calls.find += 1;
-		if (over.failFind === true) return { ok: false, reason: 'gh timed out', kind: 'unreachable' };
-		if (stale > 0) { stale -= 1; return { ok: true, value: null }; }
-		const hit = issues.find(i => labels.every(l => i.spec.labels.includes(l)));
-		over.afterFind?.(hit?.ref ?? null);
-		return { ok: true, value: hit?.ref ?? null };
-	};
-	const port = {
-		kind: 'github', capabilities: new Set(['issue-create']),
-		whoAmI: () => ({ ok: true, value: 'me' }),
-		findIssue: find,
-		issueOps: {
-			ensureLabel: (name: string) => { calls.label.push(name); return name !== over.failLabel; },
-			create: (spec: IssueSpec): PortResult<CreatedIssue> => {
-				calls.create += 1;
-				if (over.failCreate === true && over.commitThenFail !== true) return { ok: false, reason: 'gh rejected the create', kind: 'rejected' };
-				if (over.racer === true) {
-					over.racer = false;
-					const rn = counter.n++;
-					issues.push({ number: rn, ref: `acme/demo#${rn}`, spec: { ...spec, labels: [...spec.labels] }, state: 'open' });
-				}
-				const number = counter.n++;
-				const ref = `acme/demo#${number}`;
-				issues.push({ number, ref, spec, state: 'open' });
-				if (over.commitThenFail === true) { over.commitThenFail = false; over.failCreate = false; return { ok: false, reason: 'timed out after the issue was committed', kind: 'unreachable' }; }
-				over.afterCreate?.();
-				return { ok: true, value: { ref, id: 1000 + number, typed: true } };
-			},
-			linkSubIssue: (parent: IssueRef, childId: number): PortResult<void> => {
-				calls.link.push([parent, childId]);
-				if (over.failLink !== undefined && over.failLink > 0) { over.failLink -= 1; return { ok: false, reason: 'link rejected', kind: 'rejected' }; }
-				return { ok: true, value: undefined };
-			},
-			...(over.withoutResolve === true ? {} : {
-				resolveIssueId: (ref: IssueRef): PortResult<number> => {
-					calls.resolve.push(ref);
-					if (over.failResolve !== undefined && over.failResolve > 0) { over.failResolve -= 1; return { ok: false, reason: 'lookup failed', kind: over.failResolveKind ?? 'unreachable' }; }
-					const hit = issues.find(i => i.ref === ref);
-					return hit === undefined ? { ok: false, reason: 'no such issue', kind: 'rejected' } : { ok: true, value: 1000 + hit.number };
-				},
-			}),
-			comment: (ref: IssueRef, body: string): PortResult<void> => { calls.comments.push([ref, body]); return { ok: true, value: undefined }; },
-			close: (ref: IssueRef): PortResult<void> => {
-				if (over.failClose === true) return { ok: false, reason: 'close rejected', kind: 'rejected' };
-				calls.closed.push(ref);
-				const hit = issues.find(i => i.ref === ref); if (hit !== undefined) hit.state = 'closed';
-				return { ok: true, value: undefined };
-			},
-		},
-		findIssuesByTitleToken: (token: string): PortResult<IssueRef[]> => ({ ok: true, value: over.staleTitle === true ? [] : issues.filter(i => titleMatchesToken(i.spec.title, token)).sort((a, b) => a.number - b.number).map(i => i.ref) }),
-		...(over.withListing !== false ? {
-			findIssues: (labels: string[]): PortResult<IssueRef[]> => {
-				calls.list += 1;
-				// the guard's lookup before a create is stale for a stale tracker; only the tie-break listing after a create fails
-				if (over.staleTitle === true && calls.create === 0) return { ok: true, value: [] };
-				if (over.failList === true && calls.create > 0) return { ok: false, reason: 'listing timed out', kind: 'unreachable' };
-				return { ok: true, value: issues.filter(i => labels.every(l => i.spec.labels.includes(l))).sort((a, b) => a.number - b.number).map(i => i.ref) };
-			},
-		} : {}),
-	} as unknown as TrackerPort;
-	return { port, issues, calls, shared: { issues, next: counter } };
-}
-
-// ---------------------------------------------------------------------------
-// A repo with a Define, HLD, LLD and plan
-// ---------------------------------------------------------------------------
-
-function seed(): { repo: string; json: (id: string) => string; read: (id: string) => any; cleanup: () => void } {
-	const repo = mkdtempSync(join(tmpdir(), 'insrc-unit-issue-'));
-	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-	const put = (id: string, doc: unknown): void => writeFileSync(artifactJsonPath(repo, id), JSON.stringify(doc, null, 2) + '\n');
-	put(defineArtifactId(HASH), {
-		meta: { workflow: 'define', runId: 'r', repoPath: repo, createdAt: CREATED, epicHash: HASH, epicSlug: SLUG, schemaVersion: 1 },
-		body: {
-			flavor: 'enhancement', problem: 'Users cannot filter todos by tag today. Only status filtering exists.', nonGoals: [], assumptions: [],
-			constraints: [{ id: 'k1', text: 'Reuse the sidebar', type: 'convention', source: 'c1' }],
-			stories: [{ id: 's1', title: 'Filter by tag', userValue: 'find todos faster', acceptanceCriteria: [{ id: 'ac1', given: 'g', when: 'w', then: 't', operationalizes: ['k1'] }] }],
-			openQuestions: [],
-		},
-		citations: [],
-	});
-	put(hldArtifactId(HASH), { meta: { workflow: 'design.epic', epicHash: HASH, epicSlug: SLUG, createdAt: CREATED }, body: {}, citations: [] });
-	put(lldArtifactId(HASH, 's1'), { meta: { workflow: 'design.story', epicHash: HASH, epicSlug: SLUG, storyId: 's1', createdAt: CREATED, revision: 2 }, body: {}, citations: [] });
-	put(planArtifactId(HASH, 's1'), {
-		meta: { workflow: 'plan', epicHash: HASH, epicSlug: SLUG, storyId: 's1', createdAt: CREATED },
-		body: { tasks: [{ id: 't1', title: 'Add the filter', summary: 'Add it', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['it filters'], derivedFrom: ['c1'], tests: [] }] },
-		citations: [],
-	});
-	return {
-		repo, json: id => artifactJsonPath(repo, id), read: id => JSON.parse(readFileSync(artifactJsonPath(repo, id), 'utf8')),
-		cleanup: () => rmSync(repo, { recursive: true, force: true }),
-	};
-}
-
-const epic = (repo: string): UnitRef => ({ unit: 'epic', repoPath: repo, epicHash: HASH });
-const story = (repo: string): UnitRef => ({ unit: 'story', repoPath: repo, epicHash: HASH, storyId: 's1' });
-const task = (repo: string): UnitRef => ({ unit: 'task', repoPath: repo, epicHash: HASH, storyId: 's1', taskId: 't1' });
+import { CFG, HASH, MEMBERSHIP, SLUG, bound, deps, epic, fakeTracker, ref, seed, story, task } from './unit-issue-kit.js';
 
 // ---------------------------------------------------------------------------
 
@@ -190,7 +53,7 @@ test('resolveUnitIssueLocal resolves from records and legacy refs, reconciles lo
 		const def = fx.read(defineArtifactId(HASH)); def.meta.tracker = { adapter: 'github', epicRef: 'acme/demo#7' };
 		writeFileSync(fx.json(defineArtifactId(HASH)), JSON.stringify(def));
 		assert.equal(resolveUnitIssueLocal(epic(fx.repo), deps.now), 'acme/demo#7');
-		assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#7');
+		assert.equal(bound(fx, defineArtifactId(HASH)), 'acme/demo#7');
 		assert.equal(fx.read(hldArtifactId(HASH)).meta.tracker.epicRef, 'acme/demo#7', 'the HLD ref is reconciled');
 
 		// Story: the Define's storyRefs entry; the LLD gets its own storyRef and record
@@ -199,7 +62,7 @@ test('resolveUnitIssueLocal resolves from records and legacy refs, reconciles lo
 		assert.equal(resolveUnitIssueLocal(story(fx.repo), deps.now), 'acme/demo#8');
 		const lld = fx.read(lldArtifactId(HASH, 's1')).meta;
 		assert.equal(lld.tracker.storyRef, 'acme/demo#8');
-		assert.equal(lld.tracker.units['story:s1'].createdAtRevision, 2, 'the record notes the artifact revision');
+		assert.equal(lld.envelope.binding.createdAtRevision, 2, 'the binding notes the artifact revision');
 
 		// Task: the plan's taskRefs entry
 		const plan = fx.read(planArtifactId(HASH, 's1')); plan.meta.tracker = { adapter: 'github', taskRefs: { t1: 'acme/demo#9' } };
@@ -285,7 +148,7 @@ test('team mode creates only when everything misses and reports phase before-cre
 		assert.equal(s.ok && s.value.issue, 'acme/demo#2');
 		assert.deepEqual(t.calls.link[0], ['acme/demo#1', 1002], 'the Story is linked under its Epic');
 		assert.match(t.issues[1]!.spec.body, /#1/, 'the body names the Epic issue');
-		assert.equal(fx.read(lldArtifactId(HASH, 's1')).meta.tracker.units['story:s1'].issue, 'acme/demo#2');
+		assert.equal(bound(fx, lldArtifactId(HASH, 's1')), 'acme/demo#2');
 
 		const k = ensureUnitIssueDetailed(task(fx.repo), t.port, deps);
 		assert.equal(k.ok && k.value.issue, 'acme/demo#3');
@@ -305,7 +168,7 @@ test('team mode creates only when everything misses and reports phase before-cre
 			const a = ensureUnitIssueDetailed(epic(other.repo), t2.port, deps);
 			assert.deepEqual(a.ok && [a.value.issue, a.value.created], ['acme/demo#40', false]);
 			assert.equal(t2.calls.create, 0);
-			assert.equal(other.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#40', 'and recorded');
+			assert.equal(bound(other, defineArtifactId(HASH)), 'acme/demo#40', 'and recorded');
 		} finally { other.cleanup(); }
 
 		// a unit that is not in its artifact is a failure before create
@@ -326,7 +189,7 @@ test('a create that times out after the remote committed is adopted by its label
 		const second = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(second.ok && [second.value.issue, second.value.created], ['acme/demo#1', false], 'found by its per-unit label');
 		assert.equal(t.calls.create, 1, 'no second create');
-		assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#1');
+		assert.equal(bound(fx, defineArtifactId(HASH)), 'acme/demo#1');
 	} finally { fx.cleanup(); }
 });
 
@@ -359,7 +222,7 @@ test('a lower-numbered issue is adopted and the call\'s own is commented on and 
 			assert.deepEqual(t.calls.comments.map(([ref]) => ref), ['acme/demo#2'], 'the call\'s own issue is commented on');
 			assert.match(t.calls.comments[0]![1], /Duplicate of acme\/demo#1/);
 			assert.deepEqual(t.calls.closed, failClose ? [] : ['acme/demo#2']);
-			assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#1', 'the record names the lowest');
+			assert.equal(bound(fx, defineArtifactId(HASH)), 'acme/demo#1', 'the record names the lowest');
 			assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.epicRef, 'acme/demo#1');
 
 			// the listing's own issue first: kept, nothing commented
@@ -388,8 +251,8 @@ test('two simulated daemons that both create converge on the lowest issue', () =
 		assert.equal(ra.ok && rb?.ok, true);
 		assert.deepEqual(shared.issues.filter(i => i.state === 'open').map(i => i.ref), ['acme/demo#1'], 'one open issue: the lowest');
 		assert.deepEqual(second.calls.closed, ['acme/demo#2']);
-		assert.equal(a.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#1');
-		assert.equal(b.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#1', 'both records name it');
+		assert.equal(bound(a, defineArtifactId(HASH)), 'acme/demo#1');
+		assert.equal(bound(b, defineArtifactId(HASH)), 'acme/demo#1', 'both records name it');
 	} finally { a.cleanup(); b.cleanup(); }
 });
 
@@ -399,7 +262,7 @@ test('a failed findIssues listing keeps the recorded issue and a following call 
 		const t = fakeTracker({ withListing: true, failList: true });
 		const r = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(r, { ok: true, value: { issue: 'acme/demo#1', created: true, duplicateCheck: 'not-run' } });
-		assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#1');
+		assert.equal(bound(fx, defineArtifactId(HASH)), 'acme/demo#1');
 		const before = { ...t.calls };
 		const again = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(again, { ok: true, value: { issue: 'acme/demo#1', created: false, duplicateCheck: 'clean' } });
@@ -414,8 +277,8 @@ test('a link under the parent that failed at creation is retried on the next ens
 		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
 		const first = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		assert.equal(first.ok, true, 'the Story issue is still returned');
-		const pending = fx.read(lldArtifactId(HASH, 's1')).meta.tracker.units['story:s1'].pendingLink;
-		assert.deepEqual(pending, { parent: 'acme/demo#1', childId: 1002 }, 'the failed link is recorded');
+		const pending = fx.read(lldArtifactId(HASH, 's1')).meta.envelope.binding.pendingLink;
+		assert.deepEqual(pending, { parent: ref('acme/demo#1'), childId: 1002 }, 'the failed link is recorded on the binding');
 		assert.equal(isUnitSettled(story(fx.repo)), false);
 
 		// the next ensure retries the link (no new issue) and clears it
@@ -424,7 +287,7 @@ test('a link under the parent that failed at creation is retried on the next ens
 		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
 		assert.equal(t.calls.link.length, linksBefore + 1);
 		assert.equal(t.calls.create, createsBefore);
-		assert.equal(fx.read(lldArtifactId(HASH, 's1')).meta.tracker.units['story:s1'].pendingLink, undefined);
+		assert.equal(fx.read(lldArtifactId(HASH, 's1')).meta.envelope.binding.pendingLink, undefined);
 		assert.equal(isUnitSettled(story(fx.repo)), true);
 
 		// settled: a further ensure makes no tracker call at all
@@ -465,7 +328,16 @@ function timedOutUnit(fx: ReturnType<typeof seed>, unitOf: (repo: string) => Uni
 	assert.deepEqual(first.ok ? null : first.phase, 'create', 'the outcome is unconfirmed');
 	return t;
 }
-const recordOf = (fx: ReturnType<typeof seed>, u: UnitRef) => (u.unit === 'story' ? fx.read(lldArtifactId(HASH, 's1')) : fx.read(planArtifactId(HASH, 's1'))).meta.tracker.units[u.unit === 'story' ? 'story:s1' : 'task:s1/t1'];
+/** The unit's record in the shape the retry reads: a Story's binding (refs as owner/repo#N), a Task's Plan record. */
+const recordOf = (fx: ReturnType<typeof seed>, u: UnitRef) => {
+	if (u.unit !== 'story') return fx.read(planArtifactId(HASH, 's1')).meta.tracker.units['task:s1/t1'];
+	const b = fx.read(lldArtifactId(HASH, 's1')).meta.envelope.binding;
+	const p = b.pendingLink;
+	return {
+		issue: b.reference.entityId, createdAtRevision: b.createdAtRevision,
+		pendingLink: p === undefined ? undefined : { parent: p.parent.entityId, ...(p.childId !== undefined ? { childId: p.childId } : {}), ...(p.child !== undefined ? { child: p.child.entityId } : {}) },
+	};
+};
 
 test('a Story or Task issue adopted by its label after a timed-out create is resolved and linked under its parent, a failed resolve records pendingLink with child and a failed link records childId, the next ensure completes either, an Epic adoption makes no call, and an old pendingLink with childId still links without a resolve', () => {
 	// Story: adopted, resolved, linked, settled; the record keeps its revision mark
@@ -569,14 +441,14 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 		assert.deepEqual([t.calls.resolve.length, t.calls.link.length], [0, 0]);
 	} finally { fx.cleanup(); }
 
-	// A record from before this change ({ parent, childId }) links with its id and makes no lookup
+	// A pending link that already holds the child id links with it and makes no lookup
 	fx = seed();
 	try {
 		const t = fakeTracker();
 		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
 		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
 		const lld = fx.read(lldArtifactId(HASH, 's1'));
-		lld.meta.tracker.units['story:s1'].pendingLink = { parent: 'acme/demo#1', childId: 77 };
+		lld.meta.envelope.binding.pendingLink = { parent: ref('acme/demo#1'), childId: 77 };
 		writeFileSync(fx.json(lldArtifactId(HASH, 's1')), JSON.stringify(lld));
 		const resolvesBefore = t.calls.resolve.length;
 		const linksBefore = t.calls.link.length;

@@ -32,10 +32,12 @@ function withStory(fn: (unit: UnitRef, marks: () => Record<string, string>) => v
 		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 		const path = artifactJsonPath(repo, lldArtifactId(HASH, 's1'));
 		writeFileSync(path, JSON.stringify({
-			meta: { workflow: 'design.story', epicHash: HASH, storyId: 's1', tracker: { adapter: 'github', units: { 'story:s1': { unit: 'story', unitId: 's1', issue: 'acme/demo#8', createdAtRevision: 1 } } } },
+			meta: { workflow: 'design.story', epicHash: HASH, storyId: 's1', envelope: { binding: { reference: { entityId: 'acme/demo#8', type: 'github:issue', relation: 'tracked-by' }, createdAtRevision: 1, posted: [] } } },
 			body: {}, citations: [],
 		}));
-		const marks = (): Record<string, string> => JSON.parse(readFileSync(path, 'utf8')).meta.tracker.units['story:s1'].extrasDone ?? {};
+		const NAME: Record<string, string> = { 'task-list': 'taskList', design: 'designComment', review: 'reviewComment', plan: 'planComment', milestone: 'milestone' };
+		// what the binding records as posted, by the extra's name (s6: binding.posted replaces extrasDone)
+		const marks = (): Record<string, string> => Object.fromEntries((JSON.parse(readFileSync(path, 'utf8')).meta.envelope.binding.posted as Array<{ kind: string; at: string }>).map(p => [NAME[p.kind]!, p.at]));
 		fn({ unit: 'story', repoPath: repo, epicHash: HASH, storyId: 's1' }, marks);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 }

@@ -899,3 +899,23 @@ test('a size-refused compare or pair call is re-divided by its stage within the 
 	}
 	assert.fail('no pair call was reached');
 });
+
+test('a mutual call cut between chunks is checked in both directions, each at its own caller', () => {
+	// placeOrder calls fill and fill calls placeOrder; the two land in different chunks.
+	const g: CodeReviewGrounding = { symbols: DIVIDING.symbols.map(x => x.entityId === 'id-fill' ? { ...x, callees: ['placeOrder'] } : x) };
+	const s = subject();
+	const snap = codeReviewSnapshot(s, g);
+	const adapter = modelDimensionAdapter(qualitySpec(s), s, snap, SMALL) as unknown as ReviewAdapter<unknown>;
+	const calls = adapter.material().relations.filter(r => r.kind === 'calls').map(r => `${r.from}->${r.to}`).sort();
+	assert.deepEqual(calls, ['id-fill->id-placeOrder', 'id-placeOrder->id-fill'], 'both directions are relations');
+	// Same file and same module stay one relation per pair.
+	const symmetric = adapter.material().relations.filter(r => r.kind !== 'calls').map(r => [r.kind, [r.from, r.to].sort().join('|')].join(':'));
+	assert.equal(new Set(symmetric).size, symmetric.length, 'no symmetric relation twice');
+	const { calls: made } = drive(createReviewJob(adapter, 'daemon', snap, SMALL), adapter, call => call.role === 'chunk' ? chunkAnswer('quality', call) : { findings: [] });
+	const relationCallers = [...new Set(made.filter(c => c.role === 'relation').map(c => c.carries.atomIds[0]))].sort();
+	assert.deepEqual(relationCallers, ['id-fill', 'id-placeOrder'], 'one relation check per direction');
+	for (const c of made.filter(r => r.role === 'relation')) {
+		const callerFile = c.carries.atomIds[0] === 'id-fill' ? 'src/basket/basket.ts' : 'src/order/order.ts';
+		assert.ok((c.messages[0]!.content as string).includes(`in its file, "${callerFile}"`), 'located at its own caller');
+	}
+});

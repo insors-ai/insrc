@@ -36,9 +36,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "S003 designs the four upstream requirements: obligation gathering, cross-chunk relationships, duplicate detection, and the installed-daemon smoke.",
-          "evidence": "DEF S003 FR001–FR004 and HLD §5.3 specify exactly these responsibilities. Design §§2.3–2.6 cover the gather and comparisons; §3.2 and §6 cover the smoke. The existing adapter modules implement the corresponding obligation, relation, compare, pair, and merge seams. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/adapters/code-review-duplicates.ts]",
-          "action": "Retain this scope.",
+          "premise": "The design addresses all four upstream S003 acceptance criteria.",
+          "evidence": "DEF §6.3 and HLD §5.3 require obligation adjudication, cross-chunk relationship checks, duplicate detection and the installed-daemon smoke. The design assigns these to obligation gather, relationCall, compare/pair and the smoke respectively. The existing adapters implement the first three mechanisms; the relationship-completeness dependency gap is reported under change-sites. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/adapters/code-review-duplicates.ts]",
+          "action": "Retain this scope and resolve the relationship dependency gap.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -48,9 +48,21 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Today's quality review reasons over structured summaries, and the runner folds HIGH to block, MED to warn, otherwise pass.",
-          "evidence": "buildQualityPrompt explicitly says 'Reason only over the structured symbol summaries provided — you are not given raw file contents' and serializes grounding.symbols. ChangedSymbolSummary contains signature and caller/callee names, not function bodies. foldVerdict implements HIGH→block, MED→warn, otherwise pass; its optional cap promotes only pass to warn. [files: src/workflow/code-review/dimensions/quality.ts, src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts]",
-          "action": "Keep relationship and duplication guarantees limited to evidence available in these summaries.",
+          "premise": "Today's quality review reasons over structured symbol summaries rather than function bodies.",
+          "evidence": "buildQualityPrompt explicitly says 'Reason only over the structured symbol summaries provided — you are not given raw file contents' and serializes grounding.symbols. ChangedSymbolSummary carries signatures and caller/callee names. codeReviewMaterial serializes those same rows into atoms. [files: src/workflow/code-review/dimensions/quality.ts, src/workflow/code-review/types.ts, src/workflow/review-pipeline/adapters/code-review-material.ts]",
+          "action": "Preserve the stated limitation; do not treat signature-only evidence as proof of body-level behavior.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The verdict fold remains HIGH→block, MED→warn, otherwise pass, with an optional pass-to-warn floor.",
+          "evidence": "runCodeReview collects dimension results serially and folds their findings. foldVerdict computes 'counts.high > 0 ? block : counts.med > 0 ? warn : pass'; capAtWarn promotes only pass. outOfScope findings are excluded from foldCounts. [files: src/workflow/code-review/runner.ts]",
+          "action": "Keep the existing fold unchanged.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -60,9 +72,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The existing shared pipeline provides the adapter, gather, carried-material, refusal-redivision, and completion-hook contracts this Story consumes.",
-          "evidence": "types.ts defines ChunkPrompt.carries, AdapterStage.redivide, GatherPlan.obligationCall/reduceCall/relationCall/merge, and finish(outputs, context). driver.ts defines onDone(job) and invokes it before returning the result. The amended migration description correctly acknowledges that the S003 adapter implementation already exists in substantial part. [files: src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/code-review.ts]",
-          "action": "Extend the existing adapters and completion hook.",
+          "premise": "The shared pipeline already supplies the finish-before-merge contract, refusal hooks and completion hook this Story consumes.",
+          "evidence": "GatherPlan exposes obligationCall with context, relationCall with maxChars, validate and merge. AdapterStage exposes carries-related redivision through redivide. finishJob invokes adapter.finish before gather.merge([finished, ...parts]). RunReviewJobOpts exposes onDone, invoked with the finished job. runDimensionJob does not yet install the proposed plan logging, consistent with the design identifying it as remaining work. [files: src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/code-review.ts]",
+          "action": "Reuse these contracts and add the planned logging at runDimensionJob.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -71,10 +83,10 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "The error-path and migration instructions can put merged coverage normalization and gather FR filtering in finish.",
-          "evidence": "Despite the correct amendment in §2.6, §5 still says 'finish applies today's FR-reference filter', migration step 2 says 'finish normalises coverage once', and §8.1 assigns merged normalization to finish. job.ts executes 'adapter.finish(job.outputs, ...)' before 'gather.merge([finished, ...])'. The divided finish returns chunk findings only; code-review-gather.ts instead executes 'args.finalize(mergeFindings(parts))'. Thus finish cannot filter obligation findings. The existing test titled 'dropped by finish' actually exercises the completed divided job, masking the terminology error. [files: src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/code-review.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/__tests__/code-review-gather.test.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/PLAN.md]",
-          "action": "Make §§5, 7, and 8 consistent with §2.6: divided finish collects chunk/pair findings; merge invokes toResult once over all findings. Update the corresponding PLAN wording and misleading test title.",
+          "severity": "HIGH",
+          "premise": "Consuming s2's crossRelations is sufficient to check every directed caller–callee relationship cut between chunks.",
+          "evidence": "codeReviewMaterial deduplicates all relations using 'const [a, b] = from < to ? [from, to] : [to, from]' and 'JSON.stringify([kind, a, b])', including calls. A read-only execution with A calling B and B calling A produced only [{\"from\":\"a\",\"to\":\"b\",\"kind\":\"calls\"}]. planChunks merely filters material.relations into crossRelations; startGather forwards each retained direction, and relationCall judges the first atom as caller. Consequently, the reverse call's argument/return/error contract gets no dedicated relationship check. [files: src/workflow/review-pipeline/adapters/code-review-material.ts, src/workflow/review-pipeline/prepare.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts]",
+          "action": "Record an explicit dependency correction in s2: preserve ordered endpoints for calls while retaining unordered deduplication for symmetric relations. Add a mutual-call fixture split across chunks and require both directed checks.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -84,9 +96,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The smoke needs a separate source for chunk plans because the code-review RPC returns the artifact without the job plan.",
-          "evidence": "codeReviewRunStart emits 'data: { runId, artifact: outcome.artifact }'. DimensionResult has pipelineCalls but no ChunkPlan. runDimensionJob currently returns runReviewJob's result directly, while RunReviewJobOpts.onDone exposes the completed job. The proposed prepared/final plan logging therefore has an existing integration point. [files: src/daemon/code-review-rpc.ts, src/workflow/code-review/types.ts, src/workflow/review-pipeline/code-review.ts, src/workflow/review-pipeline/driver.ts]",
-          "action": "Implement the proposed logging and smoke capture in the remaining task.",
+          "premise": "Divided finish returns unfiltered chunk findings and merge applies the dimension result filters once.",
+          "evidence": "modelDimensionAdapter.finish returns chunkFindings for divided reviews. codeReviewGather.merge calls finalize(mergeFindings(parts)); finalize invokes spec.toResult and separately retains out-of-set findings for the controller. finishJob supplies obligation and relation parts after finish. Existing gather tests assert deduplication, FR filtering, controller outOfScope preservation and one coverage lowering. [files: src/workflow/review-pipeline/code-review.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/__tests__/code-review-gather.test.ts]",
+          "action": "Preserve this ordering when completing integration.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -96,9 +108,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "pipelineCalls is additive and optional, single-chunk results omit it, and the existing parts shape remains available.",
-          "evidence": "DimensionResult declares both optional parts and optional pipelineCalls. pipelineCallsOf returns undefined when job.plan.single is true; finishJob adds the field only when counts exist. The runner's artifact validation checks dimensions, counts, and verdict without requiring pipelineCalls or parts. [files: src/workflow/code-review/types.ts, src/workflow/review-pipeline/job.ts, src/workflow/code-review/runner.ts]",
-          "action": "Preserve these optional fields and the single-chunk omission.",
+          "premise": "Optional pipelineCalls can be added without rewriting existing code-review records or removing parts.",
+          "evidence": "DimensionResult retains optional parts and defines optional pipelineCalls. pipelineCallsOf returns undefined for a single-chunk plan; finishJob adds the field only when defined. The runner persists dimension results directly, and enforceCodeReviewGate reads verdict/counts without requiring either diagnostics field. [files: src/workflow/code-review/types.ts, src/workflow/review-pipeline/job.ts, src/workflow/code-review/runner.ts, src/workflow/code-review/gate.ts]",
+          "action": "Keep both fields optional and leave older records untouched.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -108,9 +120,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "S003 owns dimension gathering and the acceptance smoke, while generic pipeline execution, material grouping, design review, and controller protocol remain adjacent Story responsibilities.",
-          "evidence": "HLD §§5.1–5.5 assigns these responsibilities to S001–S005 exactly as the design describes. The implementation separates code-review material, dimension gather/duplicate adapters, generic job/driver logic, and the controller handler. The controller handler still uses its existing judgements path, consistent with S005 being separate work. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/adapters/code-review-material.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/job.ts, src/daemon/steps/code-review-step/handler.ts]",
-          "action": "Keep controller answers-phase and MCP schema changes in S005.",
+          "premise": "S003 owns code-review gather and the acceptance smoke, while generic pipeline machinery, material construction and controller integration belong to adjacent Stories.",
+          "evidence": "HLD §5 assigns the generic pipeline and sc1–sc6 to s1, code-review material to s2, gather and smoke to s3, design review to s4 and controller frames to s5. The design follows that allocation and consumes existing adapter hooks rather than introducing a replacement protocol. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/code-review.ts]",
+          "action": "Route the directed-call prerequisite correction through s2's ownership rather than silently expanding S003.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -120,9 +132,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "A gather failure is retried once, then fails the review before a new review record is written; size refusals use redivision.",
-          "evidence": "applyFailure assigns gather calls onCallFailure:'fail-review', reissues while attempts remain, then throws ReviewCallFailedError. Size refusals branch to relation, note, or stage redivision instead. runCodeReview awaits every judge before building and writing the artifact; a judge exception returns {ok:false,error}. [files: src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/driver.ts, src/workflow/code-review/runner.ts]",
-          "action": "Retain the planned end-to-end assertion that a twice-failed gather produces no new record.",
+          "premise": "An invalid or failed gather call is retried once, then fails the review without writing a new partial review record.",
+          "evidence": "applyFailure assigns gather roles onCallFailure:'fail-review', reissues while attempt is below MAX_CALL_ATTEMPTS, and otherwise throws ReviewCallFailedError. Size refusals take separate redivision branches. runReviewJob propagates terminal failures; runCodeReview catches them before its artifact-writing phase and returns {ok:false,error}. This does not delete a record from an earlier successful run. [files: src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/driver.ts, src/workflow/code-review/runner.ts]",
+          "action": "Retain the planned end-to-end assertion that a terminal gather failure causes no new record write.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -132,21 +144,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Every upstream S003 acceptance criterion has a planned proving test.",
-          "evidence": "HLD §5.3 defines ac1 equivalence, ac2 relationship mismatch, ac3 duplication, and ac4 installed-daemon completion. Design §6 maps each to a named integration or smoke test. PLAN T008 and T009 repeat those checks. Existing gather tests exercise relationship findings, duplicate merging, invalid descriptions, scope filtering, and coverage normalization. The design explicitly identifies integration and smoke work as remaining; this verifies the mapping, not execution or acceptance. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/PLAN.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/BUILD.md, src/workflow/review-pipeline/__tests__/code-review-gather.test.ts]",
-          "action": "Complete T008 and T009 and retain their results before claiming acceptance. No tests or installed-daemon smoke were run in this review.",
+          "premise": "Every upstream acceptance criterion has a designated test in the design.",
+          "evidence": "DEF S003 ac1–ac4 map to divided/single equivalence, relationship mismatch, duplicate reporting and installed-daemon smoke. PLAN t8 and t9 carry the integration and smoke work. Existing code-review-gather tests exercise obligations, relationship dispatch, pair-result merging, validation and normalization. The dedicated divided integration and live smoke suites are still planned, matching the design's remaining-work statement; their outcomes were not verified. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/PLAN.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/BUILD.md, src/workflow/review-pipeline/__tests__/code-review-gather.test.ts]",
+          "action": "Complete t8/t9 and add the mutual-call regression identified above before claiming acceptance.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 8,
+        "high": 1,
+        "med": 0,
+        "low": 9,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-20T19:53:34.532Z",
+      "reviewedAt": "2026-10-20T19:56:18.465Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
     }
@@ -450,7 +462,7 @@
           ],
           "returns": {
             "type": "readonly ChunkPrompt[]",
-            "meaning": "For the quality and adherence dimensions: one call carrying both full summaries when they fit together, otherwise two calls, one full summary against the other's neighbour summary in each direction (the amended s1 GatherPlan.relationCall). Each judges whether the caller's use matches the callee (arguments, return use, error contract; for adherence, the approved clauses either one carries) and returns today's findings shape, a mismatch located at the caller. Evidence (amended 2026-10-20, after review): these calls judge the same structured summaries today's single prompt reads, which is told to 'reason only over the structured symbol summaries' and is given no file contents: each symbol's signature (its parameters and return type), its callers and callees. A mismatch or a duplication visible at that level (for example a callee that may return undefined and a caller that uses the value as always present) is judged; behaviour only a function body shows is beyond today's single call too, and the epic adds no new review criteria."
+            "meaning": "For the quality and adherence dimensions: one call carrying both full summaries when they fit together, otherwise two calls, one full summary against the other's neighbour summary in each direction (the amended s1 GatherPlan.relationCall). Each judges whether the caller's use matches the callee (arguments, return use, error contract; for adherence, the approved clauses either one carries) and returns today's findings shape, a mismatch located at the caller. Evidence (amended 2026-10-20, after review): these calls judge the same structured summaries today's single prompt reads, which is told to 'reason only over the structured symbol summaries' and is given no file contents: each symbol's signature (its parameters and return type), its callers and callees. A mismatch or a duplication visible at that level (for example a callee that may return undefined and a caller that uses the value as always present) is judged; behaviour only a function body shows is beyond today's single call too, and the epic adds no new review criteria. A correction to Story s2 (recorded 2026-10-20 at the stakeholder's decision after review): s2's material de-duplicated every relation without regard to direction, so of a mutual call (A calls B, B calls A) only one direction survived. 'calls' relations now keep their direction (A->B and B->A are two relations); same-file and same-module relations stay one per pair. Each direction cut between chunks is checked in its own relation call, located at its own caller; a test splits a mutual call across chunks and requires both checks."
           },
           "errors": [],
           "preconditions": [
@@ -684,6 +696,10 @@
         {
           "input": "A conventions candidate deviation seen in one chunk that the module judgement rejects.",
           "expected": "It never appears: chunks make no conventions findings, only notes."
+        },
+        {
+          "input": "Two changed symbols that call each other, held in different chunks.",
+          "expected": "Two relation checks, one per direction, each located at its own caller (s2's material keeps a call's direction)."
         }
       ],
       "invariantsToPreserve": [

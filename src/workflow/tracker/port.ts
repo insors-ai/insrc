@@ -96,6 +96,8 @@ export interface TrackerPort {
 	findIssuesByTitleToken(token: string): PortResult<IssueRef[]>;
 	/** Every comment of the issue, in ascending time order and complete across pages; with `since` (ISO time), only those created or updated at or after it. A failed read is a failure, never an empty list (s6). */
 	listComments(issue: IssueRef, since?: string): PortResult<TrackerComment[]>;
+	/** Post one comment on the issue and answer its id, so a caller can record the post (s8). {@link IssueOps.comment} answers nothing and is unchanged. */
+	postComment(issue: IssueRef, body: string): PortResult<{ externalId: string }>;
 	/** Make `artifact`'s file reachable from the issue through `link`. A tracker without an attachment API (GitHub) posts one comment holding the link; `externalId` is that comment's id (s6). */
 	attach(issue: IssueRef, artifact: Reference, link: string): PortResult<{ externalId?: string }>;
 	openSignoffRequest(spec: SignoffRequestSpec): PortResult<SignoffRequestRef>;

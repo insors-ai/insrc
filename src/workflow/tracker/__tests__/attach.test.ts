@@ -22,6 +22,7 @@ function fakePort(): Fake {
 	let id = 100;
 	(fake as { port: TrackerPort }).port = {
 		listComments: (): PortResult<TrackerComment[]> => { fake.calls.push('list'); return fake.failList ? { ok: false, kind: 'unreachable', reason: 'offline' } : { ok: true, value: fake.comments }; },
+		postComment: (): PortResult<{ externalId: string }> => ({ ok: true, value: { externalId: String(++id) } }),
 		attach: (_issue: string, ref: { entityId: string }, link: string): PortResult<{ externalId?: string }> => {
 			fake.calls.push(`attach:${link}`);
 			return fake.failAttach ? { ok: false, kind: 'rejected', reason: 'nope' } : { ok: true, value: { externalId: String(++id) } };

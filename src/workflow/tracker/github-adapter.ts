@@ -194,9 +194,11 @@ export function createGithubTracker(owner: string, repo: string): TrackerPort {
 
 		listComments: (issue: IssueRef, since?: string) => attempt(() => ghListIssueComments(owner, repo, issue, since)),
 
-		// GitHub has no attachment API: the link goes in one comment that names the artifact.
+		postComment: (issue: IssueRef, body: string) => attempt(() => ({ externalId: ghPostCommentReturningId(owner, repo, issue, body) })),
+
+		// GitHub has no attachment API: the link goes in one comment that names the artifact. The marker line tells it from a person's comment (s8).
 		attach: (issue: IssueRef, artifact: Reference, link: string) =>
-			attempt(() => ({ externalId: ghPostCommentReturningId(owner, repo, issue, `Attached ${artifact.type} \`${artifact.entityId}\`: ${link}`) })),
+			attempt(() => ({ externalId: ghPostCommentReturningId(owner, repo, issue, `<!-- insrc:attach:${artifact.entityId} -->\nAttached ${artifact.type} \`${artifact.entityId}\`: ${link}`) })),
 
 		openSignoffRequest: () => unsupported('signoff requests'),
 		readSignoffState: () => unsupported('reading signoff state'),

@@ -36,7 +36,7 @@ test("the GitHub adapter's listComments pages comments in time order and passes 
 	assert.equal(calls.filter(c => c.includes('POST')).length, 1, 'one comment');
 	assert.ok(post.includes('repos/o/r/issues/7/comments'));
 	const body = post[post.indexOf('-f') + 1]!;
-	assert.match(body, /^body=Attached LLD `LLD-0123456789abcdef-s6`: https:\/\/github\.com\/o\/r\/blob\/abc123\/docs\/LLD\.md$/);
+	assert.match(body, /^body=<!-- insrc:attach:LLD-0123456789abcdef-s6 -->\nAttached LLD `LLD-0123456789abcdef-s6`: https:\/\/github\.com\/o\/r\/blob\/abc123\/docs\/LLD\.md$/);
 
 	// a failing gh is a classified failure, never an empty list
 	_setTrackerExecForTests(() => { throw Object.assign(new Error('boom'), { stderr: 'You are not logged in. Run gh auth login' }); });

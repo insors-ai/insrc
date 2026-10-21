@@ -38,6 +38,12 @@ export function fakeTracker(over: { failFind?: boolean; failComment?: string } =
 		},
 		// the issue's comments as the tracker would answer them: whatever was posted
 		listComments: (ref: IssueRef): PortResult<TrackerComment[]> => ({ ok: true, value: log.comments.filter(([r]) => r === ref).map(([, body], i) => ({ externalId: String(700 + i), author: 'insrc', text: body, at: '2026-10-21T00:00:00.000Z' })) }),
+		// a posted comment is listed back, with the id it was given
+		postComment: (ref: IssueRef, body: string): PortResult<{ externalId: string }> => {
+			const externalId = String(700 + log.comments.length);
+			log.comments.push([ref, body]);
+			return { ok: true, value: { externalId } };
+		},
 		issueOps: {
 			ensureLabel: () => true,
 			create: (spec: IssueSpec): PortResult<CreatedIssue> => {

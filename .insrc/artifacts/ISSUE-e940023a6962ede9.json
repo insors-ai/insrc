@@ -21,7 +21,11 @@
     "epicSlug": "stop-code-review-s-material-building",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-21T09:43:31.445Z",
+    "parentRef": {
+      "slug": "stop-code-review-s-material-building"
+    }
   },
   "body": {
     "title": "Stop the code review's material building from freezing the daemon",

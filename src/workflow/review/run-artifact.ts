@@ -147,7 +147,8 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 		// With a service the content goes through the store (staged, logged, revisioned); the review stamp then follows as a meta-only write.
 		const stored = JSON.parse(readFileSync(opts.jsonPath, 'utf8')) as { citations?: unknown };
 		const citations = Array.isArray(stored.citations) ? stored.citations : [];
-		await opts.lifecycle.updateContent(artifactId, reviewer, { body: fixed.body as Record<string, unknown>, citations });
+		// an automated fix is not an answer to a person's feedback: it addresses none
+		await opts.lifecycle.updateContent(artifactId, reviewer, { body: fixed.body as Record<string, unknown>, citations }, { addresses: [] });
 		const current = JSON.parse(readFileSync(opts.jsonPath, 'utf8')) as { meta: Record<string, unknown> };
 		writeArtifact(opts.jsonPath, { ...current, meta: { ...current.meta, review: stamped } }, 'meta-only');
 	} else {

@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s5",
+    "createdAt": "2026-10-21T12:07:40.117Z",
+    "updatedAt": "2026-10-21T12:14:11.102Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S005/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-2f27754d4ad00b8e-s5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T12:14:11.102Z"
+      }
+    ],
+    "commit": "adbac821"
+  }
+}

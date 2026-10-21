@@ -366,3 +366,18 @@ Open code-review findings on the s4 BUILD (review cycle 2, round 3: `warn`, 0 HI
 4. **A retried add compares what the caller supplied.** A retry with the same caller id is matched on `text`, `kind`, `anchor`, `inReplyTo`, `batchId` and the actor id; on a match `add` returns the stored entry unchanged (original timestamp and revision), on a difference it refuses. It does not compare whole entries.
 5. **`add` is atomic per artifact.** The lookup and the append run under the store's per-artifact queue (or an equivalent lock), stated as a postcondition, so two concurrent adds with one id cannot both append and break every later read of the artifact. Test: two concurrent adds with one id and different content leave exactly one line.
 6. **Open questions resolved:** companion-file targets on the parent with `anchor.section` (item 1); legacy kind by the decision that took effect (item 1); the readers of `body.feedback` (companion headers, delivery) are left alone and show a mixed view until s9, which is recorded as an s9 input; the ep3 citation-only references are accepted.
+
+## s5 build: content-writer inventory (addresses rule)
+
+Every production caller that writes content through the store, and what it does with `addresses` (the store addresses all open feedback on a revision unless the writer says otherwise). Checked at s5/t3 by `grep` for `updateContent`, `.update(`, `updateAndLog` and `store.write` outside tests.
+
+| Caller | Writes | Decision |
+| :--- | :--- | :--- |
+| `src/daemon/steps/review-step/phases/verdicts.ts` (`handleVerdicts`) | the controller's review auto-fix, `updateContent` | `addresses: []`: an automated fix answers no person's request. |
+| `src/workflow/review/run-artifact.ts` (`reviewArtifactFile`) | the daemon's review auto-fix, `updateContent` | `addresses: []`, same reason. |
+| `src/workflow/runners/build/round-writer.ts` (`storeRound`) | the BUILD, TESTS and code-review rounds (reached from `persistBuildRecord`, `persistTestRecordTask`, `runCodeReview` and `ensureBuildRecordOnCompletion`) | `addresses: []`: a round is recorded by the build or the review, not written in answer to feedback. The first round is a create and addresses nothing. |
+| `src/workflow/artifact-core/lifecycle-service.ts` (`updateContent`, its create branch) | the passthrough for the three callers above | passes `addresses` through; a create logs none. |
+| `src/workflow/artifact-core/lifecycle-service.ts` (`completeMember`, `reopenMember`, `apply`) | lifecycle operations through `ArtifactStore.update` / `updateAndLog` | not updates: the entry carries no `addresses`, so approval, review and completion never close feedback. |
+| a person's revision of a design (none in production yet) | content through `updateContent` | no `addresses` given, so it addresses all open feedback, or the list the person names. The s7 Task edits are the first such caller. |
+
+A new content writer added by a later Story should be added to this table and pass `addresses: []` when it is automated.

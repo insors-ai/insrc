@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s5",
+    "createdAt": "2026-10-21T12:07:40.117Z",
+    "updatedAt": "2026-10-21T12:14:11.102Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "91263a04",
+        "ranAt": "2026-10-21T12:07:40.117Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "feedback-reply-shape.test.ts: History.validateFeedback accepts inReplyTo as a non-empty string other than its own id and refuses a reply that carries nested replies",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/feedback-reply-shape.test.ts",
+                "title": "History.validateFeedback accepts inReplyTo as a non-empty string other than its own id and refuses a reply that carries nested replies",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/feedback-reply-shape.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 484,
+            "titles": [
+              {
+                "title": "History.validateFeedback accepts inReplyTo as a non-empty string other than its own id and refuses a reply that carries nested replies",
+                "result": "pass"
+              },
+              {
+                "title": "feedback-reply-shape",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "adbac821",
+        "ranAt": "2026-10-21T12:14:11.102Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "addresses-rule.test.ts: ArtifactStore.write stamps addresses 'all' on a revision that moves the revision number, honours a list, refuses ids that are not roots or are already addressed, and addresses nothing on an identical rewrite or a lifecycle operation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/addresses-rule.test.ts",
+                "title": "ArtifactStore.write stamps addresses 'all' on a revision that moves the revision number, honours a list, refuses ids that are not roots or are already addressed, and addresses nothing on an identical rewrite or a lifecycle operation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/addresses-rule.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1173,
+            "titles": [
+              {
+                "title": "ArtifactStore.write stamps addresses 'all' on a revision that moves the revision number, honours a list, refuses ids that are not roots or are already addressed, and addresses nothing on an identical rewrite or a lifecycle operation",
+                "result": "pass"
+              },
+              {
+                "title": "addresses-rule",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

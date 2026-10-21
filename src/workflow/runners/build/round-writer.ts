@@ -62,11 +62,12 @@ function discardUnreadableHead(id: string, jsonPath: string): boolean {
 
 /**
  * Store one round's body as the artifact's content, creating the artifact through the store when it has no head yet, with
- * `outcome` on the change log entry. A failed store throws: the round is not recorded and the persist fails with it.
+ * `outcome` on the change log entry. A round is recorded by the build or the review, not written in answer to a person's feedback, so it
+ * addresses none (`addresses: []`). A failed store throws: the round is not recorded and the persist fails with it.
  */
 export function storeRound(through: RoundWriter, id: string, jsonPath: string, body: unknown, outcome: ChangeLogEntry['outcome']): Promise<boolean> {
 	discardUnreadableHead(id, jsonPath);
-	return through.writer.updateContent(id, through.actor, { body: body as HeadPayload['body'], citations: [] }, { create: true, outcome });
+	return through.writer.updateContent(id, through.actor, { body: body as HeadPayload['body'], citations: [] }, { create: true, outcome, addresses: [] });
 }
 
 /**

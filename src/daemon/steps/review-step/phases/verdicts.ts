@@ -131,7 +131,8 @@ export async function handleVerdicts(
 		// With a service the content goes through the store; the review stamp then follows as a meta-only write.
 		const stored = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { citations?: unknown };
 		const citations = Array.isArray(stored.citations) ? stored.citations : [];
-		await lifecycle.updateContent(artifactId, REVIEWER, { body: fixed.body as Record<string, unknown>, citations });
+		// an automated fix is not an answer to a person's feedback: it addresses none
+		await lifecycle.updateContent(artifactId, REVIEWER, { body: fixed.body as Record<string, unknown>, citations }, { addresses: [] });
 		const current = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown> };
 		writeArtifact(state.jsonPath, { ...current, meta: { ...current.meta, review: report } }, 'meta-only');
 	} else {

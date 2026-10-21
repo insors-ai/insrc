@@ -1,0 +1,231 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792607370671-m3rkwy",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T18:29:30.671Z",
+    "model": "claude:opus",
+    "elapsedMs": 107759,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s7",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s7",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "docs/plans/core-data-model.md",
+        "src/cli/__tests__/command.test.ts",
+        "src/cli/__tests__/tui.test.ts",
+        "src/cli/command.ts",
+        "src/cli/panes/WorkflowsPane.tsx",
+        "src/cli/services/index.ts",
+        "src/cli/services/workflow.ts",
+        "src/daemon/index.ts",
+        "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts",
+        "src/daemon/steps/build-step/phases/validate.ts",
+        "src/daemon/tasks-sync.ts",
+        "src/workflow/__tests__/approve-attach.test.ts",
+        "src/workflow/__tests__/artifact-kinds.test.ts",
+        "src/workflow/__tests__/draft-issues.test.ts",
+        "src/workflow/__tests__/gates-lifecycle-service.test.ts",
+        "src/workflow/__tests__/other-party-review-gate.test.ts",
+        "src/workflow/__tests__/s7-handoffs.test.ts",
+        "src/workflow/artifact-core/__tests__/decode.test.ts",
+        "src/workflow/artifact-core/__tests__/pass-through-codecs.test.ts",
+        "src/workflow/artifact-core/__tests__/store-kit.ts",
+        "src/workflow/artifact-core/__tests__/store-write.test.ts",
+        "src/workflow/artifact-core/__tests__/tasks-codec.test.ts",
+        "src/workflow/artifact-core/codecs.ts",
+        "src/workflow/artifact-core/completion-evidence.ts",
+        "src/workflow/artifact-core/task-bodies.ts",
+        "src/workflow/artifact-write-inventory.ts",
+        "src/workflow/draft-issues.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/orchestrator.ts",
+        "src/workflow/runners/tracker/context.ts",
+        "src/workflow/tasks/__tests__/task-build-rounds.test.ts",
+        "src/workflow/tasks/__tests__/task-diff.test.ts",
+        "src/workflow/tasks/__tests__/task-edit-check.test.ts",
+        "src/workflow/tasks/__tests__/task-kit.ts",
+        "src/workflow/tasks/__tests__/task-numbers.test.ts",
+        "src/workflow/tasks/__tests__/task-readers.test.ts",
+        "src/workflow/tasks/__tests__/task-set-approve.test.ts",
+        "src/workflow/tasks/__tests__/task-set-create.test.ts",
+        "src/workflow/tasks/__tests__/task-set-edit.test.ts",
+        "src/workflow/tasks/__tests__/task-set-kit.ts",
+        "src/workflow/tasks/__tests__/task-set-reconcile.test.ts",
+        "src/workflow/tasks/__tests__/task-set-sync.test.ts",
+        "src/workflow/tasks/__tests__/task-unit-issue.test.ts",
+        "src/workflow/tasks/lookup.ts",
+        "src/workflow/tasks/pure.ts",
+        "src/workflow/tasks/task-set.ts",
+        "src/workflow/tasks/types.ts",
+        "src/workflow/tracker-auto.ts",
+        "src/workflow/tracker/resolve.ts",
+        "src/workflow/tracker/unit-issue.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/gates.ts:616",
+            "message": "approveArtifactByJsonPath declares `opts?: { readonly overrideReview?: string }`. Under exactOptionalPropertyTypes the optional property should be `overrideReview?: string | undefined`. The line probably predates s7 (the file's history shows s3 and s6 work), but it is in a file s7 touched.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/gates.ts:915",
+            "message": "approveWorkflowTarget declares `opts?: { readonly enforce?: boolean }` without `| undefined` on the optional property.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/gates.ts:1088",
+            "message": "readArtifactMeta returns `{ epicHash?: string; storyId?: string }`. These optional properties are not declared `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/cli/services/workflow.ts:140",
+            "message": "attachApprovedDocuments returns a type containing `commit?: CommitArtifactsResult` without `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/completion-evidence.ts:1",
+            "message": "completion-evidence.ts adds its own readJson/asRecord helpers. gates.ts (readJsonOrUndefined) and tracker/resolve.ts (readArtifact) each have equivalents. The modules touched here usually keep a private reader per file, so this may be the local idiom; it is drawn from few examples.",
+            "expectationRef": "module-idiom:local-json-reader-helpers",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/tasks-sync.ts:85",
+            "message": "Present but unverified: recordTaskRound has an empty testsReaching. The passing validate-task-round.test.ts ('a validate turn records its round in the Task's own log…') should reach it through handleBuildStep → runValidateTurn, but the graph shows no edge from runValidateTurn either. The test record shows the file passing, yet the grounding cannot confirm that this function is the one exercised.",
+            "expectationRef": "recordTaskRound",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/tasks-sync.ts:63",
+            "message": "Present but unverified: syncPlanTasks and followOnTasksSync (the daemon seam behind plan approval) have no testsReaching edges. task-set-approve.test.ts passes and its title claims coverage 'through the daemon seam', but no reaching edge confirms it.",
+            "expectationRef": "followOnTasksSync / syncPlanTasks",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/tasks/task-set.ts:148",
+            "message": "Present but unverified: the TaskSets methods createFromPlan, reconcile, edit, recordBuildRound and syncOnPlanApproval have empty testsReaching. The graph appears to lack call edges into class methods. The promised task-set-create, task-set-reconcile, task-set-edit, task-set-sync and task-build-rounds tests are all present and passing in the test record, so this looks like a grounding gap, not a missing test.",
+            "expectationRef": "TaskSets.createFromPlan / reconcile / edit / recordBuildRound / syncOnPlanApproval",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/tasks/lookup.ts:59",
+            "message": "Present but unverified: taskHeadIdOf and taskIssueRefsOf have no testsReaching edges. task-readers.test.ts passes and covers the head-based readers by title, but no edge confirms that these functions are reached.",
+            "expectationRef": "taskHeadIdOf / taskIssueRefsOf",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/task-bodies.ts:19",
+            "message": "Present but unverified: checkTaskBody and checkTasksBody have no testsReaching edges. tasks-codec.test.ts ('…refuse a malformed body') passes and probably reaches them through codecFor, but the graph does not confirm it.",
+            "expectationRef": "checkTaskBody / checkTasksBody",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/cli/panes/WorkflowsPane.tsx:113",
+            "message": "Unverified: doApprove is now async and has an empty testsReaching. The test meant to cover it (in tui.test.ts) is not in the build test record, so its pass state cannot be confirmed.",
+            "expectationRef": "doApprove",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-write-inventory.ts:286",
+            "message": "Unverified: checkInventoryEntry and the scanWriters helpers have no testsReaching edges. artifact-write-inventory.test.ts references them, but that file is not in the test record, so its pass state is unverified.",
+            "expectationRef": "checkInventoryEntry",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/completion-evidence.ts:30",
+            "message": "readJson re-implements the existing safe JSON reader in gates.ts (read the file if it exists, parse it, return undefined on any failure). The only difference is that this one also narrows the result to an object. Two copies can drift on how they treat a missing or corrupt record.",
+            "counterpartRef": "readJsonOrUndefined",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/completion-evidence.ts:38",
+            "message": "asRecord duplicates the plain-object guard isObject in task-bodies.ts (not null, typeof 'object', not an array). Consider sharing one helper.",
+            "counterpartRef": "isObject",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/unit-issue.ts",
+            "message": "firstSentence is defined twice in the changed set, here and in runners/tracker/context.ts, for the same purpose: a one-line summary of a Task or Story for a tracker issue. If the two copies diverge, the issue body could summarize the same text differently depending on which path rendered it.",
+            "counterpartRef": "firstSentence",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/completion-evidence.ts:55",
+            "message": "taskBuildPassed calls History.log without a guard. Every other read in this module returns undefined/false on a bad record, but a corrupt or unreadable sidecar log throws out of the CompletionEvidence port and into the completion roll-up. If throwing is the intended fail-closed behaviour, it should be stated; otherwise catch the error and return false like the BUILD-record fallback does.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 14
+    }
+  }
+}

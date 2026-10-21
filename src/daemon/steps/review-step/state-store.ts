@@ -7,108 +7,63 @@
  * Server-side state store for `insrc_review_step`.
  *
  * Structurally identical to `daemon/steps/workflow-step/state-store.ts` — an opaque
- * 22-char token → server-side run state, with an LRU + TTL sweep. The state
+ * 22-char token → server-side run state, with an LRU + TTL sweep, except that
+ * the token stays the same across turns. The state
  * itself is NOT round-tripped through the outer LLM; only the token travels
  * in the response `state` field.
  */
 
-import { randomBytes } from 'node:crypto';
-
-import { getLogger } from '../../../shared/logger.js';
+import { getStepStateStore } from '../../threads/step-state.js';
 import type { ReviewStepStatePayload } from './types.js';
 
-const log = getLogger('mcp:review-step:state-store');
+// The entries live in the daemon's shared step-state store (Epic 86197ac6
+// s1), kind 'review', whose token stays stable across turns.
 
-const MAX_ENTRIES = 100;
-const TTL_MS      = 60 * 60 * 1_000;
-
-interface Entry {
-	payload:            ReviewStepStatePayload;
-	readonly createdAt: number;
-	touchedAt:          number;
+export function saveState(payload: ReviewStepStatePayload): Promise<string> {
+	return getStepStateStore().mint('review', payload);
 }
 
-const store = new Map<string, Entry>();
-
-export function saveState(payload: ReviewStepStatePayload): string {
-	sweep();
-	const now = Date.now();
-	const token = mintToken();
-	store.set(token, { payload, createdAt: now, touchedAt: now });
-	if (store.size >= MAX_ENTRIES / 2) {
-		log.warn(
-			{ size: store.size, cap: MAX_ENTRIES, stage: payload.stage, runId: payload.runId },
-			'review-step state-store: entries approaching cap',
-		);
-	}
-	return token;
-}
-
-export function loadState(token: string): ReviewStepStatePayload {
-	const entry = store.get(token);
+export async function loadState(token: string): Promise<ReviewStepStatePayload> {
+	const entry = await getStepStateStore().read<ReviewStepStatePayload>('review', token);
 	if (entry === undefined) {
 		throw new StateTokenNotFound(
 			`review state token '${token}' not found: the insrc daemon was restarted (runs are held in its memory and a restart loses them), ` +
 			`the token went unused for an hour, or the run was already completed. Start the run again with phase='start'.`,
 		);
 	}
-	entry.touchedAt = Date.now();
 	return entry.payload;
 }
 
 /** Replace the payload under an existing token in place (keeps the token
  *  stable across turns). */
-export function updateState(token: string, payload: ReviewStepStatePayload): void {
-	const entry = store.get(token);
-	if (entry === undefined) {
+export async function updateState(token: string, payload: ReviewStepStatePayload): Promise<void> {
+	try {
+		await getStepStateStore().update('review', token, payload);
+	} catch (err) {
+		// The shared store's miss, raised here or re-raised across the hub under its name.
+		if ((err as Error | undefined)?.name !== 'StepStateNotFound') throw err;
 		throw new StateTokenNotFound(
 			`review state token '${token}' not found while updating: the insrc daemon was restarted, the token went unused for an hour, ` +
 			`or the run was already completed. Start the run again with phase='start'.`,
 		);
 	}
-	entry.payload = payload;
-	entry.touchedAt = Date.now();
 }
 
-export function releaseState(token: string): void {
-	store.delete(token);
+export function releaseState(token: string): Promise<void> {
+	return getStepStateStore().release('review', token);
 }
 
-export function _clearReviewStateStoreForTests(): void {
-	store.clear();
+export function _clearReviewStateStoreForTests(): Promise<void> {
+	return getStepStateStore().clearForTests('review');
 }
 
-export function _reviewStateStoreSize(): number {
-	return store.size;
+export function _reviewStateStoreSize(): Promise<number> {
+	return getStepStateStore().sizeForTests('review');
 }
 
 export class StateTokenNotFound extends Error {
 	constructor(msg: string) {
 		super(msg);
 		this.name = 'StateTokenNotFound';
-	}
-}
-
-function mintToken(): string {
-	return randomBytes(16)
-		.toString('base64')
-		.replace(/\+/g, '-')
-		.replace(/\//g, '_')
-		.replace(/=/g, '');
-}
-
-function sweep(): void {
-	const now = Date.now();
-	for (const [k, v] of store) {
-		if (now - v.touchedAt > TTL_MS) store.delete(k);
-	}
-	if (store.size >= MAX_ENTRIES) {
-		const arr = [...store.entries()].sort(
-			(a, b) => a[1].touchedAt - b[1].touchedAt,
-		);
-		while (store.size >= MAX_ENTRIES && arr.length > 0) {
-			const [k] = arr.shift()!;
-			store.delete(k);
-		}
 	}
 }

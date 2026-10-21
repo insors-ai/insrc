@@ -29,7 +29,7 @@ export async function handleClaims(input: ReviewStepInputClaims): Promise<Review
 	if (typeof input.state !== 'string' || input.state.length === 0) {
 		throw new Error(`insrc_review_step[claims]: missing \`state\` token from the prior start response.`);
 	}
-	const state = loadState(input.state);
+	const state = await loadState(input.state);
 	if (state.templateIntent !== undefined) {
 		throw new Error(
 			`insrc_review_step[claims]: this run reviews a design document against a template — ` +
@@ -39,7 +39,7 @@ export async function handleClaims(input: ReviewStepInputClaims): Promise<Review
 
 	const claims = normalizeClaimsEnvelope(input.claims ?? {});
 	const evidence = await gatherEvidence(claims as Claim[], state.repo);
-	updateState(input.state, { ...state, claims, evidence });
+	await updateState(input.state, { ...state, claims, evidence });
 
 	const prompt = buildBatchedVerifyPrompt(claims, evidence);
 	log.info({ runId: state.runId, stage: state.stage, claims: claims.length }, 'insrc_review_step[claims]: gathered evidence, emitting verdicts prompt');

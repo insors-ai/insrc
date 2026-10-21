@@ -77,7 +77,7 @@ export async function handleStart(
 			markdown:    design,
 			templateIntent: plan.intent,
 		};
-		const designToken = saveState(designState);
+		const designToken = await saveState(designState);
 		log.info({ runId: designState.runId, stage, template: plan.template.id, mdPath }, 'insrc_review_step[start]: emitting review template');
 		return {
 			next:     'emit_findings',
@@ -103,7 +103,7 @@ export async function handleStart(
 		stage,
 		markdown,
 	};
-	const token = saveState(state);
+	const token = await saveState(state);
 
 	const prompt = buildExtractPrompt(markdown, stage);
 	log.info({ runId: state.runId, stage, mdPath }, 'insrc_review_step[start]: emitting extract prompt');

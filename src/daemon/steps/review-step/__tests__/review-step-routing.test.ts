@@ -90,7 +90,7 @@ const answer = () => ({ items: SPEC.items.map(it => ({ item: it.id, premises: [{
 for (const author of ['controller', 'unknown'] as const) {
 	for (const [kind, workflow] of [['DEF', 'define'], ['LLD', 'design.story'], ['HLD', 'design.epic']] as const) {
 		test(`T9 a ${kind} of ${author} author is sent to the daemon and returns done with the daemon's verdict`, async () => {
-			_clearReviewStateStoreForTests();
+			await _clearReviewStateStoreForTests();
 			const fx = fixture(workflow, author);
 			try {
 				const d = fakeDaemon();
@@ -113,7 +113,7 @@ for (const author of ['controller', 'unknown'] as const) {
 }
 
 test('T9/T14 daemon-authored work runs the controller loop as before, and the daemon is not asked', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const def = fixture('define', 'daemon');
 	const lld = fixture('design.story', 'daemon');
 	const hld = fixture('design.epic', 'daemon');
@@ -131,7 +131,7 @@ test('T9/T14 daemon-authored work runs the controller loop as before, and the da
 });
 
 test('T9 an older artifact with no author field is routed by its attribution labels', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const mk = (model: string) => {
 		const fx = fixture('define', 'unknown');
 		const stored = JSON.parse(readFileSync(fx.jsonPath, 'utf8'));
@@ -152,7 +152,7 @@ test('T9 an older artifact with no author field is routed by its attribution lab
 // --- T11: the wait limit, and a failed daemon review ----------------------------
 
 test('T11 the tool waits 31 minutes for a design (HLD, LLD) and 90 minutes for a DEF', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	assert.equal(DESIGN_REVIEW_WAIT_MS, 31 * MIN);
 	// A real DEF review measured 777 s (t12), so the first limit of 10 minutes cut it off; 30, then tripled to 90.
 	assert.equal(PIPELINE_REVIEW_WAIT_MS, 90 * MIN);
@@ -178,7 +178,7 @@ const FAILURES = [
 
 for (const [failure, error, retryable] of FAILURES) {
 	test(`T11 a daemon review that fails (${failure}) is an error: nothing stamped, no controller loop offered`, async () => {
-		_clearReviewStateStoreForTests();
+		await _clearReviewStateStoreForTests();
 		for (const workflow of ['define', 'design.story']) {
 			const fx = fixture(workflow, 'controller');
 			try {
@@ -203,7 +203,7 @@ for (const [failure, error, retryable] of FAILURES) {
 }
 
 test('T11 against an older daemon (a plain unknown-method line, socket kept open) the tool fails at once with the update message', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const sock = join(tmpdir(), `insrc-rr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.sock`);
 	const sockets: Socket[] = [];
 	const server = createServer((socket) => {
@@ -256,7 +256,7 @@ async function startThenFlip(workflow: string, to: Author) {
 
 for (const [kind, workflow] of [['LLD', 'design.story'], ['HLD', 'design.epic']] as const) {
 	test(`T12 the findings phase refuses a controller-authored ${kind} and stamps nothing`, async () => {
-		_clearReviewStateStoreForTests();
+		await _clearReviewStateStoreForTests();
 		const { fx, state } = await startThenFlip(workflow, 'controller');
 		try {
 			const before = { json: readFileSync(fx.jsonPath, 'utf8'), md: readFileSync(fx.mdPath, 'utf8') };
@@ -277,7 +277,7 @@ for (const [kind, workflow] of [['LLD', 'design.story'], ['HLD', 'design.epic']]
 }
 
 test('T12 the verdicts phase refuses a controller-authored DEF and stamps nothing', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const { fx, state } = await startThenFlip('define', 'controller');
 	try {
 		const claims = parse(await handleReviewStep({ phase: 'claims', state, claims: { claims: [] } }));
@@ -292,7 +292,7 @@ test('T12 the verdicts phase refuses a controller-authored DEF and stamps nothin
 });
 
 test('T12/T4 on a daemon-authored DEF the verdicts phase stamps the controller, and so does findings on an LLD', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const def = fixture('define', 'daemon');
 	const lld = fixture('design.story', 'daemon');
 	try {

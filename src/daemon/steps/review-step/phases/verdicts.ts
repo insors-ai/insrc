@@ -34,11 +34,11 @@ const log = getLogger('mcp:review-step:verdicts');
 
 const REVIEW_MODEL = 'client';
 
-export function handleVerdicts(input: ReviewStepInputVerdicts): ReviewStepDone {
+export async function handleVerdicts(input: ReviewStepInputVerdicts): Promise<ReviewStepDone> {
 	if (typeof input.state !== 'string' || input.state.length === 0) {
 		throw new Error(`insrc_review_step[verdicts]: missing \`state\` token from the prior claims response.`);
 	}
-	const state = loadState(input.state);
+	const state = await loadState(input.state);
 	if (state.claims === undefined) {
 		throw new Error(`insrc_review_step[verdicts]: no claims in run state — call phase='claims' before phase='verdicts'.`);
 	}
@@ -86,7 +86,7 @@ export function handleVerdicts(input: ReviewStepInputVerdicts): ReviewStepDone {
 	// the controller authored. `start` already sends such work to the daemon; this
 	// holds the rule at the point of the stamp, whatever led here.
 	if (authorPartyOf(artifact.meta) === 'controller') {
-		releaseState(input.state);
+		await releaseState(input.state);
 		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
 	}
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
@@ -98,7 +98,7 @@ export function handleVerdicts(input: ReviewStepInputVerdicts): ReviewStepDone {
 	writeAtomic(state.mdPath, nextMd);
 
 	const pending = pendingUserFindings(report).length;
-	releaseState(input.state);
+	await releaseState(input.state);
 
 	log.info(
 		{ runId: state.runId, stage: state.stage, verdict: report.verdict, applied: fixed.applied.length, pending },

@@ -62,8 +62,8 @@ async function dispatch(input: unknown, deps: ReviewStepDeps): Promise<ReviewSte
 		switch (step.phase) {
 			case 'start':    return await handleStart(step, deps);
 			case 'claims':   return await handleClaims(step);
-			case 'verdicts': return handleVerdicts(step);
-			case 'findings': return handleFindings(step);
+			case 'verdicts': return await handleVerdicts(step);
+			case 'findings': return await handleFindings(step);
 			default:
 				return errorResult(
 					'bad-phase',

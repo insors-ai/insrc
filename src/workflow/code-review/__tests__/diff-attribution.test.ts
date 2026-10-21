@@ -139,7 +139,7 @@ test("without a story key the diff is today's, and both diff callers record the 
 		assert.deepEqual(rpcBody.subject, { changedFiles: ['src/mine.ts', 'src/shared.ts'], changeSetAttribution: 'story-trailer', sharedWithExcluded: ['src/shared.ts'], excludedFromScope: ['src/theirs.ts'] });
 
 		// 2. insrc_code_review_step: a hollow graph grounding diverts to the diff review.
-		_clearCodeReviewStateStoreForTests();
+		await _clearCodeReviewStateStoreForTests();
 		const stepSeen: (DiffGroundingOptions | undefined)[] = [];
 		const stepWrites: { path: string; content: string }[] = [];
 		const stepDeps: CodeReviewStepDeps = {

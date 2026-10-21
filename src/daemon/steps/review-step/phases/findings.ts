@@ -32,11 +32,11 @@ const log = getLogger('mcp:review-step:findings');
 
 const REVIEW_MODEL = 'client';
 
-export function handleFindings(input: ReviewStepInputFindings): ReviewStepDone | ReviewStepError {
+export async function handleFindings(input: ReviewStepInputFindings): Promise<ReviewStepDone | ReviewStepError> {
 	if (typeof input.state !== 'string' || input.state.length === 0) {
 		throw new Error(`insrc_review_step[findings]: missing \`state\` token from the prior start response.`);
 	}
-	const state = loadState(input.state);
+	const state = await loadState(input.state);
 	if (state.templateIntent === undefined) {
 		throw new Error(
 			`insrc_review_step[findings]: this run reviews a ${state.stage} artifact, which is not a design document — ` +
@@ -84,7 +84,7 @@ export function handleFindings(input: ReviewStepInputFindings): ReviewStepDone |
 	// the controller authored. `start` already sends such work to the daemon; this
 	// holds the rule at the point of the stamp, whatever led here.
 	if (authorPartyOf(artifact.meta) === 'controller') {
-		releaseState(input.state);
+		await releaseState(input.state);
 		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
 	}
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
@@ -92,7 +92,7 @@ export function handleFindings(input: ReviewStepInputFindings): ReviewStepDone |
 	writeAtomic(state.mdPath, `${md.replace(/\s+$/, '')}\n\n${REVIEW_SECTION}\n\n## Review\n\n${renderReviewReport(report)}\n`);
 
 	const pending = pendingUserFindings(report).length;
-	releaseState(input.state);
+	await releaseState(input.state);
 
 	log.info(
 		{ runId: state.runId, stage: state.stage, template: template.id, verdict: report.verdict, pending },

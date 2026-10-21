@@ -60,7 +60,7 @@ async function start(fx: ReturnType<typeof fixture>): Promise<Record<string, unk
 }
 
 test('T13 start on a design returns the review template with next emit_findings', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const fx = fixture({ priorReview: true });
 	try {
 		const out = await start(fx);
@@ -80,7 +80,7 @@ test('T13 start on a design returns the review template with next emit_findings'
 });
 
 test('T13 a design that answers an ISSUE gets the ISSUE template; an HLD is a design too', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const issue = fixture({ issue: true });
 	const hld = fixture({ workflow: 'design.epic' });
 	try {
@@ -92,7 +92,7 @@ test('T13 a design that answers an ISSUE gets the ISSUE template; an HLD is a de
 });
 
 test('T13 the findings phase stamps the review and does not edit the design', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const fx = fixture({ priorReview: true });
 	try {
 		const state = (await start(fx))['state'] as string;
@@ -130,7 +130,7 @@ test('T13 the findings phase stamps the review and does not edit the design', as
 });
 
 test('T13 an answer the session path rejects is rejected by the findings phase with the same errors, and nothing is stamped', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const fx = fixture();
 	try {
 		const state = (await start(fx))['state'] as string;
@@ -158,7 +158,7 @@ test('T13 an answer the session path rejects is rejected by the findings phase w
 });
 
 test('T13 the two paths do not cross: no claims on a design run, no findings on a non-design run', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const design = fixture();
 	const plan = fixture({ workflow: 'plan' });
 	try {
@@ -176,7 +176,7 @@ test('T13 the two paths do not cross: no claims on a design run, no findings on 
 });
 
 test('T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	for (const workflow of ['define', 'issue', 'plan']) {
 		const fx = fixture({ workflow, issue: true });
 		try {
@@ -189,7 +189,7 @@ test('T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt',
 });
 
 test('T4 the findings phase stamps the controller on an HLD too', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const fx = fixture({ workflow: 'design.epic' });
 	try {
 		const state = (await start(fx))['state'] as string;
@@ -216,7 +216,7 @@ test('T13 the registered tool accepts phase `findings` and its phase list names 
 });
 
 test('T13 the ISSUE template is validated against its own items', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const fx = fixture({ issue: true });
 	try {
 		const state = (await start(fx))['state'] as string;

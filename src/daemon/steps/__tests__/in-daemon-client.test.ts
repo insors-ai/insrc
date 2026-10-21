@@ -108,7 +108,7 @@ const parse = (env: { content: readonly { text: string }[] }): Record<string, un
 
 /** `repo: null` sends no repo, so the start resolves it from the caller's cwd. */
 async function reviewStart(fx: ReturnType<typeof reviewFixture>, deps: ReviewStepDeps = {}, repo: string | null = fx.repo) {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	return parse(await handleReviewStep({ phase: 'start', artifact: fx.mdPath, ...(repo !== null ? { repo } : {}) }, deps));
 }
 
@@ -138,7 +138,7 @@ function crDeps(extra: Partial<CodeReviewStepDeps> = {}): CodeReviewStepDeps {
 }
 
 async function crStart(deps: CodeReviewStepDeps) {
-	_clearCodeReviewStateStoreForTests();
+	await _clearCodeReviewStateStoreForTests();
 	return parse(await handleCodeReviewStep({ phase: 'start', epicHash: 'e1a2b3c4d5e6f7a8', storyId: 's8', repo: '/repo' }, deps));
 }
 

@@ -84,7 +84,7 @@ function harness(author: PartyOrUnknown, overrides: Partial<CodeReviewStepDeps> 
 
 const START = { phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' } as const;
 const start = async (deps: CodeReviewStepDeps) => parse(await handleCodeReviewStep(START, deps));
-const reset = (): void => _clearCodeReviewStateStoreForTests();
+const reset = (): Promise<void> => _clearCodeReviewStateStoreForTests();
 
 function judgements(): { judgements: DimensionResult[] } {
 	const dims: ReviewDimension[] = ['adherence', 'conventions', 'coverage', 'quality'];
@@ -95,7 +95,7 @@ function judgements(): { judgements: DimensionResult[] } {
 
 for (const author of ['controller', 'unknown'] as const) {
 	test(`T10 code of ${author} author with fresh grounding is sent to the daemon (full) and returns done with its verdict`, async () => {
-		reset();
+		await reset();
 		const h = harness(author);
 		const out = await start(h.deps);
 		assert.ok(out.next === 'done', JSON.stringify(out));
@@ -115,7 +115,7 @@ for (const author of ['controller', 'unknown'] as const) {
 }
 
 test('T10 daemon-authored code gets the judgements prompt as before, and the daemon is not asked', async () => {
-	reset();
+	await reset();
 	const h = harness('daemon');
 	const out = await start(h.deps);
 	assert.ok(out.next === 'emit_judgements');
@@ -128,7 +128,7 @@ test('T10 daemon-authored code gets the judgements prompt as before, and the dae
 });
 
 test('T10 the invoking client is passed to the daemon when the tool knows it', async () => {
-	reset();
+	await reset();
 	const h = harness('controller', { client: 'codex' });
 	await start(h.deps);
 	assert.equal(h.asked[0]!.params.client, 'codex');
@@ -137,7 +137,7 @@ test('T10 the invoking client is passed to the daemon when the tool knows it', a
 // --- T17: the start phase keeps every outcome ------------------------------------
 
 test('T17 a stale index returns confirm_wait and asks no daemon; the author is not even read yet', async () => {
-	reset();
+	await reset();
 	const h = harness('controller', { fetchFreshness: async () => STALE });
 	const out = await start(h.deps);
 	assert.ok(out.next === 'confirm_wait');
@@ -148,7 +148,7 @@ test('T17 a stale index returns confirm_wait and asks no daemon; the author is n
 });
 
 test('T17 a declined wait asks the daemon with the degraded mode, and the tool does not assemble the diff itself', async () => {
-	reset();
+	await reset();
 	const h = harness('controller', { fetchFreshness: async () => STALE });
 	const cw = await start(h.deps);
 	assert.ok(cw.next === 'confirm_wait');
@@ -163,7 +163,7 @@ test('T17 a declined wait asks the daemon with the degraded mode, and the tool d
 });
 
 test('T17 an accepted wait that never becomes fresh asks the daemon with the degraded mode', async () => {
-	reset();
+	await reset();
 	let t = 0;
 	const h = harness('controller', { fetchFreshness: async () => STALE, now: () => (t += 60_000), freshnessTimeoutMs: () => 120_000 });
 	const cw = await start(h.deps);
@@ -176,7 +176,7 @@ test('T17 an accepted wait that never becomes fresh asks the daemon with the deg
 });
 
 test('T17 an accepted wait that becomes fresh asks the daemon with the full mode, and never returns emit_judgements', async () => {
-	reset();
+	await reset();
 	let calls = 0;
 	const h = harness('controller', { fetchFreshness: async () => (++calls <= 2 ? STALE : FRESH) });
 	const cw = await start(h.deps);
@@ -189,7 +189,7 @@ test('T17 an accepted wait that becomes fresh asks the daemon with the full mode
 });
 
 test('T17 fresh grounding with no symbols asks the daemon with the degraded mode', async () => {
-	reset();
+	await reset();
 	const h = harness('unknown', { fetchGrounding: async () => ({ ok: true, grounding: { symbols: [] } }) });
 	const out = await start(h.deps);
 	assert.ok(out.next === 'done', JSON.stringify(out));
@@ -198,7 +198,7 @@ test('T17 fresh grounding with no symbols asks the daemon with the degraded mode
 });
 
 test('T17 an unavailable freshness check and unavailable grounding each return their own error and ask no daemon', async () => {
-	reset();
+	await reset();
 	const a = harness('controller', { fetchFreshness: async () => ({ ok: false, reason: 'daemon-unreachable' }) as never });
 	const outA = await start(a.deps);
 	assert.ok(outA.next === 'error');
@@ -223,7 +223,7 @@ test('T17 an unavailable freshness check and unavailable grounding each return t
 });
 
 test('T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped', async () => {
-	reset();
+	await reset();
 	const cause = 'codeReview.run: could not read the changed-file diff — git diff exited 128';
 	const h = harness('controller', { fetchGrounding: async () => ({ ok: true, grounding: { symbols: [] } }) }, new ReviewStreamError('daemon-error', cause, 'diff-unavailable'));
 	const out = await start(h.deps);
@@ -242,7 +242,7 @@ for (const [what, answer] of [
 	['stamped no reviewer', { meta: { model: 'claude:opus' }, body: { verdict: 'warn', counts: { high: 0, med: 0, low: 0 }, groundingMode: 'degraded' } }],
 ] as const) {
 	test(`an older daemon that ${what} is an error, not a verdict`, async () => {
-		reset();
+		await reset();
 		const h = harness('controller', {
 			fetchGrounding: async () => ({ ok: true, grounding: { symbols: [] } }),   // asks for degraded
 			reviewByDaemon: async () => ({ runId: 'cr-old', artifact: answer as never }),
@@ -268,7 +268,7 @@ const FAILURES = [
 
 for (const [failure, error, retryable] of FAILURES) {
 	test(`T11 a daemon code review that fails (${failure}) is an error: nothing stamped, no judgements prompt offered`, async () => {
-		reset();
+		await reset();
 		const h = harness('controller', {}, error);
 		const env = await handleCodeReviewStep(START, h.deps);
 		assert.equal((env as { isError?: boolean }).isError, true);
@@ -285,7 +285,7 @@ for (const [failure, error, retryable] of FAILURES) {
 }
 
 test('T11 the tool waits 30 minutes: with a daemon that never answers it fails when that limit fires', async () => {
-	reset();
+	await reset();
 	assert.equal(DAEMON_CODE_REVIEW_WAIT_MS, 30 * MIN);
 	const sock = join(tmpdir(), `insrc-crr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.sock`);
 	const sockets: Socket[] = [];
@@ -329,7 +329,7 @@ test('T11 the tool waits 30 minutes: with a daemon that never answers it fails w
 // --- T12: the judgements phase refuses controller-authored code ------------------
 
 test('T12 the judgements phase refuses controller-authored code and stamps nothing', async () => {
-	reset();
+	await reset();
 	// Start as daemon-authored so the controller loop begins, then the record names the controller.
 	let author: PartyOrUnknown = 'daemon';
 	const h = harness('daemon', { readBuildAuthor: () => author });
@@ -351,7 +351,7 @@ test('T12 the judgements phase refuses controller-authored code and stamps nothi
 });
 
 test('T12 an unknown author does not stop the judgements phase (only a known controller author does)', async () => {
-	reset();
+	await reset();
 	let author: PartyOrUnknown = 'daemon';
 	const h = harness('daemon', { readBuildAuthor: () => author });
 	const s = await start(h.deps);

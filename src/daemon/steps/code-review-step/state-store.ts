@@ -12,89 +12,42 @@
  * outer LLM; only the token travels in the response `state` field (ac2).
  */
 
-import { randomBytes } from 'node:crypto';
-
-import { getLogger } from '../../../shared/logger.js';
+import { getStepStateStore } from '../../threads/step-state.js';
 import type { CodeReviewStepStatePayload } from './types.js';
 
-const log = getLogger('mcp:code-review-step:state-store');
+// The entries live in the daemon's shared step-state store (Epic 86197ac6
+// s1), kind 'code-review': each stage consumes its token and mints the next.
 
-const MAX_ENTRIES = 100;
-const TTL_MS      = 60 * 60 * 1_000;
-
-interface Entry {
-	payload:            CodeReviewStepStatePayload;
-	readonly createdAt: number;
-	touchedAt:          number;
+export function saveState(payload: CodeReviewStepStatePayload): Promise<string> {
+	return getStepStateStore().mint('code-review', payload);
 }
 
-const store = new Map<string, Entry>();
-
-export function saveState(payload: CodeReviewStepStatePayload): string {
-	sweep();
-	const now = Date.now();
-	const token = mintToken();
-	store.set(token, { payload, createdAt: now, touchedAt: now });
-	if (store.size >= MAX_ENTRIES / 2) {
-		log.warn(
-			{ size: store.size, cap: MAX_ENTRIES, storyId: payload.storyId, runId: payload.runId },
-			'code-review-step state-store: entries approaching cap',
-		);
-	}
-	return token;
-}
-
-export function loadState(token: string): CodeReviewStepStatePayload {
-	const entry = store.get(token);
+export async function loadState(token: string): Promise<CodeReviewStepStatePayload> {
+	const entry = await getStepStateStore().read<CodeReviewStepStatePayload>('code-review', token);
 	if (entry === undefined) {
 		throw new StateTokenNotFound(
 			`code-review state token '${token}' not found: the insrc daemon was restarted (runs are held in its memory and a restart loses them), ` +
 			`the token went unused for an hour, or the run was already completed. Start the run again with phase='start'.`,
 		);
 	}
-	entry.touchedAt = Date.now();
 	return entry.payload;
 }
 
-export function releaseState(token: string): void {
-	store.delete(token);
+export function releaseState(token: string): Promise<void> {
+	return getStepStateStore().release('code-review', token);
 }
 
-export function _clearCodeReviewStateStoreForTests(): void {
-	store.clear();
+export function _clearCodeReviewStateStoreForTests(): Promise<void> {
+	return getStepStateStore().clearForTests('code-review');
 }
 
-export function _codeReviewStateStoreSize(): number {
-	return store.size;
+export function _codeReviewStateStoreSize(): Promise<number> {
+	return getStepStateStore().sizeForTests('code-review');
 }
 
 export class StateTokenNotFound extends Error {
 	constructor(msg: string) {
 		super(msg);
 		this.name = 'StateTokenNotFound';
-	}
-}
-
-function mintToken(): string {
-	return randomBytes(16)
-		.toString('base64')
-		.replace(/\+/g, '-')
-		.replace(/\//g, '_')
-		.replace(/=/g, '');
-}
-
-function sweep(): void {
-	const now = Date.now();
-	for (const [k, v] of store) {
-		if (now - v.touchedAt > TTL_MS) store.delete(k);
-	}
-	if (store.size >= MAX_ENTRIES) {
-		const arr = [...store.entries()].sort(
-			(a, b) => a[1].touchedAt - b[1].touchedAt,
-		);
-		while (store.size >= MAX_ENTRIES && arr.length > 0) {
-			const [k] = arr.shift()!;
-			store.delete(k);
-		}
 	}
 }

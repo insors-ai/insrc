@@ -226,7 +226,7 @@ test('a Story with no attributable change declines with no-build-record on the g
 		assert.equal((last.data as { reason?: string }).reason, 'no-build-record');
 
 		// 3. insrc_code_review_step: a hollow graph grounding diverts to the diff review.
-		_clearCodeReviewStateStoreForTests();
+		await _clearCodeReviewStateStoreForTests();
 		const out = await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: 'S001', repo: r }, {
 			resolveSubject: async () => ({ ok: true, subject: subjectFor(r) }),
 			fetchGrounding: async () => ({ ok: true, grounding: { symbols: [] } }),

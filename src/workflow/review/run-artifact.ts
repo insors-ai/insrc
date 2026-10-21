@@ -18,6 +18,8 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
+import { headConflict } from '../artifact-core/head-guard.js';
+import { LifecycleConflictError } from '../artifact-core/types.js';
 import { writeArtifact, writeAtomic } from '../storage.js';
 import { applyAutoFixes, pendingUserFindings } from './apply.js';
 import { reviewFixModeFor } from '../team/approval-gate.js';
@@ -74,6 +76,9 @@ export function stripReviewSection(md: string): string {
 export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<ReviewArtifactResult> {
 	if (!existsSync(opts.jsonPath)) throw new Error(`No artifact json at ${opts.jsonPath}`);
 	if (!existsSync(opts.mdPath))   throw new Error(`No artifact md at ${opts.mdPath}`);
+	// A head whose stored content hash no longer matches its content is not reviewed or stamped until a person resolves it.
+	const conflict = headConflict(opts.jsonPath);
+	if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
 
 	const artifact = JSON.parse(readFileSync(opts.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
 	const stage = typeof artifact.meta.workflow === 'string' ? artifact.meta.workflow : 'unknown';

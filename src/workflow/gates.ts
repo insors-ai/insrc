@@ -34,6 +34,8 @@ import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld
 import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
 import type { PlanArtifact } from './artifacts/plan.js';
 import { decodeArtifactHead } from './artifact-core/decode.js';
+import { headConflict } from './artifact-core/head-guard.js';
+import { LifecycleConflictError } from './artifact-core/types.js';
 import { isSpecBody } from './artifacts/spec.js';
 import type { SpecArtifact } from './artifacts/spec.js';
 import { authorPartyOf, reviewerPartyOf } from './review/party.js';
@@ -604,6 +606,9 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 	if (typeof artifact.meta !== 'object' || artifact.meta === null) {
 		throw new Error(`Artifact at ${jsonPath} has no meta`);
 	}
+	// A head whose stored content hash no longer matches its content is not stamped: a person has to resolve it first.
+	const conflict = headConflict(jsonPath);
+	if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
 	// Team gate: in a team repo a stage held by someone else is not approved here. Refused before any
 	// review check or stamp; a repo with no policy is untouched.
 	const teamRefusal = authorizeApproval(jsonPath);
@@ -856,6 +861,14 @@ export async function approveWorkflowTarget(
 		return true;
 	};
 
+	/** A BUILD target whose stored hash differs from its content goes to skipped[] before the hook rewrites its record. */
+	const refuseConflict = (jsonPath: string): boolean => {
+		const conflict = headConflict(jsonPath);
+		if (conflict === undefined) return false;
+		skipped.push({ path: jsonPath, reason: new LifecycleConflictError(conflict.artifactId, conflict.reason).message });
+		return true;
+	};
+
 	const approveOne = (jsonPath: string): void => {
 		// A test record carries an Epic and a Story in its meta, so without this it
 		// would be put through the code-review gate below and come back with that
@@ -893,6 +906,8 @@ export async function approveWorkflowTarget(
 				skipped.push({ path: jsonPath, reason: err.summary });
 			} else if (err instanceof TeamGateRefusedError) {
 				skipped.push({ path: jsonPath, reason: err.reason });
+			} else if (err instanceof LifecycleConflictError) {
+				skipped.push({ path: jsonPath, reason: err.message });
 			} else {
 				throw err;   // ArtifactMissingError / no-meta — surface, not skip
 			}
@@ -907,6 +922,7 @@ export async function approveWorkflowTarget(
 		if (basename(jsonPath).startsWith('BUILD-')) {
 			// Authorize BEFORE the record is created or merged: a refused target changes nothing.
 			if (refuseBeforeRecord(jsonPath)) return { approved, skipped, codeReview };
+			if (refuseConflict(jsonPath)) return { approved, skipped, codeReview };
 			const ref = buildRefFor(jsonPath);
 			if (ref !== undefined) await ensureBuildRecordOnCompletion(req.repoPath, ref);
 		}
@@ -918,6 +934,7 @@ export async function approveWorkflowTarget(
 		for (const p of pending) {
 			if (basename(p).startsWith('BUILD-')) {
 				if (refuseBeforeRecord(p)) continue;
+				if (refuseConflict(p)) continue;
 				const ref = buildRefFor(p);
 				if (ref !== undefined) await ensureBuildRecordOnCompletion(req.repoPath, ref);
 			}

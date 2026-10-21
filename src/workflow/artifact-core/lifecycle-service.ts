@@ -41,6 +41,8 @@ export interface ContentWriteOptions {
 	readonly references?: readonly Reference[] | undefined;
 	/** Create the artifact through the store when it has no head yet. */
 	readonly create?:     boolean | undefined;
+	/** The feedback roots this revision addresses; absent means all of them when the revision moves. */
+	readonly addresses?:  'all' | readonly string[] | undefined;
 }
 
 export interface ApplyResult {
@@ -193,7 +195,7 @@ export class LifecycleService {
 	 * first round of a record is logged like every later one.
 	 */
 	async updateContent(id: string, by: Actor, payload: HeadPayload, opts: ContentWriteOptions = {}): Promise<boolean> {
-		const options = { operation: 'update' as const, ...(opts.outcome !== undefined ? { outcome: opts.outcome } : {}), ...(opts.references !== undefined ? { references: opts.references } : {}) };
+		const options = { operation: 'update' as const, ...(opts.outcome !== undefined ? { outcome: opts.outcome } : {}), ...(opts.references !== undefined ? { references: opts.references } : {}), ...(opts.addresses !== undefined ? { addresses: opts.addresses } : {}) };
 		try {
 			return await this.deps.store.update(id, by, current => {
 				const { changeLog: _log, ...head } = current;

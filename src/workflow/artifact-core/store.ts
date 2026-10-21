@@ -28,7 +28,7 @@ import type { History } from './history.js';
 import { createMemoryJournal, headHashOf } from './journal.js';
 import type { StagedOperation, WriteJournal } from './journal.js';
 import { TERMINAL, assertLegalStatusChange, checkHeadIntegrity, checkIntegrity, isLifecycleOperation } from './lifecycle.js';
-import { ArtifactNotFoundError, ArtifactShapeError, IllegalTransitionError, LifecycleConflictError } from './types.js';
+import { ArtifactNotFoundError, ArtifactShapeError, HistoryEntryError, IllegalTransitionError, LifecycleConflictError } from './types.js';
 import type { Actor, Artifact, ChangeLogEntry, Feedback, Operation, Reference } from './types.js';
 
 const log = getLogger('artifact-store');
@@ -293,6 +293,11 @@ export class ArtifactStore {
 		if (from !== undefined && isLifecycleOperation(operation)) assertLegalStatusChange(from, stored.status, operation, options.cascade === true);
 		if (priorBytes === prepared.bytes) return undefined;       // nothing changes: no staged operation, no log entry
 
+		// The addresses rule: a revision (an update that moves the revision number) addresses all open feedback unless the writer
+		// lists some; a list may name only open roots; an update that moves no revision and a lifecycle operation address nothing.
+		const addresses = options.addresses !== undefined ? options.addresses
+			: operation === 'update' && prior !== undefined && prepared.revision > priorRevision ? 'all' as const : undefined;
+		if (Array.isArray(addresses)) await this.checkAddresses(a.id, addresses);
 		// A fresh id per staged operation, so the same transition made twice (references A to B, back to A, to B again)
 		// is logged twice. A retry does not mint another: it finds the staged operation in the journal and reuses its id.
 		const operationId = randomUUID().replace(/-/g, '');
@@ -305,7 +310,7 @@ export class ArtifactStore {
 			...(from !== undefined && from !== stored.status ? { status: { from, to: stored.status } } : {}),
 			...(options.outcome !== undefined ? { outcome: options.outcome } : {}),
 			...(options.references !== undefined ? { references: options.references } : {}),
-			...(options.addresses !== undefined ? { addresses: options.addresses } : {}),
+			...(addresses !== undefined ? { addresses } : {}),
 		};
 		// Never stage what a later read or append would refuse: it would block every later write of this artifact.
 		validateLogEntry(entry);
@@ -322,6 +327,13 @@ export class ArtifactStore {
 		}
 		await this.clearQuietly(a.id, operationId);
 		return entry;
+	}
+
+	/** Refuse a list of feedback ids that are not open roots of this artifact (unknown, a reply, or already addressed by an earlier revision). */
+	private async checkAddresses(id: string, listed: readonly string[]): Promise<void> {
+		const open = new Set((await this.deps.history.openFeedback(id)).filter(f => f.inReplyTo === undefined).map(f => f.id));
+		const bad = [...new Set(listed.filter(x => !open.has(x)))];
+		if (bad.length > 0) throw new HistoryEntryError(`${id}: addresses names feedback that is not open at the root of this artifact: ${bad.join(', ')}`);
 	}
 
 	/**

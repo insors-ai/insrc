@@ -353,6 +353,8 @@ tracker.syncComments is the single entry; the build phases are left alone.
   - **resolved**: Accept as additive, no amendment — Approved with the LLD (option A). _(2026-10-21T20:16:41.194Z)_
 - `q737c78be` — The attach comment gets a marker line so the framework's own comments are told by a marker. This changes the text s6's attach posts, though not its link. Resolve: accept (recommended), or keep the attach comment as it is and recognise it only by its shape.
   - **resolved**: Accept the marker line — Approved with the LLD (option A). _(2026-10-21T20:17:20.218Z)_
+- `q8ba3793b` — The comment commands are /revise and revision: for a revision request, /suggest and suggestion: for a suggestion, on the first line only. Resolve: accept these forms (recommended), or name other words.
+  - **resolved**: Accept the proposed forms — Approved with the LLD (option A). _(2026-10-21T20:17:45.336Z)_
 
 ## Citations
 

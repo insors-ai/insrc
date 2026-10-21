@@ -213,6 +213,13 @@
         "choice": "Accept the marker line",
         "rationale": "Approved with the LLD (option A).",
         "resolvedAt": "2026-10-21T20:17:20.218Z"
+      },
+      "q8ba3793b": {
+        "question": "The comment commands are /revise and revision: for a revision request, /suggest and suggestion: for a suggestion, on the first line only. Resolve: accept these forms (recommended), or name other words.",
+        "status": "resolved",
+        "choice": "Accept the proposed forms",
+        "rationale": "Approved with the LLD (option A).",
+        "resolvedAt": "2026-10-21T20:17:45.336Z"
       }
     }
   },

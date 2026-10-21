@@ -125,12 +125,15 @@ export function checkHeadIntegrity(a: ContentView): Integrity {
 }
 
 /**
- * Head against log: `logTail` is the last change log entry that carries a revision. An empty stored hash has
- * nothing to compare; a log with no revision-bearing entry is no history, so it cannot be ahead of the head.
+ * Head against log. Given the log, the head is compared with the last entry that carries a revision, so a revision-less entry
+ * (a build round, a feedback post receipt) after it can never stand in for it. Given one entry, that entry is the comparison (a
+ * caller that has already picked it). An empty stored hash has nothing to compare; a log with no revision-bearing entry is no
+ * history, so it cannot be ahead of the head.
  */
-export function checkIntegrity(a: ContentView, logTail: ChangeLogEntry | undefined): Integrity {
+export function checkIntegrity(a: ContentView, log: ChangeLogEntry | readonly ChangeLogEntry[] | undefined): Integrity {
 	const own = checkHeadIntegrity(a);
 	if (!own.ok) return own;
+	const logTail = Array.isArray(log) ? [...(log as readonly ChangeLogEntry[])].reverse().find(e => e.revision !== undefined) : log as ChangeLogEntry | undefined;
 	const head = a.lifecycle.revision;
 	if (head.contentHash === '' || logTail?.revision === undefined) return { ok: true };
 	if (head.number > logTail.revision.number) return { ok: false, reason: 'head-ahead-of-log' };

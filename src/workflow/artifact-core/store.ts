@@ -262,9 +262,10 @@ export class ArtifactStore {
 		let revisionFloor: number | undefined;
 		if (prior !== undefined) {
 			const view = { description: prior.artifact.description, payload: prior.artifact.payload, lifecycle: prior.artifact.lifecycle };
-			const tail = (await this.deps.history.log(a.id)).reverse().find(e => e.revision !== undefined);
+			const log = await this.deps.history.log(a.id);
+			const tail = [...log].reverse().find(e => e.revision !== undefined);
 			if (!resolving) {
-				const integrity = checkIntegrity(view, tail);
+				const integrity = checkIntegrity(view, log);
 				if (!integrity.ok && integrity.reason !== 'head-ahead-of-log') throw new LifecycleConflictError(a.id, integrity.reason);
 			} else if (tail?.revision !== undefined && tail.revision.number > prior.artifact.lifecycle.revision.number) {
 				revisionFloor = tail.revision.number + 1;

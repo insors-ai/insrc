@@ -85,8 +85,7 @@ export class LifecycleService {
 			const { changeLog, ...head } = current;
 
 			if (INTEGRITY_CHECKED.includes(op)) {
-				const tail = [...changeLog].reverse().find(e => e.revision !== undefined);
-				const integrity = checkIntegrity({ description: head.description, payload: head.payload, lifecycle: head.lifecycle }, tail);
+				const integrity = checkIntegrity({ description: head.description, payload: head.payload, lifecycle: head.lifecycle }, changeLog);
 				if (!integrity.ok) throw new LifecycleConflictError(id, integrity.reason);
 			}
 
@@ -178,8 +177,7 @@ export class LifecycleService {
 		try {
 			await this.deps.store.finishPending(id);
 			const stored = await this.deps.store.readWithHistory(id);
-			const tail = [...stored.changeLog].reverse().find(e => e.revision !== undefined);
-			const integrity = checkIntegrity({ description: stored.description, payload: stored.payload, lifecycle: stored.lifecycle }, tail);
+			const integrity = checkIntegrity({ description: stored.description, payload: stored.payload, lifecycle: stored.lifecycle }, stored.changeLog);
 			return { status: stored.lifecycle.status, integrity, lifecycle: stored.lifecycle };
 		} catch (err) {
 			if (err instanceof ArtifactNotFoundError) return undefined;
@@ -246,8 +244,7 @@ export class LifecycleService {
 			if (['completed', 'withdrawn', 'superseded'].includes(current.lifecycle.status)) return undefined;
 			const { changeLog, ...head } = current;
 			// A member is held to the same check as the unit: its head and its log have to agree before it is frozen.
-			const tail = [...changeLog].reverse().find(e => e.revision !== undefined);
-			const integrity = checkIntegrity({ description: head.description, payload: head.payload, lifecycle: head.lifecycle }, tail);
+			const integrity = checkIntegrity({ description: head.description, payload: head.payload, lifecycle: head.lifecycle }, changeLog);
 			if (!integrity.ok) throw new LifecycleConflictError(member, integrity.reason);
 			return {
 				next: { ...head, lifecycle: nextLifecycle(head, 'complete', by, this.at(), { cascade: true }) },

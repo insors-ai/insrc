@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -196,3 +196,43 @@ Run at 2026-10-21T04:36:46.306Z on commit `6225fb6b`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` | 0 | 22 | 1 s |  |
+
+## t8
+
+Run at 2026-10-21T04:47:37.943Z on commit `72cb9d62`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways | `src/workflow/review-pipeline/__tests__/code-review-divided.test.ts` |
+
+**integration: src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller | `src/workflow/review-pipeline/__tests__/code-review-divided.test.ts` |
+
+**integration: src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef | `src/workflow/review-pipeline/__tests__/code-review-divided.test.ts` |
+
+**integration: src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence | `src/workflow/review-pipeline/__tests__/code-review-divided.test.ts` |
+
+**integration: src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a gather call failing twice fails the review and records nothing'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a gather call failing twice fails the review and records nothing | `src/workflow/review-pipeline/__tests__/code-review-divided.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review-pipeline/__tests__/code-review-divided.test.ts` | 0 | 5 | 0.7 s |  |

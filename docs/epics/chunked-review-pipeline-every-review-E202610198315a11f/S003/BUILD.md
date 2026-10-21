@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s3
 
-**Standalone:** no  ·  **Created:** 2026-10-20T16:44:27.482Z  ·  **Updated:** 2026-10-21T04:36:46.306Z
+**Standalone:** no  ·  **Created:** 2026-10-20T16:44:27.482Z  ·  **Updated:** 2026-10-21T04:47:37.943Z
 
-**Commit:** 6225fb6b
+**Commit:** 72cb9d62
 
 ## Summary
 
-A divided code review finishes into today's DimensionResult: finish returns the chunks' own findings; gather.merge joins every part, keeps identical findings once and applies the dimension's toResult once (changed-set filter, known-FR filter, coverage normalised once). Daemon path: out-of-set findings dropped. Controller path: they are handed on in findings, and the controller step's handler splits them into outOfScope as today (it rebuilds outOfScope from the findings it gets); the tests run a divided result through that handler split (validateJudgements, now exported). merge never rewrites a location: a gather finding at an evidence note id, with or without line and column (file part = text before the first ':'), or anything not file:line, is re-asked then fails the review. Fixes after the first gate: 6225fb6b.
+Integration tests (code-review-divided.test.ts) drive runCodeReview end to end at a small limit and at a raised one: production runner, fold, record, dimension specs, adapters and s1's driver; judge slots mirror runDimensionJob with the test's limit (the configured limit lives in ~/.insrc); a scripted model judges only from what each call carries. Same verdicts per dimension and the same overall verdict both ways, each non-empty; cross-chunk contract mismatch reported at the caller; cross-chunk duplicate reported with counterpartRef; a degraded review whose coverage call is over the limit is divided with zero atoms (pipelineCalls chunk 0, one obligation per promised test) and judges each test on its evidence; an obligation answered at a note id twice fails the review with nothing written; every call within the limit.
 
 ## Tasks validated
 
@@ -19,17 +19,18 @@ A divided code review finishes into today's DimensionResult: finish returns the 
 - ✓ `t5`
 - ✓ `t6`
 - ✓ `t7`
+- ✓ `t8`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `docs/mocks/ontology-editor.html` — **insrc-build** (2026-10-21T04:36:46.306Z)
-- `docs/mocks/ontology-source/ontology.template.html` — **insrc-build** (2026-10-21T04:36:46.306Z)
-- `docs/mocks/ontology-source/render.mjs` — **insrc-build** (2026-10-21T04:36:46.306Z)
-- `docs/mocks/ontology-viewer.html` — **insrc-build** (2026-10-21T04:36:46.306Z)
-- `docs/ontology-builder-prd.html` — **insrc-build** (2026-10-21T04:36:46.306Z)
-- `docs/ontology-builder-prd.md` — **insrc-build** (2026-10-21T04:36:46.306Z)
+- `docs/mocks/ontology-editor.html` — **insrc-build** (2026-10-21T04:47:37.943Z)
+- `docs/mocks/ontology-source/ontology.template.html` — **insrc-build** (2026-10-21T04:47:37.943Z)
+- `docs/mocks/ontology-source/render.mjs` — **insrc-build** (2026-10-21T04:47:37.943Z)
+- `docs/mocks/ontology-viewer.html` — **insrc-build** (2026-10-21T04:47:37.943Z)
+- `docs/ontology-builder-prd.html` — **insrc-build** (2026-10-21T04:47:37.943Z)
+- `docs/ontology-builder-prd.md` — **insrc-build** (2026-10-21T04:47:37.943Z)
 
 ## Feedback
 

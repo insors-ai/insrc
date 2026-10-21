@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s3",
     "createdAt": "2026-10-20T16:44:27.482Z",
-    "updatedAt": "2026-10-21T04:36:46.306Z",
+    "updatedAt": "2026-10-21T04:47:37.943Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
@@ -38,9 +38,13 @@
       {
         "id": "t7",
         "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
       }
     ],
-    "summary": "A divided code review finishes into today's DimensionResult: finish returns the chunks' own findings; gather.merge joins every part, keeps identical findings once and applies the dimension's toResult once (changed-set filter, known-FR filter, coverage normalised once). Daemon path: out-of-set findings dropped. Controller path: they are handed on in findings, and the controller step's handler splits them into outOfScope as today (it rebuilds outOfScope from the findings it gets); the tests run a divided result through that handler split (validateJudgements, now exported). merge never rewrites a location: a gather finding at an evidence note id, with or without line and column (file part = text before the first ':'), or anything not file:line, is re-asked then fails the review. Fixes after the first gate: 6225fb6b.",
+    "summary": "Integration tests (code-review-divided.test.ts) drive runCodeReview end to end at a small limit and at a raised one: production runner, fold, record, dimension specs, adapters and s1's driver; judge slots mirror runDimensionJob with the test's limit (the configured limit lives in ~/.insrc); a scripted model judges only from what each call carries. Same verdicts per dimension and the same overall verdict both ways, each non-empty; cross-chunk contract mismatch reported at the caller; cross-chunk duplicate reported with counterpartRef; a degraded review whose coverage call is over the limit is divided with zero atoms (pipelineCalls chunk 0, one obligation per promised test) and judges each test on its evidence; an obligation answered at a note id twice fails the review with nothing written; every call within the limit.",
     "testRecord": {
       "md": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/TESTS.md"
     },
@@ -50,45 +54,45 @@
           "file": "docs/mocks/ontology-editor.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T04:36:46.306Z"
+        "timestamp": "2026-10-21T04:47:37.943Z"
       },
       {
         "target": {
           "file": "docs/mocks/ontology-source/ontology.template.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T04:36:46.306Z"
+        "timestamp": "2026-10-21T04:47:37.943Z"
       },
       {
         "target": {
           "file": "docs/mocks/ontology-source/render.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T04:36:46.306Z"
+        "timestamp": "2026-10-21T04:47:37.943Z"
       },
       {
         "target": {
           "file": "docs/mocks/ontology-viewer.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T04:36:46.306Z"
+        "timestamp": "2026-10-21T04:47:37.943Z"
       },
       {
         "target": {
           "file": "docs/ontology-builder-prd.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T04:36:46.306Z"
+        "timestamp": "2026-10-21T04:47:37.943Z"
       },
       {
         "target": {
           "file": "docs/ontology-builder-prd.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T04:36:46.306Z"
+        "timestamp": "2026-10-21T04:47:37.943Z"
       }
     ],
-    "commit": "6225fb6b",
+    "commit": "72cb9d62",
     "feedback": [
       {
         "id": "c264a0b0",

@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s3",
     "createdAt": "2026-10-20T16:44:27.482Z",
-    "updatedAt": "2026-10-21T04:36:46.306Z",
+    "updatedAt": "2026-10-21T04:47:37.943Z",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
   },
@@ -717,6 +717,110 @@
               },
               {
                 "title": "a mutual call cut between chunks is checked in both directions, each at its own caller",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "72cb9d62",
+        "ranAt": "2026-10-21T04:47:37.943Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a gather call failing twice fails the review and records nothing'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "a gather call failing twice fails the review and records nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 737,
+            "titles": [
+              {
+                "title": "a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways",
+                "result": "pass"
+              },
+              {
+                "title": "a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller",
+                "result": "pass"
+              },
+              {
+                "title": "two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef",
+                "result": "pass"
+              },
+              {
+                "title": "a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence",
+                "result": "pass"
+              },
+              {
+                "title": "a gather call failing twice fails the review and records nothing",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 28 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -193,3 +193,34 @@ Run at 2026-10-21T06:37:50.385Z on commit `666a5332`. Tests check: **passed**. 5
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/build-step/__tests__/build-step.test.ts` | 0 | 64 | 12.5 s |  |
 | `src/workflow/runners/build/__tests__/changed-files.test.ts` | 0 | 42 | 5.3 s |  |
+
+## t7
+
+Run at 2026-10-21T06:44:13.783Z on commit `a0a031cf`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files | `src/daemon/steps/build-step/__tests__/validation-checks.test.ts` |
+| pass | ISSUE-b4b6b835: validate hands the check runner the other TypeScript projects the build touched; a build inside the root project names none | `src/daemon/steps/build-step/__tests__/build-step.test.ts` |
+
+**unit: src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests | `src/daemon/steps/build-step/__tests__/validation-checks.test.ts` |
+| pass | on the standalone routes: a wrong mapping on a small build is refused with 'invalid-test-mapping', a good one is planned by subject, and `tests` is ignored on a trivial build | `src/daemon/steps/build-step/__tests__/build-step.test.ts` |
+
+**unit: src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, a trivial build that deletes a test file does not ask to run it'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | with a storyKey, a trivial build that deletes a test file does not ask to run it | `src/daemon/steps/build-step/__tests__/validation-checks.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/build-step/__tests__/build-step.test.ts` | 0 | 64 | 11.5 s |  |
+| `src/daemon/steps/build-step/__tests__/validation-checks.test.ts` | 0 | 31 | 9.2 s |  |

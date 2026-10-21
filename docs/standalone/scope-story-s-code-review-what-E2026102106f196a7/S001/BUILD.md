@@ -2,13 +2,13 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-21T05:47:38.616Z  ·  **Updated:** 2026-10-21T06:37:50.385Z
+**Standalone:** yes  ·  **Created:** 2026-10-21T05:47:38.616Z  ·  **Updated:** 2026-10-21T06:44:13.783Z
 
-**Commit:** 666a5332
+**Commit:** a0a031cf
 
 ## Summary
 
-Both BUILD writers (completion-record.ts, validate.ts) pass the Story's key to collectBuildChangeLog and always write the changeLog, empty included, so a rewrite replaces a contaminated prior one. The writers' own tests (build-step.test.ts, build-start.test.ts, completion-record.test.ts) that pinned an absent changeLog or validated uncommitted work with no base were updated to the rule, and a validate-phase writer test was added beside them.
+withTypecheckProjects and trivialCheckPlan take an optional storyKey and, with it, select from the Story's own commits (strict, synchronous via storyChangeSet; trivial tests filtered to files that still exist; no base fails the trivial listing); validate.ts passes the key at both call sites. Two validate-level tests in build-step.test.ts that relied on untracked files or a base-less HEAD listing were updated to the rule.
 
 ## Tasks validated
 
@@ -18,14 +18,15 @@ Both BUILD writers (completion-record.ts, validate.ts) pass the Story's key to c
 - ✓ `t4`
 - ✓ `t5`
 - ✓ `t6`
+- ✓ `t7`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `docs/mocks/ontology-editor.html` — **insrc-build** (2026-10-21T06:37:50.385Z)
-- `docs/mocks/ontology-source/ontology.template.html` — **insrc-build** (2026-10-21T06:37:50.385Z)
-- `docs/mocks/ontology-source/render.mjs` — **insrc-build** (2026-10-21T06:37:50.385Z)
-- `docs/mocks/ontology-viewer.html` — **insrc-build** (2026-10-21T06:37:50.385Z)
-- `docs/ontology-builder-prd.html` — **insrc-build** (2026-10-21T06:37:50.385Z)
-- `docs/ontology-builder-prd.md` — **insrc-build** (2026-10-21T06:37:50.385Z)
+- `docs/mocks/ontology-editor.html` — **insrc-build** (2026-10-21T06:44:13.783Z)
+- `docs/mocks/ontology-source/ontology.template.html` — **insrc-build** (2026-10-21T06:44:13.783Z)
+- `docs/mocks/ontology-source/render.mjs` — **insrc-build** (2026-10-21T06:44:13.783Z)
+- `docs/mocks/ontology-viewer.html` — **insrc-build** (2026-10-21T06:44:13.783Z)
+- `docs/ontology-builder-prd.html` — **insrc-build** (2026-10-21T06:44:13.783Z)
+- `docs/ontology-builder-prd.md` — **insrc-build** (2026-10-21T06:44:13.783Z)

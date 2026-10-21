@@ -4,7 +4,7 @@
     "epicHash": "06f196a7ff528143",
     "storyId": "S001",
     "createdAt": "2026-10-21T05:47:38.616Z",
-    "updatedAt": "2026-10-21T06:37:50.385Z",
+    "updatedAt": "2026-10-21T06:44:13.783Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-21T05:02:26.565Z",
@@ -35,9 +35,13 @@
       {
         "id": "t6",
         "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
       }
     ],
-    "summary": "Both BUILD writers (completion-record.ts, validate.ts) pass the Story's key to collectBuildChangeLog and always write the changeLog, empty included, so a rewrite replaces a contaminated prior one. The writers' own tests (build-step.test.ts, build-start.test.ts, completion-record.test.ts) that pinned an absent changeLog or validated uncommitted work with no base were updated to the rule, and a validate-phase writer test was added beside them.",
+    "summary": "withTypecheckProjects and trivialCheckPlan take an optional storyKey and, with it, select from the Story's own commits (strict, synchronous via storyChangeSet; trivial tests filtered to files that still exist; no base fails the trivial listing); validate.ts passes the key at both call sites. Two validate-level tests in build-step.test.ts that relied on untracked files or a base-less HEAD listing were updated to the rule.",
     "testRecord": {
       "md": "docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/TESTS.md"
     },
@@ -47,44 +51,44 @@
           "file": "docs/mocks/ontology-editor.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:37:50.385Z"
+        "timestamp": "2026-10-21T06:44:13.783Z"
       },
       {
         "target": {
           "file": "docs/mocks/ontology-source/ontology.template.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:37:50.385Z"
+        "timestamp": "2026-10-21T06:44:13.783Z"
       },
       {
         "target": {
           "file": "docs/mocks/ontology-source/render.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:37:50.385Z"
+        "timestamp": "2026-10-21T06:44:13.783Z"
       },
       {
         "target": {
           "file": "docs/mocks/ontology-viewer.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:37:50.385Z"
+        "timestamp": "2026-10-21T06:44:13.783Z"
       },
       {
         "target": {
           "file": "docs/ontology-builder-prd.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:37:50.385Z"
+        "timestamp": "2026-10-21T06:44:13.783Z"
       },
       {
         "target": {
           "file": "docs/ontology-builder-prd.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:37:50.385Z"
+        "timestamp": "2026-10-21T06:44:13.783Z"
       }
     ],
-    "commit": "666a5332"
+    "commit": "a0a031cf"
   }
 }

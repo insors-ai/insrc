@@ -65,11 +65,11 @@ export const LEDGER_EXCLUDE_GLOBS: readonly string[] = Object.freeze([
  *  derivation is bit-for-bit unchanged when none is supplied, so every
  *  existing single-argument call site keeps its current result. */
 export interface ChangedFilesOptions {
-	/** Start of the Story's COMMITTED range. Consulted ONLY when the working tree
-	 *  is clean — which is exactly when it is needed, because the implement prompt
-	 *  mandates committing before the validate phase runs, so the working-tree
-	 *  derivation sees nothing. A dirty tree keeps using the working tree and never
-	 *  looks at the base. */
+	/** Start of the Story's COMMITTED range. With it, the Story's commits decide the
+	 *  set, whatever the working tree holds (ISSUE-b97752e9): an uncommitted change
+	 *  counts only when it edits a file those commits changed, and every other one is
+	 *  reported as excludedUncommitted. Without it, the working-tree derivation, for
+	 *  callers that do not know a Story. */
 	readonly base?: string | undefined;
 	/** Paths to drop from the derived set, whatever derivation produced them.
 	 *  Accepts repo-ABSOLUTE or repo-RELATIVE entries — callers hold absolute paths
@@ -82,13 +82,13 @@ export interface ChangedFilesOptions {
 	 *  which filters the reported paths here, these never reach the diff at all —
 	 *  so a tree dirty only with matching files is clean for the emptiness gate. */
 	readonly excludeGlobs?: readonly string[] | undefined;
-	/** `<epicHash>/<storyId>` (ISSUE-b47dadc7): on the committed-range derivation,
-	 *  keeps only the commits carrying the Story's `Insrc-Story` trailer (see
-	 *  {@link storyChangeSet}). Ignored while the working tree is dirty. */
+	/** `<epicHash>/<storyId>` (ISSUE-b47dadc7): keeps only the Story's own commits
+	 *  (see {@link storyChangeSet}, read with `strict`). A storyKey without a base is
+	 *  refused: a Story's set has no anchor, and the working tree is not its scope. */
 	readonly storyKey?: string | undefined;
 	/** Told how the returned set was scoped: the working tree, or the committed
 	 *  range by trailer or by first-parent commits, with the Story paths another
-	 *  Story's excluded commit also changed. */
+	 *  Story's excluded commit also changed and the uncommitted paths left out. */
 	readonly onAttribution?: ((a: ChangeSetAttributionReport) => void) | undefined;
 }
 
@@ -96,6 +96,9 @@ export interface ChangedFilesOptions {
 export interface ChangeSetAttributionReport {
 	readonly attribution:        StoryAttribution | 'working-tree';
 	readonly sharedWithExcluded: readonly string[];
+	/** Uncommitted paths (unstaged or staged) left out because none of the Story's
+	 *  commits changed them, sorted. Empty for the working-tree derivation. */
+	readonly excludedUncommitted: readonly string[];
 }
 
 /** Run one `git_diff` and collect its changed paths into `into`. */
@@ -115,14 +118,15 @@ async function collectDiff(
 }
 
 /**
- * Derive the changed-file set from the working-tree diff (unstaged ∪ staged) via
- * the `git_diff` builtin. Read-only; throws `NoBuildChangesError` on git failure.
+ * The changed-file set, via the `git_diff` builtin. Read-only; throws
+ * `NoBuildChangesError` on git failure.
  *
- * With `opts.base`, a CLEAN working tree additionally derives the committed range
- * `base..HEAD`. That ordering is the point of the Story: the collector runs after
- * the implement prompt has committed, so the working tree is empty precisely when
- * the change set matters. A dirty tree is left exactly as it was — the base is not
- * consulted at all, so the result cannot depend on which range was supplied.
+ * With `opts.base`, the Story's commits since the base decide the set
+ * (ISSUE-b97752e9): their units are read first, then the working tree
+ * (unstaged ∪ staged), whose paths count only when a Story commit already
+ * changed them. Every other uncommitted path is reported, never returned, so the
+ * result never depends on what else the tree holds. Without a base, the
+ * working-tree diff, for callers that do not know a Story.
  */
 export async function changedFiles(repoPath: string, opts?: ChangedFilesOptions): Promise<readonly string[]> {
 	// ONE filter, applied to BOTH derivations through this single closure. The
@@ -138,48 +142,57 @@ export async function changedFiles(repoPath: string, opts?: ChangedFilesOptions)
 	const globs = opts?.excludeGlobs !== undefined && opts.excludeGlobs.length > 0
 		? { exclude: [...opts.excludeGlobs] }
 		: {};
+	const base = opts?.base !== undefined && opts.base.length > 0 ? opts.base : undefined;
+	if (base === undefined && opts?.storyKey !== undefined) {
+		throw new NoBuildChangesError(`no range base for Story ${opts.storyKey} in ${repoPath}: its change set has no anchor`);
+	}
 
 	const working = new Set<string>();
-	for (const staged of [false, true]) {
-		await collectDiff(repoPath, { staged, ...globs }, working);
-	}
-	// Exclusion runs BEFORE the emptiness gate, and that order is the whole point.
-	// The record's own json + md are the paths THIS collector's caller is about to
-	// write, so they are not evidence of a dirty tree — at completion time they are
-	// typically the ONLY dirty paths. Testing size first let them stand in for real
-	// work: the range was skipped as "tree is dirty", the set then filtered to
-	// nothing, and the record silently kept the previous write's file list.
-	const kept = keep(working);
-	if (kept.length > 0) {
-		opts?.onAttribution?.({ attribution: 'working-tree', sharedWithExcluded: [] });
-		return kept;
+	const readWorking = async (): Promise<void> => {
+		for (const staged of [false, true]) await collectDiff(repoPath, { staged, ...globs }, working);
+	};
+
+	if (base === undefined) {
+		await readWorking();
+		opts?.onAttribution?.({ attribution: 'working-tree', sharedWithExcluded: [], excludedUncommitted: [] });
+		return keep(working);
 	}
 
-	// Committed-range fallback: only when the working tree yielded nothing of the
-	// Story's own. A tree carrying real uncommitted work never reaches here, so the
-	// result still cannot depend on which range was supplied.
-	if (opts?.base !== undefined && opts.base.length > 0) {
-		const set = storyChangeSet(repoPath, opts.base, { storyKey: opts.storyKey });
-		const ranged = new Set<string>();
-		if (set.attribution === 'story-trailer') {
-			// Each kept unit's own diff (ISSUE-b47dadc7), not the net range: a file
-			// this Story changed and another Story later restored is still this
-			// Story's. The exclusions stay with git.
-			for (const u of set.units) await collectDiff(repoPath, { from: u.from, to: u.to, ...globs }, ranged);
-		} else {
-			await collectDiff(repoPath, { from: opts.base, ...globs }, ranged);
-			// Only the Story's OWN changes count (ISSUE-f9ced66a): a file a mid-build
-			// merge brought in is in base..HEAD but in none of the Story's units. The
-			// exclusions above stay with git; this only narrows what git reported.
-			const own = new Set(set.paths);
-			for (const f of [...ranged]) if (!own.has(f)) ranged.delete(f);
-		}
-		const files = keep(ranged);
-		opts.onAttribution?.({ attribution: set.attribution, sharedWithExcluded: set.sharedWithExcluded.filter(p => files.includes(p)) });
-		return files;
+	// The Story's commits first. With a storyKey the trailer scan is strict: a
+	// failed read must refuse, not widen the set to the whole first-parent range.
+	const set = storyChangeSet(repoPath, base, { storyKey: opts?.storyKey, ...(opts?.storyKey !== undefined ? { strict: true } : {}) });
+	const ranged = new Set<string>();
+	if (set.perUnit) {
+		// Each kept unit's own diff (ISSUE-b47dadc7), not the net range: a file this
+		// Story changed and another Story later restored is still this Story's, and a
+		// left-out commit's change to a shared file never shows. The exclusions stay
+		// with git.
+		for (const u of set.units) await collectDiff(repoPath, { from: u.from, to: u.to, ...globs }, ranged);
+	} else {
+		await collectDiff(repoPath, { from: base, ...globs }, ranged);
+		// Only the Story's OWN changes count (ISSUE-f9ced66a): a file a mid-build
+		// merge brought in is in base..HEAD but in none of the Story's units. The
+		// exclusions above stay with git; this only narrows what git reported.
+		const own = new Set(set.paths);
+		for (const f of [...ranged]) if (!own.has(f)) ranged.delete(f);
 	}
-	opts?.onAttribution?.({ attribution: 'working-tree', sharedWithExcluded: [] });
-	return kept;
+
+	// Then the working tree: an in-progress edit of a Story file joins; anything
+	// else is not the Story's and is only reported.
+	await readWorking();
+	const storyPaths = new Set(set.paths);
+	const excludedUncommitted: string[] = [];
+	for (const f of keep(working)) {
+		if (storyPaths.has(f)) ranged.add(f);
+		else excludedUncommitted.push(f);
+	}
+	const files = keep(ranged);
+	opts?.onAttribution?.({
+		attribution: set.attribution,
+		sharedWithExcluded: set.sharedWithExcluded.filter(p => files.includes(p)),
+		excludedUncommitted: excludedUncommitted.sort(),
+	});
+	return files;
 }
 
 /** Normalise an exclusion entry to the repo-relative form `git_diff` reports.
@@ -211,6 +224,9 @@ export async function collectBuildChangeLog(
 		/** Forwarded to {@link changedFiles} — see {@link ChangedFilesOptions}. */
 		readonly base?: string | undefined;
 		readonly exclude?: readonly string[] | undefined;
+		/** `<epicHash>/<storyId>`: the BUILD record's changeLog follows the Story's
+		 *  commits; with no base the seam refuses, and the swallow below yields []. */
+		readonly storyKey?: string | undefined;
 	},
 	/** Injectable changed-file seam (defaults to the real git derivation); tests
 	 *  stub it. Additive/optional — the mandated 2-arg call sites are unchanged, and
@@ -221,8 +237,12 @@ export async function collectBuildChangeLog(
 	// than `{ base: undefined, exclude: undefined }` — keeping the seam call, and
 	// any recording stub's view of it, identical to today.
 	const opts: ChangedFilesOptions | undefined =
-		ctx.base !== undefined || ctx.exclude !== undefined
-			? { ...(ctx.base !== undefined ? { base: ctx.base } : {}), ...(ctx.exclude !== undefined ? { exclude: ctx.exclude } : {}) }
+		ctx.base !== undefined || ctx.exclude !== undefined || ctx.storyKey !== undefined
+			? {
+				...(ctx.base !== undefined ? { base: ctx.base } : {}),
+				...(ctx.exclude !== undefined ? { exclude: ctx.exclude } : {}),
+				...(ctx.storyKey !== undefined ? { storyKey: ctx.storyKey } : {}),
+			}
 			: undefined;
 	let files: readonly string[];
 	try {

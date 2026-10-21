@@ -599,7 +599,7 @@ function findBuildMd(repo: string): string | undefined {
 
 /** Drive a standalone build through implement THEN validate, the real two-phase
  *  sequence that produces the flip, and return the persisted record + markdown. */
-async function runImplementThenValidate(repo: string, opts?: { readonly summary?: string | undefined }): Promise<{ rec: { meta: Record<string, unknown>; body: Record<string, unknown> }; md: string }> {
+async function runImplementThenValidate(repo: string, opts?: { readonly summary?: string | undefined; readonly beforeValidate?: (() => void) | undefined }): Promise<{ rec: { meta: Record<string, unknown>; body: Record<string, unknown> }; md: string }> {
 	_setBuildValidateProviderForTests({
 		async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
 	});
@@ -611,6 +611,7 @@ async function runImplementThenValidate(repo: string, opts?: { readonly summary?
 		const afterImpl = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
 		assert.equal(afterImpl.meta['standalone'], true, 'implement wrote standalone:true — the precondition the flip destroys');
 		assert.equal(afterImpl.body['focus'], 'Add a --json flag to the status subcommand.');
+		opts?.beforeValidate?.();
 
 		const val = outputOf(await handleBuildStep({
 			phase: 'validate', target: 's1', repo, standalone,
@@ -762,17 +763,23 @@ test('t10 END-TO-END: a trivial-routed build produces ONE record carrying the ch
 		execFileSync('git', ['add', '-f', ownJson], { cwd: repo, stdio: 'ignore' });
 		execFileSync('git', ['commit', '-qm', 'placeholder so the record\'s own path is tracked', '--', ownJson], { cwd: repo, stdio: 'ignore' });
 
-		const head = gitOut(repo, 'rev-parse', '--short', 'HEAD');
+		let head = '';
 		const { rec, md } = await runImplementThenValidate(repo, {
 			summary: 'Added the --json flag and routed status through the shared serialiser.',
+			// The build commits its work before validate, as the implement prompt
+			// requires: since ISSUE-b97752e9 only the Story's commits decide its set.
+			beforeValidate: () => {
+				execFileSync('git', ['commit', '-qm', 'the Story work', '--', 'shipped.ts', 'added.ts'], { cwd: repo, stdio: 'ignore' });
+				head = gitOut(repo, 'rev-parse', '--short', 'HEAD');
+			},
 		});
 
 		// --- t3 / t4 / t6: a POPULATED change set, and only the Story's own files
 		const files = ((rec.body['changeLog'] ?? []) as { target: { file: string } }[]).map(e => e.target.file);
 		assert.deepEqual([...files].sort(), ['added.ts', 'shipped.ts'],
-			'both halves of the derivation contribute (staged + unstaged) and nothing else does');
-		assert.match(md, /## Changes\n\n- `shipped\.ts` — \*\*insrc-build\*\*/,
-			'`## Changes` opens with the modified file, attributed');
+			'the modified file and the new file the Story committed, and nothing else');
+		assert.match(md, /## Changes\n\n(?:- .*\n)*- `shipped\.ts` — \*\*insrc-build\*\*/,
+			'`## Changes` lists the modified file, attributed');
 		assert.match(md, /^- `added\.ts` — \*\*insrc-build\*\* \(2\d{3}-/m,
 			'and carries the new file too, each line attributed + timestamped');
 		// t4's exclusion, LIVE end-to-end: the record's own json is tracked and was
@@ -985,16 +992,15 @@ test('t6: a multi-task Story\'s change set GROWS across tasks rather than descri
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('t6: a DIRTY tree yields today\'s working-tree result and does NOT union in the committed range', async () => {
+test("t6: a DIRTY tree still yields the Story's committed change set, and an unrelated uncommitted file is left out (ISSUE-b97752e9)", async () => {
 	if (!gitAvailable()) return;
 	const { repo } = mkStampedRepo();
 	try {
 		writeFileSync(join(repo, 'uncommitted.ts'), 'export const u = 1;\n');
 		execFileSync('git', ['add', 'uncommitted.ts'], { cwd: repo, stdio: 'ignore' });
 		const files = changeFiles(await validateOnce(repo));
-		assert.ok(files.includes('uncommitted.ts'), 'the dirty path is reported');
-		assert.ok(!files.includes('shipped.ts'),
-			'and the committed range is NOT unioned in — a dirty tree is left exactly as it was');
+		assert.ok(files.includes('shipped.ts'), `the Story's committed work is recorded, got ${JSON.stringify(files)}`);
+		assert.ok(!files.includes('uncommitted.ts'), 'and the uncommitted file no Story commit touched is not');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -1746,9 +1752,10 @@ test("the build tool's registered input shape accepts `tests` on the validate ph
 test("a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path", async () => {
 	const repo = mappedRepo();
 	try {
-		// The Story's work: one staged source file, so the change log has something real in it.
+		// The Story's work: one committed source file, so the change log has something real in it.
 		writeFileSync(join(repo, 'src', 'filter.ts'), 'export const f = 1;\n');
 		execFileSync('git', ['add', 'src/filter.ts'], { cwd: repo });
+		execFileSync('git', ['commit', '-qm', 'the Story work', '--', 'src/filter.ts'], { cwd: repo, stdio: 'ignore' });
 		const { out } = await turn(repo, { tests: GOOD_MAPPING });
 		assert.equal(out['passed'], true);
 
@@ -1792,7 +1799,7 @@ test("a validate turn with a mapping writes the test record, the build record li
 		assert.deepEqual(readTests(repo).body.tasks.map(t => t.taskId), ['t1', 't2']);
 		assert.equal(JSON.stringify(readTests(repo).body.tasks[0]), t1Before);
 		const dirty = execFileSync('git', ['status', '--porcelain'], { cwd: repo, encoding: 'utf8' }).split('\n').filter(l => l.length > 0).map(l => l.slice(3)).sort();
-		assert.deepEqual(dirty, [`.insrc/artifacts/BUILD-${HASH}-s1.json`, `.insrc/artifacts/TESTS-${HASH}-s1.json`, `${TR_ROOT}/BUILD.md`, `${TR_ROOT}/TESTS.md`, 'src/filter.ts'].sort(),
+		assert.deepEqual(dirty, [`.insrc/artifacts/BUILD-${HASH}-s1.json`, `.insrc/artifacts/TESTS-${HASH}-s1.json`, `${TR_ROOT}/BUILD.md`, `${TR_ROOT}/TESTS.md`].sort(),
 			'precondition: all four record files are dirty tracked files');
 		assert.deepEqual(changeFiles(readBuildRecord(repo)), ['src/filter.ts']);
 	} finally { rmSync(repo, { recursive: true, force: true }); }

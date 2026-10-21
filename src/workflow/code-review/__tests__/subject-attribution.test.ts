@@ -86,17 +86,18 @@ test("the review subject holds only the Story's own files and records attributio
 	} finally { cleanup(); }
 });
 
-test('a dirty tree gives attribution working-tree and the step-down order is unchanged', async () => {
+test('a dirty tree still gives the Story\'s trailered commits, and the step-down order is unchanged', async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		interleaved(r);
 		write(r, { 'README.md': 'uncommitted edit\n' });
+		// The uncommitted README.md is no Story commit's file: it is left out (ISSUE-b97752e9).
 		const dirty = await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base));
 		assert.ok(dirty.ok);
 		if (!dirty.ok) return;
-		assert.deepEqual([...dirty.subject.changedFiles], ['README.md']);
-		assert.equal(dirty.subject.changeSetAttribution, 'working-tree');
-		assert.deepEqual(dirty.subject.sharedWithExcluded, []);
+		assert.deepEqual([...dirty.subject.changedFiles].sort(), ['src/mine.ts', 'src/mine2.ts', 'src/shared.ts']);
+		assert.equal(dirty.subject.changeSetAttribution, 'story-trailer');
+		assert.deepEqual(dirty.subject.sharedWithExcluded, ['src/shared.ts']);
 
 		// A clean tree where every commit carries another Story's trailer: a Story
 		// with no carrying commit gets none of them (ISSUE-b97752e9).

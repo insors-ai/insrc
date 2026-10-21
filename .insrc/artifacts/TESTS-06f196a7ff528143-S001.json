@@ -4,7 +4,7 @@
     "epicHash": "06f196a7ff528143",
     "storyId": "S001",
     "createdAt": "2026-10-21T05:47:38.616Z",
-    "updatedAt": "2026-10-21T05:47:38.616Z",
+    "updatedAt": "2026-10-21T05:56:21.050Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-21T05:02:26.565Z",
     "epicSlug": "scope-story-s-code-review-what"
@@ -68,6 +68,121 @@
               },
               {
                 "title": "when the diff body command succeeds and the numstat command fails, git_diff returns success: false naming the stat failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "751f13b9",
+        "ranAt": "2026-10-21T05:56:21.050Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with a storyKey and no commit carrying it, a commit carrying another Story's trailer is left out, and a range of only other Stories' commits gives an empty set'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "with a storyKey and no commit carrying it, a commit carrying another Story's trailer is left out, and a range of only other Stories' commits gives an empty set",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a Story with no carrying commit keeps its untrailered commits and leaves out another Story's, so the range of src/a.ts and src/b.ts gives src/a.ts'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "a Story with no carrying commit keeps its untrailered commits and leaves out another Story's, so the range of src/a.ts and src/b.ts gives src/a.ts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a merge carrying only another Story's trailer is not a unit, two-parent or octopus, with and without a commit carrying this Story's trailer, while an untrailered merge edit still is'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "a merge carrying only another Story's trailer is not a unit, two-parent or octopus, with and without a commit carrying this Story's trailer, while an untrailered merge edit still is",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4400,
+            "titles": [
+              {
+                "title": "with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not",
+                "result": "pass"
+              },
+              {
+                "title": "two standalone Stories both S001 are told apart by the trailer's epicHash",
+                "result": "pass"
+              },
+              {
+                "title": "a Story with no carrying commit keeps its untrailered commits and leaves out another Story's, so the range of src/a.ts and src/b.ts gives src/a.ts",
+                "result": "pass"
+              },
+              {
+                "title": "with no foreign commit, a Story with no carrying commit gets today's first-parent range, read as a whole",
+                "result": "pass"
+              },
+              {
+                "title": "when reading trailers fails without strict, the set is today's first-parent range",
+                "result": "pass"
+              },
+              {
+                "title": "with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey and no commit carrying it, a commit carrying another Story's trailer is left out, and a range of only other Stories' commits gives an empty set",
+                "result": "pass"
+              },
+              {
+                "title": "a file one Story changed and another Story reverted stays in the first Story's subject and diff",
+                "result": "pass"
+              },
+              {
+                "title": "a commit counts as the Story's when its Insrc-Story line is in any paragraph, never when the key is only mentioned (ISSUE-f431a442)",
+                "result": "pass"
+              },
+              {
+                "title": "storyLines reads every whole Insrc-Story line and nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "a merge carrying only another Story's trailer is not a unit, two-parent or octopus, with and without a commit carrying this Story's trailer, while an untrailered merge edit still is",
                 "result": "pass"
               }
             ],

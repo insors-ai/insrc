@@ -21,7 +21,11 @@
     "epicSlug": "build-each-review-adapter-s-material",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-21T10:30:26.172Z",
+    "parentRef": {
+      "slug": "build-each-review-adapter-s-material"
+    }
   },
   "body": {
     "title": "Build each review adapter's material once, not on every call",

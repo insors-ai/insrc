@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s1",
     "createdAt": "2026-10-21T15:03:00.014Z",
-    "updatedAt": "2026-10-21T15:20:58.413Z",
+    "updatedAt": "2026-10-21T15:38:09.812Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
@@ -26,9 +26,13 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "Added src/daemon/threads/registry.ts (TargetRegistry: one live admin, indexing and unattributed target and one per session; unregister removes all of a thread's targets, unknown threads a no-op; targetFor resolves an identity-less session request to the unattributed target) and src/daemon/threads/status-board.ts (StatusBoard with publish, publishIndexing, publishClients, publishRun refusing shrinking frames, publishStore, snapshot and forget, using today's AttachedClient, RegisteredRepo, RepoCompleteness and UnattributedUnwritableCount shapes; statusBoardHubHandlers for the main thread and StatusBoardClient for workers). Tests in src/daemon/threads/__tests__/registry-board.test.ts, including a real worker publishing through the hub; four falsifying mutations each fail their target test.",
+    "summary": "Store health is process-wide (shared health word with compare-and-swap; every reader in src/db/graph/store.ts goes through currentHealth()) and the full locks-lost record travels through the hub (src/daemon/threads/store-health-hub.ts: wireWorkerStoreHealth sends a worker's record to the main thread and takes pushes; wireMainStoreHealth keeps it and pushes it to every worker). Fixing the previous gate's finding, the hub test now buffers every worker message from the start, so a message sent before the test waits for it is never lost; it passed five runs in a row, and the worker-never-sends and main-never-fans-out mutations each fail it within 3 s.",
     "testRecord": {
       "md": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S001/TESTS.md"
     },
@@ -38,93 +42,128 @@
           "file": "src/db/graph/__tests__/helpers/lmdb-open-close.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/helpers/lmdb-worker.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/worker-thread-lock.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/helpers/store-guard-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/store-guard.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
       },
       {
         "target": {
           "file": "src/db/store-guard.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/channel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/helpers/hub-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/channel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/helpers/board-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/registry-board.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/status-board.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T15:20:58.413Z"
+        "timestamp": "2026-10-21T15:38:09.812Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/helpers/health-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T15:38:09.812Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/store-health-threads.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T15:38:09.812Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T15:38:09.812Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/store-health-hub.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T15:38:09.812Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/helpers/health-hub-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T15:38:09.812Z"
       }
     ],
-    "commit": "b2c89fda"
+    "commit": "e3731fb0"
   }
 }

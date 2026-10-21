@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s1",
     "createdAt": "2026-10-21T15:03:00.014Z",
-    "updatedAt": "2026-10-21T15:20:58.413Z",
+    "updatedAt": "2026-10-21T15:38:09.812Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -321,6 +321,68 @@
               },
               {
                 "title": "a status published from a worker appears in a main-thread snapshot",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "e3731fb0",
+        "ranAt": "2026-10-21T15:38:09.812Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health-threads.test.ts",
+                "title": "locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health-threads.test.ts",
+                "title": "after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/store-health-threads.test.ts",
+                "title": "the full locks-lost record reaches the main thread and every other worker through the hub",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/store-health-threads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1191,
+            "titles": [
+              {
+                "title": "locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing",
+                "result": "pass"
+              },
+              {
+                "title": "after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log",
+                "result": "pass"
+              },
+              {
+                "title": "the full locks-lost record reaches the main thread and every other worker through the hub",
                 "result": "pass"
               }
             ],

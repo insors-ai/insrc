@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -129,3 +129,26 @@ Run at 2026-10-21T15:20:58.413Z on commit `b2c89fda`. Tests check: **passed**. 5
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/registry-board.test.ts` | 0 | 5 | 0.5 s |  |
+
+## t5
+
+Run at 2026-10-21T15:38:09.812Z on commit `e3731fb0`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing | `src/db/graph/__tests__/store-health-threads.test.ts` |
+
+**integration: after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log | `src/db/graph/__tests__/store-health-threads.test.ts` |
+| pass | the full locks-lost record reaches the main thread and every other worker through the hub | `src/db/graph/__tests__/store-health-threads.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/graph/__tests__/store-health-threads.test.ts` | 0 | 3 | 1.2 s |  |

@@ -32,7 +32,7 @@ describe('task-set-reconcile', () => {
 			const t1 = await s.k.store.read(taskId(1));
 			assert.equal((t1.payload.body as unknown as TaskPayload).summary, 'reworded');
 			assert.equal(t1.lifecycle.revision.number, 2, 'a changed Task gets a new revision');
-			assert.equal(t1.lifecycle.status, 'approved', 'and is approved again with the plan');
+			assert.equal(t1.lifecycle.status, 'draft', 'and returns to draft: its re-approval is the local user\'s');
 			// an unchanged Task keeps its revision; its reference follows the plan
 			const t2 = await s.k.store.read(taskId(2));
 			assert.equal(t2.lifecycle.revision.number, 1);

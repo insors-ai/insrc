@@ -205,7 +205,7 @@ export class TaskSets {
 
 	/**
 	 * Bring the Tasks into line with a plan approved at a newer revision than the Tasks file records. The plan's rows are the
-	 * source: a Task whose row differs gets a new revision (and is approved again with the plan), a Task whose row is gone is
+	 * source: a Task whose row differs gets a new revision and returns to draft (its re-approval is the local user's), a Task whose row is gone is
 	 * withdrawn and its issue closed, a row with no Task becomes a new Task under the next number. Rows are matched to Tasks by
 	 * `planTaskId`, a withdrawn Task is never matched again, and `nextNumber` only grows, so no Task id is reused. The Tasks file
 	 * records the new plan revision last: a call that fails part-way is finished by repeating it.
@@ -247,10 +247,7 @@ export class TaskSets {
 				const body = moved ? taskPayloadFromRow(row) as unknown as Record<string, unknown> : head.payload.body;
 				return { next: { ...head, description: moved ? row.title : head.description, references, payload: { ...head.payload, body } }, options: { operation: 'update' } };
 			});
-			if (moved) {
-				result.changed.push(short);
-				if ((await this.deps.store.read(have.id)).lifecycle.status === 'draft') await this.deps.service.apply(have.id, 'approve', by);
-			}
+			if (moved) result.changed.push(short);
 		}
 
 		// dropped Tasks: withdrawn with the plan's approval; the issue is closed, or the failed close is kept for the next call

@@ -1,0 +1,2069 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s2",
+    "createdAt": "2026-10-20T17:17:06.359Z",
+    "updatedAt": "2026-10-20T19:11:05.306Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "a63c1d13",
+        "ranAt": "2026-10-20T17:19:11.063Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/artifact-core/__tests__/types-contract.test.ts: the exported types accept the sc2, sc3, sc4 and sc6 sketches and the stated anchor extension",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/types-contract.test.ts",
+                "title": "the exported types accept the sc2, sc3, sc4 and sc6 sketches and the stated anchor extension",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/changed-files.test.ts",
+                "title": "collectBuildChangeLog: one file-level entry per changed path (segment omitted), stamped author/timestamp",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/changed-files.test.ts",
+                "title": "collectBuildChangeLog: an empty changed set → []",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/provenance-build.test.ts",
+                "title": "t1: a BuildRecord carrying changeLog + feedback type-checks and JSON round-trips",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/types-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3266,
+            "titles": [
+              {
+                "title": "the exported types accept the sc2, sc3, sc4 and sc6 sketches and the stated anchor extension",
+                "result": "pass"
+              },
+              {
+                "title": "exports only the six error classes at runtime",
+                "result": "pass"
+              },
+              {
+                "title": "artifact-core types",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/changed-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2626,
+            "titles": [
+              {
+                "title": "changedFiles: derives the staged changed set from a real git repo (extraction is behaviour-preserving)",
+                "result": "pass"
+              },
+              {
+                "title": "changedFiles: throws NoBuildChangesError on a non-git directory",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog: one file-level entry per changed path (segment omitted), stamped author/timestamp",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog: version is threaded onto target when supplied",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog: an empty changed set → []",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog: a git derivation failure is SWALLOWED → [] (never throws out)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: collectBuildChangeLog with NO base/exclude forwards `undefined` — the seam sees exactly what it sees today",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a base on the ctx REACHES the seam as opts.base",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an exclude list on the ctx REACHES the seam as opts.exclude",
+                "result": "pass"
+              },
+              {
+                "title": "t3: existing TWO-ARGUMENT call sites and ONE-PARAMETER seam stubs still compile and behave identically",
+                "result": "pass"
+              },
+              {
+                "title": "t3: collectBuildChangeLog STILL never throws and STILL logs — a seam that throws yields [] (ac6 regression guard)",
+                "result": "pass"
+              },
+              {
+                "title": "t4: `exclude` is forwarded to the seam, and the COLLECTOR itself still does no filtering (the filter lives in changedFiles)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a CLEAN tree + base derives the COMMITTED range — the base reaches git_diff as `from`",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a DIRTY tree NEVER consults the base — the result cannot depend on which range was supplied",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an UNRESOLVABLE base on a clean tree throws out of changedFiles (the caller swallows it — ac6 is enforced one level up)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an empty-string base behaves as ABSENT (contract pinned; the guard itself is defence-in-depth)",
+                "result": "pass"
+              },
+              {
+                "title": "t4 (WORKING-TREE derivation): the record's own json + md are dirty and are EXCLUDED, while a genuinely-changed artifact survives",
+                "result": "pass"
+              },
+              {
+                "title": "t4 (RANGE derivation): the exclusion is honoured on a CLEAN tree deriving base..HEAD — asserted separately from the working-tree case",
+                "result": "pass"
+              },
+              {
+                "title": "CR-1: a tree dirty with ONLY the record's own paths still derives the COMMITTED range — the exclusion is applied BEFORE the emptiness gate",
+                "result": "pass"
+              },
+              {
+                "title": "CR-1: a tree dirty with REAL work plus the record's own paths still does NOT consult the base — the fix must not widen the gate",
+                "result": "pass"
+              },
+              {
+                "title": "t4: ABSOLUTE exclusion paths are normalised — callers hold absolute paths while git reports relative ones",
+                "result": "pass"
+              },
+              {
+                "title": "t4: a Story that changed ONLY artifact files still yields a NON-EMPTY change set (docs-only edge case)",
+                "result": "pass"
+              },
+              {
+                "title": "t4: an exclusion path OUTSIDE the repo is left alone rather than relativised into something that might match",
+                "result": "pass"
+              },
+              {
+                "title": "T26: LEDGER_EXCLUDE_GLOBS keep and drop EXACTLY the listed sets (real git)",
+                "result": "pass"
+              },
+              {
+                "title": "T26: the constant is exactly the four globs, and frozen",
+                "result": "pass"
+              },
+              {
+                "title": "T27: the globs give the SAME result when git_diff runs from a subdirectory of the repo",
+                "result": "pass"
+              },
+              {
+                "title": "T28 (WORKING-TREE derivation): a tree dirty ONLY with an artifact json is clean under excludeGlobs, so the range is derived",
+                "result": "pass"
+              },
+              {
+                "title": "T28 (STAGED derivation): a STAGED artifact json is excluded as well — the glob reaches both working-tree diffs",
+                "result": "pass"
+              },
+              {
+                "title": "T29: WITHOUT excludeGlobs the inputs sent to git_diff are exactly today's — no `exclude` key at all",
+                "result": "pass"
+              },
+              {
+                "title": "T29: WITH excludeGlobs every one of the three diffs carries them",
+                "result": "pass"
+              },
+              {
+                "title": "T29: collectBuildChangeLog passes NO excludeGlobs — the BUILD writers are unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "a clean tree with a base reports only the Story's own files, not files a merge brought in",
+                "result": "pass"
+              },
+              {
+                "title": "without a base the derivation is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog with a base lists only the Story's own files after a mid-build merge",
+                "result": "pass"
+              },
+              {
+                "title": "a committed ledger file stays out of the range result after a mid-build merge",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/provenance-build.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1203,
+            "titles": [
+              {
+                "title": "t1: a BuildRecord carrying changeLog + feedback type-checks and JSON round-trips",
+                "result": "pass"
+              },
+              {
+                "title": "t4: renderBuildRecordMd emits a ## Changes and a ## Feedback section when present",
+                "result": "pass"
+              },
+              {
+                "title": "t4: absent, undefined-valued, and empty-array changeLog/feedback all render byte-identically (omit-slot)",
+                "result": "pass"
+              },
+              {
+                "title": "t4/t6c: a legacy record (body without the S002 keys) re-renders byte-identically to the base render",
+                "result": "pass"
+              },
+              {
+                "title": "t6a: a re-validate that omits changeLog KEEPS the prior changeLog + out-of-band feedback",
+                "result": "pass"
+              },
+              {
+                "title": "t6b: appendFeedback on a written BUILD json with a source-file target → body.feedback + a rendered ## Feedback section",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "78a1ce90",
+        "ranAt": "2026-10-20T18:02:48.932Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/prepare-artifact-write.test.ts: prepareArtifactWrite returns the bytes and revision writeArtifact writes for content, meta-only, identical and first writes, and writes nothing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/prepare-artifact-write.test.ts",
+                "title": "prepareArtifactWrite returns the bytes and revision writeArtifact writes for content, meta-only, identical and first writes, and writes nothing",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-writer.test.ts",
+                "title": "writeArtifact mints and keeps revisions, carries the whole tracker block, and rejects a value without meta",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-writer.test.ts",
+                "title": "readRevision reads 0 for bad values; patchTrackerMeta keeps every field, merges units and preserves the tracker kind",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/storage.test.ts",
+                "title": "writeAtomic creates parent dirs + writes content",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/storage.test.ts",
+                "title": "writeAtomic overwrites existing file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-writer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 944,
+            "titles": [
+              {
+                "title": "writeArtifact mints and keeps revisions, carries the whole tracker block, and rejects a value without meta",
+                "result": "pass"
+              },
+              {
+                "title": "readRevision reads 0 for bad values; patchTrackerMeta keeps every field, merges units and preserves the tracker kind",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/prepare-artifact-write.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 854,
+            "titles": [
+              {
+                "title": "prepareArtifactWrite returns the bytes and revision writeArtifact writes for content, meta-only, identical and first writes, and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "prepareArtifactWrite",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/storage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1033,
+            "titles": [
+              {
+                "title": "writeAtomic creates parent dirs + writes content",
+                "result": "pass"
+              },
+              {
+                "title": "writeAtomic overwrites existing file",
+                "result": "pass"
+              },
+              {
+                "title": "writeAtomic refuses relative paths",
+                "result": "pass"
+              },
+              {
+                "title": "writeAtomic refuses empty path",
+                "result": "pass"
+              },
+              {
+                "title": "stubArtifactPaths returns docs/stub layout",
+                "result": "pass"
+              },
+              {
+                "title": "defineArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/",
+                "result": "pass"
+              },
+              {
+                "title": "hldArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/",
+                "result": "pass"
+              },
+              {
+                "title": "lldArtifactPaths — story-scoped nested md, json in .insrc/artifacts/",
+                "result": "pass"
+              },
+              {
+                "title": "md folder is labelled by slug; json stays named by hash",
+                "result": "pass"
+              },
+              {
+                "title": "slug label is sanitised against path separators",
+                "result": "pass"
+              },
+              {
+                "title": "amendmentArtifactPath uses the AMD- prefix inside .insrc/artifacts/",
+                "result": "pass"
+              },
+              {
+                "title": "amendmentFilenamePrefix is `AMD-<hash>-`",
+                "result": "pass"
+              },
+              {
+                "title": "lldFilenamePrefix is `LLD-<hash>-`",
+                "result": "pass"
+              },
+              {
+                "title": "amendmentsRootDir points at .insrc/artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — a DEF present and readable wins outright; the ISSUE is never consulted",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — a hash carrying BOTH artifacts resolves to the DEF, so the read ORDER is the discriminator",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — a DEF absent with an ISSUE present yields the ISSUE's values",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — a CORRUPT DEF falls through to a valid ISSUE: first-READABLE-wins, not first-PRESENT-wins",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — a DEF that PARSES but carries none of the three fields also falls through",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — neither artifact readable yields an empty result and does NOT throw",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — standalone is reported only when genuinely boolean; the other two fields are unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — UNWIRED: the accessor exists but changes no folder path yet",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — an ISSUE-anchored work item yields the ISSUE's createdAt instead of undefined",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — signature and return meaning unchanged for a DEF-bearing epic",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — CLOCK INDEPENDENCE: two stages straddling midnight UTC resolve to ONE identity segment",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a SAME-DAY fixture cannot detect the defect, which is why the above is mandatory",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — the anchor read is finalize-time only: path construction performs no read",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the non-standalone branch yields a real label for an ISSUE-anchored work item",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the raw hash appears nowhere in the composed folder name",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — an explicit standalone=true still reads the LLD branch and still falls back to ownCreatedAt",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the hash fallback is still REACHABLE for a work item with no definition artifact",
+                "result": "pass"
+              },
+              {
+                "title": "3a98d279 — the STANDALONE route takes the label from the head, not the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "3a98d279 — the ANCHOR is the Epic's (the head's), never the LLD's own createdAt",
+                "result": "pass"
+              },
+              {
+                "title": "3a98d279 — with no definition head the LLD's label is still the fallback, not a raw hash",
+                "result": "pass"
+              },
+              {
+                "title": "3a98d279 — the EPIC route is unchanged: head is the only source, so no second read alters it",
+                "result": "pass"
+              },
+              {
+                "title": "3a98d279 — an EMPTY head label counts as absent, so it cannot name a folder `artifact`",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — inheritedStoryStandalone: the head wins, the LLD is the fallback, the caller is last",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — the standalone route anchors on the HEAD before the record's own clock when there is no LLD",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — storyRecordFolderArgs: an LLD-only Small story is standalone, named and dated by its LLD",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — storyRecordFolderArgs: an ISSUE-anchored story with no LLD lands in the ISSUE's folder, caller holding nothing",
+                "result": "pass"
+              },
+              {
+                "title": "b2e16601 — storyRecordFolderArgs takes the label from the head when the LLD stored a different one",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — storyRecordFolderArgs: a Trivial build with no head and no LLD is found by its own BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — storyRecordFolderArgs: an epic-parented story is unchanged, and the caller is the last resort",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — the LLD's stamped epicCreatedAt is its anchor, so records land in the LLD's own folder",
+                "result": "pass"
+              },
+              {
+                "title": "lowercase-story artifacts keep their id and file name and resolve through the storage lookups and gates",
+                "result": "pass"
+              },
+              {
+                "title": "an artifact stored with an uppercase story fails with an error that points to the conversion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "25d3f94b",
+        "ranAt": "2026-10-20T18:11:02.812Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6457,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              },
+              {
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "c2dd663b",
+        "ranAt": "2026-10-20T18:13:24.728Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/artifact-core/__tests__/history.test.ts: History validates feedback and keeps the anchor through a round trip, and openFeedback closes entries by addresses",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/history.test.ts",
+                "title": "History validates feedback and keeps the anchor through a round trip, and openFeedback closes entries by addresses",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/history.test.ts",
+                "title": "a failing or malformed reader surfaces as HistoryReadError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/sidecar.test.ts: appendSidecarLine appends one JSON line per call to the path it is given",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/sidecar.test.ts",
+                "title": "appendSidecarLine appends one JSON line per call to the path it is given",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9161,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              },
+              {
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2461,
+            "titles": [
+              {
+                "title": "History validates feedback and keeps the anchor through a round trip, and openFeedback closes entries by addresses",
+                "result": "pass"
+              },
+              {
+                "title": "a failing or malformed reader surfaces as HistoryReadError",
+                "result": "pass"
+              },
+              {
+                "title": "History",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/sidecar.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2226,
+            "titles": [
+              {
+                "title": "appendSidecarLine appends one JSON line per call to the path it is given",
+                "result": "pass"
+              },
+              {
+                "title": "appendSidecarLine",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "e871ea09",
+        "ranAt": "2026-10-20T18:21:52.256Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/artifact-core/__tests__/decode.test.ts: decodeArtifactHead fills every envelope part, returns empty parts for a head without them, and refuses a malformed head, an unknown kind and a flat amendment",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/decode.test.ts",
+                "title": "decodeArtifactHead fills every envelope part, returns empty parts for a head without them, and refuses a malformed head, an unknown kind and a flat amendment",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/codec-create.test.ts: a create without a prior head builds identity meta that workItemAnchorCreatedAt and the Define renderer accept",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/codec-create.test.ts",
+                "title": "a create without a prior head builds identity meta that workItemAnchorCreatedAt and the Define renderer accept",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/codec-create.test.ts",
+                "title": "kinds with no stored head yet have no codec",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/codec-create.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1136,
+            "titles": [
+              {
+                "title": "a create without a prior head builds identity meta that workItemAnchorCreatedAt and the Define renderer accept",
+                "result": "pass"
+              },
+              {
+                "title": "kinds with no stored head yet have no codec",
+                "result": "pass"
+              },
+              {
+                "title": "kind codecs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/decode.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 899,
+            "titles": [
+              {
+                "title": "decodeArtifactHead fills every envelope part, returns empty parts for a head without them, and refuses a malformed head, an unknown kind and a flat amendment",
+                "result": "pass"
+              },
+              {
+                "title": "decodeArtifactHead",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "e5333449",
+        "ranAt": "2026-10-20T18:26:32.462Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/artifact-core/__tests__/gates-delegation.test.ts: the four gates readers return the same artifact and the same missing-file error as before, synchronously",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/gates-delegation.test.ts",
+                "title": "the four gates readers return the same artifact and the same missing-file error as before, synchronously",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/plan-gate.test.ts",
+                "title": "requireApprovedLld: returns the LLD when approved + non-stale",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/storage.test.ts",
+                "title": "lowercase-story artifacts keep their id and file name and resolve through the storage lookups and gates",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/gates.test.ts",
+                "title": "jsonPathForMd resolves a nested epic DEF md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+                "title": "implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts",
+                "title": "build implement and validate on a stage held by someone else are refused naming the holder",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue: magnitude='small' -> standalone insrc_build_step (issue->build)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18644,
+            "titles": [
+              {
+                "title": "implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref",
+                "result": "pass"
+              },
+              {
+                "title": "implement: does NOT gate on the LLD open questions (resolved at stage-start now)",
+                "result": "pass"
+              },
+              {
+                "title": "implement: unapproved plan returns next=refused with reason plan-unapproved",
+                "result": "pass"
+              },
+              {
+                "title": "implement: a non-task target (a story) is a resolution error",
+                "result": "pass"
+              },
+              {
+                "title": "validate: returns the judge verdict from a stubbed CliProvider review session",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a failing judge verdict gives passed:false",
+                "result": "pass"
+              },
+              {
+                "title": "validate: persists a plan-driven BUILD ledger record (standalone key ABSENT since t9) recording the task + passed",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a BUILD-record persist failure is swallowed — the verdict is still returned",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: no plan → resolves identity from context, persists a BUILD record (standalone key ABSENT since t9, story task)",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: the persisted record carries the file-level change-log for a non-empty changed set",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: a persist failure is swallowed — the verdict is still returned",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: a Small build with no resolvable identity → err(no-identity)",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: the persisted record is approvable by the completion gate",
+                "result": "pass"
+              },
+              {
+                "title": "implement: multi-epic dir + { target:'s1/t1', epicHash } resolves + proceeds",
+                "result": "pass"
+              },
+              {
+                "title": "validate: multi-epic dir + { target:'s1/t1', epicHash } resolves + returns a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "implement: multi-epic dir + 's1/t1' WITHOUT epicHash still returns err(unresolved-target)",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION A (INVERTED at t8): a standalone build's persisted md now RENDERS '## Scope' for its body.focus",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION B (INVERTED at t9): a standalone build KEEPS meta.standalone true through validate",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section",
+                "result": "pass"
+              },
+              {
+                "title": "t10 END-TO-END: a trivial-routed build produces ONE record carrying the change set, the summary, the commit, its scope and its route — none of which it could carry before this Story",
+                "result": "pass"
+              },
+              {
+                "title": "t10 AUDIT: all three of t1's characterisations are still here, each carrying the task that INVERTED it — none deleted, none skipped",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION harness: read-only — rev-list --count and status --porcelain unchanged afterwards, and the suite skips cleanly when git is unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the validate writer EXCLUDES its own json + md from its own change-log, keeping the Story's real change",
+                "result": "pass"
+              },
+              {
+                "title": "t6 THE POINT OF THE STORY: a CLEAN tree WITH a stamped base yields the Story's committed change set",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a multi-task Story's change set GROWS across tasks rather than describing only the latest",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a DIRTY tree yields today's working-tree result and does NOT union in the committed range",
+                "result": "pass"
+              },
+              {
+                "title": "t6: an UNRESOLVABLE base still WRITES the record, keeps the verdict, and substitutes no range",
+                "result": "pass"
+              },
+              {
+                "title": "t6: BOTH writers resolve the SAME base for the same Story — one resolver, not two chains",
+                "result": "pass"
+              },
+              {
+                "title": "t7: a SUPPLIED summary reaches body.summary",
+                "result": "pass"
+              },
+              {
+                "title": "t7: NO summary supplied → the record carries NO summary key (never synthesised from the task list)",
+                "result": "pass"
+              },
+              {
+                "title": "t7: an EMPTY or WHITESPACE-ONLY summary is treated as omitted, not stored as a blank",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the summary input is OPTIONAL — a controller that never supplies it sees no behavioural difference",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a standalone work item gets meta.standalone TRUE on the FIRST write, read from its definition head",
+                "result": "pass"
+              },
+              {
+                "title": "validate: an EPIC-parented work item is unchanged — no flag written, record under docs/epics/",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate, LLD-only Small story: first write is standalone, sized, and filed beside the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate, no head and no LLD: the route the standalone branch declared is what is written",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate: a caller's declaration does NOT relabel a story whose definition head says otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — completion: an LLD-only story's record is written standalone, beside the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — a record that never got its flag is still re-rendered beside its story, and resolves by its md path",
+                "result": "pass"
+              },
+              {
+                "title": "validate runs the checks before the judge and overwrites testsPassed and typecheckClean from the daemon results",
+                "result": "pass"
+              },
+              {
+                "title": "a judge passed:true with a failing typecheck gives passed:false",
+                "result": "pass"
+              },
+              {
+                "title": "a judge timeout returns verdict-session-timeout and writes no BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "the validate judge is called through runReviewSession with the repo as cwd and a verdict schema",
+                "result": "pass"
+              },
+              {
+                "title": "a judge object without a boolean passed gives unparseable-verdict",
+                "result": "pass"
+              },
+              {
+                "title": "a non-timeout judge error gives verdict-session-failed and writes no BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "plan-driven and standalone validate each hand the check runner the plan for their route",
+                "result": "pass"
+              },
+              {
+                "title": "implement and validate return merge-in-progress while a merge is uncommitted",
+                "result": "pass"
+              },
+              {
+                "title": "a validate turn with a wrong mapping returns 'invalid-test-mapping', runs no check, calls no judge and writes neither record",
+                "result": "pass"
+              },
+              {
+                "title": "a second validate turn of the same Task with no mapping uses the stored one (mutation: fall back to the prefix rule when a stored mapping exists)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-b4b6b835: validate hands the check runner the other TypeScript projects the build touched; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "the builder's reported results never set testsPassed: a mapping of reported passes with a failing mapped case still fails",
+                "result": "pass"
+              },
+              {
+                "title": "the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field",
+                "result": "pass"
+              },
+              {
+                "title": "a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path",
+                "result": "pass"
+              },
+              {
+                "title": "when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)",
+                "result": "pass"
+              },
+              {
+                "title": "when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)",
+                "result": "pass"
+              },
+              {
+                "title": "a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)",
+                "result": "pass"
+              },
+              {
+                "title": "when the Story's route cannot be resolved, the verdict is returned with a note and neither record is written on that turn",
+                "result": "pass"
+              },
+              {
+                "title": "a stored test record that cannot be read is said so in the verdict, and a stored reported result is not reused once its test is no longer live",
+                "result": "pass"
+              },
+              {
+                "title": "on the standalone routes: a wrong mapping on a small build is refused with 'invalid-test-mapping', a good one is planned by subject, and `tests` is ignored on a trivial build",
+                "result": "pass"
+              },
+              {
+                "title": "builder text in the judge's evidence is kept to one line",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was unresolved-target)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2092,
+            "titles": [
+              {
+                "title": "build implement and validate on a stage held by someone else are refused naming the holder",
+                "result": "pass"
+              },
+              {
+                "title": "build with no policy behaves as before and never touches the tracker",
+                "result": "pass"
+              },
+              {
+                "title": "validate asks the gate again before each record it writes: a claim that moved to someone else meanwhile refuses the write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1355,
+            "titles": [
+              {
+                "title": "nextAfterIssue: magnitude='small' -> standalone insrc_build_step (issue->build)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_step design.story (START)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: the small build routes through the build-step NO-LLD path (sizeClass=trivial, consumable)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: the sized design.story spec carries the full defect body, not just the title",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: emitted stage matches routeForSizeClass (small->build has no design.story)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef WorkItemRef -> admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef ABSENT -> not admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: not approved -> not admitted",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: WorkItemRef -> writeParentRef(ref); returns the ParentLocation",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: standalone (null) -> writeParentRef(null)",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: readIssue null -> throws issue-not-found, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: not approved -> throws not-approved, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: locateParent rejects -> propagates, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: defectDescription is built from the issue body; touchedPaths empty",
+                "result": "pass"
+              },
+              {
+                "title": "defaultStampDeps: writeParentRef patches meta.parentRef only, body byte-unchanged (k4)",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: bugfix issue -> stamps, admits, returns nextCall",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: non-issue artifact -> skipped, nothing routed",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: bugfixCategory flag off -> skipped",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/gates.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2194,
+            "titles": [
+              {
+                "title": "jsonPathForMd resolves a nested epic DEF md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested epic HLD md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested story-scoped LLD md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd leaves docs/stub layout untouched",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd returns json paths unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested standalone SPEC md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested story-scoped CR md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd recognises both docs/epics and docs/standalone top-levels, stub stays the side-by-side exception",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd rejects unknown extensions",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd throws for a nested md with no insrc:artifact marker (path no longer encodes the id)",
+                "result": "pass"
+              },
+              {
+                "title": "approveArtifactByJsonPath sets meta.approvedAt",
+                "result": "pass"
+              },
+              {
+                "title": "rejectArtifactByJsonPath sets meta.rejectedAt + reason",
+                "result": "pass"
+              },
+              {
+                "title": "rejectArtifactByJsonPath refuses empty reason",
+                "result": "pass"
+              },
+              {
+                "title": "reject then approve clears the rejection",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic throws ArtifactMissingError when no Define exists",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic throws ArtifactNotApprovedError when Define is not approved",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic returns the Define artifact after approval",
+                "result": "pass"
+              },
+              {
+                "title": "t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside meta.approvedAt",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT",
+                "result": "pass"
+              },
+              {
+                "title": "t5: an UNREADABLE HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never an empty string",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not resolve yet)",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: re-approving after the work has landed does NOT move rangeBase forward — the FIRST stamp wins",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved, so the stamp is write-once rather than approve-once",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real base — write-once must not preserve a useless value forever",
+                "result": "pass"
+              },
+              {
+                "title": "t5: rangeBase SURVIVES a write-read-write round trip, and the two deliberate key deletions do not take it with them",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/plan-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1217,
+            "titles": [
+              {
+                "title": "requireApprovedLld: returns the LLD when approved + non-stale",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedLld: throws ArtifactNotApprovedError when approvedAt is missing",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedLld: throws when rejectedAt is set",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedLld: throws when effective hash differs and no stale-ack",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedLld: returns the LLD when stale but stale-acked",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedLld: throws ArtifactMissingError when no LLD exists",
+                "result": "pass"
+              },
+              {
+                "title": "readPlanUpstream: assembles { lld, hldSlice, storyDependsOn } from approved artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "readPlanUpstream: a standalone LLD skips the HLD/epic reads → hldSlice null, no throw (no HLD/DEF present)",
+                "result": "pass"
+              },
+              {
+                "title": "readPlanUpstream: an epic-scoped LLD (standalone unset) still requires the HLD — throws when it is absent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/storage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1061,
+            "titles": [
+              {
+                "title": "writeAtomic creates parent dirs + writes content",
+                "result": "pass"
+              },
+              {
+                "title": "writeAtomic overwrites existing file",
+                "result": "pass"
+              },
+              {
+                "title": "writeAtomic refuses relative paths",
+                "result": "pass"
+              },
+              {
+                "title": "writeAtomic refuses empty path",
+                "result": "pass"
+              },
+              {
+                "title": "stubArtifactPaths returns docs/stub layout",
+                "result": "pass"
+              },
+              {
+                "title": "defineArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/",
+                "result": "pass"
+              },
+              {
+                "title": "hldArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/",
+                "result": "pass"
+              },
+              {
+                "title": "lldArtifactPaths — story-scoped nested md, json in .insrc/artifacts/",
+                "result": "pass"
+              },
+              {
+                "title": "md folder is labelled by slug; json stays named by hash",
+                "result": "pass"
+              },
+              {
+                "title": "slug label is sanitised against path separators",
+                "result": "pass"
+              },
+              {
+                "title": "amendmentArtifactPath uses the AMD- prefix inside .insrc/artifacts/",
+                "result": "pass"
+              },
+              {
+                "title": "amendmentFilenamePrefix is `AMD-<hash>-`",
+                "result": "pass"
+              },
+              {
+                "title": "lldFilenamePrefix is `LLD-<hash>-`",
+                "result": "pass"
+              },
+              {
+                "title": "amendmentsRootDir points at .insrc/artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — a DEF present and readable wins outright; the ISSUE is never consulted",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — a hash carrying BOTH artifacts resolves to the DEF, so the read ORDER is the discriminator",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — a DEF absent with an ISSUE present yields the ISSUE's values",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — a CORRUPT DEF falls through to a valid ISSUE: first-READABLE-wins, not first-PRESENT-wins",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — a DEF that PARSES but carries none of the three fields also falls through",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — neither artifact readable yields an empty result and does NOT throw",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — standalone is reported only when genuinely boolean; the other two fields are unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — UNWIRED: the accessor exists but changes no folder path yet",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — an ISSUE-anchored work item yields the ISSUE's createdAt instead of undefined",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — signature and return meaning unchanged for a DEF-bearing epic",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — CLOCK INDEPENDENCE: two stages straddling midnight UTC resolve to ONE identity segment",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a SAME-DAY fixture cannot detect the defect, which is why the above is mandatory",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — the anchor read is finalize-time only: path construction performs no read",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the non-standalone branch yields a real label for an ISSUE-anchored work item",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the raw hash appears nowhere in the composed folder name",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — an explicit standalone=true still reads the LLD branch and still falls back to ownCreatedAt",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the hash fallback is still REACHABLE for a work item with no definition artifact",
+                "result": "pass"
+              },
+              {
+                "title": "3a98d279 — the STANDALONE route takes the label from the head, not the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "3a98d279 — the ANCHOR is the Epic's (the head's), never the LLD's own createdAt",
+                "result": "pass"
+              },
+              {
+                "title": "3a98d279 — with no definition head the LLD's label is still the fallback, not a raw hash",
+                "result": "pass"
+              },
+              {
+                "title": "3a98d279 — the EPIC route is unchanged: head is the only source, so no second read alters it",
+                "result": "pass"
+              },
+              {
+                "title": "3a98d279 — an EMPTY head label counts as absent, so it cannot name a folder `artifact`",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — inheritedStoryStandalone: the head wins, the LLD is the fallback, the caller is last",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — the standalone route anchors on the HEAD before the record's own clock when there is no LLD",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — storyRecordFolderArgs: an LLD-only Small story is standalone, named and dated by its LLD",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — storyRecordFolderArgs: an ISSUE-anchored story with no LLD lands in the ISSUE's folder, caller holding nothing",
+                "result": "pass"
+              },
+              {
+                "title": "b2e16601 — storyRecordFolderArgs takes the label from the head when the LLD stored a different one",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — storyRecordFolderArgs: a Trivial build with no head and no LLD is found by its own BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — storyRecordFolderArgs: an epic-parented story is unchanged, and the caller is the last resort",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — the LLD's stamped epicCreatedAt is its anchor, so records land in the LLD's own folder",
+                "result": "pass"
+              },
+              {
+                "title": "lowercase-story artifacts keep their id and file name and resolve through the storage lookups and gates",
+                "result": "pass"
+              },
+              {
+                "title": "an artifact stored with an uppercase story fails with an error that points to the conversion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/gates-delegation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1044,
+            "titles": [
+              {
+                "title": "the four gates readers return the same artifact and the same missing-file error as before, synchronously",
+                "result": "pass"
+              },
+              {
+                "title": "gates readers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "c5798b26",
+        "ranAt": "2026-10-20T18:31:58.232Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/artifact-core/__tests__/store-read.test.ts: readWithHistory exposes identity, description, parent, references, change log, feedback and lifecycle in one shape for an artifact with non-empty history and feedback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/store-read.test.ts",
+                "title": "readWithHistory exposes identity, description, parent, references, change log, feedback and lifecycle in one shape for an artifact with non-empty history and feedback",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/store-read.test.ts: a head with no envelope or lifecycle part reads an empty part and does not fail",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/store-read.test.ts",
+                "title": "a head with no envelope or lifecycle part reads an empty part and does not fail",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/store-read.test.ts: a reference names its target, type and relation, external targets are accepted, and the parent chain is given by the parent link",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/store-read.test.ts",
+                "title": "a reference names its target, type and relation, external targets are accepted, and the parent chain is given by the parent link",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/store-children.test.ts: children are derived from the parent link and are never stored on the parent",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/store-children.test.ts",
+                "title": "children are derived from the parent link and are never stored on the parent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2862,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              },
+              {
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/store-children.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1124,
+            "titles": [
+              {
+                "title": "children are derived from the parent link and are never stored on the parent",
+                "result": "pass"
+              },
+              {
+                "title": "ArtifactStore.childrenOf",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/store-read.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1147,
+            "titles": [
+              {
+                "title": "readWithHistory exposes identity, description, parent, references, change log, feedback and lifecycle in one shape for an artifact with non-empty history and feedback",
+                "result": "pass"
+              },
+              {
+                "title": "a head with no envelope or lifecycle part reads an empty part and does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "a reference names its target, type and relation, external targets are accepted, and the parent chain is given by the parent link",
+                "result": "pass"
+              },
+              {
+                "title": "ArtifactStore read side",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "4fd964f4",
+        "ranAt": "2026-10-20T18:38:19.197Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/artifact-core/__tests__/store-write.test.ts: write then read round trip keeps the revision rule for every registered kind",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/store-write.test.ts",
+                "title": "write then read round trip keeps the revision rule for every registered kind",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/store-write.test.ts: only a content change moves the revision, and a description change is content",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/store-write.test.ts",
+                "title": "only a content change moves the revision, and a description change is content",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/store-write.test.ts: a bad parent or artifact-typed reference is refused and external references are accepted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/store-write.test.ts",
+                "title": "a bad parent or artifact-typed reference is refused and external references are accepted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/journal.test.ts: a failure at stage, log append, head replace and clear each leaves the documented state and the next write completes the staged operation once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/journal.test.ts",
+                "title": "a failure at stage, log append, head replace and clear each leaves the documented state and the next write completes the staged operation once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/journal.test.ts: a restart before the append, a retry by a different actor and an identical-head append failure all recover the original entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/journal.test.ts",
+                "title": "a restart before the append, a retry by a different actor and an identical-head append failure all recover the original entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/store-write.test.ts: a store write keeps the prior meta so workItemAnchorCreatedAt and the Define renderer give the same results",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/store-write.test.ts",
+                "title": "a store write keeps the prior meta so workItemAnchorCreatedAt and the Define renderer give the same results",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2258,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              },
+              {
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/journal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1288,
+            "titles": [
+              {
+                "title": "a failure at stage, log append, head replace and clear each leaves the documented state and the next write completes the staged operation once",
+                "result": "pass"
+              },
+              {
+                "title": "a restart before the append, a retry by a different actor and an identical-head append failure all recover the original entry",
+                "result": "pass"
+              },
+              {
+                "title": "WriteJournal recovery",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/store-write.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1205,
+            "titles": [
+              {
+                "title": "write then read round trip keeps the revision rule for every registered kind",
+                "result": "pass"
+              },
+              {
+                "title": "only a content change moves the revision, and a description change is content",
+                "result": "pass"
+              },
+              {
+                "title": "a bad parent or artifact-typed reference is refused and external references are accepted",
+                "result": "pass"
+              },
+              {
+                "title": "a store write keeps the prior meta so workItemAnchorCreatedAt and the Define renderer give the same results",
+                "result": "pass"
+              },
+              {
+                "title": "ArtifactStore.write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "517df755",
+        "ranAt": "2026-10-20T18:40:06.210Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/artifact-core/__tests__/repo-schema.test.ts: RepoSchemaGate reads version 1 with no marker, requires a version and throws on an invalid marker",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/repo-schema.test.ts",
+                "title": "RepoSchemaGate reads version 1 with no marker, requires a version and throws on an invalid marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/repo-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 480,
+            "titles": [
+              {
+                "title": "RepoSchemaGate reads version 1 with no marker, requires a version and throws on an invalid marker",
+                "result": "pass"
+              },
+              {
+                "title": "RepoSchemaGate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "b26165d0",
+        "ranAt": "2026-10-20T18:43:36.424Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/artifact-core/__tests__/feedback-convert.test.ts: the legacy feedback conversion maps every field and reports what it cannot map",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/feedback-convert.test.ts",
+                "title": "the legacy feedback conversion maps every field and reports what it cannot map",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/feedback-convert.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 813,
+            "titles": [
+              {
+                "title": "the legacy feedback conversion maps every field and reports what it cannot map",
+                "result": "pass"
+              },
+              {
+                "title": "legacy feedback conversion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "3d32cabf",
+        "ranAt": "2026-10-20T19:11:05.306Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/docs-s2-inputs.test.ts: the plans doc lists the four s9 conversion inputs from the common model Story",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/docs-s2-inputs.test.ts",
+                "title": "the plans doc lists the four s9 conversion inputs from the common model Story",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/admit-build.test.ts",
+                "title": "t4: admitBuild propagates a corrupt plan body rather than reporting plan-missing",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/admit-build.test.ts",
+                "title": "t2: approvalVerdict re-throws an unrelated (corrupt-body) error rather than swallowing it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/docs-s2-inputs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1186,
+            "titles": [
+              {
+                "title": "the plans doc lists the four s9 conversion inputs from the common model Story",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/admit-build.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1574,
+            "titles": [
+              {
+                "title": "ac1: admitBuild returns admitted:true with only the thin pointer when approved + recorded==current",
+                "result": "pass"
+              },
+              {
+                "title": "ac2: admitBuild returns plan-unapproved when the plan exists but was never approved",
+                "result": "pass"
+              },
+              {
+                "title": "ac2: approval is evaluated before staleness — unapproved AND drifted yields the single reason plan-unapproved",
+                "result": "pass"
+              },
+              {
+                "title": "ac4: admitBuild returns plan-missing (precedence over staleness) when no plan record exists",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: admitBuild returns plan-stale with inline staleness when the recorded basis differs from current",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: admitBuild conservatively refuses plan-stale when the recorded design hash is empty/absent",
+                "result": "pass"
+              },
+              {
+                "title": "t4: admitBuild propagates a malformed epicHash rather than remapping it",
+                "result": "pass"
+              },
+              {
+                "title": "t4: admitBuild propagates a corrupt plan body rather than reporting plan-missing",
+                "result": "pass"
+              },
+              {
+                "title": "t4: admitBuild propagates a missing current design.story rather than admitting or fabricating plan-stale",
+                "result": "pass"
+              },
+              {
+                "title": "t2: approvalVerdict maps an unapproved plan to { unapproved }",
+                "result": "pass"
+              },
+              {
+                "title": "t2: approvalVerdict maps a missing plan to { missing }",
+                "result": "pass"
+              },
+              {
+                "title": "t2: approvalVerdict re-throws an unrelated (corrupt-body) error rather than swallowing it",
+                "result": "pass"
+              },
+              {
+                "title": "t2: approvalVerdict returns { ok, plan } for an approved plan",
+                "result": "pass"
+              },
+              {
+                "title": "t3: driftVerdict yields stale with inline hashes when recorded differs from current",
+                "result": "pass"
+              },
+              {
+                "title": "t3: driftVerdict treats equal recorded/current hashes as fresh",
+                "result": "pass"
+              },
+              {
+                "title": "t3: driftVerdict conservatively yields stale when the recorded design hash is empty",
+                "result": "pass"
+              },
+              {
+                "title": "guard: admitBuild is the public verdict surface of the admission module",
+                "result": "pass"
+              },
+              {
+                "title": "t1: BuildAdmissionResult discriminates on `admitted` (accepted branch carries only the thin pointer)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

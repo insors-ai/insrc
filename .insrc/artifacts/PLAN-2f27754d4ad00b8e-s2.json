@@ -1,0 +1,532 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792514337345-sh30za",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-20T16:43:00.184Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 242836,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s2",
+    "lldRunId": "wf-1792513058992-7t1vmw",
+    "lldEffectiveHash": "07908de0d9650221de8ca49c9500a84b37fd4f28d11eb08263626e6924497b79",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-20T16:45:08.287Z",
+    "rangeBase": "d9df9857d5031b0fdfd5bb0157fcaeb708cf3689"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build lays the common model in small steps: the types and the rename first, then the pure prepare split and the inventory detector (each independent), the sidecar primitive and History, the codecs with the shared decoder and the creation context, the gates readers moving onto the decoder, the store read side, the store write side with the journal and recovery, the repository gate, the legacy feedback conversion, and last the s9 inputs and final checks. Every task keeps the inventory test green and leaves existing behaviour unchanged."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Declare the envelope types and rename the build change log types",
+        "summary": "Add src/workflow/artifact-core/types.ts with the envelope, Actor, Reference, ChangeLogEntry, Feedback, SidecarRecord, RepoSchema, the error classes, and the sc4 Lifecycle family and sc6 TrackerBinding and Attachment exactly as the HLD defines them. Rename the provenance ChangeLogEntry and ChangeLog to FileChangeEntry and FileChangeLog and update their three consumers. Stored data does not change.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "the exported types accept the sc2, sc3, sc4 and sc6 sketches (with the stated anchor extension) and nothing else is exported from the new module",
+          "no production file refers to the old ChangeLogEntry or ChangeLog names and the build change log tests pass unchanged apart from the names",
+          "the repository type-checks"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/types-contract.test.ts: the exported types accept the sc2, sc3, sc4 and sc6 sketches and the stated anchor extension"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Split writeArtifact into a pure prepare step and a write",
+        "summary": "In src/workflow/storage.ts add prepareArtifactWrite returning the exact bytes, the revision and whether content changed, and rewrite writeArtifact as prepare then writeAtomic with an identical signature and results.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "prepareArtifactWrite returns the bytes and revision writeArtifact writes for content, meta-only, identical and first writes",
+          "every existing writeArtifact and storage test passes unchanged",
+          "prepareArtifactWrite writes nothing"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/prepare-artifact-write.test.ts: prepareArtifactWrite returns the bytes and revision writeArtifact writes for content, meta-only, identical and first writes, and writes nothing"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Extend the write-inventory detector and enter the files it newly flags",
+        "summary": "In src/workflow/artifact-write-inventory.ts add appendFileSync, appendSidecarLine and an import-based store-write rule to the detector, with negative controls, and add inventory entries for every existing file the detector newly flags (src/daemon/fatal.ts, src/daemon/shutdown.ts, the analyze-step, build-step, workflow-step and review-step handlers, src/config/feedback.ts and the appendRunLog call in src/workflow/storage.ts). It names the new writers by name only, so it does not need the new files to exist.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "the detector reports a raw, aliased, renamed, namespace and injected appendFileSync, an unlisted appendSidecarLine and a store write in a file with no entry",
+          "the five existing writers are still detected exactly as before",
+          "every file under src that the detector now flags has an inventory entry and the inventory test passes"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the sidecar primitive and History",
+        "summary": "Add src/workflow/artifact-core/sidecar.ts (appendSidecarLine and the in-memory reader and appender) and src/workflow/artifact-core/history.ts (History with entry validation and the anchor limits), and enter the sidecar file in the inventory in the same task.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "History validates text, kind and the anchor limits and keeps prefix, suffix, section and lines through a round trip",
+          "openFeedback closes entries by addresses all and by listed ids",
+          "appendSidecarLine appends one JSON line per call to the path it is given",
+          "the inventory test passes with the sidecar file entered"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/history.test.ts: History validates feedback and keeps the anchor through a round trip, and openFeedback closes entries by addresses"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/sidecar.test.ts: appendSidecarLine appends one JSON line per call to the path it is given"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Add the kind codecs, the creation context and the shared decoder",
+        "summary": "Add the codec registry with a codec per existing kind except AMD, each owning encode(payload, ctx) and the kind's identity meta; define the codec creation context type and its provider so a create with no prior head obtains workflow, runId, repoPath, createdAt, epicCreatedAt, elapsedMs, repoIndexedAt and schemaVersion; add the pure synchronous decodeArtifactHead; make the AMD codec refuse a flat amendment with a pointer to the s9 conversion.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "decodeArtifactHead fills every envelope part for a head with envelope parts and returns empty parts for a head without them",
+          "a create without a prior head builds a head whose workItemAnchorCreatedAt and Define renderer results are the ones an existing writer would produce",
+          "a flat amendment, a malformed head and an unknown kind are refused with the documented errors"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/decode.test.ts: decodeArtifactHead fills every envelope part, returns empty parts for a head without them, and refuses a malformed head, an unknown kind and a flat amendment"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/codec-create.test.ts: a create without a prior head builds identity meta that workItemAnchorCreatedAt and the Define renderer accept"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Delegate the four gates readers to the shared decoder",
+        "summary": "Make readDefineArtifact, readHldArtifact, readLldArtifact and readPlanArtifact in src/workflow/gates.ts call decodeArtifactHead, staying synchronous with unchanged return shapes and missing-file errors.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "each reader returns the same artifact and the same ArtifactMissingError as before for a head with no envelope parts",
+          "no caller of the four readers changed or became asynchronous",
+          "the gates, orchestrator and build-step tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/gates-delegation.test.ts: the four gates readers return the same artifact and the same missing-file error as before, synchronously"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Add the read side of ArtifactStore",
+        "summary": "Add src/workflow/artifact-core/store.ts with ArtifactStore.read, readWithHistory and childrenOf over the decoder and History, and enter the store file in the inventory in the same task.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "readWithHistory returns identity, description, parent, references, change log, feedback and lifecycle in one shape for an artifact with non-empty history and feedback",
+          "an artifact type with no lifecycle part reads an empty part and nothing fails",
+          "childrenOf derives children from parent links, skips an unreadable head and stores nothing on the parent",
+          "the inventory test passes with the store file entered"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/store-read.test.ts: readWithHistory exposes identity, description, parent, references, change log, feedback and lifecycle in one shape for an artifact with non-empty history and feedback"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/store-read.test.ts: a head with no envelope or lifecycle part reads an empty part and does not fail"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/store-read.test.ts: a reference names its target, type and relation, external targets are accepted, and the parent chain is given by the parent link"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/store-children.test.ts: children are derived from the parent link and are never stored on the parent"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Add the write side with the WriteJournal and recovery",
+        "summary": "Add ArtifactStore.write and the WriteJournal port (stage, pending, clear) with an in-memory journal and a named non-durable constructor. The journal stages the whole immutable ChangeLogEntry with the prepared head; write completes any pending operation first, then stages, appends the log entry, replaces the head and clears; recovery appends the staged entry idempotently even when the head already matches. Validate the parent and artifact-typed references and merge the prior meta, replacing only meta.envelope, meta.lifecycle and meta.revision.",
+        "size": "L",
+        "order": 8,
+        "dependsOn": [
+          "t2",
+          "t4",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "only a content change moves the revision, and a description change is content",
+          "a failure at stage, log append, head replace and clear each leaves the documented state and the next write completes the staged operation under the same operation id with the log showing it once",
+          "a restart before the append, a retry by a different actor and an identical-head append failure all recover the original entry",
+          "the store merges prior meta and a store write followed by workItemAnchorCreatedAt and the Define renderer returns the same results as before the write",
+          "external references are accepted and a bad parent or artifact-typed reference is refused"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/store-write.test.ts: write then read round trip keeps the revision rule for every registered kind"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/store-write.test.ts: only a content change moves the revision, and a description change is content"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/store-write.test.ts: a bad parent or artifact-typed reference is refused and external references are accepted"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/journal.test.ts: a failure at stage, log append, head replace and clear each leaves the documented state and the next write completes the staged operation once"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/journal.test.ts: a restart before the append, a retry by a different actor and an identical-head append failure all recover the original entry"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/artifact-core/__tests__/store-write.test.ts: a store write keeps the prior meta so workItemAnchorCreatedAt and the Define renderer give the same results"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Add RepoSchemaGate",
+        "summary": "Add the repository version marker reader and require over .insrc/schema.json, with absent meaning version 1.",
+        "size": "S",
+        "order": 9,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "read returns version 1 with no marker and the marker's version when valid",
+          "require refuses an unconverted repository with a message naming the s9 conversion and throws on an invalid marker"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/repo-schema.test.ts: RepoSchemaGate reads version 1 with no marker, requires a version and throws on an invalid marker"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Add the legacy feedback conversion",
+        "summary": "Add the pure conversion from a stored FeedbackEntry to a Feedback with a report of unmapped fields: absent kind becomes comment, the author becomes an unknown: actor, sectionSlug becomes section, the segment becomes lines, an integer target.version becomes revision and any other value is reported, and the decision becomes the batch's log outcome.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "every stated mapping is covered by a test including the absent kind and the namespaced actor",
+          "an unmappable target.version or a foreign target.file is reported, not dropped"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/feedback-convert.test.ts: the legacy feedback conversion maps every field and reports what it cannot map"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Record the s9 inputs and the final checks",
+        "summary": "Record in docs/plans/core-data-model.md the s9 conversion inputs this Story creates (the flat amendments, the envelope and lifecycle back-fill, the feedback conversion and the version marker) and run the workflow, mcp and daemon subsets and the build.",
+        "size": "S",
+        "order": 11,
+        "dependsOn": [
+          "t6",
+          "t8",
+          "t9",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "the plans doc lists the four s9 inputs from this Story",
+          "npm run build succeeds and the workflow and mcp subsets pass"
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/docs-s2-inputs.test.ts: the plans doc lists the four s9 conversion inputs from the common model Story"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "prepareArtifactWrite returns the same bytes and revision that writeArtifact writes for content, meta-only, identical and first writes, and writeArtifact keeps its existing results",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "decodeArtifactHead fills every envelope part from a head with and without meta.envelope and meta.lifecycle, and rejects a malformed head, an unknown kind and an unconverted amendment",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "ArtifactStore.write chooses content for a payload or description change and meta-only for references, parent, attachments, binding or lifecycle changes",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "reference validation: an artifact-typed reference with a bad id and a parent that differs from ArtifactIds.parentOf are refused; github:issue, code-path and URL references are accepted",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "the operation id is the same for a replayed staged write and different when the prior revision or the bytes differ",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "History.appendFeedback validation of text, kind and the anchor limits, and that prefix, suffix, section and lines survive a round trip",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "History.openFeedback closing by addresses 'all' and by listed ids",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "RepoSchemaGate.read and require over no marker, a valid marker and an invalid marker",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "the legacy feedback conversion: absent kind, namespaced unknown: actor, sectionSlug to section, segment to lines, integer and non-integer target.version, foreign target.file, decision to the batch log outcome",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "write then read round trip for each registered kind keeps the revision rule: identical rewrite keeps it, a reference change keeps it, a description change moves it, a payload change moves it by one",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "a store write followed by workItemAnchorCreatedAt and the Define renderer over the stored head returns the same anchor and markdown as before the write",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "retry BEFORE replacement: a failure injected at stage, at the log append and at the head replace leaves the documented state and the next write completes the staged operation under the same operation id with the log showing it once",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "retry AFTER replacement: the head replace succeeds and clear fails, the write still resolves, and the next write finds the pending operation, only clears it and appends no second entry",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "an unrelated write while an operation is pending completes the pending one first",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "a fresh store over the same directory and a persisted journal replays a staged write after a simulated restart",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "readWithHistory returns a non-empty change log and non-empty feedback together with the lifecycle for an artifact that has both",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "readDefineArtifact, readHldArtifact, readLldArtifact and readPlanArtifact return the same artifact and the same missing-file error as before, synchronously, for a head with no envelope parts",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "appendSidecarLine appends one JSON line per call to a path it is given",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the write inventory test over the real src tree: every file the new detector flags has an entry, the store and primitive files have entries, and the negative controls for raw, aliased, renamed, namespace, injected appendFileSync and a store write with no entry are reported",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "the build change log tests pass unchanged apart from the renamed type names",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the Lifecycle, Revision, Approval, Review, Signoff, Staleness, TrackerBinding and Attachment types accept the sc4 and sc6 sketches exactly",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the Artifact, ChangeLogEntry, Feedback and SidecarRecord types accept the sc2 and sc3 sketches plus the stated anchor extension",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the stored head keeps { meta, body, citations } with envelope parts only under meta.envelope and meta.lifecycle",
+        "coveredByTaskIds": [
+          "t5",
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD LLD-2f27754d4ad00b8e-s2 handoff c1: envelope types and the build change log rename"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD LLD-2f27754d4ad00b8e-s2 handoff c2: prepareArtifactWrite split in src/workflow/storage.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD LLD-2f27754d4ad00b8e-s2 handoff c3: write-inventory detector, sidecar primitive and History"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD LLD-2f27754d4ad00b8e-s2 handoff c4: kind codecs, creation context and shared decoder"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD LLD-2f27754d4ad00b8e-s2 handoff c5: gates readers delegate to the decoder"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD LLD-2f27754d4ad00b8e-s2 handoff c6: ArtifactStore read and write sides with the WriteJournal"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD LLD-2f27754d4ad00b8e-s2 handoff c7: RepoSchemaGate"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD LLD-2f27754d4ad00b8e-s2 handoff c8: legacy feedback conversion"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD LLD-2f27754d4ad00b8e-s2 handoff c9: s9 conversion inputs and final checks"
+    }
+  ]
+}

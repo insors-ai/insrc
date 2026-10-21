@@ -278,3 +278,17 @@ The common artifact model (s2) reads and writes the new shapes but converts noth
 4. **Version marker.** After converting, s9 writes `.insrc/schema.json` as `{ "version": 2, "convertedAt": … }`. `RepoSchemaGate.require(repo, 2)` is how the new tools refuse an unconverted repository.
 
 Left to other Stories: the durable `WriteJournal` and the sidecar file layout, ordering and de-duplication (s4, against the `WriteJournal` and `SidecarIo` ports defined here); the lifecycle rules (s3); the tracker binding (s6); Task artifacts (s7). The question whether the `WriteJournal` port and the `prefix`/`suffix` anchor extension need HLD amendments (sbdry3) is still deferred to the owner.
+
+## s2 built and approved with an override (2026-10-21)
+
+All 11 tasks of the s2 plan are built; the BUILD was approved on the owner's explicit yes after two code-review cycles (six rounds, diff-only because the daemon index was stale; every round `block`). The 41 to 42 HIGH findings per round were all "empty testsReaching" (no graph reachability on a diff review); every other HIGH was fixed. Gate items carried by the override: t6 (a fixture change in `storage.test.ts`: `seedMeta` now writes `body: {}`), t7 (the store's inventory entry landed in t8), t11 (the gate cannot see the full sweep or the two `admit-build.test.ts` expectations that moved from `SyntaxError` to `ArtifactShapeError`).
+
+Follow-ups left open for later Stories:
+
+1. **Recovery conflict (s4).** `completePending` replaces a head that differs from the staged bytes, even if a `writeArtifact` caller (which does not use the store's per-artifact queue) advanced it meanwhile. Stage a hash of the expected prior head in the `WriteJournal` and report a conflict when the head matches neither version. This extends the port contract, so it belongs to s4's durable journal.
+2. **`canonical()` and `toJSON`.** The content-changed comparison ignores `toJSON`, so two different `Date` values nested in a payload compare equal. Payloads are parsed JSON today, so it cannot happen yet; compare the JSON-serialised form.
+3. **`openFeedback` ties.** Feedback and the log are separate files with no shared order, so an entry at the same instant does not close feedback (the safe side). s4's reader order settles it.
+4. **Operation id.** The LLD said a hash of artifact id, prior revision and bytes; that collides for a repeated transition (references A, B, A, B), so ids are unique per staged operation and reused from the journal on recovery. The LLD text should be amended when s4's LLD is written.
+5. **sbdry3** (does the `WriteJournal` port and the `prefix`/`suffix` anchor extension need HLD amendments) is still deferred to the owner.
+6. **Flaky test hangs (pre-existing).** `src/workflow/review/__tests__/source-root-reader.test.ts` and a few other LMDB-backed review tests occasionally never finish when the suite runs in parallel (1 run in 6 on the commit before s2). Run sweeps with `--test-timeout` and in foreground chunks; the root cause is not investigated.
+7. **Pre-existing failures:** `gate-review-fix.test.ts` (identifier-mismatch) and the SqliteDriver `temporalTrend` test fail without s2's changes.

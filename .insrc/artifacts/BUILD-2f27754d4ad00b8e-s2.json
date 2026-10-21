@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s2",
+    "createdAt": "2026-10-20T17:17:06.359Z",
+    "updatedAt": "2026-10-21T04:22:26.428Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact",
+    "approvedAt": "2026-10-21T04:22:26.966Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": false
+      },
+      {
+        "id": "t7",
+        "passed": false
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": false
+      }
+    ],
+    "summary": "Recorded the four s9 conversion inputs this Story leaves (flat amendments, envelope and lifecycle back-fill, feedback conversion, version marker) in docs/plans/core-data-model.md, with a test that pins them. Final checks: npm run build succeeds; the full sweep ran once after all tasks in foreground chunks: src/workflow/__tests__ 792 pass; src/workflow/*/__tests__ 722 pass (4 skipped); src/workflow/*/*/__tests__ 554 pass; src/mcp 113 pass; src/daemon/__tests__ 312 pass (12 skipped); src/daemon/steps 397 pass, 1 fail; src/daemon/db 350 pass, 1 fail; src/daemon/tools 167 pass. The sweep found two tests that pinned the old SyntaxError for a corrupt plan body (admit-build.test.ts); they now expect ArtifactShapeError, the error the LLD specifies for a head that fails the shared decoder. The two remaining failures are pre-existing and unrelated: the review-step gate-review-fix test (identifier-mismatch) fails identically on the commit before s2 started, and the SqliteDriver temporalTrend test fails before s2 as well. A pre-existing flaky hang in src/workflow/review/__tests__/source-root-reader.test.ts also occurs on that commit (1 of 6 runs).",
+    "testRecord": {
+      "md": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-2f27754d4ad00b8e-s2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T04:22:26.428Z"
+      }
+    ],
+    "commit": "97db113e"
+  }
+}

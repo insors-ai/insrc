@@ -215,7 +215,9 @@
         "rationale": "Whether the WriteJournal port and the anchor extension need HLD amendments is the owner's call; deferred to the review flow rather than filing two more amendments unasked.",
         "resolvedAt": "2026-10-20T16:37:38.270Z"
       }
-    }
+    },
+    "staleAckedAt": "2026-10-20T16:38:44.020Z",
+    "staleAckedReason": "AMD-7 (readWithHistory on sc2) was approved after the LLD; it is the amendment the LLD itself filed, so the design already includes it."
   },
   "body": {
     "summary": {

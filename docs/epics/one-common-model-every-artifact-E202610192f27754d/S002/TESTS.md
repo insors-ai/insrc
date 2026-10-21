@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 40 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 43 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -262,3 +262,22 @@ Run at 2026-10-20T18:43:36.424Z on commit `b26165d0`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/artifact-core/__tests__/feedback-convert.test.ts` | 0 | 2 | 0.8 s |  |
+
+## t11
+
+Run at 2026-10-20T19:11:05.306Z on commit `3d32cabf`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/workflow/__tests__/docs-s2-inputs.test.ts: the plans doc lists the four s9 conversion inputs from the common model Story**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the plans doc lists the four s9 conversion inputs from the common model Story | `src/workflow/__tests__/docs-s2-inputs.test.ts` |
+| pass | t4: admitBuild propagates a corrupt plan body rather than reporting plan-missing | `src/workflow/runners/build/__tests__/admit-build.test.ts` |
+| pass | t2: approvalVerdict re-throws an unrelated (corrupt-body) error rather than swallowing it | `src/workflow/runners/build/__tests__/admit-build.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/__tests__/docs-s2-inputs.test.ts` | 0 | 1 | 1.2 s |  |
+| `src/workflow/runners/build/__tests__/admit-build.test.ts` | 0 | 18 | 1.6 s |  |

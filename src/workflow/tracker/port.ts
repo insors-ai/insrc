@@ -10,6 +10,8 @@
  * strict `loadTracker` loader build on these.
  */
 
+import type { Reference } from '../artifact-core/types.js';
+
 /** An issue reference, `owner/repo#N`, as everywhere else in the tracker code. */
 export type IssueRef = string;
 
@@ -66,6 +68,16 @@ export interface IssueOps {
 	attachMilestone(issue: IssueRef, title: string): PortResult<void>;
 }
 
+/** One comment of an issue, as `listComments` reads it. */
+export interface TrackerComment {
+	readonly externalId: string;
+	readonly author:     string;
+	readonly text:       string;
+	/** ISO time the comment was created. */
+	readonly at:         string;
+	readonly url?:       string | undefined;
+}
+
 export interface TrackerPort {
 	readonly kind: TrackerKind;
 	readonly capabilities: ReadonlySet<Capability>;
@@ -82,6 +94,10 @@ export interface TrackerPort {
 	findIssues(labels: string[]): PortResult<IssueRef[]>;
 	/** Every issue, open or closed, whose title is exactly the artifact-id `token` or starts with it followed by an em dash and a space ({@link titleMatchesToken}), complete across pages, in ascending issue-number order. A failed lookup is a failed result, never an empty list (AMD-2f27754d4ad00b8e-6). */
 	findIssuesByTitleToken(token: string): PortResult<IssueRef[]>;
+	/** Every comment of the issue, in ascending time order and complete across pages; with `since` (ISO time), only those created or updated at or after it. A failed read is a failure, never an empty list (s6). */
+	listComments(issue: IssueRef, since?: string): PortResult<TrackerComment[]>;
+	/** Make `artifact`'s file reachable from the issue through `link`. A tracker without an attachment API (GitHub) posts one comment holding the link; `externalId` is that comment's id (s6). */
+	attach(issue: IssueRef, artifact: Reference, link: string): PortResult<{ externalId?: string }>;
 	openSignoffRequest(spec: SignoffRequestSpec): PortResult<SignoffRequestRef>;
 	readSignoffState(ref: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'>;
 }

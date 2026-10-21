@@ -27,7 +27,9 @@ import {
 	ghEditIssueBody,
 	ghEnsureMilestone,
 	ghFindIssueByLabelsStrict,
+	ghListIssueComments,
 	ghListIssuesByLabelsStrict,
+	ghPostCommentReturningId,
 	ghListIssuesByTitleTokenStrict,
 	ghGetIssueBody,
 	ghLinkSubIssue,
@@ -35,6 +37,7 @@ import {
 	runGh,
 } from './github.js';
 import { parseIssueRef } from './refs.js';
+import type { Reference } from '../artifact-core/types.js';
 import {
 	missingCapabilities,
 	type Capability,
@@ -188,6 +191,12 @@ export function createGithubTracker(owner: string, repo: string): TrackerPort {
 		findIssues: (labels: string[]) => attempt(() => ghListIssuesByLabelsStrict(owner, repo, labels)),
 
 		findIssuesByTitleToken: (token: string) => attempt(() => ghListIssuesByTitleTokenStrict(owner, repo, token)),
+
+		listComments: (issue: IssueRef, since?: string) => attempt(() => ghListIssueComments(owner, repo, issue, since)),
+
+		// GitHub has no attachment API: the link goes in one comment that names the artifact.
+		attach: (issue: IssueRef, artifact: Reference, link: string) =>
+			attempt(() => ({ externalId: ghPostCommentReturningId(owner, repo, issue, `Attached ${artifact.type} \`${artifact.entityId}\`: ${link}`) })),
 
 		openSignoffRequest: () => unsupported('signoff requests'),
 		readSignoffState: () => unsupported('reading signoff state'),

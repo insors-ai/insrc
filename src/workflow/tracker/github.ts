@@ -19,6 +19,7 @@ import { existsSync } from 'node:fs';
 
 import { buildRef, parseIssueRef } from './refs.js';
 import { titleMatchesToken } from './port.js';
+import type { TrackerComment } from './port.js';
 import { epicMembershipLabel } from './conventions.js';
 
 export type TrackerExec = (cmd: string, args: readonly string[], opts?: ExecFileSyncOptions) => Buffer | string;
@@ -273,6 +274,34 @@ export function ghEditIssueBody(owner: string, repo: string, ref: string, body: 
 /** Post a comment on an issue. */
 export function ghComment(owner: string, repo: string, ref: string, body: string): void {
 	runGh(['issue', 'comment', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--body', body], { discardOutput: true });
+}
+
+/** Every comment of an issue in ascending time order across every page (`gh api --paginate`), as
+ *  `{ externalId, author, text, at, url }`; with `since` (ISO time) only comments created or updated at or after it.
+ *  A failed or timed-out read throws a classified {@link GhCommandError}; it is never read as "no comments". */
+export function ghListIssueComments(owner: string, repo: string, ref: string, since?: string): TrackerComment[] {
+	const query = `per_page=100${since !== undefined ? `&since=${encodeURIComponent(since)}` : ''}`;
+	const raw = runGh(['api', '--paginate', `repos/${owner}/${repo}/issues/${parseIssueRef(ref).number}/comments?${query}`,
+		'-q', '.[] | {id, author: .user.login, text: .body, at: .created_at, url: .html_url}']);
+	const bad = (): never => { throw new GhCommandError('rejected', 'gh api returned an unexpected answer for the comment listing'); };
+	const comments: TrackerComment[] = [];
+	for (const line of raw.split('\n').map(l => l.trim()).filter(l => l.length > 0)) {
+		let row: { id?: unknown; author?: unknown; text?: unknown; at?: unknown; url?: unknown };
+		try { row = JSON.parse(line) as typeof row; } catch { return bad(); }
+		if ((typeof row.id !== 'number' && typeof row.id !== 'string') || typeof row.text !== 'string' || typeof row.at !== 'string') return bad();
+		comments.push({
+			externalId: String(row.id), author: typeof row.author === 'string' ? row.author : '', text: row.text, at: row.at,
+			...(typeof row.url === 'string' ? { url: row.url } : {}),
+		});
+	}
+	return comments.sort((a, b) => a.at.localeCompare(b.at) || a.externalId.localeCompare(b.externalId, undefined, { numeric: true }));
+}
+
+/** Post a comment on an issue and return the new comment's id (`gh api` POST, which answers it; `gh issue comment` does not). */
+export function ghPostCommentReturningId(owner: string, repo: string, ref: string, body: string): string {
+	const id = runGh(['api', '-X', 'POST', `repos/${owner}/${repo}/issues/${parseIssueRef(ref).number}/comments`, '-f', `body=${body}`, '-q', '.id']);
+	if (!/^\d+$/.test(id)) throw new GhCommandError('rejected', 'gh api returned no comment id for the new comment');
+	return id;
 }
 
 /** Close an issue (`gh issue close`). The thin sibling of ghEditIssueBody /

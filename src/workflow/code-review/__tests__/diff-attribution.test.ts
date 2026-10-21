@@ -154,3 +154,64 @@ test("without a story key the diff is today's, and both diff callers record the 
 		assert.deepEqual(stepBody.subject, { changedFiles: ['src/mine.ts', 'src/shared.ts'], changeSetAttribution: 'story-trailer', sharedWithExcluded: ['src/shared.ts'] });
 	} finally { r.cleanup(); }
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-b97752e9: the Story's commits decide the diff-only review's scope; the
+// working tree only adds hunks of the Story's own files.
+// ---------------------------------------------------------------------------
+
+test("the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit", async () => {
+	const r = repo();   // HEAD is the OTHER Story's commit
+	try {
+		writeFileSync(join(r.repo, 'src/mine.ts'), 'mine\nUNCOMMITTED-MINE\n');          // the Story's file, in progress
+		writeFileSync(join(r.repo, 'src/theirs.ts'), 'theirs\nUNCOMMITTED-THEIRS\n');    // another Story's file
+		writeFileSync(join(r.repo, 'notes.md'), 'unrelated\n');
+		execFileSync('git', ['add', 'notes.md'], { cwd: r.repo });                        // staged, unrelated
+		const res = await assembleDiffCodeReviewGrounding(r.repo, realDiffGroundingDeps(), { base: r.base, excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: KEY });
+		assert.deepEqual([...res.changedFiles].sort(), ['src/mine.ts', 'src/shared.ts']);
+		assert.match(sig(res, 'src/mine.ts'), /^\+mine$/m, 'the committed hunk');
+		assert.match(sig(res, 'src/mine.ts'), /\[uncommitted change\][\s\S]*^\+UNCOMMITTED-MINE$/m, 'and the uncommitted one');
+		for (const s of res.grounding.symbols) assert.doesNotMatch(s.signature, /THEIRS|unrelated/, `${s.file} carries nothing of the others`);
+		assert.deepEqual(res.excludedFromScope, ['notes.md', 'src/theirs.ts']);
+		assert.equal(res.changeSetAttribution, 'story-trailer');
+	} finally { r.cleanup(); }
+});
+
+test("storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited", async () => {
+	const r = mkdtempSync(join(tmpdir(), 'insrc-diff-legacy-'));
+	const git = (...a: string[]): string => execFileSync('git', a, { cwd: r, encoding: 'utf8' }).trim();
+	const commit = (files: Record<string, string>, msg: string): void => {
+		for (const [f, body] of Object.entries(files)) { mkdirSync(dirname(join(r, f)), { recursive: true }); writeFileSync(join(r, f), body); }
+		git('add', '-A'); git('commit', '-qm', msg);
+	};
+	try {
+		git('init', '-q', '-b', 'main'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't'); git('config', 'commit.gpgsign', 'false');
+		commit({ 'src/shared.ts': LINES() }, 'base');
+		const base = git('rev-parse', 'HEAD');
+		// A Story built before the trailer: its commit carries none.
+		commit({ 'src/shared.ts': LINES({ 1: 'LEGACY-EDIT' }) }, 'feat: legacy work, untrailed');
+		commit({ 'src/shared.ts': LINES({ 1: 'LEGACY-EDIT', 10: 'THEIRS-EDIT' }) }, 'feat(build): s3/t1 theirs\n\nInsrc-Story: c2ba6fa6aaaaaaaa/s3');
+		const res = await assembleDiffCodeReviewGrounding(r, realDiffGroundingDeps(), { base, storyKey: KEY });
+		assert.deepEqual(res.changedFiles, ['src/shared.ts']);
+		assert.match(sig(res, 'src/shared.ts'), /^\+LEGACY-EDIT$/m);
+		assert.doesNotMatch(sig(res, 'src/shared.ts'), /THEIRS-EDIT/, "the other Story's hunk is not grounded");
+		assert.equal(res.changeSetAttribution, 'first-parent-range');
+		assert.deepEqual(res.sharedWithExcluded, ['src/shared.ts']);
+	} finally { rmSync(r, { recursive: true, force: true }); }
+});
+
+test('a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding', async () => {
+	const r = repo();
+	try {
+		writeFileSync(join(r.repo, 'src/mine.ts'), 'STAGED-EDIT\nmine\n');
+		execFileSync('git', ['add', 'src/mine.ts'], { cwd: r.repo });
+		writeFileSync(join(r.repo, 'src/mine.ts'), 'STAGED-EDIT\nmine\nUNSTAGED-EDIT\n');
+		const working = await realDiffGroundingDeps().workingTreeDiff(r.repo);
+		const stat = working.files.find(f => f.path === 'src/mine.ts');
+		assert.deepEqual([stat?.insertions, stat?.deletions], [2, 0], 'one staged line plus one unstaged line');
+		const res = await assembleDiffCodeReviewGrounding(r.repo, realDiffGroundingDeps(), { base: r.base, storyKey: KEY });
+		const s = sig(res, 'src/mine.ts');
+		assert.match(s, /^\+STAGED-EDIT$/m);
+		assert.match(s, /^\+UNSTAGED-EDIT$/m);
+	} finally { r.cleanup(); }
+});

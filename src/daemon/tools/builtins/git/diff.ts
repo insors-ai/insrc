@@ -18,6 +18,14 @@
  */
 
 import { runShell } from '../../shell-helper.js';
+
+/** The shell runner; a test replaces it to make one of the two git commands fail. */
+let shell: typeof runShell = runShell;
+
+/** Test seam: run git through `fn` (restore with no argument). */
+export function setGitDiffShellForTests(fn?: typeof runShell): void {
+  shell = fn ?? runShell;
+}
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
 
 // ---------------------------------------------------------------------------
@@ -142,8 +150,8 @@ export const gitDiffTool: Tool = {
     const statArgv = buildStatArgv(statOpts);
 
     const [diff, stat] = await Promise.all([
-      runShell(argv, { cwd, timeoutMs: 30_000, maxBytes }),
-      runShell(statArgv, { cwd, timeoutMs: 15_000 }),
+      shell(argv, { cwd, timeoutMs: 30_000, maxBytes }),
+      shell(statArgv, { cwd, timeoutMs: 15_000 }),
     ]);
 
     if (diff.spawnError) {
@@ -164,7 +172,18 @@ export const gitDiffTool: Tool = {
       };
     }
 
-    const files = stat.code === 0 ? parseNumstat(stat.stdout) : [];
+    // A failed stat read is a failure, not "no files changed": an empty list here
+    // would pass for an empty change set (ISSUE-b97752e9).
+    if (stat.spawnError || stat.code !== 0) {
+      const msg = stat.stderr.trim() || stat.stdout.trim() || `exit ${stat.code}`;
+      return {
+        output: `[git:diff] numstat failed: ${msg}`,
+        format: 'text',
+        success: false,
+        error: `numstat failed: ${msg}`,
+      };
+    }
+    const files = parseNumstat(stat.stdout);
     const totalInsertions = files.reduce((n, f) => n + f.insertions, 0);
     const totalDeletions  = files.reduce((n, f) => n + f.deletions, 0);
     const truncated = diff.stdout.length >= maxBytes;

@@ -127,7 +127,8 @@ function locationReasons(answer: unknown, call: ReviewCall): string[] {
 	if (call.role !== 'obligation' && call.role !== 'relation') return [];
 	const noteIds = new Set(call.carries.noteIds);
 	const bad = ((answer as { findings?: readonly { location?: string }[] }).findings ?? []).flatMap((f, i) => {
-		const m = /^(\S+):(\d+)(?::\d+)?$/.exec((f.location ?? '').trim());
+		// The file is the text before the first ':', as every location check reads it (so `n1:1:2` is note n1).
+		const m = /^([^:\s]+):(\d+)(?::\d+)?$/.exec((f.location ?? '').trim());
 		return m !== null && !noteIds.has(m[1]!) ? [] : [`findings[${i}].location`];
 	});
 	return bad.length > 0 ? [`${bad.length} findings are not located at \`file:line\` in the code (first: ${bad[0]}); locate each at a file and line of a symbol the notes name, never at an evidence note id`] : [];

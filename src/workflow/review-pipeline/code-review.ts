@@ -164,8 +164,11 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 	const finalize = (findings: readonly DimensionFinding[]): DimensionResult => {
 		const result = spec.toResult({ findings } as unknown as O, grounding, groundingMode);
 		if (path !== 'controller') return result;
-		const outOfScope = findings.filter(f => !changed.has(fileOfLocation(f.location)));
-		return { ...result, ...(outOfScope.length > 0 ? { outOfScope } : {}) };
+		// The controller step's handler splits a dimension's findings into findings and outOfScope
+		// itself, as today (it rebuilds outOfScope from the findings it is given): hand it the
+		// out-of-set findings too, after today's other filters.
+		const outOfSet = findings.filter(f => !changed.has(fileOfLocation(f.location)));
+		return { ...result, findings: [...result.findings, ...outOfSet] };
 	};
 	const stages = (stagePath: ReviewPath): readonly AdapterStage[] => {
 		if (spec.skip !== undefined) {

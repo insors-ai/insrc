@@ -618,7 +618,9 @@ type ValidateResult =
  *  dimensions with well-formed findings (severity enum + `file:line` location),
  *  then scope-drop each dimension's findings to the Story's changed set (the
  *  same drop the daemon-path judges apply). */
-function validateJudgements(raw: readonly DimensionResult[] | undefined, subject: CodeReviewSubject): ValidateResult {
+/** Exported for the review pipeline's controller-path test (Epic 8315a11f s3): a divided review's
+ *  results go through this same split into findings and outOfScope. */
+export function validateJudgements(raw: readonly DimensionResult[] | undefined, subject: CodeReviewSubject): ValidateResult {
 	if (raw === undefined || !Array.isArray(raw) || raw.length === 0) {
 		return { ok: false, message: 'judgements is missing or empty; supply one DimensionResult per dimension.' };
 	}

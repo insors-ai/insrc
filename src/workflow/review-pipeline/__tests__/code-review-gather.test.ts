@@ -28,6 +28,7 @@ import { ADHERENCE_LLD_EXCLUDED, ADHERENCE_LLD_SECTIONS } from '../adapters/code
 import { codeReviewSnapshot, modelDimensionAdapter, type ModelDimensionSpec } from '../code-review.js';
 import { applyFailure, applyOutput, createReviewJob, nextCalls, result, ReviewCallFailedError } from '../job.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
+import { expectedDimensions, validateJudgements } from '../../../daemon/steps/code-review-step/handler.js';
 import { envelopeMessages, promptChars } from '../envelope.js';
 import type { ReviewAdapter, ReviewCall, ReviewMaterial, ReviewPipelineJob } from '../types.js';
 
@@ -737,6 +738,14 @@ test('compare and pair calls are counted under pipelineCalls.relation, not chunk
 
 // -- merge and finish (t7) ------------------------------------------------------
 
+/** A controller-path result as the controller step records it today: through the handler's own split. */
+function throughHandler(result: { dimension: string }, s: CodeReviewSubject = subject()): { findings: { location: string }[]; outOfScope?: { location: string }[] } {
+	const all = expectedDimensions(s).map(d => d === result.dimension ? result : { dimension: d, findings: [] });
+	const v = validateJudgements(all as never, s) as { ok: boolean; message?: string; byDimension?: Map<string, { findings: { location: string }[]; outOfScope?: { location: string }[] }> };
+	assert.ok(v.ok, v.message);
+	return v.byDimension!.get(result.dimension)!;
+}
+
 /** Drive a divided job on `path` to its result. */
 function divided<O>(spec: (s: CodeReviewSubject) => ModelDimensionSpec<O>, path: 'daemon' | 'controller', answer: (call: ReviewCall) => unknown, s: CodeReviewSubject = subject(), g: CodeReviewGrounding = DIVIDING): { result: { findings: { location: string; severity: string; message: string; expectationRef?: string; dimension: string }[]; outOfScope?: { location: string }[]; lowered?: { location: string; reason: string }[]; pipelineCalls?: Record<string, number> }; calls: ReviewCall[] } {
 	const snap = codeReviewSnapshot(s, g);
@@ -756,7 +765,8 @@ test('out-of-set findings are dropped on the daemon path and kept in outOfScope 
 	const daemon = divided(qualitySpec, 'daemon', answer).result;
 	assert.deepEqual(daemon.findings.map(f => f.location), ['src/order/order.ts:2']);
 	assert.equal(daemon.outOfScope, undefined, 'dropped, as the daemon judge does today');
-	const controller = divided(qualitySpec, 'controller', answer).result;
+	// The controller path hands every finding to the controller step, whose handler splits them as today.
+	const controller = throughHandler(divided(qualitySpec, 'controller', answer).result);
 	assert.deepEqual(controller.findings.map(f => f.location), ['src/order/order.ts:2']);
 	assert.deepEqual(controller.outOfScope?.map(f => f.location), ['src/price/price.ts:2'], 'kept in outOfScope, as the controller step does today');
 });
@@ -796,8 +806,9 @@ test('merge keeps identical findings once, accepts only file:line locations (a n
 	// Identical findings from two obligations are kept once, in stage order after the chunk findings.
 	const same = { severity: 'MED', location: 'src/order/order.ts:4', message: 'placeOrder departs from the contract', expectationRef: 'LLD contract 1: placeOrder' };
 	const adherence = divided(adherenceSpec, 'controller', call => call.role === 'chunk' ? { notes: [] } : call.carries.key === 'lld:contract:1' || call.carries.key === 'plan:t1' ? { findings: [same] } : call.carries.key === 'lld:edge:1' ? { findings: [{ ...same, location: 'src/price/price.ts:1' }] } : { findings: [] }).result;
-	assert.deepEqual(adherence.findings.map(f => f.location), ['src/order/order.ts:4'], 'once');
-	assert.deepEqual(adherence.outOfScope?.map(f => f.location), ['src/price/price.ts:1'], 'out of set: outOfScope on the controller path');
+	const recorded = throughHandler(adherence);
+	assert.deepEqual(recorded.findings.map(f => f.location), ['src/order/order.ts:4'], 'once');
+	assert.deepEqual(recorded.outOfScope?.map(f => f.location), ['src/price/price.ts:1'], 'out of set: outOfScope on the controller path');
 
 	// A finding located at an evidence note id (with or without a line) is re-asked, then fails the review;
 	// merge never rewrites a location.
@@ -818,6 +829,8 @@ test('merge keeps identical findings once, accepts only file:line locations (a n
 		const again = next.pending.find(c => c.attempt === 2)!;
 		assert.ok(again !== undefined && again.carries.key === judged.carries.key, 're-asked');
 		assert.match(again.prompt.messages[0]!.content as string, /1 findings are not located at `file:line` in the code \(first: findings\[0\]\.location\)/);
+		// A note id with a line and a column is still the note: its file part is the text before the first ':'.
+		assert.equal(adapter.gather!.validate!({ findings: [{ ...same, location: `${noteId}:1:2` }] }, judged).length, 1, `${noteId}:1:2 is a note id`);
 		assert.throws(() => applyOutput(next, adapter, again.callId, echo(again, { findings: [{ ...same, location: `${noteId}:1` }] })), (e: unknown) => e instanceof ReviewCallFailedError);
 		assert.deepEqual(adapter.gather!.validate!({ findings: [same] }, judged), [], 'a file:line location is accepted');
 	}

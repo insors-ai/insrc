@@ -4,7 +4,7 @@
     "epicHash": "06f196a7ff528143",
     "storyId": "S001",
     "createdAt": "2026-10-21T05:47:38.616Z",
-    "updatedAt": "2026-10-21T06:26:10.632Z",
+    "updatedAt": "2026-10-21T06:31:25.759Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-21T05:02:26.565Z",
@@ -27,9 +27,13 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "The diff-only grounding reads the Story's range first and adds only uncommitted hunks of the Story's own files, reporting other uncommitted files as excludedFromScope; no base or a git failure raises DiffUnavailableError (no working-tree-first, last-commit or step-down path). splitDiffByFile keeps every section, workingTreeDiff sums staged and unstaged stats, storyRangeDiff honours perUnit. grounding-eligibility.test.ts was updated because it drove the removed seams with no base.",
+    "summary": "The review subject derives the Story's set once from its range base (no base or a git failure declines with no-build-record; the working-tree attempts are gone) and carries excludedFromScope, which the runner stamps on the record and both diff-only callers thread through. Test fixtures that had no range base (grounding-ipc.test.ts, subject.test.ts) now supply one, and diff-attribution.test.ts checks the two callers record excludedFromScope.",
     "testRecord": {
       "md": "docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/TESTS.md"
     },
@@ -39,44 +43,44 @@
           "file": "docs/mocks/ontology-editor.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:26:10.632Z"
+        "timestamp": "2026-10-21T06:31:25.759Z"
       },
       {
         "target": {
           "file": "docs/mocks/ontology-source/ontology.template.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:26:10.632Z"
+        "timestamp": "2026-10-21T06:31:25.759Z"
       },
       {
         "target": {
           "file": "docs/mocks/ontology-source/render.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:26:10.632Z"
+        "timestamp": "2026-10-21T06:31:25.759Z"
       },
       {
         "target": {
           "file": "docs/mocks/ontology-viewer.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:26:10.632Z"
+        "timestamp": "2026-10-21T06:31:25.759Z"
       },
       {
         "target": {
           "file": "docs/ontology-builder-prd.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:26:10.632Z"
+        "timestamp": "2026-10-21T06:31:25.759Z"
       },
       {
         "target": {
           "file": "docs/ontology-builder-prd.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:26:10.632Z"
+        "timestamp": "2026-10-21T06:31:25.759Z"
       }
     ],
-    "commit": "fabb2d0e"
+    "commit": "73362b2b"
   }
 }

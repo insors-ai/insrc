@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -133,3 +133,37 @@ Run at 2026-10-21T06:26:10.632Z on commit `fabb2d0e`. Tests check: **passed**. 5
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/code-review/__tests__/diff-attribution.test.ts` | 0 | 5 | 1.9 s |  |
 | `src/workflow/code-review/__tests__/diff-grounding.test.ts` | 0 | 24 | 2.3 s |  |
+
+## t5
+
+Run at 2026-10-21T06:31:25.759Z on commit `73362b2b`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree | `src/workflow/code-review/__tests__/subject-attribution.test.ts` |
+
+**integration: src/workflow/code-review/__tests__/subject-attribution.test.ts: 'with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree | `src/workflow/code-review/__tests__/subject-attribution.test.ts` |
+| pass | T41: with NO resolvable base the review declines and the changed-file seam is never called — no base is invented | `src/workflow/code-review/__tests__/subject.test.ts` |
+| pass | T43: a seam that throws on the anchored derivation -> no-build-record after ONE attempt; there is no plainer one | `src/workflow/code-review/__tests__/subject.test.ts` |
+
+**integration: src/workflow/code-review/__tests__/runner.test.ts: 'the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were | `src/workflow/code-review/__tests__/runner.test.ts` |
+| pass | without a story key the diff is today's, and both diff callers record the attribution and what was left out on the subject | `src/workflow/code-review/__tests__/diff-attribution.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/__tests__/diff-attribution.test.ts` | 0 | 5 | 1.9 s |  |
+| `src/workflow/code-review/__tests__/runner.test.ts` | 0 | 19 | 0.6 s |  |
+| `src/workflow/code-review/__tests__/subject-attribution.test.ts` | 0 | 4 | 1.4 s |  |
+| `src/workflow/code-review/__tests__/subject.test.ts` | 0 | 19 | 1.6 s |  |

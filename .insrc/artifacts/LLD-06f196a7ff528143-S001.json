@@ -37,9 +37,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design addresses the approved ISSUE's scope: Story commits determine review and BUILD scope, with unrelated working-tree changes excluded and reported.",
-          "evidence": "The approved ISSUE's fixIntent explicitly names review, diff-only grounding and build records. The inspected subject resolver, grounding assembler and both BUILD writers use the Story key and range base; the review runner persists excludedFromScope. The proposed legacy-end amendment addresses the remaining pre-trailer case. [files: .insrc/artifacts/ISSUE-b97752e9c7cee6fe.json, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/workflow/code-review/runner.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
-          "action": "Retain this scope.",
+          "premise": "The design covers the upstream ISSUE's requested scope: Story-attributed review, diff-only grounding, BUILD change logs, and reporting excluded edits.",
+          "evidence": "The ISSUE's Fix intent explicitly names those three consumers and exclusion reporting. Inspected implementations anchor the subject and diff grounding on the Story key; both BUILD writers forward that key; the review runner persists excludedFromScope. [files: docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/workflow/code-review/runner.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
+          "action": "Preserve this scope while completing the remaining amendments.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -49,9 +49,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The migration progress statement correctly distinguishes implemented scoping changes from the remaining legacy-end and stable-commit work.",
-          "evidence": "changedFiles already reads storyChangeSet before working-tree diffs; the subject already declines without a base. storyChangeSet still traverses base..HEAD without a recorded-end bound. persistBuildRecord currently computes 'rec.body.commit ?? storyCommit(...) ?? headShortSha(repoPath)', so an untrailered record is refreshed to HEAD. These match the amendment's stated remaining work. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/code-review/subject.ts]",
-          "action": "Label older 'today' descriptions as pre-change behavior consistently.",
+          "premise": "The migration amendment correctly distinguishes implemented scoping from the remaining legacy-end, stable-commit, and rename-parser work.",
+          "evidence": "changedFiles already reads storyChangeSet before working-tree diffs. storyChangeSet still enumerates 'base..HEAD' without a recorded-end bound. persistBuildRecord computes 'rec.body.commit ?? storyCommit(...) ?? headShortSha(repoPath)'. buildStatArgv lacks '-z', and parseNumstat splits lines and matches ' => '. These match the amendment's stated remaining work. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/standalone-record.ts, src/daemon/tools/builtins/git/diff.ts]",
+          "action": "Keep the historical State before text distinct from the current implementation status.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -60,22 +60,10 @@
           "ref": "new-versus-reuse",
           "item": "new-versus-reuse",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The reused git_diff path representation is suitable for exact membership checks against storyChangeSet.paths and for per-file grounding.",
-          "evidence": "A read-only diff of existing commit f9276dc1 produced '1\\t1\\tsrc/workflow/{code-review => review-pipeline}/__tests__/pack-into-batches.test.ts'. parseNumstat uses /^(.+?) => (.+)$/ and assigns 'path: renameMatch[2]', producing 'review-pipeline}/__tests__/pack-into-batches.test.ts', not the destination path. storyChangeSet supplies literal paths, while changedFiles uses storyPaths.has(f) and grounding uses storyPaths.has(f.path). The design retains this parser while promising correct path attribution and retained hunks; ordinary compact renames can therefore yield malformed subjects, missing hunks, or incorrectly excluded edits. [files: src/daemon/tools/builtins/git/diff.ts, src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/grounding.ts]",
-          "action": "Add canonical rename-safe path decoding, preferably using NUL-delimited numstat output, and tests covering committed renames plus staged and unstaged edits at the destination.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
           "severity": "LOW",
-          "premise": "The existing persistence merge and renderer support replacing a contaminated changeLog with an empty list without retaining a Changes section.",
-          "evidence": "mergeWithPrior spreads '...prior.body, ...rec.body'. Both writers supply changeLog unconditionally. renderBuildRecordMd passes the change log through an omit-slot section. The inspected rewrite test asserts an empty stored changeLog and absence of '## Changes'. [files: src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/runners/build/__tests__/changed-files.test.ts]",
-          "action": "Reuse these mechanisms.",
+          "premise": "The legacy-end amendment can reuse existing BUILD identity and persistence infrastructure while adding a distinct range-end resolver.",
+          "evidence": "range-base.ts already reads BUILD JSON through ARTIFACTS_DIR and buildArtifactId, and provides synchronous, non-throwing range-base resolution. Its full implementation contains no range-end resolver; repository search found no resolveStoryRangeEnd. standalone-record.ts already centralizes both writers through persistBuildRecord and has a prior-record reader. [files: src/workflow/runners/build/range-base.ts, src/workflow/runners/build/standalone-record.ts]",
+          "action": "Reuse the existing identity and read helpers; preserve the proposed non-throwing resolver contract.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -85,9 +73,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Both production diff-only callers already pass the Story's base, Story key and ledger exclusions.",
-          "evidence": "The daemon RPC and controller handler each call the assembler with resolveStoryRangeBase(...), LEDGER_EXCLUDE_GLOBS and `${epicHash}/${storyId}`. Both propagate the resulting attribution and excludedFromScope onto the review subject. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts]",
-          "action": "Preserve both call paths.",
+          "premise": "The identified production callers supply Story identity to degraded grounding and validation selection.",
+          "evidence": "Both code-review-rpc.ts and beginDiffOnlyReview pass base, LEDGER_EXCLUDE_GLOBS, and storyKey to the grounding assembler. validate.ts has one withTypecheckProjects call in runValidateSession and one trivialCheckPlan call in the standalone branch, both forwarding the Story key. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/daemon/steps/build-step/phases/validate.ts, src/daemon/steps/build-step/validation-checks.ts]",
+          "action": "Retain both degraded-review callers and both validation selection sites in regression coverage.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -96,10 +84,10 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "The validate change-site inventory identifies the correct module and two withTypecheckProjects call sites.",
-          "evidence": "The actual module is src/daemon/steps/build-step/phases/validate.ts, not src/daemon/steps/build-step/validate.ts. It has one withTypecheckProjects call inside shared runValidateSession. The standalone trivial branch calls trivialCheckPlan and then enters that same shared session; there is no second withTypecheckProjects call. [files: src/daemon/steps/build-step/phases/validate.ts]",
-          "action": "Correct the path and describe the shared typecheck call plus the separate trivialCheckPlan call.",
+          "severity": "HIGH",
+          "premise": "Changing numstat to NUL-delimited literal paths is sufficient to make every reported path agree with the per-file hunk lookup, including paths containing tabs.",
+          "evidence": "splitDiffByFile still matches only '/^diff --git a\\/(.+?) b\\/(.+?)\\s*$/m'. Git quotes headers for tab-containing paths, such as 'diff --git \"a/src/a\\\\tb.ts\" \"b/src/a\\\\tb.ts\"'; a read-only evaluation confirmed this header does not match. buildDiffSymbols then substitutes '[no hunk text for ...]'. The proposed numstat parser fixes file identity but leaves these files without review hunks. [files: src/workflow/code-review/grounding.ts, src/daemon/tools/builtins/git/diff.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts]",
+          "action": "Extend the design to decode Git-quoted diff-header paths and use literal names consistently for hunk lookup. Add an end-to-end rename test with a tab-containing path and committed, staged, and unstaged hunks.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -109,9 +97,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The review-record addition preserves compatibility with records lacking excludedFromScope and with historical working-tree attribution.",
-          "evidence": "Both CodeReviewSubject and CodeReviewBody.subject declare excludedFromScope optional. ChangeSetAttribution retains 'working-tree'. The runner writes excludedFromScope only when its length is greater than zero. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts]",
-          "action": "Retain the optional persisted field and historical attribution value.",
+          "premise": "An explicitly empty new BUILD changeLog replaces contaminated prior data, while the rendered Changes section remains absent.",
+          "evidence": "Both BUILD writers supply changeLog unconditionally. mergeWithPrior spreads '...prior.body, ...rec.body'. renderBuildRecordMd renders Changes through an omit-slot section. The inspected rewrite test asserts both an empty stored changeLog and absence of '## Changes'. [files: src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/__tests__/changed-files.test.ts]",
+          "action": "Preserve unconditional writes of empty changeLog values.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -121,9 +109,21 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Preserving the prior BUILD commit in the common persistence function covers both validate and completion rewrites.",
-          "evidence": "Both writers call persistBuildRecord without supplying body.commit. approveWorkflowTarget invokes ensureBuildRecordOnCompletion before approving BUILD records. The existing common writer is therefore the appropriate location for the proposed prior-commit fallback. The observed legacy record contains body.commit 'd0da1c19', which provides the proposed boundary. [files: src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/gates.ts, .insrc/artifacts/BUILD-c2ba6fa62a148ed1-s1.json]",
-          "action": "Implement the proposed precedence in the common writer and verify both rewrite routes.",
+          "premise": "Review-record exclusion metadata is additive, and legacy working-tree attribution remains representable.",
+          "evidence": "CodeReviewSubject and CodeReviewBody.subject declare excludedFromScope optional. ChangeSetAttribution retains 'working-tree'. The runner includes excludedFromScope only when its length is positive; the inspected runner test checks JSON persistence and omission for both undefined and empty arrays. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts, src/workflow/code-review/__tests__/runner.test.ts]",
+          "action": "Keep the optional field and legacy attribution union.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The change belongs to a standalone Story and extends existing shared implementations without introducing a separate IPC scoping contract.",
+          "evidence": "The persisted LLD metadata marks the work standalone. The inspected production paths reuse changedFiles, storyChangeSet, the grounding assembler, and persistBuildRecord. Story identity already travels through the existing code-review and validate entry points; the proposed helpers and options are internal. [files: .insrc/artifacts/LLD-06f196a7ff528143-S001.json, src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/build-step/phases/validate.ts]",
+          "action": "Keep attribution logic centralized in the existing shared derivation.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -133,9 +133,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Missing anchors and failed anchored Git reads can decline review without falling back to unrelated working-tree work.",
-          "evidence": "changedFiles throws NoBuildChangesError for a Story key without a base and requests a strict trailer scan. resolveCodeReviewSubject maps missing bases and that error to no-build-record. The real range grounding wraps attribution failures in DiffUnavailableError. git_diff rejects failed numstat reads, and both collectDiff and runDiff reject unsuccessful tool results. collectBuildChangeLog catches derivation failures and returns []. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/daemon/tools/builtins/git/diff.ts]",
-          "action": "Preserve these failure mappings while adding the legacy-end resolver.",
+          "premise": "Missing anchors and failed Git reads propagate through the stated refusal paths instead of widening scope.",
+          "evidence": "changedFiles rejects storyKey without base. Strict scanTrailers rethrows Git failures. resolveCodeReviewSubject returns no-build-record for missing base or NoBuildChangesError. Grounding wraps change-set failures as DiffUnavailableError; runDiff and collectDiff reject unsuccessful git_diff results. git_diff already rejects numstat failures. collectBuildChangeLog catches derivation failures and returns []. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/daemon/tools/builtins/git/diff.ts]",
+          "action": "Apply these same failure semantics to the remaining amendments.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -145,21 +145,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design maps ac1\u2013ac5 to concrete regression tests or a specified installed-daemon smoke procedure.",
-          "evidence": "The mapping covers scope/exclusion, own-file edits, refusal paths, downstream consumers and the observed installed-daemon case. Inspected test bodies assert excluded paths, strict trailer-scan failure, retained committed and working-tree hunks, summed staged/unstaged stats, and empty changeLog replacement. Legacy-end tests and the final smoke are explicitly proposed remaining work, not established passing results. Tests were inspected, not executed. [files: src/workflow/runners/build/__tests__/changed-files.test.ts, src/workflow/runners/build/__tests__/story-commits-trailer.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
-          "action": "Add the rename regression identified above and implement the remaining legacy-end tests before the smoke.",
+          "premise": "The design maps ac1\u2013ac5 to concrete regression tests or a specified installed-daemon smoke.",
+          "evidence": "The mapping covers exclusion reporting, own-file edits, refusal paths, downstream consumers, and the observed daemon case. Inspected test bodies assert subject exclusions, strict-scan refusal, committed plus staged/unstaged hunks, filtered legacy diffs, empty changeLog replacement, and Story-scoped validation projects. Legacy-end and rename tests are proposed remaining work. Tests were inspected, not executed; the installed-daemon smoke is not established as passing. [files: docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md, src/workflow/runners/build/__tests__/changed-files.test.ts, src/workflow/runners/build/__tests__/story-commits-trailer.test.ts, src/workflow/code-review/__tests__/subject-attribution.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts, src/daemon/steps/build-step/__tests__/validation-checks.test.ts]",
+          "action": "Implement the remaining mapped tests and smoke, and add the quoted-path regression identified under change-sites. Test execution requires a writable environment because these suites create temporary repositories.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
         "high": 1,
-        "med": 1,
-        "low": 8,
+        "med": 0,
+        "low": 9,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-21T08:02:14.949Z",
+      "reviewedAt": "2026-10-21T08:07:22.963Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
     },
@@ -509,12 +509,13 @@
           ],
           "returns": {
             "type": "Map<string, string>",
-            "meaning": "Per new (b/) path, every section for that path in body order, joined with a newline; a later section is appended, never replacing an earlier one (today map.set keeps only the last)."
+            "meaning": "Per new (b/) path, every section for that path in body order, joined with a newline; a later section is appended, never replacing an earlier one (today map.set keeps only the last). Header paths are decoded the way git writes them: an unquoted `diff --git a/<old> b/<new>` line, or a quoted one, `diff --git \"a/<old>\" \"b/<new>\"`, which git uses for a path with a tab, newline, double quote, backslash or (with core.quotePath) a non-ASCII byte; the quoted form's C escapes (\\t, \\n, \\\", \\\\ and octal \\nnn bytes, decoded as UTF-8) are undone, so the section is keyed by the literal new path that git_diff's -z numstat reports."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "A file with both staged and unstaged edits keeps both sets of hunks in the diff-only grounding."
+            "A file with both staged and unstaged edits keeps both sets of hunks in the diff-only grounding.",
+            "Every file git_diff lists has its hunks found by its literal path, including a renamed file and a path git quotes, so no Story file falls back to `[no hunk text for ...]`."
           ]
         },
         {
@@ -725,7 +726,7 @@
           "expected": "Its body.commit keeps the recorded build commit; a review after the rewrite is bounded exactly as before it."
         },
         {
-          "input": "A Story commit renames a file, and the renamed file then has staged and unstaged edits.",
+          "input": "A Story commit renames a file, and the renamed file then has staged and unstaged edits. The new path may contain a tab or another character git quotes.",
           "expected": "The committed unit, the review subject and the diff-only grounding all name the new path; the uncommitted edits at the new path join as the Story's (not excluded), and both sets of hunks are kept."
         }
       ],
@@ -780,7 +781,8 @@
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a pre-trailer Story's range ends at its BUILD record's commit: a later untrailered commit is not its unit, and an end off the first-parent line is ignored'",
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'the missing-trailer warning names only untrailered commits, never another Story's commit whose subject reads the same story id'",
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits'",
-            "src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces'"
+            "src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces'",
+            "src/workflow/code-review/__tests__/diff-grounding.test.ts: 'splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes'"
           ],
           "fixturesNeeded": [
             "a git repository with a base commit, two commits carrying the Story's Insrc-Story trailer, one carrying another Story's, and unstaged, staged and untracked-then-added changes inside and outside the Story's files",
@@ -805,7 +807,7 @@
             "src/workflow/runners/build/__tests__/build-record.test.ts: 'a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it'",
             "src/daemon/steps/build-step/__tests__/build-step.test.ts: 'the validate phase's changeLog leaves out another Story's commit and replaces a stale changeLog (ISSUE-b97752e9)'",
             "src/daemon/steps/build-step/__tests__/build-step.test.ts: 'CHARACTERISATION C (TRIVIAL route \u2014 NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section'",
-            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story commit that renames a file is reviewed at the new path, and staged and unstaged edits at that path join with their hunks'"
+            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there'"
           ],
           "fixturesNeeded": [
             "the same repository fixture, with approved LLD and PLAN artifacts for the Story"
@@ -847,7 +849,8 @@
             "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding'",
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits'",
             "src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces'",
-            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story commit that renames a file is reviewed at the new path, and staged and unstaged edits at that path join with their hunks'"
+            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there'",
+            "src/workflow/code-review/__tests__/diff-grounding.test.ts: 'splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes'"
           ]
         },
         {
@@ -899,7 +902,7 @@
         },
         {
           "order": 3,
-          "action": "Read git_diff's numstat with -z so a renamed file is reported by its literal paths.",
+          "action": "Read git_diff's numstat with -z so a renamed file is reported by its literal paths. splitDiffByFile decodes git's quoted diff headers so hunks are keyed by the same literal paths.",
           "rollbackable": true
         },
         {

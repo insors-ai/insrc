@@ -21,6 +21,7 @@ import { join } from 'node:path';
 import {
 	assembleDiffCodeReviewGrounding,
 	realDiffGroundingDeps,
+	splitDiffByFile,
 	storyRangeDiff,
 	DiffUnavailableError,
 	type DiffGroundingDeps,
@@ -481,4 +482,21 @@ test('a truncated per-unit call marks the grounding truncated and a storyChangeS
 		await assert.rejects(realDiffGroundingDeps().rangeDiff!(r.repo, 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef'), DiffUnavailableError);
 		await assert.rejects(() => assembleDiffCodeReviewGrounding(r.repo, realDiffGroundingDeps(), { base: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef' }), DiffUnavailableError);
 	} finally { r.cleanup(); }
+});
+
+test('splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes', () => {
+	const section = (header: string, marker: string): string => `${header}\nindex 000..111 100644\n@@ -1 +1 @@\n-old\n+${marker}`;
+	const body = [
+		section('diff --git a/src/plain.ts b/src/plain.ts', 'PLAIN'),
+		section('diff --git a/docs/with space.md b/docs/with space.md', 'SPACE'),
+		section('diff --git "a/src/a\\tb.ts" "b/src/a\\tb.ts"', 'TAB'),
+		section('diff --git "a/odd\\nname\\"q\\\\b.ts" "b/odd\\nname\\"q\\\\b.ts"', 'ESCAPES'),
+		section('diff --git "a/caf\\303\\251.ts" "b/caf\\303\\251.ts"', 'UTF8'),
+		section('diff --git a/old/x.ts "b/new\\tdir/x.ts"', 'MIXED'),
+	].join('\n');
+	const map = splitDiffByFile(body);
+	assert.deepEqual([...map.keys()], ['src/plain.ts', 'docs/with space.md', 'src/a\tb.ts', 'odd\nname"q\\b.ts', 'café.ts', 'new\tdir/x.ts']);
+	for (const [path, marker] of [['src/a\tb.ts', 'TAB'], ['café.ts', 'UTF8'], ['new\tdir/x.ts', 'MIXED']] as const) {
+		assert.ok(map.get(path)?.includes(`+${marker}`), `${JSON.stringify(path)} keeps its hunk`);
+	}
 });

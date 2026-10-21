@@ -220,3 +220,31 @@ test('a Story file with distinct staged and unstaged edits keeps both sets of hu
 		assert.match(s, /^\+UNSTAGED-EDIT$/m);
 	} finally { r.cleanup(); }
 });
+
+test('a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there', async () => {
+	const r = mkdtempSync(join(tmpdir(), 'insrc-diff-rename-'));
+	const git = (...a: string[]): string => execFileSync('git', a, { cwd: r, encoding: 'utf8' }).trim();
+	const NEW = 'src/re\tnamed.ts';
+	try {
+		git('init', '-q', '-b', 'main'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't'); git('config', 'commit.gpgsign', 'false');
+		mkdirSync(join(r, 'src'), { recursive: true });
+		writeFileSync(join(r, 'src/original.ts'), LINES());
+		git('add', '-A'); git('commit', '-qm', 'base');
+		const base = git('rev-parse', 'HEAD');
+		// The Story renames the file and edits it in the same commit.
+		git('mv', 'src/original.ts', NEW);
+		writeFileSync(join(r, NEW), LINES({ 2: 'COMMITTED-EDIT' }));
+		git('add', '-A'); git('commit', '-qm', `feat(build): S001/t1 rename\n\nInsrc-Story: ${KEY}`);
+		// Then a staged and a different unstaged edit at the new path.
+		writeFileSync(join(r, NEW), LINES({ 2: 'COMMITTED-EDIT', 5: 'STAGED-EDIT' }));
+		git('add', '-A');
+		writeFileSync(join(r, NEW), LINES({ 2: 'COMMITTED-EDIT', 5: 'STAGED-EDIT', 9: 'UNSTAGED-EDIT' }));
+
+		const res = await assembleDiffCodeReviewGrounding(r, realDiffGroundingDeps(), { base, storyKey: KEY });
+		assert.deepEqual(res.changedFiles, [NEW], 'the new, literal path, and not the old one');
+		assert.equal(res.excludedFromScope, undefined, 'the uncommitted edits at the new path are the Story\'s');
+		const s = sig(res, NEW);
+		for (const edit of ['COMMITTED-EDIT', 'STAGED-EDIT', 'UNSTAGED-EDIT']) assert.match(s, new RegExp(`^\\+.*${edit}`, 'm'), `${edit} is grounded`);
+		assert.doesNotMatch(s, /\[no hunk text/);
+	} finally { rmSync(r, { recursive: true, force: true }); }
+});

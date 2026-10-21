@@ -96,15 +96,15 @@ test('T22: an excluded file does not count against maxBytes', async () => {
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('T23: with no exclude, and with an empty one, both argument vectors are exactly today\'s', () => {
+test('T23: with no exclude, and with an empty one, both argument vectors are exactly today\'s (numstat reads -z since ISSUE-b97752e9)', () => {
 	for (const exclude of [undefined, [] as string[]]) {
 		const extra = exclude === undefined ? {} : { exclude };
 		assert.deepEqual(buildDiffArgv({ staged: false, ...extra }).argv, ['git', 'diff', '--no-color']);
-		assert.deepEqual(buildStatArgv({ staged: false, ...extra }), ['git', 'diff', '--no-color', '--numstat']);
+		assert.deepEqual(buildStatArgv({ staged: false, ...extra }), ['git', 'diff', '--no-color', '--numstat', '-z']);
 		assert.deepEqual(buildDiffArgv({ staged: true, ...extra }).argv, ['git', 'diff', '--no-color', '--cached']);
 		assert.deepEqual(buildDiffArgv({ from: 'abc', ...extra }).argv, ['git', 'diff', '--no-color', 'abc..HEAD']);
 		assert.deepEqual(buildDiffArgv({ from: 'abc', path: 'src', ...extra }).argv, ['git', 'diff', '--no-color', 'abc..HEAD', '--', 'src']);
-		assert.deepEqual(buildStatArgv({ from: 'abc', path: 'src', ...extra }), ['git', 'diff', '--no-color', '--numstat', 'abc..HEAD', '--', 'src']);
+		assert.deepEqual(buildStatArgv({ from: 'abc', path: 'src', ...extra }), ['git', 'diff', '--no-color', '--numstat', '-z', 'abc..HEAD', '--', 'src']);
 	}
 });
 
@@ -166,3 +166,64 @@ test('when the diff body command succeeds and the numstat command fails, git_dif
 	}
 });
 
+
+// ---------------------------------------------------------------------------
+// ISSUE-b97752e9 t11: literal paths and complete inventories.
+// ---------------------------------------------------------------------------
+
+test('a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces', async () => {
+	const { repo } = repoWithChange(['src/seed.ts']);
+	try {
+		const body = Array.from({ length: 20 }, (_, i) => `export const line${i} = ${i};`).join('\n') + '\n';
+		write(repo, 'src/workflow/code-review/__tests__/pack.test.ts', body);
+		write(repo, 'docs/my old notes.md', body);
+		git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'files to rename');
+		const base = git(repo, 'rev-parse', 'HEAD').trim();
+		mkdirSync(join(repo, 'src/workflow/review-pipeline/__tests__'), { recursive: true });
+		git(repo, 'mv', 'src/workflow/code-review/__tests__/pack.test.ts', 'src/workflow/review-pipeline/__tests__/pack.test.ts');
+		git(repo, 'mv', 'docs/my old notes.md', 'docs/my new => notes.md');
+		git(repo, 'commit', '-q', '-m', 'renames');
+		// Precondition: git's own display of the first rename is the compact form.
+		assert.match(git(repo, 'diff', '--numstat', base, 'HEAD'), /src\/workflow\/\{code-review => review-pipeline\}\/__tests__\/pack\.test\.ts/);
+
+		const res = await gitDiffTool.execute({ cwd: repo, from: base }, deps(repo));
+		assert.equal(res.success, true, res.error);
+		const files = (res.data as GitDiffData).files.map(f => [f.path, f.origPath, f.change]).sort();
+		assert.deepEqual(files, [
+			['docs/my new => notes.md', 'docs/my old notes.md', 'renamed'],
+			['src/workflow/review-pipeline/__tests__/pack.test.ts', 'src/workflow/code-review/__tests__/pack.test.ts', 'renamed'],
+		]);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call', async () => {
+	const { repo, base } = repoWithChange(['src/a.ts']);
+	const run = async (fake: (argv: readonly string[]) => Awaited<ReturnType<typeof runShell>> | undefined) => {
+		setGitDiffShellForTests((argv, opts) => { const f = fake(argv); return f !== undefined ? Promise.resolve(f) : runShell(argv, opts); });
+		try { return await gitDiffTool.execute({ cwd: repo, from: base }, deps(repo)); } finally { setGitDiffShellForTests(); }
+	};
+	const ok = { stderr: '', code: 0, spawnError: false, timedOut: false };
+	try {
+		// The body: a short capture whose shell flag says output was dropped.
+		const body = await run(argv => argv.includes('--numstat') ? undefined : { ...ok, stdout: 'diff --git a/src/a.ts b/src/a.ts\n+x\n', stdoutTruncated: true });
+		assert.equal(body.success, true, body.error);
+		assert.equal((body.data as GitDiffData).truncated, true);
+
+		// The file list cut by the capture limit.
+		const cut = await run(argv => argv.includes('--numstat') ? { ...ok, stdout: '1\t0\tsrc/a.ts\0', stdoutTruncated: true } : undefined);
+		assert.equal(cut.success, false);
+		assert.match(cut.error ?? '', /numstat incomplete: its output passed the capture limit/);
+
+		// The file list ending mid-record: a rename header with only its old path.
+		const partial = await run(argv => argv.includes('--numstat') ? { ...ok, stdout: '1\t0\tsrc/a.ts\0' + '2\t1\t\0src/old.ts\0', stdoutTruncated: false } : undefined);
+		assert.equal(partial.success, false);
+		assert.match(partial.error ?? '', /numstat incomplete: its output ends mid-record/);
+		const unterminated = await run(argv => argv.includes('--numstat') ? { ...ok, stdout: '1\t0\tsrc/a.ts', stdoutTruncated: false } : undefined);
+		assert.equal(unterminated.success, false);
+
+		// Untouched, the real read succeeds and is not truncated.
+		const real = await gitDiffTool.execute({ cwd: repo, from: base }, deps(repo));
+		assert.equal(real.success, true);
+		assert.equal((real.data as GitDiffData).truncated, false);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

@@ -69,7 +69,7 @@ test("git_diff limits the body and file list to the given paths, literally", asy
 
 		// Without paths the command lines are what they were.
 		assert.deepEqual(buildDiffArgv({ from: base }).argv, ['git', 'diff', '--no-color', `${base}..HEAD`]);
-		assert.deepEqual(buildStatArgv({ from: base, exclude: ['ledger/**'] }), ['git', 'diff', '--no-color', '--numstat', `${base}..HEAD`, '--', ':(top)', ':(top,exclude,glob)ledger/**']);
+		assert.deepEqual(buildStatArgv({ from: base, exclude: ['ledger/**'] }), ['git', 'diff', '--no-color', '--numstat', '-z', `${base}..HEAD`, '--', ':(top)', ':(top,exclude,glob)ledger/**']);
 		assert.deepEqual(buildDiffArgv({ path: 'src' }).argv, ['git', 'diff', '--no-color', '--', 'src']);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

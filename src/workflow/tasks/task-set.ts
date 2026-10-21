@@ -33,6 +33,13 @@ import type { TaskPayload, TasksPayload } from './types.js';
 
 const log = getLogger('workflow:tasks');
 
+let entrySeq = 0;
+/** A log entry id that sorts in the order entries were made in this process: the history orders entries of one time by id, and a round must follow the one before it. */
+function orderedEntryId(): string {
+	entrySeq = (entrySeq + 1) % 46656;
+	return `${Date.now().toString(36).padStart(10, '0')}${entrySeq.toString(36).padStart(3, '0')}-${randomUUID()}`;
+}
+
 /** The Tasks of a Story: the Tasks file's id and the Task artifacts, in plan order. Each artifact's payload body is a TaskPayload. */
 export interface TaskSet {
 	readonly id:    string;
@@ -328,7 +335,7 @@ export class TaskSets {
 
 	private async logClose(id: string, by: Actor, outcome: { result: string; summary: string; data: unknown }): Promise<void> {
 		await this.deps.store.exclusive(id, () => this.deps.history.appendLog(id, {
-			id: randomUUID(), actor: by, timestamp: (this.deps.now ?? (() => new Date()))().toISOString(), operation: 'update', outcome,
+			id: orderedEntryId(), actor: by, timestamp: (this.deps.now ?? (() => new Date()))().toISOString(), operation: 'update', outcome,
 		}));
 	}
 
@@ -358,7 +365,7 @@ export class TaskSets {
 		await this.deps.store.exclusive(taskId, async () => {
 			await this.deps.store.read(taskId);
 			await this.deps.history.appendLog(taskId, {
-				id: randomUUID(), actor: by, timestamp: (this.deps.now ?? (() => new Date()))().toISOString(), operation: 'update',
+				id: orderedEntryId(), actor: by, timestamp: (this.deps.now ?? (() => new Date()))().toISOString(), operation: 'update',
 				outcome: { result: round.passed ? 'pass' : 'fail', summary: round.summary, data: { kind: BUILD_ROUND, ...(round.data !== undefined ? { round: round.data } : {}) } },
 			});
 		});

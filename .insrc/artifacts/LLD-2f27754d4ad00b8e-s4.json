@@ -1,0 +1,1576 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792573425917-mpgdhm",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T09:10:21.659Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 395732,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1792406752203-whj6zi",
+    "hldEffectiveHash": "aea12dd762927abf6afe318a2bc2d336c6790ef686f86304c0f3d95944aa3cf0",
+    "hldAmendmentsApplied": [
+      "AMD-2f27754d4ad00b8e-5",
+      "AMD-2f27754d4ad00b8e-6",
+      "AMD-2f27754d4ad00b8e-7",
+      "AMD-2f27754d4ad00b8e-8"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Storing round content through the existing updateContent preserves earlier round outcomes in the log and satisfies ac12.",
+          "evidence": "DEF ac12 requires an entry 'with the round's outcome, so earlier rounds can still be read'. LifecycleService.updateContent supplies only `options: { operation: 'update' }`. ArtifactStore constructs entries with revision number/hash and includes outcome only when `options.outcome !== undefined`; it stores neither the old payload nor the new payload in the entry. The proposed three-argument RoundWriter cannot supply an outcome. Creating the first round without logging also leaves that round unavailable after its replacement. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md, src/workflow/artifact-core/lifecycle-service.ts, src/workflow/artifact-core/store.ts]",
+          "action": "Specify how round outcomes enter the staged ChangeLogEntry, including preservation of the first overwritten round. Extend the writer contract or explicitly derive the outcome inside the queued mutation.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Current recovery can overwrite a moved head, and the current TESTS writer restores its prior JSON when markdown writing fails.",
+          "evidence": "completePending appends a missing entry, then executes `if (current !== op.bytes) ...writeHead...(path, op.bytes)` without checking the prior head. persistTestRecordTask captures priorJson, writes JSON before markdown, and restores priorJson or removes the new JSON in its markdown-failure catch. [files: src/workflow/artifact-core/store.ts, src/workflow/runners/build/test-record.ts]",
+          "action": "Preserve the proposed recovery conflict check and the explicitly scoped rollback behavior.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Durable sidecar and journal implementations are new work behind existing ports; the proposed RoundWriter shape already exists in the completion hook.",
+          "evidence": "sidecar.ts defines SidecarIo, createMemorySidecar and an unframed appendSidecarLine; journal.ts defines WriteJournal and createMemoryJournal. Searches found no production durable implementations. ensureBuildRecordOnCompletion already accepts `{ writer: BuildContentWriter; actor: Actor }`, where updateContent takes id, actor and HeadPayload and returns Promise<boolean>. [files: src/workflow/artifact-core/sidecar.ts, src/workflow/artifact-core/journal.ts, src/workflow/runners/build/completion-record.ts]",
+          "action": "Reuse these ports and consolidate the existing completion-hook writer type.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Supplying RoundWriter from the code-review step handler covers production CR record persistence.",
+          "evidence": "The daemon also registers `codeReview.run` through codeReviewRunStart. src/daemon/code-review-rpc.ts calls runCodeReview directly in degraded, injected-write and default branches; the default branch supplies no dependencies. The step handler routes daemon reviews to this RPC. This production writer is absent from the design's registry and RoundWriter change-site inventories, so those reviews retain the explicitly unchanged no-through finalize path. [files: src/daemon/index.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/runner.ts]",
+          "action": "Add codeReviewRunStart and its dependency contract to the change sites. Supply the repository RoundWriter in every runner branch and test both daemon and controller review routes.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Existing heads without sidecars can pass lifecycle integrity checks with empty history.",
+          "evidence": "checkIntegrity returns `{ ok: true }` when `logTail?.revision === undefined`, after checking the head's own hash. LifecycleService.inspect and apply select the last revision-bearing entry, which is undefined for an empty log. Thus the proposed missing-file-as-empty reader preserves this compatibility, provided the head itself is valid. [files: src/workflow/artifact-core/lifecycle.ts, src/workflow/artifact-core/lifecycle-service.ts]",
+          "action": "Keep an integration fixture with an existing valid head and no sidecars.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Durable lifecycle wiring and prior-head recovery checks are assigned to s4 rather than unauthorized extensions into s2 or s3.",
+          "evidence": "The HLD assigns physical sidecar storage and recovery to s4. AMD-2f27754d4ad00b8e-8 has `status: 'approved'` and adds s4 as an sc4 consumer for durable LifecycleService wiring. core-data-model.md explicitly assigns 'Recovery conflict (s4)' and staging the expected prior-head hash to s4. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/HLD.md, .insrc/artifacts/AMD-2f27754d4ad00b8e-8.json, docs/plans/core-data-model.md]",
+          "action": "Retain these ownership references; leave lifecycle transition rules and Task build-history semantics with their designated stories.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "An oversized entry rejected by appendRecord can be recovered simply by shortening the outcome and retrying.",
+          "evidence": "ArtifactStore calls `journal.stage` before `history.appendLog`. Subsequent writes and updates execute completePending first, which retries the immutable staged entry. The proposed size check occurs only at appendRecord, so an oversized entry becomes a permanently failing pending operation; a shorter replacement cannot reach staging. [files: src/workflow/artifact-core/store.ts, src/workflow/artifact-core/history.ts, src/workflow/artifact-core/journal.ts]",
+          "action": "Validate serialized entry size before staging, using the same framing validator as appendRecord. Specify recovery for already-staged invalid entries and test that a rejected oversized operation does not block a later valid write.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each upstream s4 acceptance criterion has a named proving test in the design.",
+          "evidence": "The DEF assigns ac11 to merging appended history/feedback, ac12 to preserving round outcomes, and ac13 to head conflicts. The design maps these to two-clone merge/read tests, round-recording tests and head-conflict/recovery tests respectively. The existing store-kit supplies stage, append, replace and clear fault injection suitable for the proposed recovery matrix. This verifies test-plan coverage, not execution or passing results. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md, docs/epics/one-common-model-every-artifact-E202610192f27754d/S004/LLD.md, src/workflow/artifact-core/__tests__/store-kit.ts]",
+          "action": "Make ac12 assertions inspect actual historical outcomes across multiple replacements, and add the omitted daemon CR route and oversized-staging regression cases identified above.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 3,
+        "med": 0,
+        "low": 5,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-21T09:10:27.150Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-21T09:15:29.045Z",
+    "reviewOverride": {
+      "reason": "Two authoring passes; the daemon review went from 5 HIGH to 3 HIGH and the three remaining findings (round outcome on the staged entry, the codeReview.run RPC writer, size validation before staging) are recorded as binding requirements in docs/plans/core-data-model.md for the plan and the build.",
+      "at": "2026-10-21T09:15:29.044Z"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "s4 makes an artifact's change log and feedback durable and mergeable, and makes every production approval and review use the durable lifecycle service. Each head gets two append-only line files beside it (a Tasks file's files carry the lines of its Tasks); each line is length-framed so an abandoned fragment is told from corruption, and the files are marked merge=union in a committed .gitattributes, so two clones that add different entries merge without conflict while a changed head still conflicts in git. The write journal becomes a durable file that records the head a write started from, so recovery finishes a write but never overwrites a head that has moved on. The daemon keeps one store and one LifecycleService per repository and gives them to the approve handler, the review-decision step, the daemon review and the controller's verdicts phase, and the BUILD, TESTS and code-review records store their content through that service before their meta and markdown are refreshed, so each round is logged by the same staged write that replaces the record.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework (a1): a shared artifact envelope with typed payloads, stored as a head file plus two append-only sidecar files whose lines carry the owning artifact id, behind a single identity module, with one upfront conversion and no compatibility code. The envelope carries identity, description, parent, references, a typed lifecycle (revision, approval, review, signoffs, staleness, status) and a tracker binding or attachments; the change log and feedback are separate append-only line files; each existing artifact type shrinks to a payload codec and a renderer. Tracker comment reading and attaching are added to the port and implemented for the GitHub adapter only.",
+      "ownedContracts": [
+        {
+          "id": "sc5",
+          "name": "SidecarStorage",
+          "purpose": "How an artifact is stored: the head file and the two append-only line files shared by a Tasks file, their location, the merge rule, the per-artifact filtering and the read-time ordering and de-duplication.",
+          "interfaceSketch": "interface ArtifactFiles { head: string; log: string; feedback: string }\ninterface SidecarStore { filesOf(id: string): ArtifactFiles; appendRecord<E>(file: string, record: SidecarRecord<E>): Promise<void>; readRecords<E>(file: string, artifactId: string): Promise<E[]>; mergeAttributes(): string[] }",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ArtifactIdScheme",
+          "purpose": "The single place artifact ids are made and recognised: the existing hierarchical typed ids extended for Epic, Story, Task, the Tasks file and diagrams, one story and task form, the folder-name date source, and the functional-requirement id helpers that live in id.ts today.",
+          "interfaceSketch": "type ArtifactKind = 'DEF'|'HLD'|'LLD'|'PLAN'|'BUILD'|'CR'|'TESTS'|'EXT'|'AMD'|'SPEC'|'ISSUE'|'EPIC'|'STORY'|'TASK'|'TASKS'|'DIAG';\ninterface ArtifactKey { kind: ArtifactKind; epicHash: string; story?: string; task?: string; seq?: number }\ninterface ArtifactIds { make(key: ArtifactKey): string; parse(id: string): ArtifactKey | undefined; parentOf(key: ArtifactKey): ArtifactKey | undefined }\ninterface RequirementIds { mint(epicHash: string, createdAt: string, ordinal: number, storyId?: string): string; parse(id: string): { epicHash: string; ordinal: number; storyId?: string } | undefined; isRequirementId(s: string): boolean }\n  // + RequirementIds.parse result: { date: string; hash8: string; story?: number | undefined; fr: number } | undefined;  // SUPERSEDES the return type of RequirementIds.parse declared in this sketch ({ epicHash; ordinal; storyId? }): a stored requirement id carries only the date and the first 8 hash characters, so parse returns these parts, story and fr as numbers (amend:AMD-2f27754d4ad00b8e-5)",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "ArtifactEnvelope",
+          "purpose": "The common shape of every stored entity and the one reader and writer for it, with References and namespaced Actors.",
+          "interfaceSketch": "interface Actor { id: string; kind: 'person'|'agent'|'system'; name?: string; properties: Record<string, unknown> }\ninterface Reference { entityId: string; type: string; relation: 'derived-from'|'depends-on'|'tracked-by'|'supersedes'|'documents'|'implements'|'cites'|'reviews'; fragment?: string; quote?: string }\ninterface Artifact<P> { id: string; description: string; parent?: Reference; references: Reference[]; lifecycle: Lifecycle; binding?: TrackerBinding; attachments: Attachment[]; payload: P }\ninterface ArtifactStore { read(id: string): Promise<Artifact<unknown>>; write(a: Artifact<unknown>, by: Actor): Promise<void>; childrenOf(id: string): Promise<string[]> }\n  // + readWithHistory(id: string): Promise<Artifact<unknown> & { changeLog: ChangeLogEntry[]; feedback: Feedback[] }>;  // A read that exposes the artifact together with its change log and feedback in one shape, as DEF ac4 requires; read stays the cheap head-only read. (amend:AMD-2f27754d4ad00b8e-7)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "HistoryRecords",
+          "purpose": "The change log entry and the Feedback entry shapes, the persisted sidecar record that carries the owning artifact id, and the append and read API, including how an update says which feedback it addressed.",
+          "interfaceSketch": "type Operation = 'create'|'update'|'delete'|'reparent'|'request-review'|'review'|'approve'|'reject'|'open-signoff'|'signoff-changes'|'signed-off'|'complete'|'reopen'|'withdraw'|'supersede'|'mark-stale'|'ack-stale';\ninterface ChangeLogEntry { id: string; actor: Actor; timestamp: string; operation: Operation; revision?: { number: number; contentHash: string }; status?: { from: string; to: string }; outcome?: { result: string; summary: string; data?: unknown }; references?: Reference[]; addresses?: 'all' | string[] }\ninterface Feedback { id: string; text: string; actor: Actor; timestamp: string; feedback: Feedback[]; kind: 'comment'|'suggestion'|'revision-request'; anchor?: { quote?: string; section?: string; lines?: [number, number] }; revision?: number; source?: { system: string; externalId: string; url?: string }; batchId?: string }\ninterface SidecarRecord<E> { artifactId: string; entry: E }\ninterface History { appendLog(id: string, e: ChangeLogEntry): Promise<void>; appendFeedback(id: string, f: Feedback): Promise<void>; log(id: string): Promise<ChangeLogEntry[]>; logTail(id: string): Promise<ChangeLogEntry | undefined>; feedback(id: string): Promise<Feedback[]>; openFeedback(id: string): Promise<Feedback[]> }",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "Lifecycle",
+          "purpose": "The typed lifecycle structures, the ten statuses and their transitions, the revision and content-hash rule, the completion roll-up and the conflict check against the log tail.",
+          "interfaceSketch": "type Status = 'draft'|'pending-review'|'approved'|'in-signoff'|'changes-requested'|'signed-off'|'rejected'|'completed'|'withdrawn'|'superseded';\ninterface Revision { number: number; contentHash: string; at: string; by: Actor }\ninterface Approval { revision: number; by: Actor; at: string; override?: { reason: string } }\ninterface Review { revision: number; reviewer: Actor; party: 'controller'|'daemon'; verdict: 'pass'|'warn'|'block'; counts: Record<string, number>; at: string; report?: Reference }\ninterface Signoff { revision: number; request: Reference; state: 'open'|'changes-requested'|'completed'; actors: Actor[]; at: string }\ninterface Staleness { upstream: Reference; upstreamRevision: number; since: string }\ninterface Lifecycle { status: Status; revision: Revision; approval?: Approval; review?: Review; signoffs: Signoff[]; stale?: Staleness }\ntype Integrity = { ok: true } | { ok: false; reason: 'hash-mismatch'|'head-ahead-of-log'|'log-ahead-of-head' }\ninterface LifecycleRules { transition(a: Artifact<unknown>, op: Operation, by: Actor): Promise<Lifecycle>; checkIntegrity(a: Artifact<unknown>, logTail: ChangeLogEntry | undefined): Integrity; rollUp(id: string): Promise<Status | undefined> }",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s6",
+            "s7",
+            "s8",
+            "s9",
+            "s4"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "The physical sidecar storage: file layout, the merge attributes for the line files, per-artifact filtering, read-time ordering and de-duplication, and the write order of log entry before head with the repair of a log that is ahead of its head. Private to this Story are the line format and the file naming beside a head."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The id module and its removal of the second scheme: the folder-name formatter moved into the path scheme, the date source fixed to the epic's creation time, the functional-requirement id helpers and their callers moved with stored FR ids staying valid, issue titles switched to the artifact id, and the delivery module's ordinals. The old issue-body marker is not read. Private to this Story are the exact text of the issue title and the relocation of the helpers."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2",
+            "sc3",
+            "sc8"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The envelope model, the one reader and writer, the History API and the sidecar record shape as a contract, and the repository version marker. Private to this Story are the head-file schema, the per-type payload codec registry and how the old per-type read functions delegate to the reader."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The lifecycle rules: status transitions, the revision and content-hash computation, the staleness record, the completion roll-up and the integrity check against the log tail on approve, review and complete. Private to this Story are the hash canonicalisation and how a roll-up is cached or recomputed."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5"
+          ],
+          "internal": "People-facing feedback: adding feedback and replies from a client, listing open feedback, the addresses rule at revision time, and the per-user identity declaration with alias linking. Private to this Story are the identity file format and the display of linked identities."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The typed binding and attachments, the tracker port additions implemented for GitHub, the retry of pending links and posts, and the switch of unit-issue bookkeeping to the binding. Private to this Story are the permalink construction and the retry bookkeeping."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6"
+          ],
+          "internal": "Task artifacts: creation of the Tasks file and the Task issues at plan approval, direct edits of a Task's own content with local re-approval, refusal of structural edits, and the re-plan reconciliation. Private to this Story are the diff of a Task against the new plan and the build-round recording in a Task's history."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Comment sync: reading human comments into feedback at implement, validate or on request, classifying a revision request or a suggestion from the first line, and posting feedback once. Private to this Story are the first-line commands, the derived since point and the filter for the framework's own posts."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7",
+            "sc8"
+          ],
+          "internal": "The conversion command: previews, repeats, back-fills history, renames standalone S001 to s1 rewriting the references it can with no alias, creates Epic, Story and Task artifacts for what exists, verifies through the delivery reader, and sets the repository version. Private to this Story are the per-type conversion mappings and the verification report."
+        }
+      ],
+      "rolloutPhase": "Phase B — lifecycle and sidecar storage",
+      "nonFunctional": {
+        "performance": "Reading an artifact reads its head; the log tail is read only on approve, review and complete, and counts, open feedback and status are computed on read. The delivery loader still reads each artifact once. Loading a repository of about a thousand artifacts must stay within twice today's load time on the same machine.",
+        "security": "Gates use the live tracker identity only; declared aliases are never trusted for a decision. The identity file is local and read for attribution. Tracker comments are read through the existing gh path of the GitHub adapter, with no new credential and no direct REST call.",
+        "observability": "Every state change appends a change log entry with actor, operation and, where relevant, revision and status; a conflict, a log-ahead-of-head repair, a failed attach and a pending link are logged and surfaced in the unit's result, not hidden.",
+        "durability": "Heads are replaced atomically as today; sidecar lines are append-only and de-duplicated by (artifactId, entry id) so a repeated append is harmless; a write appends its log entry before it replaces the head so a failure between the two leaves a detectable, repairable gap; the conversion is one commit, repeatable, and reverts with one git revert."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "SidecarStore.filesOf",
+          "signature": "filesOf(id: string): ArtifactFiles",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "An artifact id, parsed with ArtifactIds.parse.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ArtifactFiles",
+            "meaning": "{ head, log, feedback }: .insrc/artifacts/<id>.json, <id>.log.jsonl and <id>.feedback.jsonl, except that a TASK id returns the log and feedback files of the TASKS artifact of its Story."
+          },
+          "errors": [
+            {
+              "type": "InvalidArtifactKeyError",
+              "condition": "id is not an artifact id"
+            }
+          ],
+          "preconditions": [
+            "the store was created for one repository path"
+          ],
+          "postconditions": [
+            "pure: touches no file",
+            "two TASK ids of one Story return the same log and feedback paths, and every other id returns paths named by itself"
+          ]
+        },
+        {
+          "name": "SidecarIo.appendRecord",
+          "signature": "appendRecord<E>(file: SidecarFile, record: SidecarRecord<E>): Promise<void>",
+          "parameters": [
+            {
+              "name": "file",
+              "type": "SidecarFile",
+              "purpose": "'log' or 'feedback'.",
+              "optional": false
+            },
+            {
+              "name": "record",
+              "type": "SidecarRecord<E>",
+              "purpose": "The entry and the id of the artifact that owns it.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves once the framed line is in the file."
+          },
+          "errors": [
+            {
+              "type": "HistoryEntryError",
+              "condition": "the serialised entry is larger than 256 KiB; nothing is appended"
+            },
+            {
+              "type": "Error",
+              "condition": "the file cannot be written; nothing is appended"
+            }
+          ],
+          "preconditions": [
+            "the record's artifactId is an artifact id"
+          ],
+          "postconditions": [
+            "exactly one line of the form <byte length of the json> TAB <json> NEWLINE is added with one append-mode write, through appendSidecarLine",
+            "when the file does not end in a newline (a previous append was torn) the write begins with a newline, so the fragment stays a line of its own",
+            "the file is created with its directory when absent and an existing line is never rewritten"
+          ]
+        },
+        {
+          "name": "SidecarIo.readRecords",
+          "signature": "readRecords<E>(file: SidecarFile, artifactId: string): Promise<E[]>",
+          "parameters": [
+            {
+              "name": "file",
+              "type": "SidecarFile",
+              "purpose": "'log' or 'feedback'.",
+              "optional": false
+            },
+            {
+              "name": "artifactId",
+              "type": "string",
+              "purpose": "The artifact whose entries are wanted.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<E[]>",
+            "meaning": "The artifact's entries from its file, each once, ordered by timestamp and then by entry id."
+          },
+          "errors": [
+            {
+              "type": "HistoryReadError",
+              "condition": "a complete frame (its byte length matches) holds invalid json or is not an object with a string artifactId and an entry, or two frames repeat an (artifactId, entry id) with different content; the file and line number are named"
+            }
+          ],
+          "preconditions": [
+            "none: a missing file is an empty list"
+          ],
+          "postconditions": [
+            "a line whose frame is incomplete (no tab and length, a length that does not match, or an unterminated last line) is an abandoned fragment: it is skipped and logged with the file and line, and later complete lines are still read",
+            "lines for other artifacts in the same file are ignored",
+            "entries with the same (artifactId, entry id) and the same content are collapsed to one, which makes a repeated append and a union merge harmless"
+          ]
+        },
+        {
+          "name": "SidecarStore.mergeAttributes",
+          "signature": "mergeAttributes(): string[]",
+          "parameters": [],
+          "returns": {
+            "type": "string[]",
+            "meaning": "The .gitattributes lines the store needs: '.insrc/artifacts/*.log.jsonl merge=union' and '.insrc/artifacts/*.feedback.jsonl merge=union'."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "pure",
+            "the store ensures these lines, and the journal folder in the repository ignore file, are present when it is created, adding only what is missing and never removing another line"
+          ]
+        },
+        {
+          "name": "WriteJournal.stage",
+          "signature": "stage(id: string, op: StagedOperation): Promise<void>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            },
+            {
+              "name": "op",
+              "type": "StagedOperation",
+              "purpose": "The prepared bytes, the whole log entry, the prior revision and the hash of the head the write started from.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves once the staged operation is on disk."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "the journal file cannot be written; the write has not started"
+            }
+          ],
+          "preconditions": [
+            "no other operation is staged for id (the store holds the per-artifact queue)"
+          ],
+          "postconditions": [
+            "the operation is written to .insrc/journal/<id>.json with the atomic writer, outside the tracked artifacts folder",
+            "a restart sees it through pending"
+          ]
+        },
+        {
+          "name": "WriteJournal.pending",
+          "signature": "pending(id: string): Promise<StagedOperation | undefined>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<StagedOperation | undefined>",
+            "meaning": "The staged operation not yet cleared, if any."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "the journal file exists but is not a staged operation; the artifact's writes are refused until a person removes it"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "reads one file"
+          ]
+        },
+        {
+          "name": "WriteJournal.clear",
+          "signature": "clear(id: string, operationId: string): Promise<void>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            },
+            {
+              "name": "operationId",
+              "type": "string",
+              "purpose": "The operation to clear; another staged operation is left alone.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves once the file is removed."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "removing a file that is already gone is not an error"
+          ]
+        },
+        {
+          "name": "ArtifactStore.write",
+          "signature": "write(a: Artifact<HeadPayload>, by: Actor, options?: WriteOptions): Promise<void>",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "Artifact<HeadPayload>",
+              "purpose": "The whole envelope to store.",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "As before.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "WriteOptions",
+              "purpose": "As before.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "As before."
+          },
+          "errors": [
+            {
+              "type": "LifecycleConflictError",
+              "condition": "recovery finds a staged operation whose head has moved on: the head is neither the hash the write started from nor the staged bytes"
+            }
+          ],
+          "preconditions": [
+            "as before"
+          ],
+          "postconditions": [
+            "the order is unchanged: stage, append the log entry, replace the head, clear",
+            "completePending finishes a staged operation only when the head is still the one it started from or already the staged bytes; otherwise it appends nothing, clears nothing, logs the three hashes and throws, so a writeArtifact change made meanwhile is never overwritten",
+            "an entry already in the log is not appended again when recovery replays the operation"
+          ]
+        },
+        {
+          "name": "History.openFeedback",
+          "signature": "openFeedback(id: string): Promise<Feedback[]>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Feedback[]>",
+            "meaning": "The feedback no later log entry addressed."
+          },
+          "errors": [
+            {
+              "type": "HistoryReadError",
+              "condition": "as for readRecords"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "feedback and log entries are compared by the same (timestamp, id) order the reader uses, so an entry made at the same instant as the feedback decides by that order and never by the file it was read from",
+            "computed on read: no count, status or open flag is stored"
+          ]
+        },
+        {
+          "name": "LifecycleService.inspect",
+          "signature": "inspect(id: string): Promise<{ status: Status; integrity: Integrity; lifecycle: Lifecycle } | undefined>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ status: Status; integrity: Integrity; lifecycle: Lifecycle } | undefined>",
+            "meaning": "The status of the head, whether it and its log agree, and its lifecycle; undefined when there is no head."
+          },
+          "errors": [
+            {
+              "type": "LifecycleConflictError",
+              "condition": "a staged write for the artifact found its head moved on"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "a staged write the journal still holds is finished under the artifact's queue before the head and the log are read, so a crash between the log append and the head replace never shows as log-ahead-of-head"
+          ]
+        },
+        {
+          "name": "LifecycleService.updateContent",
+          "signature": "updateContent(id: string, by: Actor, payload: HeadPayload): Promise<boolean>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id of a BUILD, TESTS or CR record, a design artifact, or any stored head.",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The actor of the log entry.",
+              "optional": false
+            },
+            {
+              "name": "payload",
+              "type": "HeadPayload",
+              "purpose": "The record's new body and citations.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<boolean>",
+            "meaning": "True when the store accepted the update."
+          },
+          "errors": [
+            {
+              "type": "ArtifactNotFoundError",
+              "condition": "no head exists yet; the caller creates the record with its raw writer and logs nothing, as there is no earlier round"
+            },
+            {
+              "type": "LifecycleConflictError",
+              "condition": "the head conflicts with its hash or a staged write found it moved on"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "the content change and its revision-bearing log entry are one staged, queued write, so the earlier round stays readable in the log and the head and the log cannot diverge",
+            "a failure leaves the staged write in the journal for the next write or update to finish; the caller's persist fails with the error and does not go on to write the record's meta or markdown"
+          ]
+        },
+        {
+          "name": "persistBuildRecord",
+          "signature": "persistBuildRecord(repoPath: string, rec: BuildRecord, through?: RoundWriter): Promise<{ md: string; json: string }>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository.",
+              "optional": false
+            },
+            {
+              "name": "rec",
+              "type": "BuildRecord",
+              "purpose": "The BUILD record to merge and write.",
+              "optional": false
+            },
+            {
+              "name": "through",
+              "type": "RoundWriter",
+              "purpose": "The LifecycleService and the actor, as in ensureBuildRecordOnCompletion: with it the merged body is stored through updateContent before the raw writers refresh the json meta and the markdown.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ md: string; json: string }>",
+            "meaning": "The paths written."
+          },
+          "errors": [
+            {
+              "type": "LifecycleConflictError",
+              "condition": "from updateContent; the persist fails and writes nothing further"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "now async; persistStandaloneBuildRecord follows it",
+            "its callers await it: the validate phase, the implement phase and ensureBuildRecordOnCompletion; tests and tools that pass no through keep the plain writeArtifact path"
+          ]
+        },
+        {
+          "name": "persistTestRecordTask",
+          "signature": "persistTestRecordTask(repoPath: string, ident: TestRecordIdent, task: TestRecordTask, seams?: TestRecordSeams, through?: RoundWriter): Promise<{ md: string; json: string }>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository.",
+              "optional": false
+            },
+            {
+              "name": "ident",
+              "type": "TestRecordIdent",
+              "purpose": "The Story's identity.",
+              "optional": false
+            },
+            {
+              "name": "task",
+              "type": "TestRecordTask",
+              "purpose": "The round's results for one Task.",
+              "optional": false
+            },
+            {
+              "name": "seams",
+              "type": "TestRecordSeams",
+              "purpose": "As before.",
+              "optional": true
+            },
+            {
+              "name": "through",
+              "type": "RoundWriter",
+              "purpose": "As for persistBuildRecord.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ md: string; json: string }>",
+            "meaning": "The paths written."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "the markdown could not be written after the content was stored"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "with through, the record's content is stored first; a markdown failure after that does not roll the content back, because the content and its log entry are committed and the markdown is a re-runnable render: the error is returned to the step and the next persist writes it again",
+            "without through the existing json-then-markdown rollback is unchanged",
+            "now async; validate.ts awaits it through its test override seam"
+          ]
+        },
+        {
+          "name": "runCodeReview",
+          "signature": "runCodeReview(subject: CodeReviewSubject, provider: LLMProvider, opts: CodeReviewRunOpts, deps?: CodeReviewRunnerDeps): Promise<CodeReviewRunResult>",
+          "parameters": [
+            {
+              "name": "subject",
+              "type": "CodeReviewSubject",
+              "purpose": "As before.",
+              "optional": false
+            },
+            {
+              "name": "provider",
+              "type": "LLMProvider",
+              "purpose": "As before.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "CodeReviewRunOpts",
+              "purpose": "As before.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "CodeReviewRunnerDeps",
+              "purpose": "Gains an optional through: RoundWriter that the code-review step handler supplies from the registry.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<CodeReviewRunResult>",
+            "meaning": "As before."
+          },
+          "errors": [
+            {
+              "type": "LifecycleConflictError",
+              "condition": "from updateContent; the run reports a failed finalize and no record is replaced"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "with deps.through the record's body is stored through updateContent before deps.write refreshes the json and markdown",
+            "without it the finalize is unchanged"
+          ]
+        },
+        {
+          "name": "handleVerdicts",
+          "signature": "handleVerdicts(input: ReviewStepInputVerdicts, lifecycle?: LifecycleService): Promise<ReviewStepDone>",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "ReviewStepInputVerdicts",
+              "purpose": "The controller's verdicts and the run state token.",
+              "optional": false
+            },
+            {
+              "name": "lifecycle",
+              "type": "LifecycleService",
+              "purpose": "The repository's service, taken from the registry by the review-step handler for the run's repository.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<ReviewStepDone>",
+            "meaning": "As before."
+          },
+          "errors": [
+            {
+              "type": "LifecycleConflictError",
+              "condition": "the head conflicts with its hash or log; nothing is stamped"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "now async; the review-step handler awaits it",
+            "with a service the head and log are checked first, an applied fix is stored through updateContent, the meta.review stamp follows as a meta-only write, and the review is recorded with LifecycleService.apply('review') when the status allows one",
+            "without a service the existing writeArtifact path is unchanged"
+          ]
+        },
+        {
+          "name": "workflowReviewStart",
+          "signature": "workflowReviewStart(rawParams: unknown, send: (msg: IpcStreamMessage) => void, signal: AbortSignal, deps?: WorkflowReviewDeps): Promise<void>",
+          "parameters": [
+            {
+              "name": "rawParams",
+              "type": "unknown",
+              "purpose": "As before.",
+              "optional": false
+            },
+            {
+              "name": "send",
+              "type": "(msg: IpcStreamMessage) => void",
+              "purpose": "As before.",
+              "optional": false
+            },
+            {
+              "name": "signal",
+              "type": "AbortSignal",
+              "purpose": "As before.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "WorkflowReviewDeps",
+              "purpose": "Gains an optional lifecycle that the daemon fills from the registry; reviewArtifactFile receives it with an actor.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "As before."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "the daemon's review passes the repository's LifecycleService to reviewArtifactFile"
+          ]
+        },
+        {
+          "name": "approveWorkflowTarget",
+          "signature": "approveWorkflowTarget(req: WorkflowApproveRequest, opts?: { enforce?: boolean }): Promise<WorkflowApproveResult>",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "WorkflowApproveRequest",
+              "purpose": "Carries lifecycle and actor, which the daemon workflow.approve handler and the review-decision step now always set.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ enforce?: boolean }",
+              "purpose": "As before.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<WorkflowApproveResult>",
+            "meaning": "As before."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "both production callers (src/daemon/index.ts line 657 and src/workflow/review-decision.ts line 164) pass the repository's LifecycleService; the head-only path remains for tests and tools with no daemon"
+          ]
+        },
+        {
+          "name": "reviewArtifactFile",
+          "signature": "reviewArtifactFile(opts: ReviewArtifactOpts): Promise<ReviewArtifactResult>",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "ReviewArtifactOpts",
+              "purpose": "Carries lifecycle and actor, which workflowReviewStart now always sets.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ReviewArtifactResult>",
+            "meaning": "As before."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "unchanged by s4 apart from its caller passing the service"
+          ]
+        },
+        {
+          "name": "appendSidecarLine",
+          "signature": "appendSidecarLine(path: string, record: SidecarRecord<unknown>): void",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "purpose": "A line file.",
+              "optional": false
+            },
+            {
+              "name": "record",
+              "type": "SidecarRecord<unknown>",
+              "purpose": "The record.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The one place a sidecar line is written, now framed and guarded."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "stays the single writer of a line file, so the write inventory still has one raw append for history"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Log and feedback line files",
+        "change": "new",
+        "details": "<id>.log.jsonl and <id>.feedback.jsonl beside the head in .insrc/artifacts. Each line is <byte length> TAB <SidecarRecord json> NEWLINE. The Tasks file's two files hold the lines of its Tasks. Lines are never rewritten or removed. Reader order is timestamp, then entry id; a repeated (artifactId, entry id) with the same content counts once.",
+        "schemaDiff": "+ .insrc/artifacts/<id>.log.jsonl\n+ .insrc/artifacts/<id>.feedback.jsonl",
+        "callSites": [
+          "src/workflow/artifact-core/sidecar.ts",
+          "src/workflow/artifact-core/history.ts",
+          "src/workflow/storage.ts"
+        ]
+      },
+      {
+        "entity": ".gitattributes merge rules and the ignore entry",
+        "change": "new",
+        "details": "Two committed rules, '.insrc/artifacts/*.log.jsonl merge=union' and '.insrc/artifacts/*.feedback.jsonl merge=union', so git keeps the lines of both sides on merge. No rule is set for the head json, so a head changed in two clones conflicts and a person resolves it. The journal folder .insrc/journal/ is added to the ignore file. The store adds missing lines when it is created and never rewrites either file.",
+        "schemaDiff": "+ .gitattributes\n+ .gitignore: .insrc/journal/",
+        "callSites": [
+          "src/workflow/artifact-core/sidecar.ts"
+        ]
+      },
+      {
+        "entity": "WriteJournal staged operation file",
+        "change": "new",
+        "details": ".insrc/journal/<id>.json holds one StagedOperation as JSON, replaced atomically, removed on clear. It is untracked because a staged write belongs to one working copy and must never be merged.",
+        "schemaDiff": "+ .insrc/journal/<id>.json",
+        "callSites": [
+          "src/workflow/artifact-core/journal.ts",
+          "src/workflow/artifact-core/store.ts"
+        ]
+      },
+      {
+        "entity": "StagedOperation",
+        "change": "field-add",
+        "details": "priorHeadHash: the sha-256 of the head bytes the write started from, absent for a create. Recovery replaces the head only when it still hashes to priorHeadHash or already equals the staged bytes.",
+        "schemaDiff": "+ readonly priorHeadHash?: string | undefined",
+        "callSites": [
+          "src/workflow/artifact-core/journal.ts",
+          "src/workflow/artifact-core/store.ts"
+        ]
+      },
+      {
+        "entity": "RoundWriter",
+        "change": "new",
+        "details": "{ writer: { updateContent(id, by, payload): Promise<boolean> }, actor: Actor }: what the round persisters take to store a record's content through the LifecycleService. It is the shape ensureBuildRecordOnCompletion already takes (s3), now shared by persistBuildRecord, persistTestRecordTask and CodeReviewRunnerDeps.",
+        "callSites": [
+          "src/workflow/runners/build/completion-record.ts",
+          "src/workflow/runners/build/standalone-record.ts",
+          "src/workflow/runners/build/test-record.ts",
+          "src/workflow/code-review/runner.ts"
+        ]
+      },
+      {
+        "entity": "Per-repository lifecycle registry in the daemon",
+        "change": "new",
+        "details": "One ArtifactStore (over the file sidecar and file journal, with the repository's clock), one History and one LifecycleService (createCompletionEvidence as its per-call evidence factory) per registered repository, created on first use and held by the daemon. The workflow.approve handler, the review-decision step, workflowReviewStart, the review-step handler's verdicts phase and the build and code-review step handlers take their service and RoundWriter from it. If creating it fails the request is refused with that error; there is no fallback to the head-only path inside the daemon.",
+        "callSites": [
+          "src/daemon/index.ts",
+          "src/workflow/review-decision.ts",
+          "src/daemon/workflow-review-rpc.ts",
+          "src/daemon/steps/review-step/handler.ts",
+          "src/daemon/steps/review-step/phases/verdicts.ts",
+          "src/daemon/steps/build-step/phases/validate.ts",
+          "src/daemon/steps/build-step/phases/implement.ts",
+          "src/daemon/steps/code-review-step/handler.ts"
+        ]
+      },
+      {
+        "entity": "CodeReviewRunnerDeps",
+        "change": "field-add",
+        "details": "through?: RoundWriter, used by runCodeReview before deps.write.",
+        "schemaDiff": "+ readonly through?: RoundWriter | undefined",
+        "callSites": [
+          "src/workflow/code-review/runner.ts",
+          "src/daemon/steps/code-review-step/handler.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "s4 owns SidecarStorage: filesOf, appendRecord, readRecords and mergeAttributes as in the sketch, implemented over the s2 SidecarIo port. The line format is the SidecarRecord s2 defined, framed with its byte length; the file naming, the Tasks-file sharing, the union rules, the framing, the order and de-duplication are private to s4."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "History is unchanged: it reads and appends through SidecarIo. s4 adds nothing to the entry shapes; a round's outcome uses the existing outcome field and the 'update' operation that ArtifactStore.update writes."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Implements the WriteJournal port and uses ArtifactStore.write and update as they are. The only change to the port's data is StagedOperation.priorHeadHash, which s2's follow-up 1 assigned to s4."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Wires LifecycleService over the durable store so approve, review and complete run the log-tail check on every production path (AMD-8), and uses its updateContent and inspect. Consumes checkIntegrity's reasons unchanged."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Parses ids with ArtifactIds.parse, and finds a Task's Tasks file by making the TASKS id from the Task's epic hash and Story."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A crash tears the last line of a line file (the process dies mid-append), and a later append follows",
+          "detection": "appendRecord reads the last byte of the file before it writes and sees no newline; readRecords later finds a line whose frame is incomplete (no tab and length, or a length that does not match the json that follows)",
+          "response": "the append begins with a newline, so the fragment is a line of its own and the new record is a complete frame on the next line; the reader skips the fragment, logs it with the file and line, and still returns the later records, so torn text is never joined to a good record and never raises",
+          "userImpact": "none; the entry whose append was torn was not acknowledged, and its write is repaired from the journal when it had one",
+          "recoverable": true
+        },
+        {
+          "scenario": "A complete frame holds invalid json or is not a record (a hand edit, a bad merge)",
+          "detection": "readRecords reads a line whose byte length matches its frame and then fails to parse the json, or parses it to something other than an object with a string artifactId and an entry",
+          "response": "HistoryReadError naming the file and the line number; reads and writes of every artifact that shares that file are refused, approve included, because the log tail cannot be trusted",
+          "userImpact": "the artifact cannot be approved or completed until a person repairs the line; other files are unaffected",
+          "recoverable": true
+        },
+        {
+          "scenario": "A line file contains git merge markers because the union rule was missing when the branches merged",
+          "detection": "readRecords meets lines beginning with <<<<<<<, ======= or >>>>>>>, which are not complete frames",
+          "response": "they are skipped as fragments and logged as merge debris; both sides' complete frames stay in the file, so every entry is still read once and none is lost",
+          "userImpact": "the history reads correctly; the debris stays in the file until someone removes it, and the warning names the file",
+          "recoverable": true
+        },
+        {
+          "scenario": "Two frames carry the same artifact id and entry id with different content (an id collision or a hand edit)",
+          "detection": "readRecords compares a repeated (artifactId, entry id) with the first frame it kept",
+          "response": "identical content collapses silently; different content raises HistoryReadError naming both lines, because choosing one would hide an entry",
+          "userImpact": "as for a bad frame",
+          "recoverable": true
+        },
+        {
+          "scenario": "A staged write finds its head has moved on (writeArtifact or a merge changed the head after the stage)",
+          "detection": "completePending hashes the head and compares it with priorHeadHash and with the staged bytes; it matches neither",
+          "response": "LifecycleConflictError for that artifact, the journal file is kept, the three hashes are logged, and the entry is not appended a second time; nothing overwrites the head",
+          "userImpact": "the staged write does not complete and the artifact's writes and its approval are refused until a person compares the head with the staged bytes in .insrc/journal and resolves it or removes the journal file",
+          "recoverable": true
+        },
+        {
+          "scenario": "The journal file is present but is not a staged operation",
+          "detection": "WriteJournal.pending parses the file and checks operationId, priorRevision, bytes, entry and, when present, priorHeadHash",
+          "response": "an error naming the file; writes to that artifact are refused so nothing builds on an unknown state",
+          "userImpact": "that artifact cannot be written until the file is removed",
+          "recoverable": true
+        },
+        {
+          "scenario": "The process dies after the journal stage and before the log entry is appended",
+          "detection": "the next write, update or inspect finds a pending operation whose entry is not in the log",
+          "response": "completePending appends the staged entry, replaces the head when it still hashes to priorHeadHash, then clears",
+          "userImpact": "none",
+          "recoverable": true
+        },
+        {
+          "scenario": "The process dies after the log entry is appended and before the head is replaced (the log is ahead of the head)",
+          "detection": "the next write, update or inspect finds the pending operation with its entry already in the log and the head equal to priorHeadHash",
+          "response": "completePending replaces the head with the staged bytes and clears; the entry is not appended again, and LifecycleService.inspect finishes this before it reads, so approval never sees a spurious log-ahead-of-head",
+          "userImpact": "none",
+          "recoverable": true
+        },
+        {
+          "scenario": "The process dies after the head is replaced and before the journal is cleared",
+          "detection": "the pending operation's bytes equal the head",
+          "response": "completePending only clears",
+          "userImpact": "none",
+          "recoverable": true
+        },
+        {
+          "scenario": "A head holds merge conflict markers or is otherwise not a head after a merge",
+          "detection": "decodeArtifactHead raises ArtifactShapeError on the read",
+          "response": "the read fails with that error; the line files are untouched and nothing is merged automatically",
+          "userImpact": "a person resolves the head in git (ac13); reads of the artifact resume afterwards",
+          "recoverable": true
+        },
+        {
+          "scenario": "After a merge the union of both clones' log lines is ahead of, or disagrees with, the head that git kept",
+          "detection": "checkIntegrity in the LifecycleService on approve, review and complete reports log-ahead-of-head, head-ahead-of-log or hash-mismatch",
+          "response": "the operation is refused with LifecycleConflictError carrying the reason; nothing is written or logged",
+          "userImpact": "a person decides which side the head should follow; the conflict-resolved write adopts a head whose hash differs from its content",
+          "recoverable": true
+        },
+        {
+          "scenario": "A round's content cannot be stored when a BUILD, TESTS or CR record is replaced (the store refuses or the log append fails)",
+          "detection": "LifecycleService.updateContent throws inside persistBuildRecord, persistTestRecordTask or runCodeReview",
+          "response": "the persist fails with that error and writes nothing further: neither the record's meta nor its markdown, and the build verdict is returned with the error named instead of a quiet success; the staged write stays in the journal, and the next write, update or inspect of the artifact finishes it",
+          "userImpact": "the round is not recorded until the cause is fixed and the step is repeated; the earlier round and the log stay consistent, so approval and completion are not blocked by a half-recorded round",
+          "recoverable": true
+        },
+        {
+          "scenario": "The TESTS record's content is stored and then its markdown cannot be written",
+          "detection": "persistTestRecordTask catches the writeAtomic failure after updateContent resolved",
+          "response": "the content and its log entry stay committed and nothing is rolled back; the error is returned to the step, and the next persist of the record renders the markdown again",
+          "userImpact": "the markdown lags the record until the next persist; the log and the head agree",
+          "recoverable": true
+        },
+        {
+          "scenario": "The record to be replaced has no head yet (the first BUILD, TESTS or CR record of a Story)",
+          "detection": "updateContent raises ArtifactNotFoundError",
+          "response": "the persister creates the record with its raw writer and logs nothing, because there is no earlier round to keep; the next replacement goes through the store",
+          "userImpact": "none",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon is asked to approve or review in a repository whose registry entry cannot be created",
+          "detection": "the registry builds the store and service on first use and the build throws (the artifacts folder cannot be read, the journal folder cannot be created)",
+          "response": "the request is refused with that error; the daemon does not fall back to the head-only path",
+          "userImpact": "the approval or review is not recorded half-way",
+          "recoverable": true
+        },
+        {
+          "scenario": "The .gitattributes rules or the ignore entry cannot be written (read-only checkout, permission)",
+          "detection": "the ensure step catches the write error when the store is created",
+          "response": "logged as a warning naming the missing lines and reported in the daemon's status; the store still works, but a merge of line files can leave markers until the rules are added",
+          "userImpact": "merge debris is skipped by the reader, so no entry is lost; the fix is to add the lines",
+          "recoverable": true
+        },
+        {
+          "scenario": "An entry is too large for one atomic append",
+          "detection": "appendRecord measures the serialised line against a cap of 256 KiB before it writes",
+          "response": "HistoryEntryError; nothing is appended",
+          "userImpact": "the caller shortens the outcome data",
+          "recoverable": true
+        },
+        {
+          "scenario": "A step handler or writer that became async is still called without await",
+          "detection": "the typecheck fails on the Promise used as a value, and the write inventory test lists the changed writer files",
+          "response": "the call sites named in the contract are changed together; no unawaited call remains",
+          "userImpact": "none after the build",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Two clones each append different log entries to the same artifact, then merge",
+          "expected": "git merges the log file with no conflict; a reader sees every entry once, ordered by timestamp then entry id"
+        },
+        {
+          "input": "Two clones append the same entry (the same id and content), for example the same recovery run on a shared branch",
+          "expected": "the union keeps both frames; the reader counts the entry once"
+        },
+        {
+          "input": "A torn append, a later append, a re-read and a journal retry of the interrupted write in one sequence",
+          "expected": "the fragment is skipped, the later record is read, and the retry appends its entry once, so the log holds the entry exactly once and reads without error"
+        },
+        {
+          "input": "A Task's log entry is appended while its Tasks file has entries for other Tasks",
+          "expected": "the frame goes to the Tasks file's log, and reading one Task returns only the frames whose artifactId is that Task"
+        },
+        {
+          "input": "A TASK id whose Tasks head does not exist yet",
+          "expected": "filesOf still returns the Tasks file's paths and an append creates them"
+        },
+        {
+          "input": "A feedback entry and a log entry with the same timestamp",
+          "expected": "openFeedback orders them by the shared (timestamp, id) rule, so the result does not depend on which file was read first"
+        },
+        {
+          "input": "Feedback text containing newlines, tabs, quotes or a line separator character",
+          "expected": "JSON.stringify escapes them, so the json is one line, and the frame's byte length counts the escaped text, so it reads back identical"
+        },
+        {
+          "input": "Text with multi-byte characters",
+          "expected": "the frame length is the byte length, not the character count, and the entry reads back identical"
+        },
+        {
+          "input": "An artifact with no line files",
+          "expected": "log and feedback are empty lists, logTail is undefined, and sc4 treats a log with no revision-bearing entry as no history"
+        },
+        {
+          "input": "A repository that already has a .gitattributes or a .gitignore with other rules",
+          "expected": "only the missing lines are appended, on their own lines, and nothing else changes"
+        },
+        {
+          "input": "A round that changes nothing (the same content again)",
+          "expected": "updateContent stores no revision and appends no entry, because an identical rewrite does not move the revision (k3)"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A write stages its operation, appends its log entry, replaces the head atomically and then clears the journal, in that order, under the per-artifact queue; the order does not change when the journal becomes durable",
+          "source": "c2"
+        },
+        {
+          "text": "Appending the same entry twice is harmless: a reader collapses a repeated (artifactId, entry id)",
+          "source": "c4"
+        },
+        {
+          "text": "A change log or feedback line is never rewritten or removed once appended",
+          "source": "c4"
+        },
+        {
+          "text": "appendSidecarLine stays the only function that writes a line file, so the write inventory keeps one raw append for history",
+          "source": "c4"
+        },
+        {
+          "text": "A head with no log or feedback file behaves as before: it reads, writes and decodes with empty history",
+          "source": "c1"
+        },
+        {
+          "text": "A recorded operation id is reused by a retry and never minted twice for one staged write",
+          "source": "c2"
+        },
+        {
+          "text": "A record written without a RoundWriter (tests, tools with no daemon) is written exactly as before, including the TESTS json-then-markdown rollback",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test run through tsx (npx tsx --test), with node:assert/strict; tests live in __tests__ beside the code and real git is run through child_process in a temporary directory",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The single-file behaviour of the durable sidecar and journal: where files are, what a reader returns for any file content, and each recovery decision.",
+          "subjects": [
+            "SidecarStore.filesOf maps an id to its head, log and feedback files and a TASK id to its Story's Tasks files",
+            "SidecarIo.readRecords filters by artifact id, collapses repeated entries, orders by timestamp then id, skips an abandoned fragment and merge debris, and refuses a complete frame with bad json and a conflicting duplicate",
+            "SidecarIo.appendRecord writes one framed line, starts a new line after a torn one, counts bytes for multi-byte text, and refuses an oversize entry",
+            "a torn append, a later append, a re-read and a journal retry as one sequence",
+            "SidecarStore.mergeAttributes and the ensure step add only the missing lines to .gitattributes and .gitignore and are idempotent",
+            "WriteJournal stage, pending and clear over files, including an invalid journal file",
+            "completePending decisions for each crash point and for a head that moved on, using priorHeadHash",
+            "LifecycleService.inspect finishes a staged write before it reads",
+            "History.openFeedback ordering when a feedback entry and a log entry share a timestamp"
+          ],
+          "fixturesNeeded": [
+            "a temporary repository directory",
+            "store-kit.ts extended with a durable mode that uses the file sidecar and journal and keeps its fault switches"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The acceptance criteria against real git and the real write paths: merges, conflicts, recorded rounds, failed rounds and the daemon wiring of every approval and review path.",
+          "subjects": [
+            "two real clones of a temporary git repository append different log and feedback entries to one artifact and merge with no conflict",
+            "two clones change the same head and git reports a conflict",
+            "persistBuildRecord, persistTestRecordTask and runCodeReview with a RoundWriter each store the content through the LifecycleService, log the round and refresh the meta and markdown, and the earlier round stays readable",
+            "a TESTS persist whose markdown fails after the content was stored keeps the committed content and entry and the next persist renders the markdown",
+            "a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so approval is not blocked",
+            "the daemon workflow.approve handler, the review-decision step, workflowReviewStart and the review step's verdicts phase each use the repository's durable LifecycleService and refuse a head that is ahead of its log",
+            "controller verdict persistence: handleVerdicts with an auto-fix stores the content through the service, stamps the review and records it on the lifecycle",
+            "a restart between each step of a write leaves the repository in the state the recovery decisions expect and the next write completes it once",
+            "the write inventory test classifies the new files and the changed writers and still finds one raw append for history"
+          ],
+          "fixturesNeeded": [
+            "git available on the path, with a skip when it is not",
+            "a bare origin and two clones created per test",
+            "a daemon test harness that registers a temporary repository and an enveloped fake provider (as in gate-review-fix.test.ts)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac11",
+          "provingTests": [
+            "src/workflow/artifact-core/__tests__/sidecar-merge.test.ts: two clones that append different log and feedback entries to one artifact merge with no conflict and a reader sees every entry once, in timestamp then id order",
+            "src/workflow/artifact-core/__tests__/sidecar-read.test.ts: readRecords filters by artifact id, collapses repeated entries, orders by timestamp then id, skips an abandoned fragment and merge debris, and refuses a complete frame with bad json and a conflicting duplicate",
+            "src/workflow/artifact-core/__tests__/sidecar-append.test.ts: a torn append, a later append, a re-read and a journal retry leave the entry once and the file readable",
+            "src/workflow/artifact-core/__tests__/sidecar-files.test.ts: filesOf names the head and line files of an artifact and gives every Task of a Story its Tasks file, and the merge rules and the ignore entry are added once",
+            "src/workflow/artifact-core/__tests__/history-order.test.ts: openFeedback orders a feedback entry and a log entry with the same timestamp by the shared rule"
+          ]
+        },
+        {
+          "criterionId": "ac12",
+          "provingTests": [
+            "src/workflow/artifact-core/__tests__/round-recording.test.ts: persistBuildRecord, persistTestRecordTask and runCodeReview with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log",
+            "src/workflow/artifact-core/__tests__/round-recording.test.ts: a TESTS persist whose markdown fails after the content was stored keeps the committed content and entry, and the next persist renders the markdown",
+            "src/workflow/artifact-core/__tests__/round-recording.test.ts: a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so the next approval is not refused",
+            "src/daemon/steps/review-step/__tests__/verdicts-lifecycle.test.ts: handleVerdicts with a service stores an applied fix through the service, stamps the review and records it on the lifecycle, and refuses a head that is ahead of its log"
+          ]
+        },
+        {
+          "criterionId": "ac13",
+          "provingTests": [
+            "src/workflow/artifact-core/__tests__/sidecar-merge.test.ts: a head changed in two clones conflicts in git and the line files of the same merge still union",
+            "src/workflow/artifact-core/__tests__/journal-recovery-durable.test.ts: a staged write is finished at each crash point and refused with LifecycleConflictError when the head moved on, and the head is never overwritten"
+          ]
+        },
+        {
+          "criterionId": "ac11",
+          "provingTests": [
+            "src/workflow/artifact-core/__tests__/journal-durable.test.ts: the journal stages, reports and clears one file per artifact and refuses an invalid file",
+            "src/daemon/__tests__/lifecycle-wiring.test.ts: the daemon approve handler, the review-decision step, workflowReviewStart and the verdicts phase use the repository's durable LifecycleService, and a repository whose registry entry cannot be created is refused",
+            "src/workflow/__tests__/artifact-write-inventory.test.ts: the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "SidecarIo and WriteJournal are ports with only in-memory implementations and one raw, unframed line append (src/workflow/artifact-core/sidecar.ts, src/workflow/artifact-core/journal.ts). History reads and appends through SidecarIo, and ArtifactStore writes stage in the journal, append the log entry and replace the head, but recovery replaces any head that differs from the staged bytes (src/workflow/artifact-core/store.ts). The repository has no .gitattributes and the daemon holds no ArtifactStore, History or LifecycleService, so approve and review run the head-only guard (src/workflow/gates.ts, src/daemon/index.ts, src/daemon/workflow-review-rpc.ts); the controller's verdicts phase writes with writeArtifact (src/daemon/steps/review-step/phases/verdicts.ts). The BUILD, TESTS and CR records are replaced in place by synchronous writers (persistBuildRecord, persistTestRecordTask, runCodeReview's write dependency) with no log entry for the earlier round, and the TESTS writer rolls its json back when the markdown fails.",
+      "stateAfter": "The log and feedback of an artifact live in length-framed line files beside its head, union-merged by a committed .gitattributes and read filtered, de-duplicated and ordered; the journal is a durable untracked file that remembers the head a write started from, and recovery refuses to overwrite a head that moved on. The daemon holds one durable store, history and LifecycleService per repository, and the approve handler, the review-decision step, the daemon review and the verdicts phase all use them, so the full log-tail check runs on every path. The BUILD, TESTS and CR records store their content through the service before their meta and markdown are refreshed, so each round is logged by the staged write that replaces it, and a failed round log fails the persist instead of leaving the head ahead of its log.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the framed line format to appendSidecarLine (with the torn-line guard and the size cap) and the file-backed SidecarIo and SidecarStore (filesOf, the filtered de-duplicated ordered read that skips fragments and merge debris, mergeAttributes) beside the in-memory one; nothing uses them yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add priorHeadHash to StagedOperation, stage it in ArtifactStore.write, make completePending finish an operation only when the head is the prior head or already the staged bytes, and add the durable file journal. Run the existing recovery tests against both journals.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 1"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "Give History.openFeedback the shared (timestamp, id) order, and make LifecycleService.inspect finish a staged write under the artifact's queue before it reads.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 1",
+            "step 2"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Add the ensure step that adds the two union merge rules to .gitattributes and the journal folder to the ignore file, adding only missing lines. Commit the two files for this repository.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 1"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Add the daemon's per-repository registry (store over the file sidecar and journal, history, LifecycleService with the per-call evidence factory) and pass it to the workflow.approve handler, the review-decision step and workflowReviewStart; the head-only path stays for callers with no daemon.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 2",
+            "step 4"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "Make handleVerdicts async and give it the service; the review-step handler awaits it with the registry's service for the run's repository. The auto-fix goes through updateContent, the review stamp stays a meta-only write, and the review is applied on the lifecycle.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 5"
+          ]
+        },
+        {
+          "order": 7,
+          "action": "Make persistBuildRecord, persistStandaloneBuildRecord and persistTestRecordTask async with an optional RoundWriter, add through to the code-review runner dependencies, and change every caller (the validate and implement phases, ensureBuildRecordOnCompletion, the code-review step handler, the tests) to await them with the registry's RoundWriter. A failed content store fails the persist; a TESTS markdown failure after the content was stored is not rolled back.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 5"
+          ]
+        },
+        {
+          "order": 8,
+          "action": "Add the real-git two-clone merge tests, the framing and recovery matrix tests, the round-recording and failure tests, the wiring tests and the inventory entries; record the s9 inputs (existing artifacts have no line files, so the conversion back-fills history and writes the first entries).",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 6",
+            "step 7"
+          ]
+        }
+      ],
+      "backwardCompat": "No compatibility code. An artifact with no line files reads as an empty history, so every existing head keeps working. The in-memory SidecarIo and journal stay for tests only. The head-only gate path and the round writers' plain writeArtifact path (no RoundWriter) stay for callers that have no daemon (tests and tools), not as a fallback inside the daemon, which refuses a request when its registry entry cannot be created. Making persistBuildRecord, persistStandaloneBuildRecord, persistTestRecordTask and handleVerdicts async changes their signatures; all callers are in this repository and are changed together. Existing BUILD, TESTS and CR records gain log entries only from their next replacement; earlier rounds are not reconstructed (s9 back-fills what it can).",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Per-head framed line files, rounds through the store, one daemon registry",
+        "oneLineSummary": "Per-head log and feedback files with length-framed lines and union merge, a durable untracked journal, round records stored through LifecycleService.updateContent, and one per-repository registry the approval and review paths all take their service from.",
+        "approach": "FileSidecarStore implements SidecarIo and the sc5 SidecarStore. filesOf(id) returns { head: .insrc/artifacts/<id>.json, log: .insrc/artifacts/<id>.log.jsonl, feedback: .insrc/artifacts/<id>.feedback.jsonl }, with a TASK id mapped to the files of its Story's TASKS head. Each line is framed as <byte length> TAB <json> NEWLINE and written with one append-mode write; readRecords skips a frame whose length does not match (an abandoned fragment, logged), raises HistoryReadError for a complete frame whose json is invalid, keeps the lines of the requested artifact, collapses repeated (artifactId, entry id) and orders by timestamp then entry id. mergeAttributes() yields the two merge=union rules, ensured in .gitattributes with the journal folder in the ignore file. The journal is a file per artifact under .insrc/journal/<id>.json and StagedOperation gains priorHeadHash; completePending replaces a head only when it still has that hash or already equals the staged bytes. The content of a BUILD, TESTS or CR record is stored through LifecycleService.updateContent, awaited by the step handlers (validate, implement, the test-record caller, the code-review step handler, completion-record) before the synchronous raw writers refresh the record's meta and markdown; a failed store call fails that persist, and the staged write stays in the journal for the next write or update to finish. The daemon keeps one registry of {ArtifactStore, History, LifecycleService} per repository and gives it to the workflow.approve handler, the review-decision step, workflowReviewStart and the review step's verdicts phase.",
+        "pros": [
+          "Round entries are committed by the same staged, queued write as every other change, so the log and the head cannot diverge and the earlier round stays readable",
+          "Framing separates an abandoned fragment from corruption even after later appends",
+          "One registry gives every approval and review path the same durable service, so the integrity check runs on all of them",
+          "Per-head files keep unrelated artifacts out of each other's merges and keep a log-tail read to one artifact"
+        ],
+        "cons": [
+          "Several step handlers and writers change from synchronous to awaited, and their callers with them",
+          "The raw meta and markdown writers still run after the store call, so a failure between the two leaves a re-runnable render, not a lost round",
+          "Two more files per head, and the ensure step is two more writers to inventory"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Per-head files with after-the-fact round events",
+        "oneLineSummary": "As a1 for layout and journal, but the round writers stay synchronous and a separate round event is appended to the log after they succeed.",
+        "approach": "The layout, framing, journal and registry are as in a1. The BUILD, TESTS and CR writers keep replacing their record with writeArtifact, unchanged and synchronous; afterwards the step handler appends one log entry carrying the round's outcome and the record's new revision. A failed append is logged and surfaced in the step result, and the registry offers a repair call that appends the missing entry on the next approval.",
+        "pros": [
+          "The synchronous writers and their callers do not change",
+          "A round is logged even though the record write is not staged"
+        ],
+        "cons": [
+          "Between the replace and the append the head is ahead of its log, the state the integrity check refuses, so a crash or a failed append blocks approval until the repair runs",
+          "The TESTS record's json-then-markdown rollback can leave a logged revision for content that was rolled back",
+          "Adds a repair call and a second way to write the log beside the staged write"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Keeps the writers synchronous but opens a window in which the head is ahead of its log and adds a second write path for the log."
+      },
+      {
+        "id": "a3",
+        "name": "One repository-wide pair of framed line files",
+        "oneLineSummary": "Two framed line files for the whole repository, union-merged, with the rounds and the registry as in a1.",
+        "approach": "FileSidecarStore appends every record to .insrc/history/log.jsonl or .insrc/history/feedback.jsonl; readRecords scans the file for the artifact id. One attributes rule covers both files. Framing, journal, round recording and the registry are as in a1.",
+        "pros": [
+          "Two files in total and one attributes rule",
+          "No new line format"
+        ],
+        "cons": [
+          "Every clone appends to the same two files, so unrelated work overlaps at the file tail",
+          "A read scans the whole history for one artifact, which strains the load-time budget at about a thousand artifacts",
+          "A damaged frame in the shared file stops reads of every artifact"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Scan cost grows with the repository, unrelated artifacts share a merge tail, and one damaged frame blocks every artifact."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "ep3: the invariants name the capability ids c1 to c4 whose citations point at the s1 bundles, but they do not quote the bundle text",
+      "After a merge the union of both clones' log lines can be ahead of the head git kept (log-ahead-of-head), and ArtifactStore.write refuses only a hash-mismatch: should a write on a log-ahead-of-head artifact also need the conflict-resolved option, or should the next ordinary write move the head up to the log?",
+      "The daemon's approval actor today is the gate itself (insrc:approval); the live tracker identity that k5 requires is s5's, so should s4 pass a person actor from the request when the client supplies one and fall back to the gate actor otherwise?",
+      "Making persistBuildRecord, persistStandaloneBuildRecord, persistTestRecordTask and handleVerdicts async touches many existing tests; should the tests be moved to the async forms in the same tasks as the writers, or kept on a thin synchronous test-only wrapper?"
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-core/history.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-core/store.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/runners/build/test-record.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-core/sidecar.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/gates.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/index.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/plans/core-data-model.md"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/one-common-model-every-artifact-E202610192f27754d/HLD.md"
+    }
+  ]
+}

@@ -54,7 +54,11 @@ describe('pass-through codecs', () => {
 				assert.equal(approved.lifecycle.status, 'approved', key.kind);
 				assert.equal(approved.lifecycle.revision.number, 1, key.kind);
 			}
-			assert.deepEqual(await k.store.childrenOf(ArtifactIds.make(keys[1]!)), [STORY], 'the Story is listed under its Epic');
+			// every kind's own listing, the Epic's and the Story's included
+			const listed = async (key: ArtifactKey): Promise<string[]> => [...(await k.store.childrenOf(ArtifactIds.make(key)))];
+			assert.deepEqual(await listed(keys[1]!), [STORY], 'the Story is listed under its Epic');
+			assert.deepEqual(await listed(keys[2]!), [ArtifactIds.make(keys[5]!), ArtifactIds.make(keys[3]!), TASK].sort(), 'the Story lists its Tasks, Tasks head and Diagram');
+			for (const key of [keys[3]!, keys[4]!, keys[5]!]) assert.deepEqual(await listed(key), [], `${key.kind} has no children`);
 			assert.ok(parents.has(TASK) && (await k.store.childrenOf(STORY)).includes(TASK));
 
 			// a Task with a wrong parent still fails on its parent first

@@ -93,8 +93,9 @@ describe('decodeArtifactHead', () => {
 		assert.equal(decodeArtifactHead(LLD, head({ envelope: { binding: { reference: okRef, createdAtRevision: 1, posted: [{ kind: 'plan', at: 't' }] }, attachments: [{ target: okRef, revision: 1, at: 't' }] } })).artifact.attachments.length, 1);
 		// the AMD codec refuses a flat record on its own as well
 		assert.throws(() => codecFor('AMD').decode({ id: 'x' } as never), ArtifactShapeError);
-		// an id that is not an artifact id has no kind
-		assert.throws(() => decodeArtifactHead('TASK-nope', head({})), InvalidArtifactKeyError);
+		// an id of no known kind is refused, and every kind a Task or Story can have decodes
+		assert.throws(() => decodeArtifactHead(`NOPE-${H}-s1`, head({})), InvalidArtifactKeyError);
+		assert.deepEqual(decodeArtifactHead(`STORY-${H}-s1`, head({})).artifact.payload.body, { text: 'b' });
 		assert.deepEqual(decodeArtifactHead(`TASK-${H}-s1-t1`, head({})).artifact.payload.body, { text: 'b' });
 
 		// a flat amendment is refused with a pointer to the conversion; a converted one decodes

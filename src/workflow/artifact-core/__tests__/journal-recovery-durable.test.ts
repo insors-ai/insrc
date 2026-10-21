@@ -128,4 +128,23 @@ describe('journal-recovery-durable', () => {
 			await k.store.write({ ...head, description: 'after' }, alice);
 		} finally { k.done(); }
 	});
+
+	it('a staged write over a head that moved on blocks ordinary writes, and a conflict-resolved write drops it', async () => {
+		const k = await seeded();
+		try {
+			k.faults.append = true;
+			await assert.rejects(async () => k.store.write(await described(k, 'staged'), alice));
+			writeAtomic(artifactJsonPath(k.repo, LLD), headText(k).replace('"d"', '"edited elsewhere"'));
+			const fresh = k.restart();
+			await assert.rejects(async () => fresh.store.write(await described(fresh, 'again'), alice), LifecycleConflictError);
+			await assert.rejects(new LifecycleService({ store: fresh.store, evidence: stubEvidence([]) }).inspect(LLD), LifecycleConflictError);
+			assert.ok(await fresh.journal.pending(LLD));
+			// the person resolves it: the resolution is not blocked by the stale staged write, which is dropped unapplied
+			await fresh.store.write(await described(fresh, 'resolved'), alice, { outcome: { result: 'conflict-resolved', summary: 'the head was edited by hand' } });
+			assert.equal(await fresh.journal.pending(LLD), undefined);
+			assert.ok((await logOf(fresh)).some(e => e.outcome?.result === 'conflict-resolved'), 'the resolution is logged');
+			assert.equal((await fresh.store.read(LLD)).description, 'edited elsewhere', 'the head the person kept is the one adopted');
+			await fresh.store.write(await described(fresh, 'after'), alice);
+		} finally { k.done(); }
+	});
 });

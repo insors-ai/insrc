@@ -47,7 +47,7 @@ export async function handleWorkflowApprove(
 		return { error: `workflow.approve: ${(err as Error).message}` };
 	}
 	const result = await (deps.approve ?? approveWorkflowTarget)({
-		repoPath,
+		repoPath: repoForStore.length > 0 ? repoForStore : repoPath,
 		...(p.artifactPath !== undefined ? { artifactPath: p.artifactPath } : {}),
 		...(p.epicHash !== undefined ? { epicHash: p.epicHash } : {}),
 		...(p.overrideReview !== undefined ? { overrideReview: p.overrideReview } : {}),

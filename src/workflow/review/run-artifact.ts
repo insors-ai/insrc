@@ -86,15 +86,16 @@ export function stripReviewSection(md: string): string {
 export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<ReviewArtifactResult> {
 	if (!existsSync(opts.jsonPath)) throw new Error(`No artifact json at ${opts.jsonPath}`);
 	if (!existsSync(opts.mdPath))   throw new Error(`No artifact md at ${opts.mdPath}`);
-	// A head whose stored content hash no longer matches its content is not reviewed or stamped until a person resolves it.
-	const conflict = headConflict(opts.jsonPath);
-	if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
 	const artifactId = basename(opts.jsonPath).replace(/\.json$/, '');
 	const reviewer: Actor = opts.actor ?? { id: 'insrc:review', kind: 'system', properties: {} };
+	// inspect first: it finishes a write a crash left staged, so a state the journal repairs is not refused below.
 	if (opts.lifecycle !== undefined) {
 		const seen = await opts.lifecycle.inspect(artifactId);
 		if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
 	}
+	// A head whose stored content hash no longer matches its content is not reviewed or stamped until a person resolves it.
+	const conflict = headConflict(opts.jsonPath);
+	if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
 
 	const artifact = JSON.parse(readFileSync(opts.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
 	const stage = typeof artifact.meta.workflow === 'string' ? artifact.meta.workflow : 'unknown';

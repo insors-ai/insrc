@@ -234,7 +234,7 @@ export class ArtifactStore {
 		const codec = codecFor(key.kind);
 
 		const path = artifactJsonPath(this.deps.repoPath, a.id);
-		await this.completePending(a.id, path);
+		await this.completePending(a.id, path, options.outcome?.result === 'conflict-resolved');
 
 		const priorBytes = existsSync(path) ? readFileSync(path, 'utf8') : undefined;
 		const prior = priorBytes === undefined ? undefined : decodeArtifactHead(a.id, priorBytes);
@@ -329,7 +329,7 @@ export class ArtifactStore {
 	 * The head is replaced only while it still hashes to the head the write started from; a head that moved on is never
 	 * overwritten and the journal file is kept. A staged entry the log would refuse is discarded, or it would block every later write.
 	 */
-	private async completePending(id: string, path: string): Promise<void> {
+	private async completePending(id: string, path: string, resolving = false): Promise<void> {
 		const op = await this.deps.journal.pending(id);
 		if (op === undefined) return;
 		try {
@@ -345,6 +345,12 @@ export class ArtifactStore {
 		if (replace && headHashOf(current) !== op.priorHeadHash) {
 			log.warn({ id, operationId: op.operationId, priorHeadHash: op.priorHeadHash, stagedHeadHash: headHashOf(op.bytes), currentHeadHash: headHashOf(current) },
 				'the head moved on after the write was staged; it is not overwritten');
+			if (resolving) {
+				// A person has resolved the conflict: the staged write is dropped (never applied) so the artifact is not blocked for good.
+				log.warn({ id, operationId: op.operationId }, 'discarding a staged write over a head that moved on: the write is a conflict resolution');
+				await this.deps.journal.clear(id, op.operationId);
+				return;
+			}
 			throw new LifecycleConflictError(id, 'head-changed-after-stage', `${id} changed after a write was staged (operation ${op.operationId}); the staged write was not applied and a person has to resolve it`);
 		}
 		const entries = await this.deps.history.log(id);

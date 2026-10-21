@@ -100,15 +100,17 @@ export async function handleVerdicts(
 	if (!existsSync(state.mdPath))   throw new Error(`insrc_review_step[verdicts]: no artifact md at ${state.mdPath}`);
 
 	// The head is checked (and any write a crash left staged is finished) BEFORE it is read: everything below works on the head as it is afterwards.
-	// A head whose stored hash no longer matches its content, or that is out of step with its change log, is not stamped until a person resolves it.
-	const conflict = headConflict(state.jsonPath);
-	if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
+	// The head is checked BEFORE it is read, and any write a crash left staged is finished first (inspect does that), so a state the
+	// journal repairs is not refused: everything below works on the head as it is afterwards.
 	const artifactId = basename(state.jsonPath).replace(/\.json$/, '');
 	const lifecycle = lifecycleFor?.(state.repo);
 	if (lifecycle !== undefined) {
 		const seen = await lifecycle.inspect(artifactId);
 		if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
 	}
+	// A head whose stored hash no longer matches its content, or that is out of step with its change log, is not stamped until a person resolves it.
+	const conflict = headConflict(state.jsonPath);
+	if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
 	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
 	// This phase stamps the CONTROLLER's review, so it does not stamp one on work
 	// the controller authored. `start` already sends such work to the daemon; this

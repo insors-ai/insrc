@@ -25,6 +25,7 @@ import { runWithRoutingContext } from '../analyze/context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../config/analyze.js';
 import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMProvider } from '../shared/types.js';
+import type { Actor } from '../workflow/artifact-core/types.js';
 import type { LifecycleService } from '../workflow/artifact-core/lifecycle-service.js';
 import { jsonPathForMd } from '../workflow/gates.js';
 import { reviewArtifactFile, SamePartyReviewError } from '../workflow/review/index.js';
@@ -32,6 +33,9 @@ import type { ReviewArtifactResult } from '../workflow/review/index.js';
 import { renderReviewReport } from '../workflow/review/report.js';
 
 const log = getLogger('daemon:workflow-review-rpc');
+
+/** Who the store records for the daemon's review. */
+const REVIEW_ACTOR: Actor = { id: 'insrc:review', kind: 'system', properties: {} };
 
 interface WorkflowReviewParams {
 	readonly artifactPath: string;
@@ -103,7 +107,7 @@ export async function workflowReviewStart(
 		const run = async (provider: LLMProvider, model: string): Promise<ReviewArtifactResult> =>
 			(deps.review ?? reviewArtifactFile)({
 				mdPath, jsonPath, repo: repoPath, provider, model,
-				...(lifecycle !== undefined ? { lifecycle } : {}),
+				...(lifecycle !== undefined ? { lifecycle, actor: REVIEW_ACTOR } : {}),
 				reviewedAt: new Date().toISOString(),
 				onProgress: progress,
 				signal,

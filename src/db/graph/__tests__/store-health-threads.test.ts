@@ -125,7 +125,18 @@ test('the full locks-lost record reaches the main thread and every other worker 
 		ports.push(main);
 		const worker = new Worker(join(HERE, 'helpers', 'health-hub-worker.ts'), { workerData: { block, port: workerPort, role }, transferList: [workerPort] });
 		workers.push(worker);
-		return { worker, next: () => new Promise((res, rej) => { worker.once('message', res); worker.once('error', rej); }) };
+		// Buffer every message from the start, so one sent before next() is called is not lost.
+		const inbox: { step: string; health?: StoreHealth }[] = [];
+		const waiting: ((m: { step: string; health?: StoreHealth }) => void)[] = [];
+		let failure: Error | undefined;
+		worker.on('message', (m: { step: string; health?: StoreHealth }) => { const w = waiting.shift(); if (w !== undefined) w(m); else inbox.push(m); });
+		worker.on('error', (e: Error) => { failure = e; });
+		const next = (): Promise<{ step: string; health?: StoreHealth }> => {
+			if (failure !== undefined) return Promise.reject(failure);
+			const m = inbox.shift();
+			return m !== undefined ? Promise.resolve(m) : new Promise(res => { waiting.push(res); });
+		};
+		return { worker, next };
 	};
 	try {
 		const finder = start('finder');

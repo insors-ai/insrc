@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 39 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -233,3 +233,37 @@ Run at 2026-10-21T15:50:23.544Z on commit `9ef84e1d`. Tests check: **passed**. 1
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/__tests__/analyze-step-state.test.ts` | 0 | 11 | 0.7 s |  |
 | `src/daemon/steps/workflow-step/__tests__/state-store.test.ts` | 0 | 14 | 0.6 s |  |
+
+## t9
+
+Run at 2026-10-21T15:54:40.240Z on commit `28bb36ea`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts passes unchanged in meaning against the hub-backed stores**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token | `src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts` |
+| pass | code-review-step stays leak-free: release-on-consume — a resend of a released token fails loadState | `src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts` |
+| pass | review-step updateState on a released token fails with today's not-found message, across the hub | `src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts` |
+
+**unit: a superseded code-review token fails with today's not-found message**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a superseded code-review token fails with today's not-found message | `src/daemon/steps/code-review-step/__tests__/handler.test.ts` |
+| pass | resending the same judgements token after done fails loadState (no double-write) | `src/daemon/steps/code-review-step/__tests__/handler.test.ts` |
+
+**integration: src/daemon/__tests__/code-review-rpc-fallback.test.ts passes unchanged in meaning**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason | `src/daemon/__tests__/code-review-rpc-fallback.test.ts` |
+| pass | a step-to-daemon run through the real codeReviewRequestParams and codeReview.run writes body.fallbackReason identical to the step's done-frame fallbackReason | `src/daemon/__tests__/code-review-rpc-fallback.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/code-review-rpc-fallback.test.ts` | 0 | 2 | 0.9 s |  |
+| `src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts` | 0 | 3 | 0.5 s |  |
+| `src/daemon/steps/code-review-step/__tests__/handler.test.ts` | 0 | 31 | 0.7 s |  |

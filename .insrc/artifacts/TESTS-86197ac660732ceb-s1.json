@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s1",
     "createdAt": "2026-10-21T15:03:00.014Z",
-    "updatedAt": "2026-10-21T15:50:23.544Z",
+    "updatedAt": "2026-10-21T15:54:40.240Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -700,6 +700,246 @@
               },
               {
                 "title": "reencodeState: version guard throws wrong-version, else delegates to replaceState (releases prev)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "28bb36ea",
+        "ranAt": "2026-10-21T15:54:40.240Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts passes unchanged in meaning against the hub-backed stores",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+                "title": "review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+                "title": "code-review-step stays leak-free: release-on-consume — a resend of a released token fails loadState",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+                "title": "review-step updateState on a released token fails with today's not-found message, across the hub",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a superseded code-review token fails with today's not-found message",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+                "title": "a superseded code-review token fails with today's not-found message",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+                "title": "resending the same judgements token after done fails loadState (no double-write)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/code-review-rpc-fallback.test.ts passes unchanged in meaning",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/code-review-rpc-fallback.test.ts",
+                "title": "codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/code-review-rpc-fallback.test.ts",
+                "title": "a step-to-daemon run through the real codeReviewRequestParams and codeReview.run writes body.fallbackReason identical to the step's done-frame fallbackReason",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/code-review-rpc-fallback.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 935,
+            "titles": [
+              {
+                "title": "codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason",
+                "result": "pass"
+              },
+              {
+                "title": "a step-to-daemon run through the real codeReviewRequestParams and codeReview.run writes body.fallbackReason identical to the step's done-frame fallbackReason",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 512,
+            "titles": [
+              {
+                "title": "review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token",
+                "result": "pass"
+              },
+              {
+                "title": "code-review-step stays leak-free: release-on-consume — a resend of a released token fails loadState",
+                "result": "pass"
+              },
+              {
+                "title": "review-step updateState on a released token fails with today's not-found message, across the hub",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 661,
+            "titles": [
+              {
+                "title": "start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "an out-of-changedFiles finding is DROPPED so the persisted record matches the daemon path (ac3 parity)",
+                "result": "pass"
+              },
+              {
+                "title": "fetchGrounding (injected) is the sole grounding source; the emit_judgements frame surfaces it (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "all-empty judgements => a written PASS record (vacuous but valid, ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: non-object input / unknown phase / missing state / unknown token => next:error, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: missing/empty judgements, wrong-dimension set, malformed finding, malformed location => bad-judgements, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved",
+                "result": "pass"
+              },
+              {
+                "title": "resending the same judgements token after done fails loadState (no double-write)",
+                "result": "pass"
+              },
+              {
+                "title": "a superseded code-review token fails with today's not-found message",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with isProcessing:true (empty staleFiles) => confirm_wait too",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements",
+                "result": "pass"
+              },
+              {
+                "title": "S001: proceed:true that never becomes fresh before the timeout auto-falls-back to the diff review (emit_judgements over diff), not a confirm_wait re-prompt",
+                "result": "pass"
+              },
+              {
+                "title": "S001: the timeout auto-diff releases the confirm_wait token before the diff review",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the diff review, NOT a hollow full emit",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_judgements over the diff grounding — NO review-declined error",
+                "result": "pass"
+              },
+              {
+                "title": "s10: the degraded judgements turn drives runReview with groundingMode:degraded + capVerdictAtWarn:true and persists a degraded record",
+                "result": "pass"
+              },
+              {
+                "title": "T48: the degraded review passes the Story's resolved range base and LEDGER_EXCLUDE_GLOBS to the diff assembler",
+                "result": "pass"
+              },
+              {
+                "title": "T48: with no resolvable base the degraded review still passes the ledger globs, and an undefined base",
+                "result": "pass"
+              },
+              {
+                "title": "s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — dropped findings are carried on the record as outOfScope, verbatim, and never counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the response says how many were dropped, per dimension, and against how large a set",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the markdown lists the dropped findings and says they are not counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature",
+                "result": "pass"
+              },
+              {
+                "title": "a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason",
+                "result": "pass"
+              },
+              {
+                "title": "on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work",
                 "result": "pass"
               }
             ],

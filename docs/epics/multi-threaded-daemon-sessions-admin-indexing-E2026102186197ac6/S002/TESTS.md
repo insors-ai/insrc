@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 47 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 51 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -237,3 +237,37 @@ Run at 2026-10-22T08:37:57.250Z on commit `6c0bef54`. Tests check: **passed**. 5
 | :--- | :--- | :--- | :--- | :--- |
 | `src/config/__tests__/config-catalog-contract.test.ts` | 0 | 10 | 0.4 s |  |
 | `src/daemon/threads/__tests__/main-services.test.ts` | 0 | 3 | 0.8 s |  |
+
+## t9
+
+Run at 2026-10-22T08:41:28.673Z on commit `68147045`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: maintenance lock at the router: a target missing for 30 s answers the not-available error, and one registering within 30 s serves the held request**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | maintenance lock at the router: a target missing for 30 s answers the not-available error, and one registering within 30 s serves the held request | `src/daemon/threads/__tests__/router.test.ts` |
+
+**integration: an admin or indexing request reaches its registered target and a session request runs on the main thread**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an admin or indexing request reaches its registered target and a session request runs on the main thread | `src/daemon/threads/__tests__/router.test.ts` |
+
+**integration: a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires | `src/daemon/threads/__tests__/router.test.ts` |
+
+**integration: debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself | `src/daemon/threads/__tests__/router.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/router.test.ts` | 0 | 4 | 1.7 s |  |

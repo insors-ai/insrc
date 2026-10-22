@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:37:57.250Z",
+    "updatedAt": "2026-10-22T08:41:28.673Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -1085,6 +1085,93 @@
               },
               {
                 "title": "daemon.threads.enabled is a config schema key defaulting to off and daemon.info returns its four fields",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "68147045",
+        "ranAt": "2026-10-22T08:41:28.673Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "maintenance lock at the router: a target missing for 30 s answers the not-available error, and one registering within 30 s serves the held request",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router.test.ts",
+                "title": "maintenance lock at the router: a target missing for 30 s answers the not-available error, and one registering within 30 s serves the held request",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an admin or indexing request reaches its registered target and a session request runs on the main thread",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router.test.ts",
+                "title": "an admin or indexing request reaches its registered target and a session request runs on the main thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router.test.ts",
+                "title": "a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router.test.ts",
+                "title": "debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/router.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1687,
+            "titles": [
+              {
+                "title": "maintenance lock at the router: a target missing for 30 s answers the not-available error, and one registering within 30 s serves the held request",
+                "result": "pass"
+              },
+              {
+                "title": "an admin or indexing request reaches its registered target and a session request runs on the main thread",
+                "result": "pass"
+              },
+              {
+                "title": "a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires",
+                "result": "pass"
+              },
+              {
+                "title": "debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself",
                 "result": "pass"
               }
             ],

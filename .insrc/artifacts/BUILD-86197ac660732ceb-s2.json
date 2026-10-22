@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:37:57.250Z",
+    "updatedAt": "2026-10-22T08:41:28.673Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
@@ -42,9 +42,13 @@
       {
         "id": "t8",
         "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
       }
     ],
-    "summary": "Added ThreadServices (src/daemon/threads/main-services.ts). It creates the guard, lock and indexing blocks and installs the guard and lock blocks on the main thread, together with the shared step-state store. It serves one hub per worker channel with the board, step state, store health and a daemon.info op; connectWorker() returns the worker's workerData, transfer list and the main thread's port. setEmbedderBackend pushes the decided backend to live workers and to every later one when it connects, and startDaemonWorker applies it with setActiveEmbedderBackend. Added serveRequests (src/daemon/threads/worker-requests.ts), the worker request entry. It serves request envelopes with a forward (directDispatch), relays frames, and aborts on a cancel envelope. A reply or frame that cannot be cloned is answered with 'the result of <method> could not be returned: …'. With INSRC_TEST_HOOKS=1 it also answers test.servingThread with the thread id. daemon.threads.enabled is a new catalog row (boolean, default false, group General) with a fail-safe reader. main() creates ThreadServices only when the flag is on, and pushes the backend once bootstrapEmbeddingModel settles; with the flag off nothing changes. The catalog row-count contract test moved from 38 to 39. Four more source-scan tests were pointed at handler-runtime.ts, where t1 moved the handler tables: settings-catalog, artifact-feedback-handler-contract, artifact-content and review-decision. The one remaining review-decision failure is the pre-existing macOS /private/var path mismatch, unrelated to this work.",
+    "summary": "Added Router (src/daemon/threads/router.ts), the IpcServer's forward on the main thread. It classifies each request with classOf. A routed class goes as a RequestEnvelope to the worker registered for it, and that worker's replies and frames come back over the channel attached for it (attach/detach). Other requests run through the local directDispatch, as before. A request whose class has no registered worker is held until one registers and is attached (targetsChanged), for at most holdMs (30 s by default); after that it is answered \"the daemon's <class> thread is not available\". On socket close, a stream gets a CancelEnvelope on its worker; a unary request is left to finish and its late reply is dropped. detach() returns a dead worker's in-flight requests, for the supervisor (t14) to fail. With daemon.threads.enabled, main() now uses the router as the server's forward with no class routed yet: each class is routed once its worker exists (admin in t10, indexing in t11). The server's registry hook publishes clients to the board before each request is forwarded.",
     "testRecord": {
       "md": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S002/TESTS.md"
     },
@@ -54,310 +58,324 @@
           "file": "src/daemon/__tests__/delivery-handler-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/list-models.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/server-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/import-graph.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/helpers/method-class-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/method-class.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/server-forward.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/store-failure-dispatch.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/understanding-rpc.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/update-handlers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/server.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/step-host.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/helpers/store-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/forward-step.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/mcp-process-e2e.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/status.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/board-amendments.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/channel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/status-board.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/compact.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/doc-summary-sweep.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/indexer/doc-summary-sweep.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/queue-threads.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/queue.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/indexing-block.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/config-catalog-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/settings-catalog.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/config/config-catalog.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/artifact-feedback-handler-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/helpers/request-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/main-services.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/main-services.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/worker-entry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/worker-requests.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/artifact-content.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/review-decision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:37:57.250Z"
+        "timestamp": "2026-10-22T08:41:28.673Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/router.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:41:28.673Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/router.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:41:28.673Z"
       }
     ],
-    "commit": "6c0bef54"
+    "commit": "68147045"
   }
 }

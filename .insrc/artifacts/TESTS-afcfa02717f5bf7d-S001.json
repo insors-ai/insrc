@@ -4,7 +4,7 @@
     "epicHash": "afcfa02717f5bf7d",
     "storyId": "S001",
     "createdAt": "2026-10-22T06:26:37.927Z",
-    "updatedAt": "2026-10-22T06:53:26.729Z",
+    "updatedAt": "2026-10-22T06:56:52.979Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-22T05:17:03.574Z",
     "epicSlug": "add-cross-thread-named-lock-framework"
@@ -629,6 +629,178 @@
               },
               {
                 "title": "a daemon worker and the main thread contend for the same named lock",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "0d068449",
+        "ranAt": "2026-10-22T06:56:52.979Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a worker's ifAvailable exclusive gets null while the main thread holds shared, then gets the lock",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager-threads.test.ts",
+                "title": "a worker's ifAvailable exclusive gets null while the main thread holds shared, then gets the lock",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a waiting worker is woken within 50 ms of another worker's release",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager-threads.test.ts",
+                "title": "a waiting worker is woken within 50 ms of another worker's release",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "writer preference across three workers",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager-threads.test.ts",
+                "title": "writer preference across three workers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "terminated holder and waiter are reclaimed and a third worker gets the lock",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager-threads.test.ts",
+                "title": "terminated holder and waiter are reclaimed and a third worker gets the lock",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "holder metadata written on one worker is read on another",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager-threads.test.ts",
+                "title": "holder metadata written on one worker is read on another",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "opposite-order nested bounded waits end in one LockTimeoutError and nothing stays held",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager-threads.test.ts",
+                "title": "opposite-order nested bounded waits end in one LockTimeoutError and nothing stays held",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "watchWorker reclaims a terminated worker's hold and pending request without an explicit reclaim",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager-threads.test.ts",
+                "title": "watchWorker reclaims a terminated worker's hold and pending request without an explicit reclaim",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a worker terminated at each point of a grant leaves nothing held",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager-threads.test.ts",
+                "title": "a worker terminated at each point of a grant leaves nothing held",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "watchWorker uses the threadId captured at registration",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager-threads.test.ts",
+                "title": "watchWorker uses the threadId captured at registration",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/locks/__tests__/lock-manager-threads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3122,
+            "titles": [
+              {
+                "title": "a worker's ifAvailable exclusive gets null while the main thread holds shared, then gets the lock",
+                "result": "pass"
+              },
+              {
+                "title": "a waiting worker is woken within 50 ms of another worker's release",
+                "result": "pass"
+              },
+              {
+                "title": "writer preference across three workers",
+                "result": "pass"
+              },
+              {
+                "title": "terminated holder and waiter are reclaimed and a third worker gets the lock",
+                "result": "pass"
+              },
+              {
+                "title": "holder metadata written on one worker is read on another",
+                "result": "pass"
+              },
+              {
+                "title": "opposite-order nested bounded waits end in one LockTimeoutError and nothing stays held",
+                "result": "pass"
+              },
+              {
+                "title": "watchWorker reclaims a terminated worker's hold and pending request without an explicit reclaim",
+                "result": "pass"
+              },
+              {
+                "title": "a worker terminated at each point of a grant leaves nothing held",
+                "result": "pass"
+              },
+              {
+                "title": "watchWorker uses the threadId captured at registration",
                 "result": "pass"
               }
             ],

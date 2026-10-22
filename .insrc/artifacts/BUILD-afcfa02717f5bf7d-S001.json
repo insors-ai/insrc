@@ -4,7 +4,7 @@
     "epicHash": "afcfa02717f5bf7d",
     "storyId": "S001",
     "createdAt": "2026-10-22T06:26:37.927Z",
-    "updatedAt": "2026-10-22T06:53:26.729Z",
+    "updatedAt": "2026-10-22T06:56:52.979Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-22T05:17:03.574Z",
@@ -31,9 +31,13 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "DaemonWorkerInit gained a required lockBlock beside guardBlock, and startDaemonWorker installs it with installLockManager, so every daemon worker shares the main thread's named locks. The worker-stores test and its helper worker pass a lock block; the helper gained a lock-probe op, and a new test shows a daemon worker refused (with the main thread named as holder) while the main thread holds the lock shared, then granted after release. Checked by hand: tsc --noEmit rejects a startDaemonWorker call without lockBlock (TS2345 'Property lockBlock is missing'), using a temporary probe file under src/daemon/threads that was then removed (tsc excludes __tests__, so the test callers themselves are not typechecked); removing the install line makes the contention test fail.",
+    "summary": "Added src/shared/locks/__tests__/lock-manager-threads.test.ts and helper worker helpers/lock-ops-worker.ts (scripted hold/release/probe/query/nested ops, and a pause-at op that blocks the worker at a chosen grant point via the t2 hook so the test can terminate it there). Nine tests over real worker_threads sharing one block prove every integration subject of the LLD's test strategy, including the measured wake gap (< 50 ms between one worker's release and another's grant) and termination at each of the three grant points with watchWorker reclaim. Ran stable 4 times; mutants (late threadId in watchWorker, no mutex takeover, no recount) each fail tests here.",
     "testRecord": {
       "md": "docs/standalone/add-cross-thread-named-lock-framework-E20261022afcfa027/S001/TESTS.md"
     },
@@ -43,44 +47,58 @@
           "file": "src/shared/locks/__tests__/lock-manager.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T06:53:26.729Z"
+        "timestamp": "2026-10-22T06:56:52.979Z"
       },
       {
         "target": {
           "file": "src/shared/locks/lock-manager.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T06:53:26.729Z"
+        "timestamp": "2026-10-22T06:56:52.979Z"
       },
       {
         "target": {
           "file": "src/shared/locks/__tests__/helpers/lock-wait-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T06:53:26.729Z"
+        "timestamp": "2026-10-22T06:56:52.979Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/helpers/store-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T06:53:26.729Z"
+        "timestamp": "2026-10-22T06:56:52.979Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/worker-stores.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T06:53:26.729Z"
+        "timestamp": "2026-10-22T06:56:52.979Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/worker-entry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T06:53:26.729Z"
+        "timestamp": "2026-10-22T06:56:52.979Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/locks/__tests__/helpers/lock-ops-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T06:56:52.979Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/locks/__tests__/lock-manager-threads.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T06:56:52.979Z"
       }
     ],
-    "commit": "3e28b52e"
+    "commit": "0d068449"
   }
 }

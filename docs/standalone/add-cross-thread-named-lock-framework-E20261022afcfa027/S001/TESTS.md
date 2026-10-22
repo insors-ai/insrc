@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 35 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -191,3 +191,67 @@ Run at 2026-10-22T06:53:26.729Z on commit `3e28b52e`. Tests check: **passed**. 6
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/worker-stores.test.ts` | 0 | 6 | 2.9 s |  |
+
+## t6
+
+Run at 2026-10-22T06:56:52.979Z on commit `0d068449`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a worker's ifAvailable exclusive gets null while the main thread holds shared, then gets the lock**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a worker's ifAvailable exclusive gets null while the main thread holds shared, then gets the lock | `src/shared/locks/__tests__/lock-manager-threads.test.ts` |
+
+**integration: a waiting worker is woken within 50 ms of another worker's release**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a waiting worker is woken within 50 ms of another worker's release | `src/shared/locks/__tests__/lock-manager-threads.test.ts` |
+
+**integration: writer preference across three workers**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | writer preference across three workers | `src/shared/locks/__tests__/lock-manager-threads.test.ts` |
+
+**integration: terminated holder and waiter are reclaimed and a third worker gets the lock**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | terminated holder and waiter are reclaimed and a third worker gets the lock | `src/shared/locks/__tests__/lock-manager-threads.test.ts` |
+
+**integration: holder metadata written on one worker is read on another**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | holder metadata written on one worker is read on another | `src/shared/locks/__tests__/lock-manager-threads.test.ts` |
+
+**integration: opposite-order nested bounded waits end in one LockTimeoutError and nothing stays held**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | opposite-order nested bounded waits end in one LockTimeoutError and nothing stays held | `src/shared/locks/__tests__/lock-manager-threads.test.ts` |
+
+**integration: watchWorker reclaims a terminated worker's hold and pending request without an explicit reclaim**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | watchWorker reclaims a terminated worker's hold and pending request without an explicit reclaim | `src/shared/locks/__tests__/lock-manager-threads.test.ts` |
+
+**integration: a worker terminated at each point of a grant leaves nothing held**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a worker terminated at each point of a grant leaves nothing held | `src/shared/locks/__tests__/lock-manager-threads.test.ts` |
+
+**integration: watchWorker uses the threadId captured at registration**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | watchWorker uses the threadId captured at registration | `src/shared/locks/__tests__/lock-manager-threads.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/locks/__tests__/lock-manager-threads.test.ts` | 0 | 9 | 3.1 s |  |

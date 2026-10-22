@@ -1,0 +1,626 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792670042267-tcco05",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T11:56:49.811Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 167535,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8b5693528b025a55",
+    "epicSlug": "make-daemon-update-source-repo-url",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1792670042267-tcco05",
+    "hldEffectiveHash": "8b5693528b025a55534fa3533f950febd4abf7e200cc203fcc2e71c0bd2a867f",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One story with one obvious approach: read two optional keys from the global config and pass them to the existing update paths. Three source files and their tests, one module family, no storage or contract change.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The intent ('make the daemon update source (repo URL and branch) configurable') is designed for both update entry points, the daemon.update IPC helper and the CLI/TUI update, with absent or empty keys keeping today's behaviour, and nothing beyond that is built (the installer and other scripts are left alone).",
+          "evidence": "The LLD covers launchUpdate (src/daemon/update-runner.ts:136), runDetachedUpdate and its argv entry (:224, :285-292), maintenance.ts update() (src/cli/services/maintenance.ts:77) and daemon-ctl.sh (--repo-url added; --branch already exists at scripts/daemon-ctl.sh:321). Those are the only update paths: a grep for launchUpdate, runDetachedUpdate and the maintenance imports turns up no others. The installer (scripts/insrc-daemon-install.sh) already has --repo and --branch and is not redesigned. [files: src/daemon/update-runner.ts, src/cli/services/maintenance.ts, scripts/daemon-ctl.sh]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today daemon-ctl.sh sync_repo defaults BRANCH to HEAD's branch and runs fetch, then discards package-lock.json, then checks for a dirty tree, then merge-base --is-ancestor and an ff-only merge, exiting 3 on a dirty tree or a diverged HEAD. maintenance.ts mirrors this with `status --porcelain`.",
+          "evidence": "scripts/daemon-ctl.sh:82-109: `git fetch --quiet origin \"$branch\"`, `checkout -- package-lock.json`, `diff --quiet || diff --cached --quiet` → die ... 3, `merge-base --is-ancestor` → die 'has diverged' 3, `merge --ff-only`. cmd_start and cmd_update (:252, :288) use `${BRANCH:-$(git rev-parse --abbrev-ref HEAD)}`. maintenance.ts:86-117 follows the same order, with `status --porcelain` at :100. [files: scripts/daemon-ctl.sh, src/cli/services/maintenance.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The daemon.update IPC passes no flags today: the helper is spawned as `node <execArgv> update-runner.js <daemonCtl> restart`, and the entry reads argv[2] and argv[3].",
+          "evidence": "update-runner.ts:159-161 `[...process.execArgv, __filename, daemonCtl, 'restart']`. The entry at :285-288 reads `process.argv[2]` (daemonCtl) and `process.argv[3] ?? 'restart'`. runDetachedUpdate at :238 spawns `bash [daemonCtl, subcommand]` with no other arguments, so taking extra flags from argv[4..] is consistent. [files: src/daemon/update-runner.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "(Implicit in the branch switch and the edge case 'branch exists only at origin → `git checkout -B <branch> origin/<branch>` creates it from the fetched ref'.) After `git fetch origin <branch>`, the installed checkout has a remote-tracking ref origin/<branch> for any branch.",
+          "evidence": "The installer that creates ~/.insrc/daemon clones with a single branch: scripts/insrc-daemon-install.sh:191 `git clone --quiet --branch \"$BRANCH\" --single-branch \"$REPO_URL\" \"$INSTALL_ROOT\"`, and nothing widens remote.origin.fetch afterwards (a grep for set-branches and remote.origin.fetch finds nothing). In such a clone the configured refspec only maps the cloned branch. `git fetch origin <other>` therefore writes FETCH_HEAD only and does not create refs/remotes/origin/<other>. As a result, the existing `rev-parse \"origin/$branch\"` (daemon-ctl.sh:98, maintenance.ts:105) and the planned `checkout -B <branch> origin/<branch>` both fail on a standard install whenever the configured branch differs from the one installed, which is the main use case of the Story. Switching the URL to a fork has the same problem for any branch other than the installed one. [files: scripts/insrc-daemon-install.sh, scripts/daemon-ctl.sh, src/cli/services/maintenance.ts]",
+          "action": "The LLD must state how a branch outside the clone's refspec is fetched: either fetch with an explicit refspec (`git fetch origin +refs/heads/<b>:refs/remotes/origin/<b>`), or run `git remote set-branches --add origin <b>` before the fetch. Apply the same in maintenance.ts. Add a single-branch clone to the integration fixtures.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "There is no existing daemonUpdate config reader or key, so readUpdateSource and the daemonUpdate.* catalog rows are new. The existing --branch flag and UpdateOptions.branch are reused as stated.",
+          "evidence": "A grep for daemonUpdate, readUpdateSource and UpdateSource in src/ finds nothing. UpdateOptions.branch already exists (maintenance.ts:43) and daemon-ctl.sh already parses --branch (:321). Note: the per-domain config readers live in src/config (loadLocalProviderConfig in src/config/local.ts:70, loadAnalyzeConfig in src/config/analyze.ts:260), so src/config/update-source.ts would match that convention better than src/shared. This does not affect correctness. [files: src/config/local.ts, src/cli/services/maintenance.ts]",
+          "action": "Consider placing the reader in src/config beside the other config readers.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Flags appended after the subcommand (`daemon-ctl.sh restart --repo-url X --branch Y`) are accepted by the script's argument parser.",
+          "evidence": "scripts/daemon-ctl.sh:315-326 parses every argument in a single while/case loop. The subcommand and the flags can come in any order, and an unknown argument dies with exit 1, which fits the stated exit 1 for a malformed --repo-url. [files: scripts/daemon-ctl.sh]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The UpdateOptions inventory is complete: the only callers of update() are the services facade and the DaemonPane, so adding repoUrl as an optional field breaks no caller.",
+          "evidence": "src/cli/services/index.ts:44 declares `update(opts: UpdateOptions, onLog)`. The only call is src/cli/panes/DaemonPane.tsx:61 `svc.daemon.update({}, task.push)`, so opts.branch is never set by the TUI today and the config branch will normally apply. The tests import other maintenance exports (runUpdateReconcile, restart), not update(). [files: src/cli/services/index.ts, src/cli/panes/DaemonPane.tsx]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Adding daemonUpdate.repoUrl and daemonUpdate.branch as CONFIG_CATALOG rows with empty-string defaults is safe: the reconcile fills them, leaves keys it does not know alone, and the existing catalog tests adapt.",
+          "evidence": "config-catalog.ts:77 onward: rows of the shape `{ path, type:'string', default, desc, group }` with group 'General' (see the ollama.host row at :80). reconcile.ts:328 reconcileConfig migrates, fills catalog defaults and prunes only RETIRED_PATHS (:331, :398). settings-catalog.test.ts:34 compares against CONFIG_CATALOG.length dynamically, so no count needs updating. [files: src/config/config-catalog.ts, src/config/reconcile.ts, src/config/__tests__/settings-catalog.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An invalid config is refused by launchUpdate before anything is spawned and before the marker is written.",
+          "evidence": "launchUpdate (update-runner.ts:145-182) resolves the helper and checks the lock before it spawns at :159 and writes the marker at :178. If the reader is called before the spawn, a throw leaves no child and no marker, exactly as the resolveDaemonCtl failure does today. The existing test 'launch failure spawns nothing' (update-runner.test.ts:139) is the model for the new test. [files: src/daemon/update-runner.ts, src/daemon/__tests__/update-runner.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A dirty tree is refused before the remote URL changes ('the remote URL is not changed before this check'), while origin is set 'before the fetch'.",
+          "evidence": "Today the dirty check runs AFTER the fetch: daemon-ctl.sh:85 fetch, :90 package-lock discard, :92 dirty check. maintenance.ts has the same order (:91 fetch, :99-100 discard and porcelain check). Because the contract puts `git remote set-url` before the fetch, the stated guarantee only holds if the dirty check, together with the package-lock.json discard that precedes it, moves ahead of set-url. Neither 2.4 nor 2.5 says so. Built as written (set-url inserted before the existing fetch), a dirty tree would still have its origin rewritten before the exit 3. [files: scripts/daemon-ctl.sh, src/cli/services/maintenance.ts]",
+          "action": "State the new order in 2.4/2.5 for both implementations: discard package-lock.json, dirty check, set-url, fetch, local-only commit check, then checkout -B or the ff-merge.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The single acceptance criterion ac1 maps to concrete unit and integration tests, and script-level integration tests against the real daemon-ctl.sh are an established pattern.",
+          "evidence": "The acceptance mapping lists four tests for ac1. src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts already runs scripts/daemon-ctl.sh against a temporary home, so daemon-ctl-source.test.ts is feasible. maintenance.ts reads DAEMON_ROOT from INSRC_DAEMON_ROOT when the module is imported (:37), so the test must set the variable before a dynamic import, as steering-refresh-through-daemon.test.ts:29 does. [files: src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts, src/cli/services/__tests__/steering-refresh-through-daemon.test.ts]",
+          "action": "In maintenance-source.test.ts, set INSRC_DAEMON_ROOT (and HOME, because update() then runs the reconcile and steering refresh) before dynamically importing maintenance.js.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The integration fixtures exercise the shape of checkout that the update runs against in practice.",
+          "evidence": "The fixtures are 'a temporary bare remote and clone created with git in the test', which is a normal full clone. The real install is `git clone --single-branch` (scripts/insrc-daemon-install.sh:191). In that shape, switching to another branch fails because origin/<branch> is never created (see current-behaviour). A full-clone fixture would pass and hide that failure. The edge cases 'repoUrl equals origin's URL → no set-url' and 'branch only at origin' also have no named test. [files: scripts/insrc-daemon-install.sh]",
+          "action": "Clone the fixture with --single-branch (as the installer does) and add cases for a branch other than the cloned one and for an unchanged URL.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 2,
+        "low": 9,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-22T11:56:56.239Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-22T12:02:43.188Z",
+    "rangeBase": "12867e77f2976754ecff9f476b3f24a0a0d09fa8",
+    "reviewOverride": {
+      "reason": "Owner approved the LLD with an override; the three review findings (single-branch clone refspec, check order, single-branch fixtures) are recorded as binding requirements in docs/plans/daemon-update-source.md.",
+      "at": "2026-10-22T12:02:43.188Z"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The daemon update takes its git remote URL and branch from two optional keys in ~/.insrc/config.json (daemonUpdate.repoUrl and daemonUpdate.branch), so a fork or a feature branch can be deployed. One validated reader serves the daemon.update IPC helper and the CLI update; the helper script gets a --repo-url flag, and a switch to another branch is a clean checkout of origin/<branch>. Empty or absent keys leave today's behaviour unchanged.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Make the daemon update source (repo URL and branch) configurable"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "readUpdateSource",
+          "signature": "function readUpdateSource(configPath?: string): UpdateSource",
+          "parameters": [
+            {
+              "name": "configPath",
+              "type": "string",
+              "purpose": "the config file to read; defaults to PATHS.config",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "UpdateSource",
+            "meaning": "{ repoUrl?: string; branch?: string } with only the keys that are set and valid; an absent file or empty keys give {}"
+          },
+          "errors": [
+            {
+              "type": "UpdateSourceError",
+              "condition": "the file is not valid JSON, daemonUpdate is not an object, or a value is not a string or fails validation (a URL that starts with '-', has whitespace or control characters, or is not an https, ssh, git or file URL, an scp-style git@host:path, or an absolute path; a branch outside the conservative ref pattern, containing '..', '//', a trailing '/' or '.lock')"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "a returned repoUrl and branch are safe to pass as single git arguments",
+            "the file is not modified"
+          ]
+        },
+        {
+          "name": "launchUpdate",
+          "signature": "function launchUpdate(deps?: UpdateRunnerDeps): DaemonUpdateResult",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "UpdateRunnerDeps",
+              "purpose": "test seams; gains readSource for the config reader",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "DaemonUpdateResult",
+            "meaning": "the launch acknowledgement, unchanged"
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "'daemon.update: invalid daemonUpdate config: <reason>' when the reader throws; nothing is spawned and no marker is written"
+            }
+          ],
+          "preconditions": [
+            "the helper script resolves"
+          ],
+          "postconditions": [
+            "the detached helper is spawned with `<daemonCtl> restart [--repo-url <url>] [--branch <name>]`, a flag present only for a key that is set"
+          ]
+        },
+        {
+          "name": "runDetachedUpdate",
+          "signature": "function runDetachedUpdate(daemonCtl: string, deps?: UpdateRunnerDeps, subcommand?: string, extraArgs?: readonly string[]): Promise<DaemonUpdateOutcome>",
+          "parameters": [
+            {
+              "name": "extraArgs",
+              "type": "readonly string[]",
+              "purpose": "flags appended after the subcommand",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<DaemonUpdateOutcome>",
+            "meaning": "unchanged"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "extraArgs reach daemon-ctl.sh after the subcommand; the detached entry takes them from argv[4..]"
+          ]
+        },
+        {
+          "name": "update",
+          "signature": "function update(opts: UpdateOptions, onLog: LogFn): Promise<MaintenanceResult>",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "UpdateOptions",
+              "purpose": "gains repoUrl?: string; branch keeps winning over the config",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<MaintenanceResult>",
+            "meaning": "unchanged"
+          },
+          "errors": [
+            {
+              "type": "MaintenanceResult.error",
+              "condition": "'invalid daemonUpdate config: <reason>'; 'working tree has uncommitted changes' or 'HEAD has commits no remote branch has' when switching branch or remote; 'HEAD diverged from origin/<branch>' as today"
+            }
+          ],
+          "preconditions": [
+            "DAEMON_ROOT is a git checkout"
+          ],
+          "postconditions": [
+            "with no repoUrl and no branch configured the sequence is the one that ran before this Story"
+          ]
+        },
+        {
+          "name": "daemon-ctl.sh --repo-url",
+          "signature": "scripts/daemon-ctl.sh [--repo-url <url>] [--branch <name>] start|restart|update",
+          "parameters": [
+            {
+              "name": "--repo-url",
+              "type": "string",
+              "purpose": "the remote origin must point at before the fetch",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "exit code",
+            "meaning": "0 success; 3 for a dirty tree, local-only commits or a diverged HEAD; 1 for a malformed flag"
+          },
+          "errors": [
+            {
+              "type": "exit 1",
+              "condition": "--repo-url without a value, or a value that starts with '-'"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "origin's URL equals --repo-url when given (set with `git remote set-url origin`, logged)",
+            "when --branch differs from the current branch the checkout is `git checkout -B <branch> origin/<branch>` after the tree and local-commit checks"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "~/.insrc/config.json daemonUpdate",
+        "change": "new",
+        "details": "Two optional string keys: daemonUpdate.repoUrl and daemonUpdate.branch. Empty string or absent means 'keep the checkout as it is'. Both get CONFIG_CATALOG rows (group General, default empty string) so the settings list shows them and the boot reconcile keeps them.",
+        "schemaDiff": "daemonUpdate: { repoUrl: string; branch: string }",
+        "callSites": [
+          "src/config/config-catalog.ts",
+          "src/shared/update-source.ts",
+          "src/daemon/update-runner.ts",
+          "src/cli/services/maintenance.ts"
+        ]
+      },
+      {
+        "entity": "UpdateOptions",
+        "change": "field-add",
+        "details": "repoUrl?: string, beside the existing branch?: string; both override the config when given.",
+        "schemaDiff": "+ readonly repoUrl?: string",
+        "callSites": [
+          "src/cli/services/maintenance.ts"
+        ]
+      },
+      {
+        "entity": "UpdateRunnerDeps",
+        "change": "field-add",
+        "details": "readSource?: () => UpdateSource, the config reader seam.",
+        "schemaDiff": "+ readSource?: () => UpdateSource",
+        "callSites": [
+          "src/daemon/update-runner.ts",
+          "src/daemon/__tests__/update-runner.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The config has an invalid value (a URL that starts with '-' or has whitespace, a branch with '..', a non-string, or daemonUpdate that is not an object)",
+          "detection": "readUpdateSource validates each value and throws UpdateSourceError naming the key and the reason",
+          "response": "launchUpdate throws 'daemon.update: invalid daemonUpdate config: <reason>' before anything is spawned; the CLI update returns { ok: false, error } before the first git command",
+          "userImpact": "The update does not start and the message says which key to fix",
+          "recoverable": true
+        },
+        {
+          "scenario": "config.json is not valid JSON",
+          "detection": "JSON.parse throws inside readUpdateSource",
+          "response": "UpdateSourceError 'config.json cannot be read as JSON' and the same refusals as above",
+          "userImpact": "The update refuses rather than running against the checkout's current branch with a config nobody could read",
+          "recoverable": true
+        },
+        {
+          "scenario": "The working tree has uncommitted changes when the branch or remote is being switched",
+          "detection": "the existing `git diff --quiet` and `diff --cached` checks in sync_repo, and `git status --porcelain` in maintenance.ts",
+          "response": "exit 3 'uncommitted local changes; refusing to overwrite'; the remote URL is not changed before this check",
+          "userImpact": "Nothing is switched; the person commits or discards the changes",
+          "recoverable": true
+        },
+        {
+          "scenario": "HEAD has commits that no remote branch contains and the branch is being switched",
+          "detection": "`git branch -r --contains HEAD` prints nothing after the fetch",
+          "response": "exit 3 'HEAD has commits no remote branch has; refusing to switch'",
+          "userImpact": "Local work in the daemon checkout is never discarded by a checkout -B",
+          "recoverable": true
+        },
+        {
+          "scenario": "The fetch fails (the URL is wrong, the branch does not exist there, or the network is down)",
+          "detection": "`git fetch` exits non-zero",
+          "response": "the script dies with the fetch error (set -e); the CLI returns 'git fetch origin/<branch> failed'; origin's URL stays as set so a later run retries",
+          "userImpact": "The daemon keeps running the code it has; the outcome record says the update failed",
+          "recoverable": true
+        },
+        {
+          "scenario": "The fork's branch has diverged from the checkout's HEAD while the branch name is unchanged",
+          "detection": "merge-base --is-ancestor HEAD origin/<branch> fails, as it does today",
+          "response": "exit 3 'HEAD has diverged from origin/<branch>; resolve manually'",
+          "userImpact": "A person re-clones or resets the checkout; the message says so",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Neither key is set, or both are empty strings",
+          "expected": "readUpdateSource returns {}; no flag is passed; no remote or branch is touched"
+        },
+        {
+          "input": "repoUrl equals origin's current URL",
+          "expected": "no `set-url` is run and nothing is logged for it"
+        },
+        {
+          "input": "branch equals the current branch and repoUrl is unset",
+          "expected": "the sequence that ran before this Story: fetch, ff-only merge"
+        },
+        {
+          "input": "branch names a branch that does not exist locally but exists at origin",
+          "expected": "`git checkout -B <branch> origin/<branch>` creates it from the fetched ref"
+        },
+        {
+          "input": "repoUrl is an absolute local path or a file:// URL",
+          "expected": "accepted, so a fork can be tried from disk and the script test can use a temporary remote"
+        },
+        {
+          "input": "opts.branch is given to the CLI update and the config also names a branch",
+          "expected": "opts.branch wins; the config's repoUrl still applies"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The update refuses a dirty tree and a diverged HEAD instead of overwriting; this Story adds checks and never removes one",
+          "source": "c1"
+        },
+        {
+          "text": "The IPC update spawns a detached helper that outlives the daemon and writes an outcome record; a launch failure writes no marker and spawns nothing",
+          "source": "c2"
+        },
+        {
+          "text": "The CLI update never starts the daemon and runs the config reconcile and steering refresh after the build",
+          "source": "c3"
+        },
+        {
+          "text": "Config keys the catalog declares are filled by the reconcile and keys it does not know are left alone, so an empty default means 'unset'",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The config reader and the launcher's argument building, with injected seams and no git or daemon",
+          "subjects": [
+            "update-source.test.ts: readUpdateSource returns only the set and valid keys, treats an absent file and empty strings as unset, and throws UpdateSourceError for each invalid value",
+            "update-runner.test.ts: launchUpdate passes --repo-url and --branch only for the keys that are set, and an invalid config spawns nothing and writes no marker"
+          ],
+          "fixturesNeeded": [
+            "temporary config.json files",
+            "the existing spawn, lock and clock seams in update-runner.test.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The real daemon-ctl.sh sequence against a temporary git remote and checkout, with --skip-install and --skip-build",
+          "subjects": [
+            "daemon-ctl-source.test.ts: daemon-ctl.sh update with --repo-url and --branch points origin at the URL, switches to the branch and fast-forwards, and refuses a dirty tree and local-only commits",
+            "maintenance-source.test.ts: the CLI update applies the configured repo URL and branch the same way, and opts.branch wins over the config"
+          ],
+          "fixturesNeeded": [
+            "a temporary bare remote and clone created with git in the test",
+            "INSRC_DAEMON_ROOT pointing at the clone"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "update-source.test.ts: readUpdateSource returns only the set and valid keys, treats an absent file and empty strings as unset, and throws UpdateSourceError for each invalid value",
+            "update-runner.test.ts: launchUpdate passes --repo-url and --branch only for the keys that are set, and an invalid config spawns nothing and writes no marker",
+            "daemon-ctl-source.test.ts: daemon-ctl.sh update with --repo-url and --branch points origin at the URL, switches to the branch and fast-forwards, and refuses a dirty tree and local-only commits",
+            "maintenance-source.test.ts: the CLI update applies the configured repo URL and branch the same way, and opts.branch wins over the config"
+          ]
+        }
+      ],
+      "testFramework": "node:test"
+    },
+    "migration": {
+      "stateBefore": "The daemon update always syncs the installed checkout against origin and the branch the checkout has checked out (daemon-ctl.sh sync_repo with BRANCH defaulting to HEAD's branch; maintenance.ts update with opts.branch defaulting the same way). The daemon.update IPC passes no flags, and no setting names a remote URL or a branch.",
+      "stateAfter": "Two optional config keys, daemonUpdate.repoUrl and daemonUpdate.branch, name the remote and branch the update follows. The IPC helper and the CLI update read them through one validated reader; daemon-ctl.sh accepts --repo-url; a switch to another branch is a clean checkout of origin/<branch>. With the keys empty or absent the behaviour is the one before.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the two catalog rows with empty-string defaults; the next boot reconcile writes them into config.json as empty strings, which mean unset",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Ship the reader, the launcher and CLI changes and the new script flag; nothing changes until a key is set",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "The owner sets daemonUpdate.branch (and repoUrl for a fork) in config.json; the next update switches the checkout",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API changes. The script keeps every existing flag and its exit codes; --repo-url is additive. UpdateOptions and UpdateRunnerDeps gain optional fields. An older daemon that does not know the keys ignores them, and the reconcile of an older build leaves unknown keys alone.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One TypeScript reader, flags to the script",
+        "oneLineSummary": "A small module reads `daemonUpdate.repoUrl` and `daemonUpdate.branch` from the global config; the IPC helper passes them to daemon-ctl.sh as --repo-url/--branch, and maintenance.ts uses them directly.",
+        "approach": "Add src/shared/update-source.ts with readUpdateSource(configPath?) returning { repoUrl?, branch? } after validating each value. update-runner.ts reads it when it spawns the helper and appends --repo-url and --branch to the daemon-ctl.sh arguments. daemon-ctl.sh gains --repo-url: before the fetch it runs `git remote set-url origin <url>` when origin differs, and when the wanted branch differs from HEAD it checks it out (creating it from origin/<branch>) after the dirty check. maintenance.ts update() applies the same steps through its capture/stream helpers, with opts.branch winning over the config. Unset keys change nothing.",
+        "pros": [
+          "The config is parsed and validated in one place that both TypeScript paths share",
+          "The script keeps flags only, so it stays usable by hand and has no JSON parser",
+          "Reuses the existing --branch flag and UpdateOptions.branch"
+        ],
+        "cons": [
+          "The set-url, checkout and fetch sequence exists twice, in the script and in maintenance.ts, as the sync logic already does",
+          "A new flag on the script"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Environment variables only",
+        "oneLineSummary": "daemon-ctl.sh and maintenance.ts read INSRC_DAEMON_REPO_URL and INSRC_DAEMON_BRANCH; the config is mapped onto them by the launcher.",
+        "approach": "The script and maintenance.ts read the two environment variables; update-runner.ts copies the config values into the helper's environment. No new script flags.",
+        "pros": [
+          "No flag parsing change in the script",
+          "A fork can also be selected for one run from the shell"
+        ],
+        "cons": [
+          "Two places to set the same thing, and the TUI path would also need the mapping",
+          "Environment values are easy to leave set by accident and are not validated at the boundary the way a config reader would"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Works, but the values reach the script through the environment unvalidated and the TUI path still needs its own mapping, so it duplicates more than a1."
+      },
+      {
+        "id": "a3",
+        "name": "The script reads the config itself",
+        "oneLineSummary": "daemon-ctl.sh parses ~/.insrc/config.json with node and applies the repo URL and branch; maintenance.ts shells out to it or repeats the parse.",
+        "approach": "Add a small node one-liner in the script to read daemonUpdate.repoUrl and daemonUpdate.branch, validate them in shell, then run the same set-url, checkout and fetch steps. maintenance.ts would call the script's update command instead of its own sequence.",
+        "pros": [
+          "The script alone knows the source, so a hand run and the IPC run agree",
+          "One implementation of the sequence if maintenance.ts delegates"
+        ],
+        "cons": [
+          "Replaces the CLI's own sequence, which also runs the config reconcile and steering refresh between the build and the end, so it is a larger change than the Story asks",
+          "Validation of a URL in shell is weaker than in TypeScript"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Moves parsing into shell and would replace the CLI sequence that also runs the config reconcile and steering refresh; larger than the Story asks."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "daemon-ctl.sh sync_repo, cmd_start, cmd_update, cmd_restart and the --branch flag"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "update-runner.ts launchUpdate and runDetachedUpdate"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "maintenance.ts update (CLI path)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "where ~/.insrc/config.json is read and how keys are declared"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "other update entry points and docs"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "tests to extend"
+    }
+  ]
+}

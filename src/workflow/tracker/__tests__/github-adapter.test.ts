@@ -212,13 +212,14 @@ test('findIssues lists every open or closed match across all pages in ascending 
 	if (!failed.ok) assert.equal(failed.kind, 'unreachable');
 });
 
-test('signoff methods return rejected without running gh', () => {
+test('the adapter declares signoff-request but not completion, and a malformed signoff request or ref is rejected without running gh', () => {
 	const port = createGithubTracker('o', 'r');
 	let ran = 0;
 	_setTrackerExecForTests(() => { ran += 1; return ''; });
-	assert.equal(port.capabilities.has('signoff-request'), false);
+	assert.equal(port.capabilities.has('signoff-request'), true);
 	assert.equal(port.capabilities.has('completion'), false);
-	for (const r of [port.openSignoffRequest({ title: 't', body: 'b' }), port.readSignoffState({ ref: 'x' })]) {
+	const spec = { title: 't', body: 'b', unit: { unit: 'story' as const, repoPath: '/r', epicHash: 'a3f4b8c9d1e2f3a4', storyId: 's1' }, artifacts: [], branch: '', issue: 'o/r#1' };
+	for (const r of [port.openSignoffRequest(spec), port.readSignoffState({ ref: 'x' })]) {
 		assert.equal(r.ok, false);
 		if (!r.ok) assert.equal(r.kind, 'rejected');
 	}

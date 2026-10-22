@@ -170,7 +170,7 @@ test('loadTracker succeeds when every needed capability is declared', () => {
 		assert.equal(r.ok, true);
 		if (r.ok) {
 			assert.equal(r.value.kind, 'github');
-			assert.deepEqual([...r.value.capabilities].sort(), ['claim', 'issue-create']);
+			assert.deepEqual([...r.value.capabilities].sort(), ['claim', 'issue-create', 'signoff-request']);
 		}
 		assert.deepEqual(calls[0], ['api', 'user', '-q', '.login']);
 	});
@@ -187,10 +187,11 @@ test('loadTracker with an empty needed set validates configuration and sign-in',
 	withLoader(() => 'subhagho', () => assert.equal(loadTracker('/r', set()).ok, true));
 });
 
-test('loadTracker refuses a needed signoff-request capability naming it', () => {
+test('loadTracker refuses a needed completion capability naming it, and accepts signoff-request', () => {
 	withLoader(() => 'subhagho', calls => {
 		const reason = refusal(loadTracker('/r', set('claim', 'signoff-request', 'completion')));
-		assert.match(reason, /signoff-request, completion/);
+		assert.match(reason, /capability: completion/);
+		assert.doesNotMatch(reason, /signoff-request/);
 		assert.equal(calls.length, 0, 'no gh command runs for a capability refusal');
 	});
 });

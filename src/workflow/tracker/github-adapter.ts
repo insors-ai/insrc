@@ -10,8 +10,9 @@
  * configuration) for fail-open callers; `loadTracker` builds the same adapter
  * after the strict checks and is for team features only.
  *
- * GitHub declares {claim, issue-create}. The signoff methods return `rejected`
- * without running gh until a later story adds those capabilities.
+ * GitHub declares {claim, issue-create, signoff-request}. A signoff request is a
+ * pull request from a branch that holds the committed artifacts; its state is read
+ * from the pull request's review decision and merge state.
  */
 
 import { getLogger } from '../../shared/logger.js';
@@ -46,12 +47,14 @@ import {
 	type IssueRef,
 	type IssueSpec,
 	type PortResult,
+	type SignoffRequestRef,
+	type SignoffRequestSpec,
 	type TrackerPort,
 } from './port.js';
 
 const log = getLogger('tracker-github-adapter');
 
-const CAPABILITIES: ReadonlySet<Capability> = new Set<Capability>(['claim', 'issue-create']);
+const CAPABILITIES: ReadonlySet<Capability> = new Set<Capability>(['claim', 'issue-create', 'signoff-request']);
 
 function failure(err: unknown): { readonly ok: false; readonly kind: 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected'; readonly reason: string } {
 	if (err instanceof GhCommandError) return { ok: false, kind: err.kind, reason: err.reason };
@@ -64,10 +67,6 @@ function attempt<T>(fn: () => T): PortResult<T> {
 	} catch (err) {
 		return failure(err);
 	}
-}
-
-function unsupported<T>(what: string): PortResult<T> {
-	return { ok: false, kind: 'rejected', reason: `the github tracker does not support ${what}` };
 }
 
 /** A well-formed `owner/repo#N`; parseIssueRef alone only checks the separators. */
@@ -136,6 +135,52 @@ function addAssignee(issue: IssueRef, who: string): PortResult<string[]> {
 	});
 }
 
+const PULL_URL_RE = /https?:\/\/\S+\/pull\/([0-9]+)/;
+
+/**
+ * Open the signoff request as a pull request from the branch that holds the committed artifacts, then link it from the stage's
+ * issue with one comment. The pull request is the request: if the link comment fails the request still stands (its ref is kept on
+ * every artifact), so the failure is logged and not returned, and a retry never has to open a second pull request.
+ */
+function openSignoffRequest(owner: string, repo: string, spec: SignoffRequestSpec): PortResult<SignoffRequestRef> {
+	return attempt(() => {
+		if (spec.branch.trim().length === 0) throw new GhCommandError('rejected', 'a signoff request needs the branch that holds the committed artifacts');
+		if (!ISSUE_REF_RE.test(spec.issue)) throw new GhCommandError('rejected', `malformed issue reference '${spec.issue}' (expected owner/repo#N)`);
+		const created = runGh(['pr', 'create', '--repo', `${owner}/${repo}`, '--head', spec.branch, '--title', spec.title, '--body', spec.body]);
+		const match = PULL_URL_RE.exec(created);
+		if (match === null) throw new GhCommandError('rejected', `gh did not print the pull request url: '${created.slice(0, 120)}'`);
+		const url = match[0];
+		const ref = `${owner}/${repo}#${match[1]}`;
+		try {
+			ghPostCommentReturningId(owner, repo, spec.issue, `<!-- insrc:signoff-request:${ref} -->\nSignoff requested: ${url}`);
+		} catch (err) {
+			log.warn({ ref, issue: spec.issue, err: err instanceof Error ? err.message : String(err) }, 'the signoff request was opened but not linked from its issue');
+		}
+		return { ref, url };
+	});
+}
+
+/**
+ * The state of a request from its pull request: merged is completed; a closed pull request that was not merged, or one with
+ * changes requested, is changes-requested (the holder revises and submits again); anything else is open.
+ */
+function readSignoffState(request: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'> {
+	return attempt(() => {
+		if (!ISSUE_REF_RE.test(request.ref)) throw new GhCommandError('rejected', `malformed signoff request reference '${request.ref}' (expected owner/repo#N)`);
+		const { owner, repo, number } = parseIssueRef(request.ref);
+		const raw = runGh(['pr', 'view', number, '--repo', `${owner}/${repo}`, '--json', 'state,mergedAt,reviewDecision']);
+		let parsed: { state?: string; mergedAt?: string | null; reviewDecision?: string | null };
+		try {
+			parsed = JSON.parse(raw) as typeof parsed;
+		} catch {
+			throw new GhCommandError('rejected', `gh returned unexpected pull request JSON for ${request.ref}: '${raw.slice(0, 120)}'`);
+		}
+		if (parsed.state === 'MERGED' || (typeof parsed.mergedAt === 'string' && parsed.mergedAt.length > 0)) return 'completed';
+		if (parsed.state === 'CLOSED' || parsed.reviewDecision === 'CHANGES_REQUESTED') return 'changes-requested';
+		return 'open';
+	});
+}
+
 function createIssueOps(owner: string, repo: string): IssueOps {
 	return {
 		create: (spec: IssueSpec) => attempt((): CreatedIssue => ghCreateIssueTyped(owner, repo, spec.title, spec.body, spec.labels, spec.issueType)),
@@ -200,8 +245,8 @@ export function createGithubTracker(owner: string, repo: string): TrackerPort {
 		attach: (issue: IssueRef, artifact: Reference, link: string) =>
 			attempt(() => ({ externalId: ghPostCommentReturningId(owner, repo, issue, `<!-- insrc:attach:${artifact.entityId} -->\nAttached ${artifact.type} \`${artifact.entityId}\`: ${link}`) })),
 
-		openSignoffRequest: () => unsupported('signoff requests'),
-		readSignoffState: () => unsupported('reading signoff state'),
+		openSignoffRequest: (spec: SignoffRequestSpec) => openSignoffRequest(owner, repo, spec),
+		readSignoffState,
 	};
 }
 

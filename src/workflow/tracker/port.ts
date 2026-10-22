@@ -11,6 +11,7 @@
  */
 
 import type { Reference } from '../artifact-core/types.js';
+import type { UnitRef } from './refs.js';
 
 /** An issue reference, `owner/repo#N`, as everywhere else in the tracker code. */
 export type IssueRef = string;
@@ -42,15 +43,23 @@ export interface CreatedIssue {
 	readonly typed: boolean;
 }
 
-/** Minimal placeholder; s7 extends it by amendment. */
+/**
+ * What a signoff request asks to be signed off and where it is linked (AMD-315d510cb28100e2-16): the stage unit, each artifact
+ * with the revision it covers and its committed path, the branch that holds them, and the issue the request is linked from.
+ */
 export interface SignoffRequestSpec {
-	readonly title: string;
-	readonly body: string;
+	readonly title:     string;
+	readonly body:      string;
+	readonly unit:      UnitRef;
+	readonly artifacts: ReadonlyArray<{ readonly artifactId: string; readonly revision: number; readonly path: string }>;
+	readonly branch:    string;
+	readonly issue:     IssueRef;
 }
 
-/** Minimal placeholder; s7 extends it by amendment. */
+/** An opened signoff request: its `ref` (a GitHub pull request is `owner/repo#N`) and, when the tracker has one, its url (AMD-315d510cb28100e2-16). */
 export interface SignoffRequestRef {
 	readonly ref: string;
+	readonly url?: string | undefined;
 }
 
 /** Grouped issue operations over the existing gh wrappers, bound to one owner and repo (AMD-8). */

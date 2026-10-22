@@ -9,8 +9,8 @@
  *
  * `listPendingArtifacts` is a pure filesystem scan of the canonical artifact
  * store (`.insrc/artifacts/<KIND>-<hash>.json`): it keeps every artifact whose
- * approval state is pending — meta.approvedAt absent AND meta.rejectedAt absent
- * (the exact fields the approve/reject path stamps) — and whose KIND is a
+ * approval state is pending — neither approved nor rejected in meta.lifecycle
+ * (the state the approve/reject path writes) — and whose KIND is a
  * reviewer-approvable kind, mapping each to the sc1 `PendingArtifact` descriptor.
  * It reads the single source of truth, so the IDE's pending list can never
  * disagree with real approval state (k1/k5), and it does one bounded directory
@@ -23,6 +23,7 @@ import { closeSync, existsSync, openSync, readdirSync, readFileSync, readSync } 
 import { join } from 'node:path';
 
 import { getLogger } from '../shared/logger.js';
+import { approvalStateOf } from './artifact-core/approval-view.js';
 import { ARTIFACTS_DIR } from './storage.js';
 import { ArtifactIds } from './artifact-ids.js';
 import { resolveArtifactMdPath, type ArtifactKind, type WorkItemKind } from './path-scheme.js';
@@ -48,7 +49,7 @@ export interface PendingArtifact {
 	readonly mdPath:            string;    // rendered .md path under docs/ (best-effort; '' when unresolvable)
 	readonly workItemId?:       string;    // the artifact id of the Epic or Story (SPEC / ISSUE id for a run with no Epic) when derivable
 	readonly openQuestionCount: number;
-	readonly state:             'pending'; // approvedAt absent AND rejectedAt absent
+	readonly state:             'pending'; // neither approved nor rejected in the lifecycle
 }
 
 export interface WorkflowPendingRequest { readonly repo: string }
@@ -131,9 +132,8 @@ export function listPendingArtifacts(repoPath: string): readonly PendingArtifact
 		}
 
 		const meta = art.meta ?? {};
-		// Pending = neither stamped: the SAME fields approve/reject write (k5).
-		if (typeof meta['approvedAt'] === 'string' && meta['approvedAt'].length > 0) continue;
-		if (typeof meta['rejectedAt'] === 'string' && meta['rejectedAt'].length > 0) continue;
+		// Pending = neither approved nor rejected in the lifecycle, the state approve and reject write.
+		if (approvalStateOf(meta) !== 'pending') continue;
 
 		out.push(toDescriptor(repoPath, file, kind as PendingKind, art));
 	}

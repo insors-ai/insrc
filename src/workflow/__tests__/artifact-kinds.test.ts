@@ -28,6 +28,7 @@ import { parseArtifactId } from '../resolve-comment.js';
 import { persistTestRecordTask } from '../runners/build/test-record.js';
 import { artifactIdMarker, artifactJsonPath, testsArtifactId } from '../storage.js';
 import { resolveWorkflowRef } from '../tracker/resolve.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
 
 const HASH = 'abc123def4567890';
 const AT = '2026-01-15T00:00:00.000Z';
@@ -192,6 +193,6 @@ test("approval of a TESTS record by its md path and by its json path through the
 		assert.ok(touched.length > 0, 'the batch must have found the Epic\'s pending artifacts');
 		assert.ok(!touched.includes(json), JSON.stringify(touched));
 		unchanged();
-		assert.equal((JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> }).meta['approvedAt'], undefined);
+		assert.notEqual(approvalStateOf((JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> }).meta), 'approved');
 	} finally { r.cleanup(); }
 });

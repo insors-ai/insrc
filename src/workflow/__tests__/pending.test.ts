@@ -7,7 +7,7 @@
  * S001 (Epic ide-artifact-review-panel-jetbrains-plugin) — daemon tests.
  *
  * t1 units: listPendingArtifacts over a temp `.insrc/artifacts` fixture —
- * mixed-state filtering (approvedAt / rejectedAt excluded), descriptor mapping
+ * mixed-state filtering (an approved or rejected lifecycle excluded), descriptor mapping
  * (kind / title / mdPath / workItemId / openQuestionCount / state), non-union
  * KIND exclusion, absent-store -> [], malformed-file skip, and the
  * missing-openQuestions / missing-workItemId defaults.
@@ -29,6 +29,7 @@ import { join } from 'node:path';
 
 import { deriveMdPath, listPendingArtifacts, handleWorkflowPending } from '../pending.js';
 import { ARTIFACTS_DIR } from '../storage.js';
+import { approvedMeta, draftMeta, lifecycleMeta, rejectedMeta, reviewedMeta } from './lifecycle-fixtures.js';
 
 const HASH = '238917216d8fd532';           // real 16-hex epic hash form
 const CREATED = '2026-09-19T08:00:00.000Z';
@@ -58,12 +59,12 @@ function pendingLld(): unknown {
 	};
 }
 
-test('listPendingArtifacts returns ONLY pending artifacts (approvedAt/rejectedAt excluded) — ac1', () => {
+test('listPendingArtifacts returns ONLY pending artifacts (an approved or rejected lifecycle excluded) — ac1', () => {
 	const repo = fixtureRepo({
 		'LLD-238917216d8fd532-s1.json': pendingLld(),
 		'DEF-238917216d8fd532.json':    { meta: { epicHash: HASH, epicCreatedAt: CREATED }, body: { title: 'Epic definition' } },
-		'HLD-238917216d8fd532.json':    { meta: { epicHash: HASH, epicCreatedAt: CREATED, approvedAt: '2026-09-19T09:00:00.000Z' }, body: { title: 'Approved HLD' } },
-		'PLAN-238917216d8fd532-s1.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId: 's1', rejectedAt: '2026-09-19T09:30:00.000Z' }, body: { title: 'Rejected plan' } },
+		'HLD-238917216d8fd532.json':    { meta: { epicHash: HASH, epicCreatedAt: CREATED, ...approvedMeta() }, body: { title: 'Approved HLD' } },
+		'PLAN-238917216d8fd532-s1.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId: 's1', ...rejectedMeta() }, body: { title: 'Rejected plan' } },
 	});
 	try {
 		const ids = listPendingArtifacts(repo).map(a => a.artifactId).sort();
@@ -160,7 +161,7 @@ test('listPendingArtifacts leaves out a BUILD record with no code review record,
 		assert.deepEqual(listPendingArtifacts(building).map(a => a.kind), ['LLD']);
 	} finally { cleanup(building); }
 	// Approved, and rejected: not pending, code review or not.
-	for (const stamp of [{ approvedAt: '2026-09-20T09:00:00.000Z' }, { rejectedAt: '2026-09-20T09:00:00.000Z' }]) {
+	for (const stamp of [approvedMeta(), rejectedMeta()]) {
 		const done = fixtureRepo({ [`${BUILD_ID}.json`]: buildRecord(stamp), [`CR-${HASH}-s1.json`]: crRecord() });
 		try {
 			assert.deepEqual(listPendingArtifacts(done).map(a => a.kind), ['CR'], JSON.stringify(stamp));
@@ -293,7 +294,7 @@ test('handleWorkflowPending: fixture repo with pending artifacts -> { artifacts 
 
 test('handleWorkflowPending: all-approved / absent store -> { artifacts: [] } (ac3, distinct from error)', () => {
 	const approved = fixtureRepo({
-		'HLD-238917216d8fd532.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, approvedAt: CREATED }, body: { title: 'x' } },
+		'HLD-238917216d8fd532.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, ...approvedMeta() }, body: { title: 'x' } },
 	});
 	const absent = mkdtempSync(join(tmpdir(), 'insrc-pending-absent-'));
 	try {
@@ -335,6 +336,26 @@ test('handleWorkflowPending: store-unreadable (artifacts path is a file) -> { er
 		const res = handleWorkflowPending({ repo }, undefined);
 		assert.ok('error' in res, 'unreadable store returns an error');
 		assert.ok(!('artifacts' in res));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('pending.test.ts: pending approvals read the lifecycle', () => {
+	const lld = (storyId: string, meta: Record<string, unknown>) => ({ meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId, ...meta }, body: { title: storyId } });
+	const repo = fixtureRepo({
+		'LLD-238917216d8fd532-s1.json': lld('s1', draftMeta()),
+		'LLD-238917216d8fd532-s2.json': lld('s2', reviewedMeta()),                      // pending-review
+		'LLD-238917216d8fd532-s3.json': lld('s3', approvedMeta()),
+		'LLD-238917216d8fd532-s4.json': lld('s4', rejectedMeta()),
+		'LLD-238917216d8fd532-s5.json': lld('s5', lifecycleMeta({ status: 'completed', approval: true })),
+		'LLD-238917216d8fd532-s6.json': lld('s6', lifecycleMeta({ status: 'in-signoff', approval: true })),
+		'LLD-238917216d8fd532-s7.json': lld('s7', lifecycleMeta({ status: 'changes-requested', approval: true })),
+		// a head with no lifecycle is pending whatever the old stamps say: the conversion removes them
+		'LLD-238917216d8fd532-s8.json': lld('s8', { approvedAt: CREATED }),
+	});
+	try {
+		assert.deepEqual(listPendingArtifacts(repo).map(a => a.artifactId).sort(), ['LLD-238917216d8fd532-s1', 'LLD-238917216d8fd532-s2', 'LLD-238917216d8fd532-s8']);
 	} finally {
 		cleanup(repo);
 	}

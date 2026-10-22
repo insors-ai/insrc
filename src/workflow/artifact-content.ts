@@ -17,7 +17,7 @@
  *     is the single source of truth; no divergent second copy is authored),
  *   - resolves the sibling hash-flat .json via jsonPathForMd and projects
  *     body.openQuestions + meta.questionResolutions into OpenQuestionRef[]
- *     (id/text/status) and meta.review into approvable/blockReason,
+ *     (id/text/status) and the lifecycle review into approvable/blockReason,
  *   - maps EVERY failure to a structured { error } (never a partial/empty view),
  * so the plugin maps a failure to Unavailable rather than a blank pane.
  *
@@ -28,8 +28,13 @@ import { createHash } from 'node:crypto';
 import { readFileSync, realpathSync } from 'node:fs';
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
+import { approvalStateOf, lifecycleReviewOf } from './artifact-core/approval-view.js';
+import { FileSidecarStore } from './artifact-core/sidecar-store.js';
+import type { ChangeLogEntry, Review } from './artifact-core/types.js';
 import { jsonPathForMd } from './gates.js';
 import { openQuestions, type OpenQuestionStatus } from './questions.js';
+import { reviewRecordOf } from './review/report-log.js';
+import type { ReviewRecord } from './review/report-log.js';
 import { effectiveReviewVerdict } from './review/resolve.js';
 import type { ReviewReport } from './review/types.js';
 import type { FunctionalDefinition } from './artifacts/functional-definition.js';
@@ -88,7 +93,7 @@ export interface ArtifactReviewView {
 	readonly feedback?:      readonly FeedbackEntry[] | undefined;
 	/** The name a comment saved now would carry. */
 	readonly reviewer:       Reviewer;
-	/** From meta.approvedAt, else meta.rejectedAt, else pending. */
+	/** From the lifecycle: approved, rejected or pending. */
 	readonly state:          ArtifactReviewState;
 }
 
@@ -221,9 +226,10 @@ export function handleArtifactContent(
 	const oq: OpenQuestionRef[] = openQuestions(texts, resolutions)
 		.map(q => ({ id: q.id, text: q.text, status: q.status }));
 
-	const review = meta['review'] as ReviewReport | undefined;
-	const reviewResolutions = meta['reviewResolutions'] as Parameters<typeof effectiveReviewVerdict>[1];
-	const blocked = review !== undefined && effectiveReviewVerdict(review, reviewResolutions) === 'block';
+	// the lifecycle review, with the full report and its resolutions read from the review entry of the artifact's log
+	const lifecycleReview = lifecycleReviewOf(meta);
+	const stored = reviewRecordOfLog(repoPath, artifactId, lifecycleReview);
+	const blocked = stored !== undefined ? effectiveReviewVerdict(stored.report, stored.resolutions) === 'block' : lifecycleReview?.['verdict'] === 'block';
 
 	const feedback = Array.isArray(body['feedback']) ? body['feedback'] as readonly FeedbackEntry[] : [];
 
@@ -233,18 +239,23 @@ export function handleArtifactContent(
 		renderedMarkdown,
 		openQuestions: oq,
 		approvable: !blocked,
-		...(blocked ? { blockReason: summarizeBlock(review!) } : {}),
+		...(blocked ? { blockReason: stored !== undefined ? summarizeBlock(stored.report) : 'Review blocks approval — the review verdict is block' } : {}),
 		...structuredRecords(body),
 		docPath: docPathOf(repoPath, realMd),
 		contentVersion: contentVersionOf(renderedMarkdown),
 		...(feedback.length > 0 ? { feedback } : {}),
 		reviewer: resolveReviewer(repoPath, deps),
-		state: nonEmptyString(meta['approvedAt']) ? 'approved' : nonEmptyString(meta['rejectedAt']) ? 'rejected' : 'pending',
+		state: approvalStateOf(meta),
 	};
 }
 
-function nonEmptyString(v: unknown): boolean {
-	return typeof v === 'string' && v.length > 0;
+/** The report a lifecycle review names and its resolutions, from the artifact's log (read synchronously, as the content view is built in one pass). */
+function reviewRecordOfLog(repoPath: string, artifactId: string, review: Readonly<Record<string, unknown>> | undefined): ReviewRecord | undefined {
+	const report = review?.['report'];
+	if (typeof report !== 'object' || report === null) return undefined;
+	try {
+		return reviewRecordOf(new FileSidecarStore(repoPath).readRecordsSync<ChangeLogEntry>('log', artifactId), artifactId, { report: report as Review['report'] });
+	} catch { return undefined; }
 }
 
 /** The canonical .md path relative to the canonical repo root, with forward slashes. */

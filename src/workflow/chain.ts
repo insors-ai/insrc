@@ -17,6 +17,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 
+import { approvalStateOf } from './artifact-core/approval-view.js';
 import type { DefineArtifact } from './artifacts/define.js';
 import type { HldArtifact } from './artifacts/hld.js';
 import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, lldArtifactId, lldArtifactPaths, workItemAnchorCreatedAt, workItemKindOf } from './storage.js';
@@ -134,8 +135,8 @@ function readDefineIfPresent(repoPath: string, epicHash: string): DefineState {
 	if (!existsSync(jsonPath)) return { exists: false, approved: false, rejected: false };
 	const raw = readFileSync(jsonPath, 'utf8');
 	const artifact = JSON.parse(raw) as DefineArtifact;
-	const approved = typeof artifact.meta.approvedAt === 'string' && artifact.meta.approvedAt.length > 0;
-	const rejected = typeof artifact.meta.rejectedAt === 'string' && artifact.meta.rejectedAt.length > 0;
+	const approved = approvalStateOf(artifact.meta) === 'approved';
+	const rejected = approvalStateOf(artifact.meta) === 'rejected';
 	const mdPath = defineArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(artifact.meta), workItemKindOf(artifact.meta), artifact.meta.epicSlug).md;
 	return { exists: true, approved, rejected, path: mdPath, artifact };
 }
@@ -145,8 +146,8 @@ function readHldIfPresent(repoPath: string, epicHash: string): HldState {
 	if (!existsSync(jsonPath)) return { exists: false, approved: false, rejected: false };
 	const raw = readFileSync(jsonPath, 'utf8');
 	const artifact = JSON.parse(raw) as HldArtifact;
-	const approved = typeof artifact.meta.approvedAt === 'string' && artifact.meta.approvedAt.length > 0;
-	const rejected = typeof artifact.meta.rejectedAt === 'string' && artifact.meta.rejectedAt.length > 0;
+	const approved = approvalStateOf(artifact.meta) === 'approved';
+	const rejected = approvalStateOf(artifact.meta) === 'rejected';
 	const mdPath = hldArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(artifact.meta), workItemKindOf(artifact.meta), artifact.meta.epicSlug).md;
 	return { exists: true, approved, rejected, path: mdPath, artifact };
 }
@@ -169,8 +170,8 @@ function readStoryLldStatus(
 		if (hasLld) {
 			try {
 				const raw = readFileSync(jsonPath, 'utf8');
-				const lld = JSON.parse(raw) as { meta: { approvedAt?: string } };
-				approved = typeof lld.meta.approvedAt === 'string' && lld.meta.approvedAt.length > 0;
+				const lld = JSON.parse(raw) as { meta: Record<string, unknown> };
+				approved = approvalStateOf(lld.meta) === 'approved';
 			} catch { /* malformed — treat as unapproved */ }
 		}
 		const stale = staleness.get(s.id);

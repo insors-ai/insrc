@@ -9,6 +9,7 @@
  * predicate over meta (mirroring the admitBuild admission pattern), no IO.
  */
 
+import { approvalStateOf } from '../artifact-core/approval-view.js';
 import type { IssueArtifact } from '../artifacts/issue.js';
 import type { AdmitResult } from './types.js';
 
@@ -19,9 +20,8 @@ import type { AdmitResult } from './types.js';
  * ABSENT parentRef (never stamped) withholds.
  */
 export function admitBugfixAdvance(issue: IssueArtifact): AdmitResult {
-	const approvedAt = issue.meta.approvedAt;
-	if (typeof approvedAt !== 'string' || approvedAt.length === 0) {
-		return { admitted: false, reason: 'issue is not approved (meta.approvedAt absent)' };
+	if (approvalStateOf(issue.meta) !== 'approved') {
+		return { admitted: false, reason: 'issue is not approved (its lifecycle is not approved)' };
 	}
 	// exactOptionalPropertyTypes: an absent parentRef is `undefined`; a resolved
 	// standalone is explicit `null`. Only `undefined` means "not yet located".

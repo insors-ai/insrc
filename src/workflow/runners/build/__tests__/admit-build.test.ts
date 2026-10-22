@@ -32,6 +32,7 @@ import { approveArtifactByJsonPath } from '../../../gates.js';
 import type { PlanArtifact } from '../../../artifacts/plan.js';
 import { artifactJsonPath, lldArtifactId, planArtifactId } from '../../../storage.js';
 import { ArtifactShapeError } from '../../../artifact-core/types.js';
+import { approvedMeta } from '../../../__tests__/lifecycle-fixtures.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';
@@ -88,7 +89,7 @@ function seedLld(repo: string, storyId: string, hldEffectiveHash: string): void 
 			workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1,
 			epicHash: HASH, epicSlug: 'tag-filtering', storyId, createdAt: CREATED, epicCreatedAt: CREATED,
 			hldBaseRunId: 'hld-run-1', hldEffectiveHash, hldAmendmentsApplied: [],
-			approvedAt: '2026-07-18T00:00:00.000Z',
+			...approvedMeta({ at: '2026-07-18T00:00:00.000Z' }),
 		},
 		body: {}, citations: [],
 	}, null, 2));

@@ -24,7 +24,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { handleArtifactContent, type ArtifactReviewView } from '../artifact-content.js';
+import { reviewReference } from '../review/report-log.js';
+import type { ReviewReport } from '../review/types.js';
 import { ARTIFACTS_DIR } from '../storage.js';
+import { approvedMeta, blockedMeta, draftMeta, lifecycleMeta, recordReview, rejectedMeta } from './lifecycle-fixtures.js';
 
 const HASH = '1703991c69967193';
 const ID = `LLD-${HASH}-s1`;
@@ -78,13 +81,25 @@ test('handleArtifactContent: happy path — renderedMarkdown byte-equal to the .
 	}
 });
 
-test('handleArtifactContent: a standing review block-verdict -> approvable=false + blockReason', () => {
+test('handleArtifactContent: a standing review block-verdict -> approvable=false + blockReason', async () => {
 	const review = {
-		artifact: ID, stage: 'design.story', verdict: 'block',
+		artifact: ID, stage: 'design.story', verdict: 'block' as const,
 		findings: [{ claimId: 'c1', kind: 'semantic', severity: 'HIGH', premise: 'a load-bearing premise', evidence: 'e', action: 'fix it', fixability: 'manual' }],
 		counts: { high: 1, med: 0, low: 0 }, reviewedAt: '2026-09-19T00:00:00.000Z', model: 'client',
-	};
-	const { repo, mdRel } = makeFixture({ json: { meta: { review }, body: {} } });
+	} as unknown as ReviewReport;
+	const { repo, mdRel } = makeFixture({ json: { meta: blockedMeta({ report: reviewReference(ID, 'review-1') }), body: {} } });
+	try {
+		await recordReview(repo, ID, review, 'review-1');
+		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		assert.equal(v.approvable, false);
+		assert.match(v.blockReason ?? '', /Review blocks approval — 1 HIGH, 0 MED: a load-bearing premise/);
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('handleArtifactContent: a review whose report cannot be read blocks on the lifecycle verdict', () => {
+	const { repo, mdRel } = makeFixture({ json: { meta: blockedMeta(), body: {} } });
 	try {
 		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
 		assert.equal(v.approvable, false);
@@ -477,13 +492,14 @@ test('review view: docPath, contentVersion, feedback, reviewer and state are ret
 		cleanup(repo);
 	}
 
-	// state follows meta.approvedAt, else meta.rejectedAt; no feedback is an absent key.
+	// state follows the lifecycle: approved or beyond, rejected, else pending; no feedback is an absent key.
 	const states: readonly [Record<string, unknown>, string][] = [
 		[{}, 'pending'],
-		[{ approvedAt: '2026-10-13T10:00:00.000Z' }, 'approved'],
-		[{ rejectedAt: '2026-10-13T10:00:00.000Z', rejectReason: 'no' }, 'rejected'],
-		[{ approvedAt: '2026-10-13T11:00:00.000Z', rejectedAt: '2026-10-13T10:00:00.000Z' }, 'approved'],
-		[{ approvedAt: '', rejectedAt: '' }, 'pending'],
+		[approvedMeta(), 'approved'],
+		[rejectedMeta(), 'rejected'],
+		[draftMeta(), 'pending'],
+		[lifecycleMeta({ status: 'completed', approval: true }), 'approved'],
+		[{ approvedAt: '2026-10-13T10:00:00.000Z' }, 'pending'],   // the old stamp says nothing
 	];
 	for (const [meta, state] of states) {
 		const fx = makeFixture({ json: { meta, body: {} } });

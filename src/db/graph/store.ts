@@ -827,8 +827,14 @@ export interface CompactResult {
  *      failure so the user can manually recover.
  *
  * Returns size delta in bytes. Throws `LmdbStoreError` on any step.
+ *
+ * `beforeRename` runs after the close and before the rename (Epic 86197ac6
+ * s2): daemon maintenance passes a check that every other handle on the
+ * native environment is closed. When it resolves false nothing is renamed:
+ * the compacted copy is removed, the original store is reopened, and the call
+ * rejects. Without it, behaviour is unchanged.
  */
-export async function compactGraphStore(): Promise<CompactResult> {
+export async function compactGraphStore(opts: { readonly beforeRename?: () => Promise<boolean> } = {}): Promise<CompactResult> {
 	const inst = _instance;
 	if (inst === null) {
 		throw new LmdbStoreError('cannot compact: graph store is not open');
@@ -863,6 +869,13 @@ export async function compactGraphStore(): Promise<CompactResult> {
 		// Reset partial state, then bubble up.
 		_instance = null;
 		throw new LmdbStoreError(`compact: close failed: ${errMessage(e)}`, e);
+	}
+
+	// Step 2b: the caller's last check before the files change.
+	if (opts.beforeRename !== undefined && !(await opts.beforeRename())) {
+		rmSync(compactPath, { force: true });
+		await getGraphStore();
+		throw new LmdbStoreError('compact: the environment was still open; nothing renamed');
 	}
 
 	// Step 3: atomic rename. If anything fails here, the .bak + .compact

@@ -391,7 +391,7 @@ function handlerSource(src: string, method: string): string {
 }
 
 test('daemon handlers: \'workflow.reviewDecision\' is registered and delegates to handleReviewDecision, and the \'workflow.approve\', \'workflow.resolveComment\' and \'artifact.feedback.append\' handlers are unchanged', () => {
-	const src = readFileSync(join(import.meta.dirname, '..', '..', 'daemon', 'index.ts'), 'utf8');
+	const src = readFileSync(join(import.meta.dirname, '..', '..', 'daemon', 'handler-runtime.ts'), 'utf8');   // the handler map (Epic 86197ac6 s2/t1)
 
 	const decision = handlerSource(src, 'workflow.reviewDecision');
 	assert.match(decision, /await import\('\.\.\/workflow\/review-decision\.js'\)/);

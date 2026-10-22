@@ -52,8 +52,10 @@ import { initChatHandlers, disposeChatHandlers } from './chat-handler.js';
 
 import { createInDaemonClient, installStepDaemonClient } from './steps/daemon-client.js';
 
-import { writePid, isAlreadyRunning, bootstrapEmbeddingModel } from './lifecycle.js';
-import { embedQuery } from '../indexer/embedder.js';
+import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
+import { readInstalledCommit } from './installed-commit.js';
+import { ThreadServices, currentLmdbFileSizeMb, threadsEnabled } from './threads/main-services.js';
+import { embedQuery, getActiveEmbedderBackend } from '../indexer/embedder.js';
 import { pruneConversations } from '../db/conversations.js';
 import { compactConversations } from '../db/compaction.js';
 // Cleanup: plan-store + Plan / PlanStepStatus dropped with the legacy planner.
@@ -183,6 +185,19 @@ async function main(): Promise<void> {
 	// see a consistent view.
 	// Phase 1 cleanup: agent-family-migration gone with the agent subsystem.
 
+	// 2d. With daemon.threads.enabled, the main thread's services for its
+	//     workers (Epic 86197ac6 s2): the shared blocks, installed here before
+	//     any store is used, and the hub each worker is served over.
+	const threadServices = threadsEnabled()
+		? new ThreadServices(() => ({
+			startedAt,
+			modelState: getModelState(),
+			installedCommit: readInstalledCommit(),
+			lmdbFileSizeMb: currentLmdbFileSizeMb(),
+		}))
+		: undefined;
+	if (threadServices !== undefined) log.info('daemon threads enabled');
+
 	// 3. Open DB
 	const db = await getDb();
 	await initDb(db);
@@ -200,7 +215,9 @@ async function main(): Promise<void> {
 	runReaderCheck('startup');
 
 	// 4. Bootstrap embedding model (async, non-blocking)
-	void bootstrapEmbeddingModel();
+	void bootstrapEmbeddingModel()
+		.then(() => threadServices?.setEmbedderBackend(getActiveEmbedderBackend()))
+		.catch(() => { /* the bootstrap logs its own failures */ });
 
 	// 5. Load repos, start indexer
 	const configStore = new ConfigStore(db);

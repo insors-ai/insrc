@@ -292,7 +292,7 @@ test('t1: the six pre-existing ArtifactReviewView members keep their names, type
 });
 
 test('t1: source-scan — the daemon handler map registers no new method; workflow.artifactContent is the single read path', () => {
-	const src = readFileSync(join(import.meta.dirname, '..', '..', 'daemon', 'index.ts'), 'utf8');
+	const src = readFileSync(join(import.meta.dirname, '..', '..', 'daemon', 'handler-runtime.ts'), 'utf8');   // the handler map (Epic 86197ac6 s2/t1)
 	const regs = src.match(/'workflow\.artifactContent':/g) ?? [];
 	assert.equal(regs.length, 1, 'exactly one workflow.artifactContent registration — the widening adds no IPC method');
 	for (const invented of ['workflow.artifactStructured', 'workflow.artifactCompanions', 'workflow.artifactDefinitions']) {

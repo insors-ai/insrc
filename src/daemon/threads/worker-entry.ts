@@ -18,6 +18,8 @@ import type { MessagePort } from 'node:worker_threads';
 
 import { declareLiveStoreOwner } from '../../db/graph/store.js';
 import { installStoreGuard } from '../../db/store-guard.js';
+import { setActiveEmbedderBackend } from '../../indexer/embedder.js';
+import type { EmbedderBackend } from '../../indexer/embedder.js';
 import { installLockManager } from '../../shared/locks/lock-manager.js';
 import { HubClient } from './channel.js';
 import { HubStepStateStore, installStepStateStore } from './step-state.js';
@@ -47,6 +49,8 @@ export function startDaemonWorker(init: DaemonWorkerInit): HubClient {
 	installLockManager(init.lockBlock);
 	const hub = new HubClient(init.hubPort);
 	wireWorkerStoreHealth(hub);
+	// The embedder's backend is per thread: take the one the main thread decided (Epic 86197ac6 s2).
+	hub.onPush('embedder.backend', backend => setActiveEmbedderBackend(backend as EmbedderBackend));
 	installStepStateStore(new HubStepStateStore(hub));
 	return hub;
 }

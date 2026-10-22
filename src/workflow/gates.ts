@@ -132,7 +132,7 @@ export class SpecArtifactNotFoundError extends Error {
 }
 
 /** Thrown when a SpecArtifact is resolved as a consumable seed but its
- *  `meta.approvedAt` is unset/empty — the read-side approval gate (k12). The
+ *  the lifecycle approval is unset/empty — the read-side approval gate (k12). The
  *  spec peer of `ArtifactNotApprovedError`; kept distinct so a consumer (and
  *  the `spec.resolveApproved` IPC's `not-approved` code) can tell the user
  *  approval is still outstanding rather than that the spec is missing
@@ -203,7 +203,7 @@ export function nextStoryId(define: DefineArtifact): string {
 }
 
 /** Append a new Story to an approved Epic's Define (the extend path).
- *  Writes the JSON + re-renders the markdown; PRESERVES `meta.approvedAt`
+ *  Writes the JSON + re-renders the markdown; PRESERVES the lifecycle approval
  *  (the extend is the sanctioned edit). Throws on a duplicate story id. */
 export function appendStoryToDefine(repoPath: string, epicHash: string, story: DefineStory): DefineArtifact {
 	const jsonPath = artifactJsonPath(repoPath, defineArtifactId(epicHash));
@@ -450,7 +450,7 @@ export function readSpecArtifact(repoPath: string, specHash: string): SpecArtifa
  *  stage (`define` / standalone `design.story`) resolves an approved spec as
  *  its focus ONLY through this gate, so an unapproved spec is never consumed
  *  (k12). Throws `SpecNotApprovedError` (naming the SPEC id, stating approval
- *  is outstanding) when `meta.approvedAt` is unset/empty, so the caller can
+ *  is outstanding) when the lifecycle approval is unset/empty, so the caller can
  *  relay that to the user (ac4). */
 export function requireApprovedSpec(repoPath: string, specHash: string): SpecArtifact {
 	const spec = readSpecArtifact(repoPath, specHash);
@@ -830,7 +830,7 @@ export interface WorkflowApproveRequest {
 
 /** The code-review gate outcome for a single story-scoped artifact, projected
  *  from {@link CodeReviewGateResult} for the controller to PRESENT alongside the
- *  approval act. A SEPARATE surfacing from `meta.review` — it reflects the CODE
+ *  approval act. A SEPARATE surfacing from the lifecycle review — it reflects the CODE
  *  review's `body.verdict`, never the design-artifact review. The `overrideReason`
  *  / `at` arm carries the OVERRIDE audit on `status === 'overridden'` so the
  *  presented outcome records a bypass, not only the stamped `approvedAt`. */
@@ -959,7 +959,7 @@ export async function approveWorkflowTarget(
 		}
 		if (await refuseLogConflict(jsonPath)) return;
 		// Code-review gate: a SEPARATE check over the CODE review's body.verdict —
-		// runs BEFORE the meta.review approve and never merges into it. Story-scoped
+		// runs BEFORE the review approval and never merges into it. Story-scoped
 		// artifacts (meta.epicHash && meta.storyId) only; a `blocked` verdict
 		// withholds completion (routed to skipped[], no approvedAt stamp). Every
 		// other status is advisory and falls through to the unchanged approve below.
@@ -972,7 +972,7 @@ export async function approveWorkflowTarget(
 			codeReview.push(projectGateOutcome(jsonPath, meta.storyId, gate));
 			if (gate.status === 'blocked') {
 				skipped.push({ path: jsonPath, reason: gate.message });
-				return;   // withhold completion — no meta.review approve, no approvedAt
+				return;   // withhold completion — no review approval, no approval record
 			}
 			// A BUILD record whose Story has NO code review (or a same-party one) is
 			// not decided here: approveArtifactByJsonPath refuses it, whatever the

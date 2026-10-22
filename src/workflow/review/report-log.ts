@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Where a design review's full report lives once `meta.review` is retired (s9). The lifecycle `Review` keeps only the
+ * Where a design review's full report lives now that the report is no longer stamped on the head (s9). The lifecycle `Review` keeps only the
  * verdict, the counts and an optional `report` Reference; the report itself (findings, claims, model) and the
  * resolutions of its findings are the outcome data of the artifact's 'review' change-log entries:
  *

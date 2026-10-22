@@ -24,14 +24,14 @@ import type { PlanRule, RulePlan } from './plan.js';
 import type { ConversionChange, ConversionProblem, ProseReference } from './types.js';
 
 const KINDS = 'DEF|HLD|LLD|PLAN|BUILD|CR|TESTS|ISSUE|SPEC|EXT|AMD';
-const STEM = new RegExp(`\\b((?:${KINDS})-[0-9a-f]{16})-S(\\d+)\\b`, 'g');
-const HEAD_STEM = new RegExp(`^((?:${KINDS})-[0-9a-f]{16})-S(\\d+)$`);
-const STORY_EXACT = /^S(\d+)$/;
+const STEM = new RegExp(`\\b((?:${KINDS})-[0-9a-f]{16})-[Ss](\\d+)\\b`, 'g');
+const HEAD_STEM = new RegExp(`^((?:${KINDS})-[0-9a-f]{16})-[Ss](\\d+)$`);
+const STORY_EXACT = /^[Ss](\d+)$/;
 const BARE = /\bS\d{3,}\b/g;
 /** Folders of the epics' documents keep their names, so a story id between slashes is a correct reference. */
 const IN_A_PATH = (s: string, at: number, len: number): boolean => s[at - 1] === '/' || s[at + len] === '/';
 
-/** `S001` becomes `s1`. */
+/** `S001` becomes `s1`, and so does a lowercase `s001` (a story id with leading zeros is not canonical either); `s1` is already right. */
 export const newStoryId = (digits: string): string => `s${Number(digits)}`;
 
 /** A string with the rewritable references replaced: an exact story id, or any full artifact id with an uppercase story. */
@@ -74,7 +74,12 @@ function markdownFiles(repo: string): string[] {
 }
 
 const jsonPath = (id: string): string => `${ARTIFACTS_DIR}/${id}.json`;
-const newStemOf = (stem: string): string | undefined => { const m = HEAD_STEM.exec(stem); return m === null ? undefined : `${m[1]}-${newStoryId(m[2]!)}`; };
+const newStemOf = (stem: string): string | undefined => {
+	const m = HEAD_STEM.exec(stem);
+	if (m === null) return undefined;
+	const to = `${m[1]}-${newStoryId(m[2]!)}`;
+	return to === stem ? undefined : to;
+};
 
 /** The plan rule: the renames, the files that need rewriting, the collisions and the prose references. */
 export const renameRule: PlanRule = (ctx): RulePlan => {

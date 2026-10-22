@@ -10,9 +10,9 @@
  * its claim (via `normalizeFinding`), assembles a `ReviewReport` using the
  * engine's own verdict policy (default blockOn HIGH+MED), then persists EXACTLY
  * like `reviewArtifactFile`: apply the `auto` fixes to the md + body, stamp
- * `meta.review` into the json, append the rendered report to the md.
+ * the lifecycle review into the json, append the rendered report to the md.
  *
- * The stamped `meta.review.model` is `'client'` — the CONTROLLER (the MCP
+ * The stamped review `model` is `'client'` — the CONTROLLER (the MCP
  * client model) authored this review, off the provider that wrote the
  * artifact. That independence is the whole point of this tool.
  */
@@ -93,7 +93,7 @@ export async function handleVerdicts(
 	};
 
 	// Persist EXACTLY like reviewArtifactFile: apply the auto-fixes, stamp
-	// meta.review, append the rendered report to the md.
+	// the lifecycle review, append the rendered report to the md.
 	if (!existsSync(state.jsonPath)) throw new Error(`insrc_review_step[verdicts]: no artifact json at ${state.jsonPath}`);
 	if (!existsSync(state.mdPath))   throw new Error(`insrc_review_step[verdicts]: no artifact md at ${state.mdPath}`);
 

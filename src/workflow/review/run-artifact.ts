@@ -70,7 +70,7 @@ export interface ReviewArtifactResult {
 
 /**
  * Review an on-disk artifact, apply the auto-fixable findings, and persist
- * the result with `meta.review` stamped. Returns the (post-fix) report plus
+ * the result with the review recorded on the lifecycle. Returns the (post-fix) report plus
  * the findings still needing a human.
  */
 export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<ReviewArtifactResult> {

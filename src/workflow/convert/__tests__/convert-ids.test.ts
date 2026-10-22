@@ -121,4 +121,17 @@ describe('convert-ids', () => {
 			assert.equal(JSON.parse(f.read(`.insrc/artifacts/LLD-${H}-s2.json`)).meta.storyId, 's2');
 		} finally { f.done(); }
 	});
+
+	it('a lowercase story id with leading zeros is renamed to the canonical form, and a canonical one is left alone', async () => {
+		const f = fixture();
+		try {
+			f.json(`PLAN-${H}-s001`, { meta: { epicHash: H, storyId: 's001', createdAt: '2026-10-20T00:00:00.000Z' }, body: {}, citations: [] });
+			f.json(`PLAN-${H}-s2`, { meta: { epicHash: H, storyId: 's2', createdAt: '2026-10-20T00:00:00.000Z' }, body: {}, citations: [] });
+			f.commit();
+			const plan = await planConversion(f.repo, { rules: [renameRule] });
+			assert.deepEqual(plan.renames, [{ from: `PLAN-${H}-s001`, to: `PLAN-${H}-s1` }]);
+			assert.equal(rewriteString('s2'), 's2');
+			assert.equal(rewriteString('s001'), 's1');
+		} finally { f.done(); }
+	});
 });

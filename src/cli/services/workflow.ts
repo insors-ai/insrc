@@ -310,7 +310,7 @@ export async function runWorkflowStreaming(
 
 /** Run the grounded review cycle over an artifact: verify its premises
  *  against real source, auto-fix the fixable findings, re-review, and stamp
- *  `meta.review`. Review is a critical (`review`) role → resolves the HIGH
+ *  the lifecycle review. Review is a critical (`review`) role → resolves the HIGH
  *  (core) tier via the RoleRouter (default: claude opus; whatever the operator
  *  pinned core to otherwise). The resulting `block` verdict is what `approve`
  *  then enforces. */

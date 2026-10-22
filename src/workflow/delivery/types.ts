@@ -183,7 +183,7 @@ export interface StagePassResult {
 
 /**
  * Approval and review facts for one record. A design artifact's review is its
- * meta.review; a CR record is itself a review (body.verdict / body.counts).
+ * the lifecycle review; a CR record is itself a review (body.verdict / body.counts).
  */
 export interface ArtifactGate {
 	readonly artifactId: string;
@@ -194,7 +194,7 @@ export interface ArtifactGate {
 		readonly reviewedBy:       'controller' | 'daemon' | null;
 		readonly counts:           { readonly high: number; readonly med: number; readonly low: number };
 		readonly override:         { readonly reason: string; readonly at: string | null } | null;
-		/** HIGH/MED findings with an entry in meta.reviewResolutions. */
+		/** HIGH/MED findings with an entry in the review resolutions. */
 		readonly resolvedFindings: number;
 		readonly effectiveVerdict: ReviewVerdict;
 		/** effectiveVerdict 'block', the gate the review guards unapproved, and no override. */

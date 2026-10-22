@@ -11,7 +11,7 @@
  * explicit approval act — it never approves on the user's behalf. It MIRRORS the
  * existing block-or-override enforcement (`ReviewBlockedError`/
  * `approveArtifactByJsonPath`) but on the CODE review's `body.verdict`, NEVER on
- * `meta.review` (the design-artifact review) — the two review kinds stay
+ * the lifecycle review (the design-artifact review) — the two review kinds stay
  * distinct. The gate is strictly ADDITIVE + fail-open:
  *   - no CR record (a pre-existing Story, or one whose review never ran) ⇒
  *     `no-review` ⇒ completion behaves exactly as before this Story;

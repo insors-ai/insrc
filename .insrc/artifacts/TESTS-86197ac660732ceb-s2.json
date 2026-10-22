@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:32:18.528Z",
+    "updatedAt": "2026-10-22T08:37:57.250Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -956,6 +956,135 @@
               },
               {
                 "title": "every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "6c0bef54",
+        "ranAt": "2026-10-22T08:37:57.250Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a worker started with the request entry answers a request, relays stream frames, aborts on cancel and names an uncloneable reply",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/main-services.test.ts",
+                "title": "a worker started with the request entry answers a request, relays stream frames, aborts on cancel and names an uncloneable reply",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a worker started before the embedding bootstrap settles embeds with the decided backend after the push",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/main-services.test.ts",
+                "title": "a worker started before the embedding bootstrap settles embeds with the decided backend after the push",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "daemon.threads.enabled is a config schema key defaulting to off and daemon.info returns its four fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/main-services.test.ts",
+                "title": "daemon.threads.enabled is a config schema key defaulting to off and daemon.info returns its four fields",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/config-catalog-contract.test.ts",
+                "title": "the real CONFIG_CATALOG has 39 rows (flat models.* surface; shaper*/summariser* now derived; + codeReview.enforce + codeReview.freshnessTimeoutMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled)",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/config-catalog-contract.test.ts",
+                "title": "real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/config-catalog-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 421,
+            "titles": [
+              {
+                "title": "src/config/** contains no import of src/cli (static scan of resolved specifiers)",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/config-catalog.ts is the single definition site of CONFIG_CATALOG and ConfigOption",
+                "result": "pass"
+              },
+              {
+                "title": "the src/cli re-export is reference-identical to the src/config definition (no duplicate literal)",
+                "result": "pass"
+              },
+              {
+                "title": "the real CONFIG_CATALOG has 39 rows (flat models.* surface; shaper*/summariser* now derived; + codeReview.enforce + codeReview.freshnessTimeoutMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled)",
+                "result": "pass"
+              },
+              {
+                "title": "RETIRED_PATHS covers exactly the 6 declared legacy entries and is disjoint from every CONFIG_CATALOG path",
+                "result": "pass"
+              },
+              {
+                "title": "real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real catalog — second pass changed === false",
+                "result": "pass"
+              },
+              {
+                "title": "ConfigCatalogError is the class thrown for catalog-integrity failures (not a bare Error)",
+                "result": "pass"
+              },
+              {
+                "title": "enrichment (S001): every catalog row has a non-empty group",
+                "result": "pass"
+              },
+              {
+                "title": "enrichment (S001): every enum row carries a non-empty enumValues; every non-enum row omits it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/main-services.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 766,
+            "titles": [
+              {
+                "title": "a worker started with the request entry answers a request, relays stream frames, aborts on cancel and names an uncloneable reply",
+                "result": "pass"
+              },
+              {
+                "title": "a worker started before the embedding bootstrap settles embeds with the decided backend after the push",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.threads.enabled is a config schema key defaulting to off and daemon.info returns its four fields",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 42 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 47 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -206,3 +206,34 @@ Run at 2026-10-22T08:32:18.528Z on commit `71c15a71`. Tests check: **passed**. 4
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/queue-lanes.test.ts` | 0 | 7 | 0.6 s |  |
 | `src/daemon/__tests__/queue-threads.test.ts` | 0 | 3 | 0.5 s |  |
+
+## t8
+
+Run at 2026-10-22T08:37:57.250Z on commit `6c0bef54`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a worker started with the request entry answers a request, relays stream frames, aborts on cancel and names an uncloneable reply**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a worker started with the request entry answers a request, relays stream frames, aborts on cancel and names an uncloneable reply | `src/daemon/threads/__tests__/main-services.test.ts` |
+
+**integration: a worker started before the embedding bootstrap settles embeds with the decided backend after the push**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a worker started before the embedding bootstrap settles embeds with the decided backend after the push | `src/daemon/threads/__tests__/main-services.test.ts` |
+
+**unit: daemon.threads.enabled is a config schema key defaulting to off and daemon.info returns its four fields**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | daemon.threads.enabled is a config schema key defaulting to off and daemon.info returns its four fields | `src/daemon/threads/__tests__/main-services.test.ts` |
+| pass | the real CONFIG_CATALOG has 39 rows (flat models.* surface; shaper*/summariser* now derived; + codeReview.enforce + codeReview.freshnessTimeoutMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled) | `src/config/__tests__/config-catalog-contract.test.ts` |
+| pass | real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate | `src/config/__tests__/config-catalog-contract.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/config/__tests__/config-catalog-contract.test.ts` | 0 | 10 | 0.4 s |  |
+| `src/daemon/threads/__tests__/main-services.test.ts` | 0 | 3 | 0.8 s |  |

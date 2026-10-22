@@ -43,7 +43,7 @@ describe('convert-marker', () => {
 			const history = new History(kit.k.sidecar);
 			const deps = { store: kit.k.store, history, taskSets: kit.sets, now: () => new Date('2026-10-22T00:00:00.000Z'), actor: MIGRATION } as unknown as ConversionDeps;
 			const plan = await planConversion(repo, { rules: CONVERSION_RULES });
-			await applyConversion(repo, plan, deps, { deliveryReadsLifecycle: () => true });
+			await applyConversion(repo, plan, deps, { deliveryReadsLifecycle: () => true, stopBeforeMarker: true });
 
 			// the apply writes every head and not the marker
 			assert.equal(existsSync(join(repo, REPO_SCHEMA_FILE)), false);

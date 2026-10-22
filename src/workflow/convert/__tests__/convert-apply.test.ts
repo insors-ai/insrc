@@ -20,7 +20,7 @@ const MIGRATION: Actor = { id: 'insrc:migration', kind: 'system', properties: {}
 const AT = '2026-10-10T00:00:00.000Z';
 const ref = (entityId: string) => ({ entityId, type: 'github:issue', relation: 'tracked-by' });
 
-const STEPS: ApplyStep[] = ['rename', 'stamp', 'amendments', 'feedback', 'migrate', 'units', 'tasks', 'story-history'];
+const STEPS: ApplyStep[] = ['rename', 'stamp', 'amendments', 'feedback', 'migrate', 'units', 'tasks', 'story-history', 'marker'];
 
 function legacyRepo(kit: ReturnType<typeof setKit>): { put(id: string, v: unknown): void; commit(): void; git(...a: string[]): string } {
 	const repo = kit.k.repo;
@@ -68,7 +68,8 @@ describe('convert-apply', () => {
 			const seen: ApplyStep[] = [];
 			const result = await applyConversion(kit.k.repo, plan, deps, { deliveryReadsLifecycle: () => true, seams: { afterStep: s => { seen.push(s); } } });
 			assert.deepEqual(seen, STEPS);
-			assert.equal(result.markerWritten, false, 'the marker is the sweep\'s');
+			assert.equal(result.markerWritten, true, 'the marker is the last write');
+			assert.deepEqual(result.verification?.differences, [], 'and the converted repository reads as the legacy one did');
 			assert.deepEqual(result.written.map(c => c.rule).filter((x, i, a) => a.indexOf(x) === i), ['rename-id', 'convert-amendment', 'convert-feedback', 'migrate-head', 'create-epic', 'create-story', 'create-tasks', 'move-binding', 'move-story-history'].filter(x => result.written.some(c => c.rule === x)));
 
 			// every artifact is converted: ids lower-case, lifecycle on each head, revision, status and approval kept

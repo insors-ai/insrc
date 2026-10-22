@@ -10,7 +10,8 @@
  *
  * Order: rename ids and files, stamp epicCreatedAt, convert flat amendments, convert body.feedback (the lines are appended before
  * the head that holds them is replaced), migrate every head, create EPIC and STORY heads and move their bindings, create the Task
- * heads of earlier Stories, move the Story history. The migration write is the one step that strips the legacy fields.
+ * heads of earlier Stories, move the Story history. The migration write is the one step that strips the legacy fields. Then the sweep
+ * and the marker (the last write), and verification of the converted repository against the before-snapshot.
  *
  * Every step can be repeated. The run keeps `.insrc/convert-progress.json` with the before-snapshot from the first start, so a
  * run that stopped part-way is resumed from the files as they are (the tree is then not clean, and the legacy stamps the snapshot
@@ -26,7 +27,7 @@ import { writeAtomic } from '../storage.js';
 import { applyAmendments, amendmentRule } from './amendments.js';
 import { backfillHead } from './backfill.js';
 import { applyFeedback, feedbackRule } from './feedback-rule.js';
-import { PROGRESS_FILE, readProgress } from './marker.js';
+import { PROGRESS_FILE, readProgress, writeMarkerIfClean } from './marker.js';
 import { writeMigratedHead } from './migrated-head.js';
 import type { MigratedHeadSeams } from './migrated-head.js';
 import { planConversion, plansEqual } from './plan.js';
@@ -37,6 +38,7 @@ import { applyStamps, stampRule } from './stamps.js';
 import { applyStoryHistory, storyHistoryRule } from './story-history.js';
 import { applyTasks, tasksRule } from './tasks.js';
 import { ConversionRefused } from './types.js';
+import { verifyConversion } from './verify.js';
 import type { ConversionDeps, ConversionPlan, ConversionResult, UnitView } from './types.js';
 import { applyUnits, unitsRule } from './units.js';
 
@@ -48,7 +50,7 @@ export const CONVERSION_RULES: readonly PlanRule[] = [renameRule, stampRule, ame
 export { PROGRESS_FILE };
 
 /** The steps of an apply, as a test seam sees them: called after each step has finished. */
-export type ApplyStep = 'rename' | 'stamp' | 'amendments' | 'feedback' | 'migrate' | 'units' | 'tasks' | 'story-history';
+export type ApplyStep = 'rename' | 'stamp' | 'amendments' | 'feedback' | 'migrate' | 'units' | 'tasks' | 'story-history' | 'marker';
 
 export interface ApplySeams {
 	readonly afterStep?:  ((step: ApplyStep) => void | Promise<void>) | undefined;
@@ -57,6 +59,8 @@ export interface ApplySeams {
 
 export interface ApplyOptions {
 	readonly seams?:                 ApplySeams | undefined;
+	/** Stop after the rules, before the sweep and the marker (the sweep and the marker have their own tests). */
+	readonly stopBeforeMarker?:      boolean | undefined;
 	/** Whether the delivery reader takes approval from the lifecycle. Defaults to asking the reader itself ({@link deliveryReadsLifecycle}). */
 	readonly deliveryReadsLifecycle?: (() => boolean) | undefined;
 }
@@ -123,5 +127,13 @@ export async function applyConversion(repo: string, plan: ConversionPlan, deps: 
 	await applyTasks(repo, deps);                            await done('tasks');
 	await applyStoryHistory(repo, deps);                     await done('story-history');
 
-	return { written: current.changes, markerWritten: false, trackerFailures: [] };
+	if (options.stopBeforeMarker === true) return { written: current.changes, markerWritten: false, trackerFailures: [] };
+
+	// the marker is the last write; verification then reads the converted repository and writes nothing
+	const before = readProgress(repo)?.snapshot ?? current.snapshot;
+	await writeMarkerIfClean(repo, deps.history, deps.now);
+	await done('marker');
+	const verification = verifyConversion(repo, before);
+	if (verification.differences.length > 0) log.warn({ differences: verification.differences.length }, 'convert: the converted repository reads differently from the legacy one');
+	return { written: current.changes, markerWritten: true, trackerFailures: [], verification };
 }

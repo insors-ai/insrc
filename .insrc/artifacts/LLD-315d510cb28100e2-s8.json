@@ -99,6 +99,12 @@
         "status": "deferred",
         "rationale": "Decided by the user: define on an existing Epic stays ungated for now; recorded in docs/plans/team-workflow.md as a deferred item so it is not forgotten.",
         "resolvedAt": "2026-10-22T20:25:26.323Z"
+      },
+      "qdf47465c": {
+        "question": "Writers other than the authoring runs also change a DEF, HLD or LLD body without a team gate: resolveComment (src/workflow/resolve-comment.ts:248-251, reached from the workflow.resolveComment handler at src/daemon/index.ts:739-745) and appendStoryToDefine (src/workflow/gates.ts:209-220). A content change returns the artifact to draft, so a non-holder can move an artifact in signoff to draft through them. Should every content writer of an artifact in signoff or changes-requested ask the gate with 'revise'? This Story gates the authoring runs only; gating the other writers is deferred to a follow-up.",
+        "status": "deferred",
+        "rationale": "Decided by the user: gating resolveComment and appendStoryToDefine (and any other content writer) with 'revise' is a follow-up of s8, not part of this plan; recorded in docs/plans/team-workflow.md.",
+        "resolvedAt": "2026-10-22T20:25:46.836Z"
       }
     }
   },

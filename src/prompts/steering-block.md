@@ -310,7 +310,7 @@ and docs yourself — use insrc analyze for drill-down — then answer once with
 the checklist is rejected with the reasons and stamps nothing; correct it and
 send `findings` again.
 
-Either way the review stamps `meta.review`, and **approval requires it**: a
+Either way the review is recorded on the lifecycle, and **approval requires it**: a
 DEF, HLD or LLD with no review, or with a review done by the party that
 authored it, is withheld, and so is one whose verdict is `block` (unresolved
 HIGH/MED findings). Resolve the blocking findings (apply / accept-with-note /

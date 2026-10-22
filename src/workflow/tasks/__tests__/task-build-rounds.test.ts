@@ -57,14 +57,14 @@ describe('task-build-rounds', () => {
 		} finally { s.done(); }
 	});
 
-	it("a Task with no head is judged by the BUILD record's per-task result, and a Task with a head is not", async () => {
+	it("a Task's build has passed by its own rounds, and a BUILD record's per-task result does not stand in for them", async () => {
 		const s = setKit();
 		try {
 			await s.plan(threeRows());
 			await s.sets.createFromPlan(PLAN, alice);
 			writeFileSync(artifactJsonPath(s.k.repo, buildArtifactId(H, 's1')), JSON.stringify({ meta: {}, body: { tasks: [{ id: 't1', passed: true }, { id: 't9', passed: true }] } }));
 			const evidence = createCompletionEvidence(s.k.repo);
-			assert.equal(await evidence.taskBuildPassed(`TASK-${H}-s1-t9`), true, 'no head: the BUILD record answers');
+			assert.equal(await evidence.taskBuildPassed(`TASK-${H}-s1-t9`), false, 'no head: the BUILD record is not read');
 			assert.equal(await evidence.taskBuildPassed(taskId(1)), false, 'a head with no round is not passed by the BUILD record');
 		} finally { s.done(); }
 	});

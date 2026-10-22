@@ -27,6 +27,7 @@ import { unitLabel } from '../unit-issue.js';
 import { ensureUnitIssueDetailed } from '../unit-issue.js';
 import type { PolicyReader, TeamPolicy } from '../../team/types.js';
 import type { UnitRef } from '../refs.js';
+import { seedTaskHeads } from '../../__tests__/helpers/task-heads.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const SLUG = 'tag-filtering';
@@ -96,6 +97,7 @@ function seed(): { repo: string; hld: string; lld: string; plan: string; cleanup
 		meta: { workflow: 'plan', runId: 'p1', ...base, storyId: 's1', schemaVersion: 1 },
 		body: { tasks: [{ id: 't1', title: 'Add the input', summary: 's', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['renders'], derivedFrom: [], tests: [] }], testStrategyCoverage: [] }, citations: [],
 	});
+	seedTaskHeads(repo, HASH, 's1', ['t1'], CREATED);
 	return {
 		repo, hld, lld, plan,
 		cleanup: () => { if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; rmSync(repo, { recursive: true, force: true }); },

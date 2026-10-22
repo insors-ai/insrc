@@ -22,7 +22,7 @@ import { renderEpicBody, renderStoryBody, updateEpicTaskList, mapIssueStatus } f
 import { resolveWorkflowRef } from '../resolve.js';
 import { ARTIFACTS_DIR } from '../../storage.js';
 import type { DefineArtifact, DefineStory } from '../../artifacts/define.js';
-import { approvedMeta } from '../../__tests__/lifecycle-fixtures.js';
+import { approvedMeta, draftMeta } from '../../__tests__/lifecycle-fixtures.js';
 
 const SLUG = 'demo-feature';
 const HASH = 'a1b2c3d4e5f60718';
@@ -231,12 +231,18 @@ function seedEpic(dir: string, hash: string, slug: string, createdAt: string, ta
 		body: { openQuestions: [] }, citations: [],
 	}));
 	writeFileSync(join(dir, `PLAN-${hash}-s1.json`), JSON.stringify({
-		meta: {
-			workflow: 'plan', schemaVersion: 1, epicHash: hash, epicSlug: slug, storyId: 's1', createdAt,
-			tracker: { taskRefs: { t1: `acme/demo#${taskRef}` } },
-		},
+		meta: { workflow: 'plan', schemaVersion: 1, epicHash: hash, epicSlug: slug, storyId: 's1', createdAt },
 		body: { tasks: [{ id: 't1', title: 'T', summary: 's', size: 'S', order: 1, dependsOn: [], acceptanceChecks: [], derivedFrom: [], tests: [] }] },
 		citations: [],
+	}));
+	// the Task artifact the plan's approval made, bound to its issue
+	const base = draftMeta();
+	writeFileSync(join(dir, `TASK-${hash}-s1-t1.json`), JSON.stringify({
+		meta: {
+			workflow: 'plan', epicHash: hash, epicSlug: slug, storyId: 's1', createdAt, epicCreatedAt: createdAt, ...base,
+			envelope: { ...(base['envelope'] as object), binding: { reference: { entityId: `acme/demo#${taskRef}`, type: 'github:issue', relation: 'tracked-by' }, createdAtRevision: 1, posted: [] } },
+		},
+		body: { planTaskId: 't1', title: 'T' }, citations: [],
 	}));
 }
 

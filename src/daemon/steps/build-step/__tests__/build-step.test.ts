@@ -34,6 +34,7 @@ import { resolveStoryRangeBase } from '../../../../workflow/runners/build/range-
 import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
 import { lifecycleFor } from '../../../lifecycle-registry.js';
 import { seedSidecarRules } from '../../../../workflow/artifact-core/__tests__/seed-rules.js';
+import { seedBoundTaskHead } from '../../../../workflow/__tests__/helpers/task-heads.js';
 
 /** The judge's structured verdict, with the fields a test does not care about filled in. */
 function judgeVerdict(over: Record<string, unknown>): Record<string, unknown> {
@@ -92,7 +93,6 @@ function seedPlan(repo: string, approved: boolean): string {
 			workflow: 'plan', runId: 'plan-run-1', schemaVersion: 1,
 			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT,
 			lldRunId: 'lld-run-1', lldEffectiveHash: 'basis-hash-xyz',
-			tracker: { taskRefs: { t1: 'acme/widgets#42' } },
 		},
 		body: {
 			tasks: [{
@@ -103,6 +103,7 @@ function seedPlan(repo: string, approved: boolean): string {
 		},
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
 	}, null, 2));
+	seedBoundTaskHead(repo, HASH, 's1', 't1', 'acme/widgets#42', CREATED_AT);
 	if (approved) markApprovedSync(json);
 	return json;
 }
@@ -131,7 +132,6 @@ function seedSecondEpic(repo: string): void {
 			workflow: 'plan', runId: 'plan-run-2', schemaVersion: 1,
 			epicHash: HASH2, epicSlug: 'other-epic', storyId: 's1', createdAt: CREATED_AT2, epicCreatedAt: CREATED_AT2,
 			lldRunId: 'lld-run-2', lldEffectiveHash: 'basis-hash-222',
-			tracker: { taskRefs: { t1: 'acme/widgets#52' } },
 		},
 		body: {
 			tasks: [{
@@ -142,6 +142,7 @@ function seedSecondEpic(repo: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
 	}, null, 2));
+	seedBoundTaskHead(repo, HASH2, 's1', 't1', 'acme/widgets#52', CREATED_AT2);
 	markApprovedSync(planJson);
 }
 

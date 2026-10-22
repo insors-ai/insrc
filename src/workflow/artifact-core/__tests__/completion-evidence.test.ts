@@ -6,7 +6,8 @@ import { dirname, join } from 'node:path';
 
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../../storage.js';
 import { createCompletionEvidence } from '../completion-evidence.js';
-import { approvedMeta } from '../../__tests__/lifecycle-fixtures.js';
+import { approvedMeta, draftMeta } from '../../__tests__/lifecycle-fixtures.js';
+import { FileSidecarStore } from '../sidecar-store.js';
 import { H } from './store-kit.js';
 
 function put(repo: string, id: string, head: object): void {
@@ -50,14 +51,22 @@ describe('createCompletionEvidence', () => {
 			put(repo, codeReviewArtifactId(H, 's4'), cr('block', approvedMeta({ override: ' ' })));
 			assert.deepEqual(await kind({ enforce: false }, 's4'), { kind: 'blocked' });
 
-			// the Task side reads the BUILD record's per-task results
-			put(repo, buildArtifactId(H, 's1'), { meta: { workflow: 'build' }, body: { tasks: [{ id: 't1', passed: true }, { id: 't2', passed: false }, { id: 't3' }] } });
+			// the Task side reads the Task's own build rounds: the latest round decides, and no head has no round
+			const round = (n: number, result: 'pass' | 'fail', id: string): void => new FileSidecarStore(repo).appendRecordSync('log', {
+				artifactId: id,
+				entry: { id: `round-${id}-${n}`, actor: { id: 'insrc:build', kind: 'system', properties: {} }, timestamp: `2026-10-0${n}T00:00:00.000Z`, operation: 'update', outcome: { result, summary: 'round', data: { kind: 'build-round' } } },
+			});
+			for (const n of [1, 2, 3]) put(repo, `TASK-${H}-s1-t${n}`, { meta: { workflow: 'plan', ...draftMeta() }, body: { planTaskId: `t${n}` } });
+			round(1, 'pass', `TASK-${H}-s1-t1`);
+			round(1, 'pass', `TASK-${H}-s1-t2`); round(2, 'fail', `TASK-${H}-s1-t2`);
+			// a BUILD record's per-task results do not stand in for the rounds
+			put(repo, buildArtifactId(H, 's1'), { meta: { workflow: 'build' }, body: { tasks: [{ id: 't1', passed: true }, { id: 't3', passed: true }, { id: 't9', passed: true }] } });
 			const evidence = createCompletionEvidence(repo);
 			assert.equal(await evidence.taskBuildPassed(`TASK-${H}-s1-t1`), true);
-			assert.equal(await evidence.taskBuildPassed(`TASK-${H}-s1-t2`), false);
-			assert.equal(await evidence.taskBuildPassed(`TASK-${H}-s1-t3`), false, 'not yet validated');
-			assert.equal(await evidence.taskBuildPassed(`TASK-${H}-s1-t9`), false, 'not in the record');
-			assert.equal(await evidence.taskBuildPassed(`TASK-${H}-s2-t1`), false, 'no BUILD record');
+			assert.equal(await evidence.taskBuildPassed(`TASK-${H}-s1-t2`), false, 'the latest round failed');
+			assert.equal(await evidence.taskBuildPassed(`TASK-${H}-s1-t3`), false, 'no round, whatever the BUILD record says');
+			assert.equal(await evidence.taskBuildPassed(`TASK-${H}-s1-t9`), false, 'no head: the BUILD record is not read');
+			assert.equal(await evidence.taskBuildPassed(`TASK-${H}-s2-t1`), false, 'no head and no BUILD record');
 			assert.equal(await evidence.taskBuildPassed(`LLD-${H}-s1`), false, 'not a Task');
 		} finally { rmSync(repo, { recursive: true, force: true }); }
 	});

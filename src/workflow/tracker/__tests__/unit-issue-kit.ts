@@ -7,6 +7,7 @@ import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planA
 import type { ResolvedGithubConfig } from '../../config/github.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortResult, type TrackerPort } from '../port.js';
 import type { UnitRef } from '../refs.js';
+import { draftMeta } from '../../__tests__/lifecycle-fixtures.js';
 
 export const HASH = 'a3f4b8c9d1e2f3a4';
 export const CREATED = '2026-07-17T07:42:28.275Z';
@@ -120,7 +121,7 @@ export const ref = (entityId: string) => ({ entityId, type: 'github:issue', rela
 // A repo with a Define, HLD, LLD and plan
 // ---------------------------------------------------------------------------
 
-export function seed(): { repo: string; json: (id: string) => string; read: (id: string) => any; cleanup: () => void } {
+export function seed(opts: { readonly taskHead?: boolean } = {}): { repo: string; json: (id: string) => string; read: (id: string) => any; cleanup: () => void } {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-unit-issue-'));
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 	const put = (id: string, doc: unknown): void => writeFileSync(artifactJsonPath(repo, id), JSON.stringify(doc, null, 2) + '\n');
@@ -141,6 +142,13 @@ export function seed(): { repo: string; json: (id: string) => string; read: (id:
 		body: { tasks: [{ id: 't1', title: 'Add the filter', summary: 'Add it', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['it filters'], derivedFrom: ['c1'], tests: [] }] },
 		citations: [],
 	});
+	// the Task artifact the plan's approval made for row t1: a Task's issue is recorded on it
+	if (opts.taskHead !== false) {
+		put(`TASK-${HASH}-s1-t1`, {
+			meta: { workflow: 'plan', epicHash: HASH, epicSlug: SLUG, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, ...draftMeta() },
+			body: { planTaskId: 't1', title: 'Add the filter' }, citations: [],
+		});
+	}
 	return {
 		repo, json: id => artifactJsonPath(repo, id), read: id => JSON.parse(readFileSync(artifactJsonPath(repo, id), 'utf8')),
 		cleanup: () => rmSync(repo, { recursive: true, force: true }),

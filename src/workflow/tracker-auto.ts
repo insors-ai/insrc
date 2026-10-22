@@ -343,7 +343,7 @@ function pushTasks(planJsonPath: string, meta: MetaShape, deps: AutoPushDeps, mo
 	const out = runUnitExtras(storyUnit, (review === undefined ? [] : [
 		{ name: 'planComment', marker: postMarker(storyUnit, 'planComment'), run: () => ops.comment(story.value.issue, `${postMarker(storyUnit, 'planComment')}\n<!-- insrc:review -->\n${renderReviewReport(review)}`) },
 	] as ExtraStep[]).map(guarded), { comments: commentsOf(port, story.value.issue) });
-	// each Task's issue, from its binding (or the plan's record for a Task with no artifact)
+	// each Task's issue, from its binding
 	const taskRefs: Record<string, string> = {};
 	for (const task of tasks) {
 		const ref = resolveUnitIssueLocal({ unit: 'task', repoPath, epicHash, storyId, taskId: task.id });

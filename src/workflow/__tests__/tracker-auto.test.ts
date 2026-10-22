@@ -23,8 +23,9 @@ import { basename, dirname, join } from 'node:path';
 
 import { blockedMeta, recordReviewSync } from './lifecycle-fixtures.js';
 import { autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
-import { planArtifactPaths } from '../storage.js';
+import { artifactJsonPath, planArtifactPaths } from '../storage.js';
 import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
+import { seedTaskHeads } from './helpers/task-heads.js';
 
 const HASH = 'a1b2c3d4e5f60718';
 const SLUG = 'demo-feature';
@@ -276,6 +277,8 @@ function setupWithPlan(useMilestones = false): ReturnType<typeof setup> & { plan
 		},
 		citations: [],
 	});
+	// the Task artifacts the approval of the plan makes: a Task's issue is recorded on its Task artifact
+	seedTaskHeads(s.repo, HASH, 's1', ['t1', 't2'], CREATED);
 	return { ...s, planJson };
 }
 
@@ -316,11 +319,14 @@ test('the three push functions run one path through the adapter: the issues, the
 		const strip = (jsonPath: string): Record<string, unknown> => { const { pushedAt: _p, ...rest } = trackerOf(jsonPath) as Record<string, unknown>; return rest; };
 		assert.deepEqual(strip(s.hldJson), { adapter: 'github', epicRef: 'acme/demo#1' });
 		assert.deepEqual(strip(s.lldJson), { adapter: 'github', storyRef: 'acme/demo#2' });
-		assert.deepEqual(strip(s.planJson), { adapter: 'github', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' }, units: strip(s.planJson)['units'] });
+		assert.deepEqual(strip(s.planJson), {}, 'the plan holds no Task record');
 		// the Epic's Define and the Story's LLD are bound to their issues
 		const bound = (path: string): string | undefined => (JSON.parse(readFileSync(path, 'utf8')) as { meta: { envelope?: { binding?: { reference: { entityId: string } } } } }).meta.envelope?.binding?.reference.entityId;
 		assert.equal(bound(s.defineJson), 'acme/demo#1');
 		assert.equal(bound(s.lldJson), 'acme/demo#2');
+		// and each Task to its issue, on its Task artifact
+		assert.equal(bound(artifactJsonPath(s.repo, `TASK-${HASH}-s1-t1`)), 'acme/demo#3');
+		assert.equal(bound(artifactJsonPath(s.repo, `TASK-${HASH}-s1-t2`)), 'acme/demo#4');
 	} finally { s.cleanup(); }
 
 	// Milestones switched on: the Epic and the Story are attached to the Epic's milestone.

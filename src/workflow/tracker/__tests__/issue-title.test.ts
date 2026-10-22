@@ -23,6 +23,7 @@ import { idMarker, parseIdMarker } from '../conventions.js';
 import type { CreatedIssue, IssueRef, IssueSpec, PortResult, TrackerPort } from '../port.js';
 import type { UnitRef } from '../refs.js';
 import { ensureUnitIssueDetailed, unitLabel } from '../unit-issue.js';
+import { seedTaskHeads } from '../../__tests__/helpers/task-heads.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';
@@ -81,6 +82,7 @@ function seed(): { repo: string; cleanup: () => void } {
 		body: { tasks: [{ id: 't1', title: 'Add the filter', summary: 'Add it', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['it filters'], derivedFrom: ['c1'], tests: [] }] },
 		citations: [],
 	});
+	seedTaskHeads(repo, HASH, 's1', ['t1'], CREATED);
 	return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 

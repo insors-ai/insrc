@@ -16,7 +16,7 @@ afterEach(() => _setGateDepsForTests());
 const policy: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
 const planJson = (fx: ReturnType<typeof seed>) => fx.read(planArtifactId(HASH, 's1'));
 
-test('ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan', () => {
+test('ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit is bound on its Task artifact with no record on the Plan', () => {
 	// the framework creates the issues: the Epic's Define and the Story's LLD are bound to them
 	let fx = seed();
 	try {
@@ -31,10 +31,11 @@ test('ensureUnitIssueDetailed binds an issue a person created first and an issue
 		assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.units, undefined);
 		assert.equal(fx.read(lldArtifactId(HASH, 's1')).meta.tracker.units, undefined);
 
-		// a Task unit keeps its record on the Plan, with no binding on the Plan
+		// a Task unit is bound on its Task artifact, with no record and no binding on the Plan
 		assert.ok(ensureUnitIssueDetailed(task(fx.repo), t.port, deps).ok);
-		assert.equal(planJson(fx).meta.tracker.units['task:s1/t1'].issue, 'acme/demo#3');
-		assert.equal(planJson(fx).meta.tracker.taskRefs.t1, 'acme/demo#3');
+		assert.equal(bound(fx, `TASK-${HASH}-s1-t1`), 'acme/demo#3');
+		assert.equal(planJson(fx).meta.tracker?.units, undefined, 'no unit record on the Plan');
+		assert.equal(planJson(fx).meta.tracker?.taskRefs, undefined, 'and no taskRefs');
 		assert.equal(planJson(fx).meta.envelope, undefined, 'the Plan carries no binding');
 		assert.equal(isUnitSettled(task(fx.repo)), true);
 		assert.equal(isUnitSettled(story(fx.repo)), true);

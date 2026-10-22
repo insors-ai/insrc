@@ -9,7 +9,7 @@
  * and walks start → plan → execute → verify → synthesize, checking:
  *   - the execute prompt carries the TASK TIER instructions + the plan's tasks,
  *   - the approved plan's tasks reach the context (an unapproved plan does not),
- *   - synthesize persists the LLM-returned taskRefs onto the plan's meta.tracker,
+ *   - synthesize binds the LLM-returned taskRefs to the Story's Task artifacts (the plan records nothing),
  *   - with pushTasks OFF, the execute prompt has no task instructions.
  *
  * Run: npx tsx --test src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts
@@ -24,9 +24,10 @@ import { tmpdir } from 'node:os';
 import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
-import { approveArtifactByJsonPath } from '../../../../workflow/gates.js';
 import { defineArtifactPaths, planArtifactPaths } from '../../../../workflow/storage.js';
-import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import { markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
+import { seedTaskHeads } from '../../../../workflow/__tests__/helpers/task-heads.js';
+import { readBinding } from '../../../../workflow/tracker/binding.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment
@@ -54,7 +55,7 @@ function seed(repo: string, opts: { approvePlan: boolean }): void {
 	const dp = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(dp.json), { recursive: true });
 	writeFileSync(dp.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
+		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			flavor: 'enhancement', problem: 'Users cannot filter todos by tag.',
 			nonGoals: [], assumptions: [], constraints: [],
@@ -63,13 +64,12 @@ function seed(repo: string, opts: { approvePlan: boolean }): void {
 		},
 		citations: [],
 	}, null, 2));
-	stampOtherPartyReview(dp.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(dp.json);
+	markApprovedSync(dp.json);
 
 	const pp = planArtifactPaths(repo, HASH, 's1', CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(pp.json), { recursive: true });
 	writeFileSync(pp.json, JSON.stringify({
-		meta: { workflow: 'plan', runId: 'p1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED, lldRunId: 'l1', lldEffectiveHash: 'x' },
+		meta: { workflow: 'plan', runId: 'p1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, lldRunId: 'l1', lldEffectiveHash: 'x' },
 		body: {
 			tasks: [
 				{ id: 't1', title: 'Add filter input', summary: 'Wire it.', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['renders'], derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'unit: input' }] },
@@ -79,7 +79,9 @@ function seed(repo: string, opts: { approvePlan: boolean }): void {
 		},
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD s1' }],
 	}, null, 2));
-	if (opts.approvePlan) approveArtifactByJsonPath(pp.json);
+	// the Task artifacts the approval of the plan makes
+	seedTaskHeads(repo, HASH, 's1', ['t1', 't2'], CREATED);
+	if (opts.approvePlan) markApprovedSync(pp.json);
 }
 
 const PUSH_PLAN = { workflow: 'tracker.push', steps: [
@@ -141,7 +143,7 @@ test('coarse push with pushTasks OFF: execute prompt has no task instructions', 
 	} finally { cfg.dispose(); rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('coarse push synthesize persists LLM-returned taskRefs onto the plan meta.tracker', async () => {
+test('coarse push synthesize binds LLM-returned taskRefs to the Task artifacts and records nothing on the plan', async () => {
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-coarse-tasks-'));
@@ -164,9 +166,12 @@ test('coarse push synthesize persists LLM-returned taskRefs onto the plan meta.t
 		const done = payload(await handleWorkflowStep({ phase: 'synthesize', artifact: { refs: execRefs, checklist: verify }, state: s3Out['state'] as string }));
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 
-		// The plan artifact's meta.tracker.taskRefs was written.
+		// Each Task artifact is bound to its issue; the plan artifact holds no Task record.
+		assert.equal(readBinding(repo, `TASK-${HASH}-s1-t1`)?.reference.entityId, 'myorg/myrepo#201');
+		assert.equal(readBinding(repo, `TASK-${HASH}-s1-t2`)?.reference.entityId, 'myorg/myrepo#202');
 		const planJson = planArtifactPaths(repo, HASH, 's1', CREATED, 'epic', 'tag-filtering').json;
-		const plan = JSON.parse(readFileSync(planJson, 'utf8')) as { meta: { tracker?: { taskRefs?: Record<string, string> } } };
-		assert.deepEqual(plan.meta.tracker?.taskRefs, { t1: 'myorg/myrepo#201', t2: 'myorg/myrepo#202' });
+		const plan = JSON.parse(readFileSync(planJson, 'utf8')) as { meta: { tracker?: { taskRefs?: Record<string, string>; units?: unknown } } };
+		assert.equal(plan.meta.tracker?.taskRefs, undefined);
+		assert.equal(plan.meta.tracker?.units, undefined);
 	} finally { cfg.dispose(); rmSync(repo, { recursive: true, force: true }); }
 });

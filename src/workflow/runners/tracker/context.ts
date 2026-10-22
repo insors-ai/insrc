@@ -67,13 +67,13 @@ export function assemblePushContext(ctx: StepRunnerContext): PushContext {
 
 	// Task tier (opt-in): for each Story that has an APPROVED plan, surface
 	// its Tasks so the execute step can create typed Task sub-issues. Also
-	// carry any taskRefs already recorded on each plan (dedup on re-push).
+	// carry any Task issues already bound to the Story's Task artifacts (dedup on re-push).
 	const plans: { storyId: string; planDocRel: string; tasks: PushTaskInfo[] }[] = [];
 	if (gh.pushTasks) {
 		for (const s of epic.body.stories) {
 			const planJson = artifactJsonPath(ctx.intent.repoPath, planArtifactId(epicHash, s.id));
 			if (!existsSync(planJson)) continue;
-			let plan: PlanArtifact & { meta: { tracker?: { taskRefs?: Record<string, string> } } };
+			let plan: PlanArtifact;
 			try { plan = JSON.parse(readFileSync(planJson, 'utf8')) as typeof plan; } catch { continue; }
 			if (approvalStateOf(plan.meta) !== 'approved') continue;   // unapproved plan → skip
 			plans.push({
@@ -85,8 +85,7 @@ export function assemblePushContext(ctx: StepRunnerContext): PushContext {
 					tests: t.tests.map(x => ({ level: x.level, name: x.name })),
 				})),
 			});
-			// a Task's own binding wins over the plan's record, which only a Task with no artifact still has
-			const priorTaskRefs = { ...(plan.meta.tracker?.taskRefs ?? {}), ...taskIssueRefsOf(dirname(planJson), epicHash, s.id) };
+			const priorTaskRefs = taskIssueRefsOf(dirname(planJson), epicHash, s.id);
 			if (Object.keys(priorTaskRefs).length > 0) {
 				(existing.taskRefs ??= {})[s.id] = priorTaskRefs;
 			}

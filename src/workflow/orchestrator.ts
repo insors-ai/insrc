@@ -129,10 +129,9 @@ import { SEQUENCE_DEFINITION_PROPERTY_SCHEMA, SEQUENCE_CONTENT_GATE_RULE } from 
 import { COMPONENT_DEFINITION_PROPERTY_SCHEMA, COMPONENT_CONTENT_GATE_RULE } from './artifacts/companion/component-schema.js';
 import { ADHERENCE_PROPERTY_SCHEMA } from './artifacts/companion/adherence.js';
 import { linkDocsToIssues } from './tracker/link.js';
-import { patchTrackerMeta } from './tracker/refs.js';
 import { bindArtifact } from './tracker/binding.js';
 import { taskHeadIdOf } from './tasks/lookup.js';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import {
 	AmendmentApplyError,
 	applyAmendments,
@@ -2915,23 +2914,17 @@ function mutateEpicTrackerMeta(
 		// Framework-owned doc↔issue linkage (same as the deterministic path):
 		// re-render each doc's markdown with a `**Tracker:**` link.
 		linkDocsToIssues(repoPath, epicHash, epicSlug, { epicRef: push.epicRef, storyRefs: push.storyRefs });
-		// Task tier: record each Story's taskRefs onto its plan artifact so a
-		// re-push adopts them (and downstream `build` can find its issues).
+		// Task tier: bind each Task issue to its Task artifact, so a re-push adopts it (and downstream `build` can find its
+		// issues). A Task with no artifact has nowhere to be recorded: the approval of its plan makes them.
 		if (push.taskRefs !== undefined) {
 			for (const [storyId, taskRefs] of Object.entries(push.taskRefs)) {
-				const planJson = artifactJsonPath(repoPath, planArtifactId(epicHash, storyId));
-				if (!existsSync(planJson)) continue;
-				// a Task with its own artifact is recorded on that artifact's binding; the plan keeps only a Task with no artifact
-				const onPlan: Record<string, string> = {};
 				for (const [taskId, ref] of Object.entries(taskRefs)) {
 					const head = taskHeadIdOf(repoPath, epicHash, storyId, taskId);
-					if (head === undefined) { onPlan[taskId] = ref; continue; }
-					// a Task already bound keeps its issue (a unit has exactly one); nothing is written on the plan for it
+					if (head === undefined) { log.warn({ storyId, taskId, ref }, 'tracker.push: the Task has no Task artifact; its issue was not recorded'); continue; }
+					// a Task already bound keeps its issue (a unit has exactly one)
 					const bound = bindArtifact(repoPath, head, ref);
 					if (!bound.ok) log.warn({ head, ref, why: bound.kind, reason: bound.reason }, 'tracker.push: the Task issue was not recorded on its Task artifact');
 				}
-				try { patchTrackerMeta(planJson, { ...(Object.keys(onPlan).length > 0 ? { taskRefs: onPlan } : {}), pushedAt: new Date().toISOString() }); }
-				catch { /* plan meta patch is best-effort */ }
 			}
 		}
 		return;

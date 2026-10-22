@@ -81,7 +81,6 @@ const DEF_RE  = /^DEF-([0-9a-f]{16})\.json$/;
 const ISSUE_RE = /^ISSUE-([0-9a-f]{16})\.json$/;
 // Every route mints the lowercase `s<n>` story id; an uppercase file name is not an artifact until the s9 conversion.
 const LLD_RE  = /^LLD-([0-9a-f]{16})-(s\d+)\.json$/;
-const PLAN_RE = /^PLAN-([0-9a-f]{16})-(s\d+)\.json$/;
 const TASK_RE = /^TASK-([0-9a-f]{16})-(s\d+)-t\d+\.json$/;
 
 // ---------------------------------------------------------------------------
@@ -343,8 +342,8 @@ function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: stri
 	let task: PlanTask | undefined;
 	if (taskId !== undefined && storyId !== undefined) {
 		const plan = readArtifact(storyArtifactPath(dir, 'PLAN', epicHash, storyId));
-		// the Task's own binding first; the plan's record only for a Task with no artifact
-		taskRef = head?.issue ?? plan?.meta?.tracker?.taskRefs?.[rowId ?? taskId];
+		// the issue is the Task artifact's binding
+		taskRef = head?.issue;
 		task = plan?.body?.tasks?.find(t => t.id === (rowId ?? taskId));
 	}
 
@@ -375,7 +374,7 @@ function readTrackerBlock(path: string): TrackerBlock | undefined {
 // Per-form resolution
 // ---------------------------------------------------------------------------
 
-/** issue# → node. Scans tasks (PLAN), then stories (LLD + DEF storyRefs),
+/** issue# → node. Scans the Task artifacts, then stories (LLD + DEF storyRefs),
  *  then epics (DEF / HLD epicRef). */
 function resolveByIssue(dir: string, number: string): ResolvedRef | null {
 	const files = listFiles(dir);
@@ -386,18 +385,6 @@ function resolveByIssue(dir: string, number: string): ResolvedRef | null {
 		if (m === null) continue;
 		const head = taskHeadsIn(dir, m[1]!, m[2]!).find(h => h.id === f.slice(0, -'.json'.length));
 		if (head !== undefined && head.status !== 'withdrawn' && head.issue !== undefined && refNumber(head.issue) === number) return buildRef(dir, m[1]!, m[2]!, head.number);
-	}
-
-	// Tasks recorded on their plan (a Task with no artifact).
-	for (const f of files) {
-		const m = PLAN_RE.exec(f);
-		if (m === null) continue;
-		const epicHash = m[1]!;
-		const storyId  = m[2]!;
-		const taskRefs = readArtifact(join(dir, f))?.meta?.tracker?.taskRefs ?? {};
-		for (const [taskId, ref] of Object.entries(taskRefs)) {
-			if (refNumber(ref) === number) return buildRef(dir, epicHash, storyId, taskId);
-		}
 	}
 
 	// Stories — LLD storyRef.

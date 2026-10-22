@@ -21,6 +21,7 @@ import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planA
 import type { ResolvedGithubConfig } from '../../config/github.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortResult, type TrackerPort } from '../port.js';
 import type { UnitRef } from '../refs.js';
+import { bindArtifact } from '../binding.js';
 import { ensureUnitIssue, ensureUnitIssueDetailed, isUnitSettled, resolveUnitIssueLocal, unitKey, unitLabel } from '../unit-issue.js';
 
 import { CFG, HASH, MEMBERSHIP, SLUG, bound, deps, epic, fakeTracker, ref, seed, story, task } from './unit-issue-kit.js';
@@ -64,19 +65,19 @@ test('resolveUnitIssueLocal resolves from records and legacy refs, reconciles lo
 		assert.equal(lld.tracker.storyRef, 'acme/demo#8');
 		assert.equal(lld.envelope.binding.createdAtRevision, 2, 'the binding notes the artifact revision');
 
-		// Task: the plan's taskRefs entry
-		const plan = fx.read(planArtifactId(HASH, 's1')); plan.meta.tracker = { adapter: 'github', taskRefs: { t1: 'acme/demo#9' } };
+		// Task: the binding on its Task artifact; a record the plan once held for it is not read
+		const plan = fx.read(planArtifactId(HASH, 's1')); plan.meta.tracker = { adapter: 'github', taskRefs: { t1: 'acme/demo#9' }, units: { 'task:s1/t1': { unit: 'task', unitId: 't1', issue: 'acme/demo#9', createdAtRevision: 1 } } };
 		writeFileSync(fx.json(planArtifactId(HASH, 's1')), JSON.stringify(plan));
+		assert.equal(resolveUnitIssueLocal(task(fx.repo), deps.now), null, 'a Task record on the plan is not read');
+		assert.equal(bindArtifact(fx.repo, `TASK-${HASH}-s1-t1`, 'acme/demo#9').ok, true);
 		assert.equal(resolveUnitIssueLocal(task(fx.repo), deps.now), 'acme/demo#9');
-		assert.equal(fx.read(planArtifactId(HASH, 's1')).meta.tracker.units['task:s1/t1'].issue, 'acme/demo#9');
+		assert.equal(bound(fx, `TASK-${HASH}-s1-t1`), 'acme/demo#9');
 
-		// the units records alone (legacy refs removed) resolve all three units
+		// the bindings alone (legacy refs removed) resolve all three units
 		const d3 = fx.read(defineArtifactId(HASH)); delete d3.meta.tracker.epicRef; delete d3.meta.tracker.storyRefs;
 		writeFileSync(fx.json(defineArtifactId(HASH)), JSON.stringify(d3));
 		const l3 = fx.read(lldArtifactId(HASH, 's1')); delete l3.meta.tracker.storyRef;
 		writeFileSync(fx.json(lldArtifactId(HASH, 's1')), JSON.stringify(l3));
-		const p3 = fx.read(planArtifactId(HASH, 's1')); delete p3.meta.tracker.taskRefs;
-		writeFileSync(fx.json(planArtifactId(HASH, 's1')), JSON.stringify(p3));
 		assert.equal(resolveUnitIssueLocal(epic(fx.repo), deps.now), 'acme/demo#7');
 		assert.equal(resolveUnitIssueLocal(story(fx.repo), deps.now), 'acme/demo#8');
 		assert.equal(resolveUnitIssueLocal(task(fx.repo), deps.now), 'acme/demo#9');
@@ -457,4 +458,43 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 		assert.equal(t.calls.resolve.length, resolvesBefore);
 		assert.equal(recordOf(fx, story(fx.repo)).pendingLink, undefined);
 	} finally { fx.cleanup(); }
+});
+
+test('unit-issue.test.ts: the unit issue resolves from the binding with no Plan Task record', () => {
+	const fx = seed();
+	try {
+		const taskId = `TASK-${HASH}-s1-t1`;
+		const t = fakeTracker();
+		// ensured for the first time: created under the Story's issue and bound on the Task artifact; the plan gets no record
+		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
+		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		const made = ensureUnitIssueDetailed(task(fx.repo), t.port, deps);
+		assert.deepEqual(made.ok ? [made.value.created, made.value.issue] : made, [true, 'acme/demo#3']);
+		assert.equal(bound(fx, taskId), 'acme/demo#3', 'the Task artifact holds the issue');
+		const plan = fx.read(planArtifactId(HASH, 's1')).meta;
+		assert.equal(plan.tracker?.taskRefs, undefined, 'no taskRefs on the plan');
+		assert.equal(plan.tracker?.units, undefined, 'no unit record on the plan');
+
+		// a later resolve answers from the binding, with no tracker call
+		const calls = t.calls.find;
+		assert.equal(resolveUnitIssueLocal(task(fx.repo), deps.now), 'acme/demo#3');
+		assert.equal(isUnitSettled(task(fx.repo)), true);
+		assert.equal(t.calls.find, calls);
+		assert.equal(ensureUnitIssueDetailed(task(fx.repo), t.port, deps).ok && t.calls.create, 3, 'and a second ensure creates nothing');
+	} finally { fx.cleanup(); }
+
+	// a Task with no artifact has nowhere to be recorded, so nothing is created and nothing is read from the plan
+	const bare = seed({ taskHead: false });
+	try {
+		const t = fakeTracker();
+		ensureUnitIssueDetailed(epic(bare.repo), t.port, deps);
+		ensureUnitIssueDetailed(story(bare.repo), t.port, deps);
+		const created = t.calls.create;
+		const refused = ensureUnitIssueDetailed(task(bare.repo), t.port, deps);
+		assert.equal(refused.ok, false);
+		assert.deepEqual(refused.ok ? null : refused.phase, 'before-create');
+		assert.match(refused.ok ? '' : refused.reason, /no Task artifact yet/);
+		assert.equal(t.calls.create, created);
+		assert.equal(resolveUnitIssueLocal(task(bare.repo), deps.now), null);
+	} finally { bare.cleanup(); }
 });

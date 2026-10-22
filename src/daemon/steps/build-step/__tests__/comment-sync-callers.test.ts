@@ -47,7 +47,7 @@ function repoWithTask(): string {
 	writeFileSync(join(dir, `${lldArtifactId(HASH, 's1')}.json`), JSON.stringify({ meta: { workflow: 'design.story', runId: 'l', schemaVersion: 1, ...meta, storyId: 's1', hldBaseRunId: 'h', hldEffectiveHash: 'x', hldAmendmentsApplied: [], ...approvedMeta({ at: AT }) }, body: { openQuestions: [] }, citations: [] }));
 	const plan = join(dir, `${planArtifactId(HASH, 's1')}.json`);
 	writeFileSync(plan, JSON.stringify({
-		meta: { workflow: 'plan', runId: 'p', schemaVersion: 1, ...meta, storyId: 's1', lldRunId: 'l', lldEffectiveHash: 'x', tracker: { taskRefs: { t1: ISSUE } } },
+		meta: { workflow: 'plan', runId: 'p', schemaVersion: 1, ...meta, storyId: 's1', lldRunId: 'l', lldEffectiveHash: 'x' },
 		body: { tasks: [{ id: 't1', title: 'Wire the filter', summary: 'Add the filter.', size: 'M', order: 1, dependsOn: [], acceptanceChecks: ['narrows'], derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'unit: narrows' }] }] },
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
 	}));

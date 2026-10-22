@@ -543,7 +543,6 @@ export interface TrackerBlock {
 	readonly epicRef?:   string;
 	readonly storyRef?:  string;
 	readonly storyRefs?: Readonly<Record<string, string>>;
-	readonly taskRefs?:  Readonly<Record<string, string>>;
 }
 
 /** Read `meta.createdAt` + `meta.epicSlug` + `meta.standalone` from a canonical

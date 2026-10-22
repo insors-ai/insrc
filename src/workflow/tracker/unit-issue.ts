@@ -5,7 +5,7 @@
 
 /**
  * One tracker issue per stage unit (sc3): the Epic on the Define, a Story on its
- * LLD, a build Task on the plan. This is the team-mode owner of "does this unit
+ * LLD, a build Task on its Task artifact. This is the team-mode owner of "does this unit
  * have an issue"; the approve-time pushes in `tracker-auto.ts` keep their own
  * (legacy) path for a repo without a team policy.
  *
@@ -27,7 +27,7 @@ import type { DefineArtifact } from '../artifacts/define.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from '../config/github.js';
 import { ArtifactIds, InvalidArtifactKeyError, type ArtifactKey } from '../artifact-ids.js';
-import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId, readRevision } from '../storage.js';
+import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
 import { epicMembershipLabel, renderEpicBody, renderStoryBody, renderTaskBody } from './conventions.js';
 import type { IssueRef, PortFailureKind, PortResult, TrackerComment, TrackerPort } from './port.js';
 import { bindArtifact, readBinding, recordPosted, setPendingLink, TRACKER_ISSUE_TYPE } from './binding.js';
@@ -126,18 +126,15 @@ function unitId(unit: UnitRef): string {
 const defineJson = (u: UnitRef): string => artifactJsonPath(u.repoPath, defineArtifactId(u.epicHash));
 const hldJson    = (u: UnitRef): string => artifactJsonPath(u.repoPath, hldArtifactId(u.epicHash));
 const lldJson    = (u: UnitRef): string => artifactJsonPath(u.repoPath, lldArtifactId(u.epicHash, u.storyId ?? ''));
-const planJson   = (u: UnitRef): string => artifactJsonPath(u.repoPath, planArtifactId(u.epicHash, u.storyId ?? ''));
 
-/** The artifact that carries the unit's own record. */
-function ownJson(unit: UnitRef): string {
-	return unit.unit === 'epic' ? defineJson(unit) : unit.unit === 'story' ? lldJson(unit) : planJson(unit);
+/** The artifact that carries the unit's own older refs (an Epic's Define, a Story's LLD); a Task has only its binding. */
+function ownJson(unit: UnitRef): string | undefined {
+	return unit.unit === 'epic' ? defineJson(unit) : unit.unit === 'story' ? lldJson(unit) : undefined;
 }
+
+const trackerMetaOf = (path: string | undefined): TrackerMeta | undefined => path === undefined ? undefined : readTrackerMeta(path);
 
 const nonEmpty = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
-
-function revisionOfFile(path: string): number {
-	try { return readRevision(JSON.parse(readFileSync(path, 'utf8'))); } catch { return 0; }
-}
 
 function mapEntry(map: Readonly<Record<string, string>> | undefined, id: string | undefined): string | undefined {
 	if (map === undefined || id === undefined) return undefined;
@@ -147,9 +144,9 @@ function mapEntry(map: Readonly<Record<string, string>> | undefined, id: string 
 const issueRefOf = (ref: string): Reference => ({ entityId: ref, type: TRACKER_ISSUE_TYPE, relation: 'tracked-by' });
 
 /**
- * Where a unit's issue record lives (s6, s7). An Epic's is the binding on its Define and a Story's the binding on its LLD; a Task's
- * is the binding on its Task artifact. A Task with no artifact (its Story was planned before Tasks were artifacts) keeps its
- * record under meta.tracker.units on the Plan until s9 gives it one. Every read and write of a record goes through here.
+ * Where a unit's issue record lives. An Epic's is the binding on its Define and a Story's the binding on its LLD; a Task's is the
+ * binding on its Task artifact. A Task with no artifact has no home: the plan's approval makes the Task artifacts, and until it
+ * has run there is nothing to record on. Every read and write of a record goes through here.
  */
 function bindingHome(unit: UnitRef): { readonly repoPath: string; readonly artifactId: string } | undefined {
 	const artifactId = unit.unit === 'task' ? taskHeadOf(unit) : unitArtifactId(unit);
@@ -159,10 +156,7 @@ function bindingHome(unit: UnitRef): { readonly repoPath: string; readonly artif
 /** The unit's recorded issue and its pending link, in the shape the retry reads (refs as `owner/repo#N`). */
 function readRecord(unit: UnitRef): { readonly issue: IssueRef; readonly pendingLink?: UnitIssue['pendingLink'] } | undefined {
 	const home = bindingHome(unit);
-	if (home === undefined) {
-		const record = readTrackerMeta(ownJson(unit))?.units?.[unitKey(unit)];
-		return record === undefined || !nonEmpty(record.issue) ? undefined : { issue: record.issue, ...(record.pendingLink !== undefined ? { pendingLink: record.pendingLink } : {}) };
-	}
+	if (home === undefined) return undefined;
 	const binding = readBinding(home.repoPath, home.artifactId);
 	if (binding === undefined) return undefined;
 	const p = binding.pendingLink;
@@ -175,19 +169,12 @@ function readRecord(unit: UnitRef): { readonly issue: IssueRef; readonly pending
 /** Keep (or with undefined clear) the unit's pending link on its record. False when it could not be written. */
 function writePendingLink(unit: UnitRef, link: UnitIssue['pendingLink']): boolean {
 	const home = bindingHome(unit);
-	if (home !== undefined) {
-		return setPendingLink(home.repoPath, home.artifactId, link === undefined ? undefined
-			: { parent: issueRefOf(link.parent), ...(link.childId !== undefined ? { childId: link.childId } : {}), ...(link.child !== undefined ? { child: issueRefOf(link.child) } : {}) });
-	}
-	const path = ownJson(unit);
-	const record = readTrackerMeta(path)?.units?.[unitKey(unit)];
-	if (record === undefined) return false;
-	if (link === undefined) { const { pendingLink: _done, ...settled } = record; patchTrackerMeta(path, { units: { [unitKey(unit)]: settled } }); return true; }
-	patchTrackerMeta(path, { units: { [unitKey(unit)]: { ...record, pendingLink: link } } });
-	return true;
+	if (home === undefined) return false;
+	return setPendingLink(home.repoPath, home.artifactId, link === undefined ? undefined
+		: { parent: issueRefOf(link.parent), ...(link.childId !== undefined ? { childId: link.childId } : {}), ...(link.child !== undefined ? { child: issueRefOf(link.child) } : {}) });
 }
 
-/** The sibling refs the renderers and the chain report read (epicRef, storyRef, storyRefs, taskRefs, pushedAt): written alongside the record until s9. */
+/** The sibling refs the renderers and the chain report read (epicRef, storyRef, storyRefs, pushedAt): written alongside the record. */
 function recordSiblings(unit: UnitRef, issue: IssueRef, now: string): boolean {
 	let ok = true;
 	const patches: Array<[string, Partial<TrackerMeta>]> = [];
@@ -207,21 +194,10 @@ function recordSiblings(unit: UnitRef, issue: IssueRef, now: string): boolean {
 	return ok;
 }
 
-/** Record the unit's issue on its own artifact (the binding, or for a Task the Plan's units record) and on the siblings that read it. */
+/** Record the unit's issue on its own artifact (the binding) and on the siblings that read it. False when it could not be recorded. */
 function recordUnit(unit: UnitRef, issue: IssueRef, now: string, pendingLink?: UnitIssue['pendingLink']): boolean {
 	const home = bindingHome(unit);
-	if (home === undefined) {
-		// a Task with no artifact: the Plan's record and taskRefs, as before s6
-		const own = ownJson(unit);
-		const prior = readTrackerMeta(own)?.units?.[unitKey(unit)];
-		const record: UnitIssue = prior !== undefined && prior.issue === issue
-			? prior
-			: { unit: unit.unit, unitId: unitId(unit), issue, createdAtRevision: revisionOfFile(own), ...(pendingLink !== undefined ? { pendingLink } : {}) };
-		const taskRefs = readTrackerMeta(own)?.taskRefs ?? {};
-		if (!fileHas(own)) { log.debug({ path: own }, 'unit-issue: no artifact to record on'); return true; }
-		try { patchTrackerMeta(own, { taskRefs: { ...taskRefs, [unit.taskId ?? '']: issue }, units: { [unitKey(unit)]: record }, pushedAt: now }); return true; }
-		catch (err) { log.warn({ path: own, err: (err as Error).message }, 'unit-issue: could not record the unit issue (its label finds it next time)'); return false; }
-	}
+	if (home === undefined) { log.debug({ unit: unitKey(unit) }, 'unit-issue: no artifact to record on'); return false; }
 	if (!fileHas(artifactJsonPath(home.repoPath, home.artifactId))) { log.debug({ artifactId: home.artifactId }, 'unit-issue: no artifact to bind'); return recordSiblings(unit, issue, now); }
 	const bound = bindArtifact(home.repoPath, home.artifactId, issue);
 	if (!bound.ok) { log.warn({ unit: unitKey(unit), why: bound.kind, reason: bound.reason }, 'unit-issue: could not bind the unit issue (its label finds it next time)'); return false; }
@@ -237,9 +213,9 @@ function recordUnit(unit: UnitRef, issue: IssueRef, now: string, pendingLink?: U
 /**
  * The unit's issue if any local record or older ref names it, else null. Makes
  * no tracker call and never throws. Order: the record (the binding of an Epic's
- * Define or a Story's LLD, the Plan's units record for a Task), then the older
- * refs (Epic: Define epicRef, HLD epicRef; Story: the LLD's own storyRef, then
- * the Define's storyRefs entry; Task: the plan's taskRefs entry). A unit with no
+ * Define, a Story's LLD or a Task's artifact), then the older refs (Epic: Define
+ * epicRef, HLD epicRef; Story: the LLD's own storyRef, then
+ * the Define's storyRefs entry; a Task has none). A unit with no
  * binding is bound once from an older ref (a one-way rebind); a hit also writes
  * the missing sibling refs locally.
  */
@@ -247,14 +223,12 @@ export function resolveUnitIssueLocal(unit: UnitRef, now: () => string = () => n
 	let hit: string | undefined;
 	try {
 		const recorded = readRecord(unit)?.issue;
-		const own = readTrackerMeta(ownJson(unit));
+		const own = trackerMetaOf(ownJson(unit));
 		if (nonEmpty(recorded)) hit = recorded;
 		else if (unit.unit === 'epic') {
 			hit = [own?.epicRef, readTrackerMeta(hldJson(unit))?.epicRef].find(nonEmpty);
 		} else if (unit.unit === 'story') {
 			hit = [own?.storyRef, mapEntry(readTrackerMeta(defineJson(unit))?.storyRefs, unit.storyId)].find(nonEmpty);
-		} else {
-			hit = mapEntry(own?.taskRefs, unit.taskId);
 		}
 		if (hit === undefined) return null;
 		reconcile(unit, hit, now());
@@ -267,12 +241,12 @@ export function resolveUnitIssueLocal(unit: UnitRef, now: () => string = () => n
 
 /** Write whatever of the record and sibling refs is missing; never changes a ref that is present. */
 function reconcile(unit: UnitRef, issue: IssueRef, now: string): void {
-	const own = readTrackerMeta(ownJson(unit));
+	const own = trackerMetaOf(ownJson(unit));
 	const siblings: boolean =
 		unit.unit === 'epic'  ? nonEmpty(readTrackerMeta(defineJson(unit))?.epicRef) && (!fileHas(hldJson(unit)) || nonEmpty(readTrackerMeta(hldJson(unit))?.epicRef)) :
 		unit.unit === 'story' ? nonEmpty(own?.storyRef) && nonEmpty(mapEntry(readTrackerMeta(defineJson(unit))?.storyRefs, unit.storyId)) :
-		// a Task with an artifact has its record on the binding alone; one without keeps the plan's taskRefs entry
-		bindingHome(unit) !== undefined || nonEmpty(mapEntry(own?.taskRefs, unit.taskId));
+		// a Task's record is its binding alone
+		true;
 	if (readRecord(unit) !== undefined && siblings) return;
 	recordUnit(unit, issue, now);
 }
@@ -307,6 +281,9 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 	if (home !== undefined) {
 		try { readBinding(home.repoPath, home.artifactId); }
 		catch (err) { return before(`the head of ${home.artifactId} cannot be read, so the unit's issue could not be recorded: ${(err as Error).message}`); }
+	} else if (unit.unit === 'task') {
+		// a Task's issue is recorded on its Task artifact, which the approval of its plan makes: without it nothing could be recorded
+		return before(`Task '${unit.taskId ?? ''}' of Story '${unit.storyId ?? ''}' has no Task artifact yet; approve its plan, which makes them, before its issue`);
 	}
 	const local = resolveUnitIssueLocal(unit, now);
 	if (local !== null) {
@@ -568,7 +545,7 @@ function buildSpec(
 		return { token: made.id, value: { title: `${made.id} \u2014 ${story.title}`, body: renderStoryBody(parentRef ?? '', story, epicSlug, unit.epicHash, createdAt, repo, made.id), labels, issueType: cfg.storyIssueType } };
 	}
 	let plan: PlanArtifact;
-	try { plan = JSON.parse(readFileSync(planJson(unit), 'utf8')) as PlanArtifact; }
+	try { plan = JSON.parse(readFileSync(artifactJsonPath(unit.repoPath, planArtifactId(unit.epicHash, storyId)), 'utf8')) as PlanArtifact; }
 	catch (err) { return { error: `cannot read the plan: ${(err as Error).message}` }; }
 	const taskId = unit.taskId ?? '';
 	const task = (plan.body?.tasks ?? []).find(t => t.id === taskId || t.id.toLowerCase() === taskId.toLowerCase());

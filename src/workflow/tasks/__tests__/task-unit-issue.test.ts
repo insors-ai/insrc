@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 import { artifactJsonPath } from '../../storage.js';
 import { ensureDraftIssues } from '../../draft-issues.js';
@@ -23,7 +23,7 @@ function writeHead(repo: string, id: string, rowId: string, status?: string): vo
 	}, null, 2) + '\n');
 }
 
-test("a Task's issue is created under the Story's issue and bound on its Task head with no record on the Plan, the draft hook claims the Epic and the Story only, and a Task with no head resolves through the Plan", () => {
+test("a Task's issue is created under the Story's issue and bound on its Task head with no record on the Plan, the draft hook claims the Epic and the Story only, and a Task with no head is not resolved through the Plan", () => {
 	const fx = seed({ pushTasks: false });
 	try {
 		const t = fakeTracker();
@@ -49,16 +49,14 @@ test("a Task's issue is created under the Story's issue and bound on its Task he
 		assert.equal(ensureUnitIssueDetailed(u('t2'), t.port).ok, true);
 		assert.equal(t.log.creates, creates);
 
-		// a Task with no head keeps its record on the Plan, as before
+		// a Task with no head has nowhere to be recorded: nothing is created for it, and nothing is written on the Plan
+		const creates1 = t.log.creates;
 		const old = ensureUnitIssueDetailed(u('t1'), t.port);
-		assert.ok(old.ok && old.value.created);
-		assert.equal(readTrackerMeta(fx.plan)?.taskRefs?.['t1'], old.ok ? old.value.issue : '');
-		assert.equal(resolveUnitIssueLocal(u('t1')), old.ok ? old.value.issue : '');
-
-		// the push reports each Task's issue, from its binding or the Plan
-		const pushed = via(t)(() => autoPushTasksOnPlan(fx.plan));
-		assert.equal(pushed.status, 'already-exists');
-		assert.deepEqual('taskRefs' in pushed ? pushed.taskRefs : null, { t1: old.ok ? old.value.issue : '', t2: ref });
+		assert.equal(old.ok, false);
+		assert.match(old.ok ? '' : old.reason, /no Task artifact yet/);
+		assert.equal(t.log.creates, creates1);
+		assert.equal(readTrackerMeta(fx.plan)?.taskRefs, undefined);
+		assert.equal(resolveUnitIssueLocal(u('t1')), null);
 		// a withdrawn Task artifact is not the row's Task any more
 		writeHead(fx.repo, HEAD, 't2', 'withdrawn');
 		assert.equal(unitLabel(u('t2')), `insrc:unit:${HASH}:s1:t2`);
@@ -74,11 +72,12 @@ test("a Task's issue is created under the Story's issue and bound on its Task he
 		assert.equal(t.log.creates, 2);
 	} finally { fy.cleanup(); }
 
-	// a Task with no head resolves through the Plan's older refs, and is recorded as before
+	// a Task with no head is not resolved through a record the Plan holds, and the Plan is not changed by the lookup
 	const fz = seed({ pushTasks: false });
 	try {
-		patchTrackerMeta(fz.plan, { taskRefs: { t1: 'acme/demo#9' } });
-		assert.equal(resolveUnitIssueLocal({ ...unit('t1'), repoPath: fz.repo }), 'acme/demo#9');
-		assert.equal(readTrackerMeta(fz.plan)?.units?.['task:s1/t1']?.issue, 'acme/demo#9');
+		patchTrackerMeta(fz.plan, { units: { 'task:s1/t1': { unit: 'task', unitId: 't1', issue: 'acme/demo#9', createdAtRevision: 1 } } });
+		const before = readFileSync(fz.plan, 'utf8');
+		assert.equal(resolveUnitIssueLocal({ ...unit('t1'), repoPath: fz.repo }), null);
+		assert.equal(readFileSync(fz.plan, 'utf8'), before);
 	} finally { fz.cleanup(); }
 });

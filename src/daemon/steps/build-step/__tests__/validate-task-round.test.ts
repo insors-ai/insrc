@@ -43,7 +43,7 @@ function repoWith(head: boolean): string {
 	writeFileSync(join(dir, `${lldArtifactId(HASH, 's1')}.json`), JSON.stringify({ meta: { workflow: 'design.story', runId: 'l', schemaVersion: 1, ...meta, storyId: 's1', hldBaseRunId: 'h', hldEffectiveHash: 'x', hldAmendmentsApplied: [], ...approvedMeta({ at: AT }), tracker: { storyRef: 'acme/widgets#10' } }, body: { openQuestions: [] }, citations: [] }));
 	const plan = join(dir, `${planArtifactId(HASH, 's1')}.json`);
 	writeFileSync(plan, JSON.stringify({
-		meta: { workflow: 'plan', runId: 'p', schemaVersion: 1, ...meta, storyId: 's1', lldRunId: 'l', lldEffectiveHash: 'x', tracker: { taskRefs: { t1: 'acme/widgets#42' } } },
+		meta: { workflow: 'plan', runId: 'p', schemaVersion: 1, ...meta, storyId: 's1', lldRunId: 'l', lldEffectiveHash: 'x'},
 		body: { tasks: [{ id: 't1', title: 'Wire the filter', summary: 'Add the filter.', size: 'M', order: 1, dependsOn: [], acceptanceChecks: ['narrows'], derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'unit: narrows' }] }] },
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
 	}));
@@ -65,7 +65,7 @@ async function validate(repo: string, passed: boolean, reason: string): Promise<
 	} finally { _setBuildValidateProviderForTests(undefined); }
 }
 
-test("a validate turn records its round in the Task's own log, and a Task with no head keeps writing the BUILD record only", async () => {
+test("a validate turn records its round in the Task's own log, and a Task with no head writes the BUILD record only and has no round", async () => {
 	const repo = repoWith(true);
 	try {
 		const evidence = createCompletionEvidence(repo);
@@ -94,7 +94,7 @@ test("a validate turn records its round in the Task's own log, and a Task with n
 		assert.ok(existsSync(join(repo, ARTIFACTS_DIR, `BUILD-${HASH}-s1.json`)));
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 
-	// a Task with no artifact: the verdict and the BUILD record are as before, and no Task head appears
+	// a Task with no artifact: the verdict and the BUILD record are written, no Task head appears and the Task has no round
 	const old = repoWith(false);
 	try {
 		const out = await validate(old, true, 'ok');
@@ -102,6 +102,6 @@ test("a validate turn records its round in the Task's own log, and a Task with n
 		assert.ok(existsSync(join(old, ARTIFACTS_DIR, `BUILD-${HASH}-s1.json`)));
 		assert.equal(readdirSync(join(old, ARTIFACTS_DIR)).some(n => n.startsWith('TASK-')), false);
 		assert.equal((out['verdict'] as { evidence: Record<string, unknown> }).evidence['taskRoundNote'], undefined);
-		assert.equal(await createCompletionEvidence(old).taskBuildPassed(TASK), true, 'the BUILD record answers for a Task with no head');
+		assert.equal(await createCompletionEvidence(old).taskBuildPassed(TASK), false, 'the BUILD record does not answer for a Task with no head');
 	} finally { rmSync(old, { recursive: true, force: true }); }
 });

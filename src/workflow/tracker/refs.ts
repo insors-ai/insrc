@@ -21,8 +21,8 @@ import { readFileSync } from 'node:fs';
 import type { TrackerKind } from './port.js';
 import { carryTracker, writeArtifact } from '../storage.js';
 
-/** A Task unit and the issue that carries it (sc3), stored under `meta.tracker.units` of its Plan until s7 gives each Task an
- *  artifact of its own. An Epic and a Story are bound to their issue on their artifact's envelope instead (s6, ./binding.ts). */
+/** A unit and the issue that carries it, as the older `meta.tracker.units` record held it. Every unit is bound to its issue on its
+ *  artifact's envelope now (./binding.ts); the shape stays for the pending link the binding keeps. */
 export interface UnitIssue {
 	readonly unit:      'epic' | 'story' | 'task';
 	readonly unitId:    string;
@@ -55,7 +55,6 @@ export interface TrackerMeta {
 	readonly storyRef?:      string;                        // on LLD
 	readonly issueRef?:      string;                        // on a bugfix IssueArtifact — its OWN created GH issue (S005/sc-none)
 	readonly storyRefs?:     Readonly<Record<string, string>>;  // aggregate on the Epic (batch push)
-	readonly taskRefs?:      Readonly<Record<string, string>>;  // on the Plan: taskId → ref (sub-issues of the Story)
 	readonly milestoneRef?:  string;
 	readonly labelsCreated?: readonly string[];
 	readonly epicStatus?:    string;

@@ -26,6 +26,8 @@ import { dirname, join } from 'node:path';
 import { autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
 import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
 import { planArtifactPaths } from '../storage.js';
+import { readBinding } from '../tracker/binding.js';
+import { seedTaskHeads } from './helpers/task-heads.js';
 
 const HASH = 'a1b2c3d4e5f60718';
 const SLUG = 'demo-feature';
@@ -115,11 +117,24 @@ function setup(pushTasks: boolean): { repo: string; hldJson: string; lldJson: st
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD s1' }],
 	});
 
+	// the Task artifacts the approval of the plan makes: a Task's issue is recorded on its Task artifact
+	seedTaskHeads(repo, HASH, 's1', ['t1', 't2'], CREATED);
+
 	return { repo, hldJson, lldJson, planJson, cleanup: () => { delete process.env['INSRC_GITHUB_CONFIG']; _setTrackerExecForTests(); rmSync(repo, { recursive: true, force: true }); } };
 }
 
 function trackerOf(jsonPath: string): Record<string, unknown> {
 	return (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: { tracker?: Record<string, unknown> } }).meta.tracker ?? {};
+}
+
+/** The issue bound on each Task artifact of Story s1, by plan row. */
+function taskBindings(repo: string): Record<string, string> {
+	const out: Record<string, string> = {};
+	for (const [i, row] of ['t1', 't2'].entries()) {
+		const entityId = readBinding(repo, `TASK-${HASH}-s1-t${i + 1}`)?.reference.entityId;
+		if (entityId !== undefined) out[row] = entityId;
+	}
+	return out;
 }
 
 /** Push the Epic + Story first so a storyRef exists for the tasks. */
@@ -154,8 +169,9 @@ test('pushTasks: creates a typed Task issue per PlanTask, linked as a sub-issue'
 		pushEpicAndStory(s.hldJson, s.lldJson);       // epic #1, story #2
 		const r = autoPushTasksOnPlan(s.planJson);
 		assert.equal(r.status, 'created', JSON.stringify(r));
-		// Two Task issues (#3, #4) recorded on the plan meta.
-		assert.deepEqual(trackerOf(s.planJson)['taskRefs'], { t1: 'acme/demo#3', t2: 'acme/demo#4' });
+		// Two Task issues (#3, #4) bound to their Task artifacts, and none recorded on the plan.
+		assert.deepEqual(taskBindings(s.repo), { t1: 'acme/demo#3', t2: 'acme/demo#4' });
+		assert.equal(trackerOf(s.planJson)['taskRefs'], undefined);
 
 		// Each create went through `gh api POST .../issues` with `type=Task`.
 		// Task creates only (the Story now also POSTs a REST issue — exclude it by its label).
@@ -179,15 +195,15 @@ test('pushTasks: falls back to an untyped issue when the org lacks the issue typ
 		pushEpicAndStory(s.hldJson, s.lldJson);
 		const r = autoPushTasksOnPlan(s.planJson);
 		assert.equal(r.status, 'created', JSON.stringify(r));
-		// Both tasks still created (untyped) + recorded.
-		assert.deepEqual(trackerOf(s.planJson)['taskRefs'], { t1: 'acme/demo#3', t2: 'acme/demo#4' });
+		// Both tasks still created (untyped) + bound.
+		assert.deepEqual(taskBindings(s.repo), { t1: 'acme/demo#3', t2: 'acme/demo#4' });
 		// The typed attempt was retried without `type=` (a bare create call exists).
 		const bareCreates = gh.calls.filter(c => c[1] === 'api' && c.some(a => a === 'repos/acme/demo/issues') && !c.some(a => a.startsWith('type=')) && c.some(a => a === 'labels[]=insrc:task'));
 		assert.equal(bareCreates.length, 2);
 	} finally { s.cleanup(); }
 });
 
-test('pushTasks: re-push is idempotent (adopts taskRefs, no new issues)', () => {
+test('pushTasks: re-push is idempotent (adopts the bound Task issues, no new issues)', () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup(true);

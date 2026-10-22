@@ -51,15 +51,10 @@ export function createCompletionEvidence(repoPath: string, options: CompletionEv
 		async taskBuildPassed(taskId: string): Promise<boolean> {
 			const key = ArtifactIds.parse(taskId);
 			if (key?.kind !== 'TASK' || key.story === undefined || key.task === undefined) return false;
-			if (existsSync(artifactJsonPath(repoPath, taskId))) {
-				const rounds = (await (options.history ?? new History(createFileSidecarStore(repoPath))).log(taskId)).filter(e => isRound(e.outcome?.data));
-				return rounds.at(-1)?.outcome?.result === 'pass';
-			}
-			const build = readJson(artifactJsonPath(repoPath, buildArtifactId(key.epicHash, key.story)));
-			const tasks = asRecord(build?.['body'])?.['tasks'];
-			if (!Array.isArray(tasks)) return false;
-			const task = tasks.map(asRecord).find(t => t?.['id'] === key.task || t?.['id'] === taskId);
-			return task?.['passed'] === true;
+			// the Task's own head holds its rounds: a Task with no head has none, so its build has not passed
+			if (!existsSync(artifactJsonPath(repoPath, taskId))) return false;
+			const rounds = (await (options.history ?? new History(createFileSidecarStore(repoPath))).log(taskId)).filter(e => isRound(e.outcome?.data));
+			return rounds.at(-1)?.outcome?.result === 'pass';
 		},
 
 		async storyCodeReview(epicHash: string, storyId: string): Promise<CodeReviewEvidence> {

@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T12:14:53.345Z",
+    "updatedAt": "2026-10-22T13:50:51.563Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -1936,6 +1936,258 @@
               },
               {
                 "title": "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "7aacd619",
+        "ranAt": "2026-10-22T13:50:51.563Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/latency-isolation.test.ts",
+                "title": "daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a session request on the main thread is answered while an indexing pass runs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/latency-isolation.test.ts",
+                "title": "a session request on the main thread is answered while an indexing pass runs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "existing status, shutdown, repo-stats, queue and MCP suites pass unchanged in meaning with threads enabled",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-completeness.test.ts",
+                "title": "repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+                "title": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+                "title": "daemon.status queue fields reflect the code-indexing worker's real lanes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-threads.test.ts",
+                "title": "every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scripts/daemon-ctl.sh start, then status prints the daemon status; stop leaves no pid file, socket or worker behind",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts (commit 4b5e4fe1), run as `npm run build && INSRC_SMOKE_TESTS=1 npx tsx --test src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts` against the compiled threaded daemon on a temporary HOME. It passed 2 of 2 runs on 2026-10-22 (output in /tmp/insrc-s2-t17-daemon-ctl-smoke.log)."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/queue-threads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 513,
+            "titles": [
+              {
+                "title": "the code-busy and stopping words track the index lane and stop()",
+                "result": "pass"
+              },
+              {
+                "title": "pause() resolves once no job is in flight and no job starts until resume()",
+                "result": "pass"
+              },
+              {
+                "title": "every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/repo-completeness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 17329,
+            "titles": [
+              {
+                "title": "repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1320,
+            "titles": [
+              {
+                "title": "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
+                "result": "pass"
+              },
+              {
+                "title": "a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.status queue fields reflect the code-indexing worker's real lanes",
+                "result": "pass"
+              },
+              {
+                "title": "No indexing object is constructed on the main thread with the flag on",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9531,
+            "titles": [
+              {
+                "title": "each indexing-class method runs on the code-indexing worker's thread id",
+                "result": "pass"
+              },
+              {
+                "title": "a file change is indexed while a session request spins the main thread",
+                "result": "pass"
+              },
+              {
+                "title": "the store slot is published before the queue starts and after every registry change",
+                "result": "pass"
+              },
+              {
+                "title": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/latency-isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 36867,
+            "titles": [
+              {
+                "title": "daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open",
+                "result": "pass"
+              },
+              {
+                "title": "a session request on the main thread is answered while an indexing pass runs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15260,
+            "titles": [
+              {
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              },
+              {
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3814,
+            "titles": [
+              {
+                "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
+                "result": "pass"
+              },
+              {
+                "title": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token",
+                "result": "pass"
+              },
+              {
+                "title": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
                 "result": "pass"
               }
             ],

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "47cc3068c78cac34",
+    "storyId": "S001",
+    "createdAt": "2026-10-22T14:10:47.685Z",
+    "updatedAt": "2026-10-22T14:10:47.685Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-22T13:59:28.984Z",
+    "epicSlug": "review-decision-build-record-test-expects"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "8074aab4",
+        "ranAt": "2026-10-22T14:10:47.685Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/review-decision.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/__tests__/review-decision.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/review-decision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 732,
+            "titles": [
+              {
+                "title": "review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: a decision with no comments writes no feedback entry",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: a failing comment write after the decision took effect reports the outcome with commentsError",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: the author is the one resolveReviewer gives and is never taken from the request",
+                "result": "pass"
+              },
+              {
+                "title": "daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "handleReviewDecision on a BUILD record: approve goes through the same approve call as any record and a result that call withholds is returned with its reason; reject stamps the record, after which it is not listed and the pane's call refuses a further decision on it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

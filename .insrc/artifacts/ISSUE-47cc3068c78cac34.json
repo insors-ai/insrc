@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792677547930-72ys53",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-22T13:59:28.984Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 21048,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "47cc3068c78cac34",
+    "epicSlug": "review-decision-build-record-test-expects",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-22T14:07:17.541Z",
+    "parentRef": {
+      "slug": "review-decision-build-record-test-expects"
+    }
+  },
+  "body": {
+    "title": "review-decision BUILD-record test expects an unresolved temporary path and fails on macOS",
+    "reproduction": "On macOS, run npx tsx --test src/workflow/__tests__/review-decision.test.ts. The test 'handleReviewDecision on a BUILD record: approve goes through the same approve call as any record ...' fails. Observed: the approve call receives artifactPath '/private/var/folders/.../BUILD-...-S001.json'. Expected by the test: '/var/folders/.../BUILD-...-S001.json'. The other tests in the file pass.",
+    "rootCause": "The test builds its repository with mkdtempSync(join(tmpdir(), ...)), and on macOS tmpdir() is /var/folders/..., a symlink to /private/var/folders/.... handleReviewDecision resolves the artifact markdown to its real path (resolveDocsMarkdown, the guard against a symlink escaping docs/) and passes the JSON beside that real path to the approve call. The handler is right; the test's expected path is the unresolved one.",
+    "fixIntent": "The test expects the path the handler uses, by working in its temporary repository's real path. No production code changes, and the assertion keeps its meaning: the approve call receives the repository and the record."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/review-decision.ts:117-131",
+      "quotedText": "const realMd = located.realPath;"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review-decision.ts:164",
+      "quotedText": "const res = await (deps.approve ?? approveWorkflowTarget)({ repoPath, artifactPath: jsonPath });"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/review-decision.test.ts:436",
+      "quotedText": "const repo = mkdtempSync(join(tmpdir(), 'insrc-review-decision-build-'));"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/review-decision.test.ts:458",
+      "quotedText": "assert.deepEqual(calls, [{ repoPath: repo, artifactPath: jsonPath }], 'the same call as for any record: the repository and the record');"
+    }
+  ]
+}

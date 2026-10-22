@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 86 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 98 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -535,3 +535,50 @@ Run at 2026-10-22T12:14:53.345Z on commit `769f9bf5`. Tests check: **passed**. 1
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/maintenance.test.ts` | 0 | 11 | 3.5 s |  |
 | `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 3 | 15.3 s |  |
+
+## t17
+
+Run at 2026-10-22T13:50:51.563Z on commit `7aacd619`. Tests check: **passed**. 12 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**integration: daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open | `src/daemon/threads/__tests__/latency-isolation.test.ts` |
+
+**integration: a session request on the main thread is answered while an indexing pass runs**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a session request on the main thread is answered while an indexing pass runs | `src/daemon/threads/__tests__/latency-isolation.test.ts` |
+
+**integration: existing status, shutdown, repo-stats, queue and MCP suites pass unchanged in meaning with threads enabled**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable | `src/daemon/__tests__/repo-completeness.test.ts` |
+| pass | the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down | `src/daemon/threads/__tests__/threads-boot.test.ts` |
+| pass | SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged | `src/daemon/threads/__tests__/threads-boot.test.ts` |
+| pass | recorded responses of repo.stats and daemon.compact equal the single-thread daemon's | `src/daemon/threads/__tests__/indexing-worker.test.ts` |
+| pass | daemon.status queue fields reflect the code-indexing worker's real lanes | `src/daemon/threads/__tests__/indexing-port.test.ts` |
+| pass | every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged | `src/daemon/__tests__/queue-threads.test.ts` |
+| pass | no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool | `src/mcp/__tests__/mcp-process-e2e.test.ts` |
+| pass | ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token | `src/mcp/__tests__/mcp-process-e2e.test.ts` |
+| pass | ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies | `src/mcp/__tests__/mcp-process-e2e.test.ts` |
+| pass | ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError | `src/mcp/__tests__/mcp-process-e2e.test.ts` |
+
+**smoke: scripts/daemon-ctl.sh start, then status prints the daemon status; stop leaves no pid file, socket or worker behind**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts (commit 4b5e4fe1), run as `npm run build && INSRC_SMOKE_TESTS=1 npx tsx --test src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts` against the compiled threaded daemon on a temporary HOME. It passed 2 of 2 runs on 2026-10-22 (output in /tmp/insrc-s2-t17-daemon-ctl-smoke.log).
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/queue-threads.test.ts` | 0 | 3 | 0.5 s |  |
+| `src/daemon/__tests__/repo-completeness.test.ts` | 0 | 1 | 17.3 s |  |
+| `src/daemon/threads/__tests__/indexing-port.test.ts` | 0 | 4 | 1.3 s |  |
+| `src/daemon/threads/__tests__/indexing-worker.test.ts` | 0 | 4 | 9.5 s |  |
+| `src/daemon/threads/__tests__/latency-isolation.test.ts` | 0 | 2 | 36.9 s |  |
+| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 3 | 15.3 s |  |
+| `src/mcp/__tests__/mcp-process-e2e.test.ts` | 0 | 4 | 3.8 s |  |

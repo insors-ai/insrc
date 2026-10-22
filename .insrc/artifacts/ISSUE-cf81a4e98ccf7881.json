@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792677482358-glxprz",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-22T13:58:30.878Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 28512,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "cf81a4e98ccf7881",
+    "epicSlug": "temporaltrend-fails-integer-overflow-sqlite-mysql",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-22T14:07:10.781Z",
+    "parentRef": {
+      "slug": "temporaltrend-fails-integer-overflow-sqlite-mysql"
+    }
+  },
+  "body": {
+    "title": "temporalTrend fails with 'integer overflow' on SQLite, MySQL and MSSQL for epoch-second timestamps",
+    "reproduction": "Seed a SQLite table with 10 rows: ts as ISO datetimes one second apart starting 2025-01-01T00:00:00Z, and val = 2 + 3*i. Register it as a sqlite connection and call the driver's temporalTrend(table, { timestampColumn: 'ts', valueColumn: 'val' }). Observed: the query fails with the SQLite error 'integer overflow'. Expected: slope 3 per second, R² 1, and n 10. The existing test 'temporalTrend recovers slope/intercept/R² via expression-based regression (Phase 5g.1)' in src/daemon/db/__tests__/sqlite-driver.test.ts does exactly this and fails.",
+    "rootCause": "Engines without native REGR_* (SQLite, MySQL, MSSQL) compute the regression from moments, which buildExpressionRegrSql in src/daemon/db/drivers/rdbms-common.ts builds as SUM(x*x), SUM(x*y), SUM(y*y), SUM(x) and SUM(y). Here x is the dialect's epoch expression, an INTEGER of about 1.7e9 for present-day timestamps. x*x is therefore about 3e18, and summing it over just a few rows exceeds the signed 64-bit range. SQLite raises 'integer overflow' on an integer SUM that overflows; MySQL and MSSQL fail the same way on BIGINT. The engine-native path (REGR_SLOPE and the rest) is not affected.",
+    "fixIntent": "Compute the moments in a numeric type that cannot overflow at these magnitudes: promote x and y to a non-integer numeric before they are multiplied and summed (REAL on SQLite, exact DECIMAL on MySQL and MSSQL). The query shape, the result fields and the native REGR path stay as they are. The existing test passes and recovers slope 3, R² 1 and n 10."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/db/drivers/rdbms-common.ts:1815-1835",
+      "quotedText": "SUM(CASE WHEN ${pair} THEN ${xExpr} * ${xExpr}       END) AS sxx,"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/db/drivers/rdbms-common.ts:1771-1793",
+      "quotedText": "const xExpr = dialect.epochExpr(tsCol);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/db/drivers/sqlite.ts:303-313"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/db/__tests__/sqlite-driver.test.ts:267-307",
+      "quotedText": "temporalTrend recovers slope/intercept/R² via expression-based regression (Phase 5g.1)"
+    }
+  ]
+}

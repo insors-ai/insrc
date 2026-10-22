@@ -61,7 +61,8 @@ import { IndexingPortClient, INDEXING_DRAINED, INDEXING_STOP_OP } from './thread
 import { pushToWorker } from './threads/channel.js';
 import type { RuntimeIndexer, RuntimeQueue } from './handler-runtime.js';
 import type { ForwardRequest } from './server.js';
-import { startClassWorker } from './threads/workers.js';
+import { startClassWorker, startWorker } from './threads/workers.js';
+import { MessageChannel } from 'node:worker_threads';
 import type { MethodClass } from './threads/channel.js';
 import { embedQuery, getActiveEmbedderBackend } from '../indexer/embedder.js';
 import { pruneConversations } from '../db/conversations.js';
@@ -246,7 +247,15 @@ async function main(): Promise<void> {
 		queue = port;
 		indexer = port;
 		routed.add('indexing');
-		const indexing = startClassWorker(threadServices, router, 'indexing', 'indexing-worker');
+		// Summary jobs run on the document-summary worker, over a channel of their own.
+		const summaryChannel = new MessageChannel();
+		const indexing = startClassWorker(threadServices, router, 'indexing', 'indexing-worker',
+			{ workerData: { summaryPort: summaryChannel.port1 }, transferList: [summaryChannel.port1] });
+		startWorker(threadServices, 'document-summary', 'summary-worker',
+			{ workerData: { summaryPort: summaryChannel.port2 }, transferList: [summaryChannel.port2] }).then(
+			({ threadId }) => log.info({ threadId }, 'document-summary worker ready'),
+			(err: unknown) => log.error({ err: err instanceof Error ? err.message : String(err) }, 'document-summary worker did not start'),
+		);
 		// The queue lives on the worker: "done" is its report that it drained after a stop (or its exit).
 		startQueue = () => indexing.then(
 			({ worker, threadId }) => {

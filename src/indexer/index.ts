@@ -161,9 +161,23 @@ type ReconcileCounts = { -readonly [K in keyof ReconcileResult]: ReconcileResult
 /** Whether a pass has begun writing to the store. */
 interface ReconcileProgress { removalStarted: boolean }
 
+/**
+ * What the indexer uses of its queue: the IndexQueue itself on the thread that
+ * hosts it, or, on the document-summary worker (Epic 86197ac6 s2), a view over
+ * the indexing shared block whose single-document edits are taken from the
+ * code-indexing worker's queue, which answers asynchronously.
+ */
+export interface IndexerQueue {
+  enqueue(job: IndexJob): void;
+  takeDocSummaryEdit(): { kind: 'doc-summarise-entity'; entityId: string } | undefined | Promise<{ kind: 'doc-summarise-entity'; entityId: string } | undefined>;
+  readonly isStopping: boolean;
+  readonly isIndexIdle: boolean;
+  waitForIndexIdle(): Promise<void>;
+}
+
 export class IndexerService {
   private readonly db:      DbClient;
-  private readonly queue:   IndexQueue;
+  private readonly queue:   IndexerQueue;
   private readonly watcher: Watcher;
   private readonly supported: Set<string>;
   private readonly configStore: ConfigStore | null;
@@ -200,7 +214,7 @@ export class IndexerService {
 
   constructor(
     db: DbClient,
-    queue: IndexQueue,
+    queue: IndexerQueue,
     watcher: Watcher,
     configStore?: ConfigStore | undefined,
     settleWindowMs: number = 2000,
@@ -954,7 +968,7 @@ export class IndexerService {
       const counts = await runDocSummarySweep(docs.map(e => e.id), {
         getEntity:  id => getEntity(this.db, id),
         summarise:  entity => this.summariseEntity(entity),
-        takeEdit:   async () => this.queue.takeDocSummaryEdit(),
+        takeEdit:   async () => await this.queue.takeDocSummaryEdit(),
         runEdit:    entityId => this.docSummariseEntity(entityId),
         shouldStop: () => this.queue.isStopping,
         waitForCodeIdle: () => this.queue.waitForIndexIdle(),

@@ -36,12 +36,29 @@ export interface StartedWorker {
  * Start a worker of `cls` from `script`; resolves once it is ready, registered
  * and attached. Rejects when it exits or fails before it is ready.
  */
-export function startClassWorker(services: ThreadServices, router: Router, cls: MethodClass, script: string): Promise<StartedWorker> {
+export async function startClassWorker(services: ThreadServices, router: Router, cls: MethodClass, script: string, extra?: WorkerExtra): Promise<StartedWorker> {
+	const started = await startWorker(services, cls, script, extra);
+	services.registry.register({ threadId: started.threadId, cls });
+	router.attach(started.threadId, started.port);
+	return started;
+}
+
+/** Extra workerData for a worker (and the ports in it, which are transferred). */
+export interface WorkerExtra {
+	readonly workerData: Record<string, unknown>;
+	readonly transferList: MessagePort[];
+}
+
+/** Start a worker from `script` and resolve once it is ready; `name` is for errors. Not registered as a request target. */
+export function startWorker(services: ThreadServices, name: string, script: string, extra?: WorkerExtra): Promise<StartedWorker> {
 	const conn = services.connectWorker();
-	const worker = new Worker(workerScript(script), { workerData: conn.workerData, transferList: conn.transferList });
+	const worker = new Worker(workerScript(script), {
+		workerData: { ...conn.workerData, ...extra?.workerData },
+		transferList: [...conn.transferList, ...(extra?.transferList ?? [])],
+	});
 	const threadId = worker.threadId;
 	return new Promise<StartedWorker>((resolve, reject) => {
-		const fail = (why: string): void => { conn.disconnect(); reject(new Error(`the ${cls} worker did not start: ${why}`)); };
+		const fail = (why: string): void => { conn.disconnect(); reject(new Error(`the ${name} worker did not start: ${why}`)); };
 		const onError = (err: Error): void => fail(err.message);
 		const onExit = (code: number): void => fail(`it exited with code ${code}`);
 		worker.once('error', onError);
@@ -50,8 +67,6 @@ export function startClassWorker(services: ThreadServices, router: Router, cls: 
 			if (m !== 'worker-ready') return;
 			worker.off('error', onError);
 			worker.off('exit', onExit);
-			services.registry.register({ threadId, cls });
-			router.attach(threadId, conn.port);
 			resolve({ worker, threadId, port: conn.port });
 		});
 	});

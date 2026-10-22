@@ -13,6 +13,7 @@
  */
 
 import { parentPort, workerData } from 'node:worker_threads';
+import type { MessagePort } from 'node:worker_threads';
 
 import { ConfigStore } from '../../config/store.js';
 import { getDb } from '../../db/client.js';
@@ -31,12 +32,14 @@ import { SHUTDOWN_OP } from './main-services.js';
 import type { WorkerConnection } from './main-services.js';
 import { methodClasses } from './method-class.js';
 import { StatusBoardClient } from './status-board.js';
+import { SummaryRunner } from './summary-link.js';
 import { startDaemonWorker } from './worker-entry.js';
 import { serveRequests } from './worker-requests.js';
 
 const log = getLogger('indexing-worker');
 
-const init = workerData as WorkerConnection['workerData'];
+/** summaryPort: the channel to the document-summary worker, when there is one; without it summaries run here. */
+const init = workerData as WorkerConnection['workerData'] & { readonly summaryPort?: MessagePort | undefined };
 const hub = startDaemonWorker(init);
 const board = new StatusBoardClient(hub);
 
@@ -44,11 +47,15 @@ const db = await getDb();
 const configStore = new ConfigStore(db);
 const watcher = new Watcher();
 let indexer: IndexerService | undefined;
+let summaries: SummaryRunner | undefined;
 const queue = new IndexQueue({
 	indexingBlock: init.indexingBlock,
 	publishLane: (lane, status, sweep) => board.publishLane(lane, status, sweep),
-	sweepProgress: () => indexer?.summarySweepProgress(),
+	sweepProgress: () => summaries !== undefined ? summaries.sweepProgress() : indexer?.summarySweepProgress(),
 });
+if (init.summaryPort !== undefined) {
+	summaries = new SummaryRunner(init.summaryPort, () => queue.takeDocSummaryEdit(), () => queue.lanesChanged());
+}
 indexer = new IndexerService(db, queue, watcher, configStore);
 const service = indexer;
 
@@ -115,8 +122,13 @@ serveRequests(init.hubPort, directDispatch(table));
 // The store slot before the queue starts, so the admin worker's first status has it.
 await publishStore();
 await service.start(await listRepos(db));
+// Summary jobs run on the document-summary worker, handed over by the summary lane.
+const isSummaryJob = (job: IndexJob): boolean => job.kind === 'doc-summarise-repo' || job.kind === 'doc-summarise-entity';
 const queueDone = queue.start(async job => {
-	try { await service.processJob(job); } finally { void publishStore(); }
+	try {
+		if (summaries !== undefined && isSummaryJob(job)) await summaries.run(job);
+		else await service.processJob(job);
+	} finally { void publishStore(); }
 });
 
 // Shutdown: stop the queue and the watcher, and report once both are done.

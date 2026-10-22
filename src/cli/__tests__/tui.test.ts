@@ -107,6 +107,7 @@ function fakeServices(): Services {
 			teamRelease: () => '',
 			teamPark:    async () => '',
 			teamResume:  async () => '',
+			teamSettle:  async () => '',
 		},
 		debug: {
 			sections: [

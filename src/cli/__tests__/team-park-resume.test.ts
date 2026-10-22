@@ -29,7 +29,7 @@ type Call = { method: string; params: Record<string, unknown> };
 function setup(reply: (method: string, params: Record<string, unknown>) => unknown): { ctx: () => CommandCtx; calls: Call[] } {
 	const calls: Call[] = [];
 	const call = async (method: string, params: Record<string, unknown>): Promise<unknown> => { calls.push({ method, params }); return reply(method, params); };
-	const services = { team: { ...team, teamPark: (r: string, u: never) => team.teamPark(r, u, call), teamResume: (r: string, u: never, w?: string) => team.teamResume(r, u, w, call) } };
+	const services = { team: { ...team, teamPark: (r: string, u: never) => team.teamPark(r, u, call), teamResume: (r: string, u: never, w?: string) => team.teamResume(r, u, w, call), teamSettle: (r: string, u: never) => team.teamSettle(r, u, call) } };
 	return { calls, ctx: () => ({ repoPath: '/repo', onLog: () => undefined, services }) as unknown as CommandCtx };
 }
 
@@ -97,4 +97,18 @@ test('team park and team resume parse the unit and --workflow, print the offer, 
 	assert.equal((await runCommand(`team claim ${HASH} s1`, real))[0], '✗ not claimed — held by bob');
 	registerParkOfferProvider(() => true);
 	assert.equal((await runCommand(`team claim ${HASH} s1`, real))[0], `✗ not claimed — held by bob; you have unfinished work here, run 'team park <epicHash> [storyId]' to hand it over`);
+});
+
+test('team settle passes the unit to the daemon and prints what was recorded, what still waits, or the failure; a task or a bad hash prints the usage line', async () => {
+	let answer: unknown = { next: 'settled', recorded: [{ artifactId: `BUILD-${HASH}-s1`, from: 'in-signoff', to: 'completed' }], statuses: {} };
+	const settled = setup(() => answer);
+	assert.deepEqual(await runCommand(`team settle ${HASH} S1`, settled.ctx()), [`✓ settled story ${HASH}/s1 — BUILD-${HASH}-s1 in-signoff → completed`]);
+	assert.deepEqual(settled.calls, [{ method: 'team.settle', params: { repo: '/repo', epicHash: HASH, storyId: 's1' } }]);
+	answer = { next: 'settled', recorded: [], statuses: { [`BUILD-${HASH}-s1`]: 'in-signoff' } };
+	assert.match((await runCommand(`team settle ${HASH} s1`, settled.ctx()))[0] ?? '', /nothing to record yet — still awaiting signoff: BUILD-/);
+	answer = { next: 'settled', recorded: [], statuses: {} };
+	assert.match((await runCommand(`team settle ${HASH}`, settled.ctx()))[0] ?? '', /no signoff request is waiting/);
+	answer = { next: 'error', error: { code: 'bad-input', message: 'no repo' } };
+	assert.deepEqual(await runCommand(`team settle ${HASH}`, settled.ctx()), ['✗ not settled — no repo']);
+	for (const bad of ['team settle', 'team settle nope', `team settle ${HASH} s1 t1`]) assert.match((await runCommand(bad, settled.ctx()))[0] ?? '', USAGE, bad);
 });

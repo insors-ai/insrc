@@ -1252,7 +1252,7 @@
         "resolvedAt": "2026-10-19T10:29:14.648Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "One common model for every artifact",
@@ -1820,7 +1820,7 @@
             "id": "ac29",
             "given": "a repository that has not been converted",
             "when": "the new tools run on it",
-            "then": "they refuse with a clear message to convert it first, and a clone with older tools reads the converted repository with a clear message",
+            "then": "they refuse with a clear message to convert it first; builds from before this model are not expected to work with a converted repository",
             "operationalizes": []
           }
         ],

@@ -253,7 +253,7 @@ A team converts a repository to the new model once, safely, and the delivery boa
 
 - **ac27:** Given a repository with artifacts of every existing type, when the conversion runs, then every artifact is converted in one commit, Epics, Stories and Tasks are created for what exists, statuses are computed, and the change log is filled in from what the artifacts already record, marked as migrated. _(operationalizes `k2`)_
 - **ac28:** Given a conversion that is run again, or run as a preview, when it finishes, then a repeat changes nothing, a preview changes nothing and lists what would change, and a verification reads the result back through the delivery reader and reports any difference.
-- **ac29:** Given a repository that has not been converted, when the new tools run on it, then they refuse with a clear message to convert it first, and a clone with older tools reads the converted repository with a clear message.
+- **ac29:** Given a repository that has not been converted, when the new tools run on it, then they refuse with a clear message to convert it first; builds from before this model are not expected to work with a converted repository.
 
 ## 7. References
 

@@ -36,6 +36,7 @@
 
 import { reviewerPartyOf } from '../review/party.js';
 import { BLOCKING, effectiveReviewVerdict } from '../review/resolve.js';
+import { signoffViewOf } from '../team/signoff.js';
 import type { Finding, ReviewReport } from '../review/types.js';
 import { makeNotice, sortNotices } from './notice.js';
 import { asObject, storyOrdinalOf, taskOrdinalOf } from './read.js';
@@ -177,21 +178,23 @@ function artifactGate(
 	byId: ReadonlyMap<string, ArtifactRecord>,
 ): ArtifactGate {
 	const approval = approvalOf(record);
-	if (record.kind === 'BUILD' || record.kind === 'AMD') return { artifactId: record.artifactId, approval, review: null };
+	const view = signoffViewOf(record.meta);
+	const signoff = view.state === 'none' ? {} : { signoff: view };
+	if (record.kind === 'BUILD' || record.kind === 'AMD') return { artifactId: record.artifactId, approval, review: null, ...signoff };
 
 	if (record.kind === 'CR') {
 		const builds = storyBuilds(record.artifactId, itemsByEvidence, graph, byId);
 		const review = codeReview(record, builds);
-		if (review === null) return { artifactId: record.artifactId, approval, review: null };
+		if (review === null) return { artifactId: record.artifactId, approval, review: null, ...signoff };
 		const guardApproved = builds.some(b => b.approval.state === 'approved');
 		const blocking = review.effectiveVerdict === 'block' && !guardApproved && review.override === null;
-		return { artifactId: record.artifactId, approval, review: { ...review, blocking } };
+		return { artifactId: record.artifactId, approval, review: { ...review, blocking }, ...signoff };
 	}
 
 	const review = designReview(record);
-	if (review === null) return { artifactId: record.artifactId, approval, review: null };
+	if (review === null) return { artifactId: record.artifactId, approval, review: null, ...signoff };
 	const blocking = review.effectiveVerdict === 'block' && record.approval.state !== 'approved' && review.override === null;
-	return { artifactId: record.artifactId, approval, review: { ...review, blocking } };
+	return { artifactId: record.artifactId, approval, review: { ...review, blocking }, ...signoff };
 }
 
 // ---------------------------------------------------------------------------

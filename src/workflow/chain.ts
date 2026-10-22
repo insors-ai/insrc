@@ -18,6 +18,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 import { approvalStateOf } from './artifact-core/approval-view.js';
+import { signoffViewOf, type SignoffViewState } from './team/signoff.js';
 import type { DefineArtifact } from './artifacts/define.js';
 import type { HldArtifact } from './artifacts/hld.js';
 import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, lldArtifactId, lldArtifactPaths, workItemAnchorCreatedAt, workItemKindOf } from './storage.js';
@@ -37,18 +38,23 @@ export interface ChainReport {
 		readonly approved:    boolean;
 		readonly rejected:    boolean;
 		readonly path?:       string;
+		/** The Define's signoff, apart from its approval; absent when it has none (Story s7). */
+		readonly signoff?:    SignoffViewState;
 	};
 	readonly hld: {
 		readonly exists:   boolean;
 		readonly approved: boolean;
 		readonly rejected: boolean;
 		readonly path?:    string;
+		readonly signoff?: SignoffViewState;
 	};
 	readonly stories: readonly {
 		readonly id:       string;
 		readonly title:    string;
 		readonly hasLld:   boolean;
 		readonly approved: boolean;
+		/** The LLD's signoff, apart from its approval; absent when it has none. */
+		readonly signoff?: SignoffViewState;
 		readonly stale:    boolean;
 		readonly staleReason?: string;
 		readonly path?:    string;
@@ -101,12 +107,14 @@ export function buildChainReport(repoPath: string, epicHash: string): ChainRepor
 			approved: define.approved,
 			rejected: define.rejected,
 			...(define.path !== undefined ? { path: define.path } : {}),
+			...signoffOf(define.artifact?.meta),
 		},
 		hld: {
 			exists:   hld.exists,
 			approved: hld.approved,
 			rejected: hld.rejected,
 			...(hld.path !== undefined ? { path: hld.path } : {}),
+			...signoffOf(hld.artifact?.meta),
 		},
 		stories,
 		amendments,
@@ -168,22 +176,32 @@ function readStoryLldStatus(
 		const jsonPath = artifactJsonPath(repoPath, lldArtifactId(epicHash, s.id));
 		const hasLld = existsSync(jsonPath);
 		let approved = false;
+		let signoff: { signoff?: SignoffViewState } = {};
 		if (hasLld) {
 			try {
 				const raw = readFileSync(jsonPath, 'utf8');
 				const lld = JSON.parse(raw) as { meta: Record<string, unknown> };
 				approved = approvalStateOf(lld.meta) === 'approved';
+				signoff = signoffOf(lld.meta);
 			} catch { /* malformed — treat as unapproved */ }
 		}
 		const stale = staleness.get(s.id);
 		return {
 			id: s.id, title: s.title,
 			hasLld, approved,
+			...signoff,
 			stale: stale?.stale === true,
 			...(stale?.staleReason !== undefined ? { staleReason: stale.staleReason } : {}),
 			...(hasLld ? { path: lldArtifactPaths(repoPath, epicHash, s.id, define.artifact!.meta.createdAt, 'epic', epicSlug).md } : {}),
 		};
 	});
+}
+
+/** The signoff a head carries, shown apart from its approval; nothing when it has none. */
+function signoffOf(meta: unknown): { signoff?: SignoffViewState } {
+	if (meta === undefined) return {};
+	const state = signoffViewOf(meta).state;
+	return state === 'none' ? {} : { signoff: state };
 }
 
 function staleByStory(entries: ReturnType<typeof scanLldStaleness>): Map<string, { stale: boolean; staleReason?: string }> {
@@ -327,11 +345,13 @@ export function formatChainReport(r: ChainReport): string {
 	lines.push(bullet('exists',   r.define.exists));
 	lines.push(bullet('approved', r.define.approved));
 	if (r.define.rejected) lines.push(`  - rejected: yes`);
+	if (r.define.signoff !== undefined) lines.push(`  - signoff: ${r.define.signoff}`);
 	lines.push('');
 	lines.push(`## HLD`);
 	lines.push(bullet('exists',   r.hld.exists));
 	lines.push(bullet('approved', r.hld.approved));
 	if (r.hld.rejected) lines.push(`  - rejected: yes`);
+	if (r.hld.signoff !== undefined) lines.push(`  - signoff: ${r.hld.signoff}`);
 	lines.push('');
 	if (r.stories.length > 0) {
 		lines.push(`## LLDs`);
@@ -340,7 +360,7 @@ export function formatChainReport(r: ChainReport): string {
 			if (!s.hasLld)           flags.push('missing');
 			else if (!s.approved)    flags.push('unapproved');
 			if (s.stale)             flags.push(`STALE (${s.staleReason ?? '?'})`);
-			const status = flags.length > 0 ? flags.join(', ') : 'up-to-date';
+			const status = (flags.length > 0 ? flags.join(', ') : 'up-to-date') + (s.signoff !== undefined ? `; signoff ${s.signoff}` : '');
 			lines.push(`  - ${s.id}: ${s.title} — ${status}`);
 		}
 		lines.push('');

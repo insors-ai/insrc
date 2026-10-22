@@ -14,6 +14,7 @@
 import type { Feedback } from '../artifact-core/types.js';
 import type { ReviewRecord } from '../review/report-log.js';
 import type { ReviewVerdict } from '../review/types.js';
+import type { SignoffView } from '../team/signoff.js';
 
 /** The one verdict language, shared with review/ and code-review/ (sc5). */
 export type { ReviewVerdict };
@@ -188,6 +189,8 @@ export interface StagePassResult {
 export interface ArtifactGate {
 	readonly artifactId: string;
 	readonly approval:   { readonly state: 'approved' | 'rejected' | 'pending'; readonly at: string | null };
+	/** The record's signoff, shown apart from its review and approval and never counted as a review (Story s7); absent when it has none. */
+	readonly signoff?:   SignoffView | undefined;
 	readonly review: {
 		readonly verdict:          ReviewVerdict;
 		readonly reviewedAt:       string;
@@ -287,6 +290,8 @@ export interface DeliveryEvidenceEntry {
 	readonly approval:       { readonly state: 'approved' | 'rejected' | 'pending'; readonly at: string | null };
 	readonly review:         ArtifactGate['review'];
 	readonly reviewCurrency: ReviewCurrency | null;
+	/** The record's signoff, apart from its review and approval; absent when it has none (Story s7). */
+	readonly signoff?:       SignoffView | undefined;
 }
 
 /** One descriptive value read from a record (with the record it came from), or the fact that no record states it. */

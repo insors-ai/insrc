@@ -107,6 +107,7 @@ export function assembleSnapshot(
 			approval:       gate?.approval ?? { state: record.approval.state, at: null },
 			review:         gate?.review ?? null,
 			reviewCurrency: currency.artifacts.get(record.artifactId)?.reviewCurrency ?? null,
+			...(gate?.signoff !== undefined ? { signoff: gate.signoff } : {}),
 		};
 		entries.set(record.artifactId, entry);
 		return entry;

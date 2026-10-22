@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { assertCleanTree, plansEqual, planConversion } from '../plan.js';
+import { runConversion } from '../run.js';
+import { legacyRepo } from './legacy-repo.js';
 import type { PlanRule } from '../plan.js';
 import { ConversionRefused } from '../types.js';
 
@@ -109,4 +111,23 @@ describe('convert-preview', () => {
 		const dir = mkdtempSync(join(tmpdir(), 'convert-preview-nogit-'));
 		try { await assert.rejects(planConversion(dir), /not a git repository/); } finally { rmSync(dir, { recursive: true, force: true }); }
 	});
+
+	it('convert-preview.test.ts: runConversion in preview mode lists the change of every rule and writes nothing', async () => {
+		const r = legacyRepo();
+		try {
+			const before = r.git('status', '--porcelain', '--untracked-files=all');
+			const files = (): string => readdirSync(join(r.repo, '.insrc', 'artifacts')).sort().map(n => `${n}:${statSync(join(r.repo, '.insrc', 'artifacts', n)).size}`).join(',');
+			const filesBefore = files();
+			const report = await runConversion(r.repo, 'preview', r.deps);
+			assert.equal(report.mode, 'preview');
+			assert.equal(report.result, undefined);
+			const rules = new Set(report.plan.changes.map(c => c.rule));
+			for (const rule of ['rename-id', 'convert-amendment', 'convert-feedback', 'migrate-head', 'create-epic', 'create-story', 'create-tasks', 'move-binding']) assert.ok(rules.has(rule as never), `the plan lists ${rule}`);
+			assert.ok(report.plan.renames.length >= 3, 'the uppercase story id is renamed in its LLD, PLAN and BUILD');
+			assert.equal(r.git('status', '--porcelain', '--untracked-files=all'), before, 'a preview changes no file');
+			assert.equal(files(), filesBefore);
+			assert.deepEqual(await runConversion(r.repo, 'preview', r.deps).then(x => x.plan), report.plan, 'and gives the same plan every time');
+		} finally { r.done(); }
+	});
 });
+

@@ -1,3 +1,14 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * The schema guard at the MCP server: the artifact tools refuse an unconverted repository; the tools that read no artifact still work.
+ *
+ * Run: npx tsx --test src/mcp/__tests__/repo-schema-guard.test.ts
+ */
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';

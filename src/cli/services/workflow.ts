@@ -37,7 +37,6 @@ import {
 	autoPushTasksOnPlan,
 	type AutoPushResult,
 } from '../../workflow/tracker-auto.js';
-import { createRepoLifecycle } from '../../workflow/artifact-core/repo-lifecycle.js';
 import {
 	listAmendments,
 	readAmendment,
@@ -129,21 +128,28 @@ function commitApprovedArtifacts(approval: ApprovalResult): CommitArtifactsResul
 	// log of each head written, plus the head of the unit whose issue the push bound (the EPIC or STORY head).
 	const files = new Set<string>();
 	const add = (p: { md: string; json: string }) => { files.add(p.md); files.add(p.json); };
-	const addHead = (id: string | undefined): void => {
-		if (id === undefined) return;
-		const sidecar = new FileSidecarStore(repoPath);
-		for (const rel of [`${ARTIFACTS_DIR}/${id}.json`, sidecar.filesOf(id).log, sidecar.filesOf(id).feedback]) if (existsSync(join(repoPath, rel))) files.add(join(repoPath, rel));
-	};
+	const addHead = (id: string | undefined): void => { if (id !== undefined) for (const f of headFiles(repoPath, id)) files.add(f); };
 	if (approval.workflow === 'design.epic') { add(hldArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)); add(defineArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)); }
 	else if (approval.workflow === 'design.story' && typeof storyId === 'string') { add(lldArtifactPaths(repoPath, epicHash, storyId, anchor, kind, epicSlug)); add(defineArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)); }
 	else if (approval.workflow === 'plan' && typeof storyId === 'string') { add(planArtifactPaths(repoPath, epicHash, storyId, anchor, kind, epicSlug)); }
 	else { add(defineArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)); }
 
 	addHead(basename(approval.path).replace(/\.json$/, ''));
-	addHead(unitHeadId({ unit: approval.workflow === 'design.epic' || typeof storyId !== 'string' ? 'epic' : 'story', epicHash, ...(typeof storyId === 'string' ? { storyId } : {}) }));
+	addHead(unitHeadOf(approval.workflow, epicHash, storyId));
 	const result = commitAndPushArtifacts(repoPath, [...files], `chore(workflow): ${approval.workflow} approved — check in artifacts + tracker refs`);
 	log.info({ workflow: approval.workflow, committed: result.committed, pushed: result.pushed, reason: result.reason }, 'approve: artifact check-in');
 	return result;
+}
+
+/** The files of the head `id` that exist: its json and its change log and feedback lines. */
+function headFiles(repoPath: string, id: string): string[] {
+	const sidecar = new FileSidecarStore(repoPath);
+	return [`${ARTIFACTS_DIR}/${id}.json`, sidecar.filesOf(id).log, sidecar.filesOf(id).feedback].map(rel => join(repoPath, rel)).filter(f => existsSync(f));
+}
+
+/** The head of the unit an approval belongs to: the EPIC head for a design.epic approval or an Epic-level one, else the STORY head. */
+function unitHeadOf(workflow: string, epicHash: string, storyId: unknown): string | undefined {
+	return unitHeadId({ unit: workflow === 'design.epic' || typeof storyId !== 'string' ? 'epic' : 'story', epicHash, ...(typeof storyId === 'string' ? { storyId } : {}) });
 }
 
 /** After the check-in commit the approved files are clean, so their permalinks name that commit: attach the approved document (and its
@@ -162,9 +168,10 @@ function attachApprovedDocuments(approval: ApprovalResult, commit: CommitArtifac
 	const result = attachApprovedDocument(approval.workflow, { repoPath, epicHash, ...(storyId !== undefined ? { storyId } : {}) }, gate.port);
 	if ('error' in result || result.attached.length + result.reconciled.length === 0) return { attach: result };
 	// the attachments are recorded on the unit's head
-	const headId = unitHeadId({ unit: approval.workflow === 'design.epic' || typeof storyId !== 'string' ? 'epic' : 'story', epicHash, ...(typeof storyId === 'string' ? { storyId } : {}) });
+	const headId = unitHeadOf(approval.workflow, epicHash, storyId);
 	if (headId === undefined) return { attach: result };
-	const second = commitAndPushArtifacts(repoPath, [join(repoPath, ARTIFACTS_DIR, `${headId}.json`)], `chore(workflow): ${approval.workflow} approved — record the attached documents`);
+	// the head, and the log and feedback lines recording the attachment on it
+	const second = commitAndPushArtifacts(repoPath, headFiles(repoPath, headId), `chore(workflow): ${approval.workflow} approved — record the attached documents`);
 	log.info({ workflow: approval.workflow, committed: second.committed, pushed: second.pushed, reason: second.reason }, 'approve: attachment records check-in');
 	return { attach: result, commit: second };
 }
@@ -329,7 +336,7 @@ export async function reviewArtifact(
 			mdPath:     artifactPath,
 			jsonPath:   jsonPathForMd(artifactPath),
 			repo:       repoPath,
-			lifecycle:  createRepoLifecycle(repoPath).service,
+			lifecycle:  lifecycleFor(repoPath).service,
 			provider,
 			model:      `${resolution.runner}:${resolution.model}`,
 			reviewedAt: new Date().toISOString(),

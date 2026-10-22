@@ -1,3 +1,8 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
 /** A design artifact in the layout the review tool resolves: the json in the artifact store, the markdown under docs/epics with its marker. */
 
 import { mkdirSync, writeFileSync } from 'node:fs';

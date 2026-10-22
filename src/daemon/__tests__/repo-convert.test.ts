@@ -1,3 +1,14 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * The repo.convert daemon method: a bare call previews and writes nothing; a missing repo or a bad mode says why.
+ *
+ * Run: npx tsx --test src/daemon/__tests__/repo-convert.test.ts
+ */
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';

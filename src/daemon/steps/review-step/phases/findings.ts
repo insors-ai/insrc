@@ -30,6 +30,7 @@ import type { ReviewReport } from '../../../../workflow/review/index.js';
 import { authorPartyOf, SamePartyReviewError } from '../../../../workflow/review/party.js';
 import { loadState, releaseState } from '../state-store.js';
 import type { ReviewStepDone, ReviewStepError, ReviewStepInputFindings } from '../types.js';
+import { LifecycleConflictError } from '../../../../workflow/artifact-core/types.js';
 
 const log = getLogger('mcp:review-step:findings');
 
@@ -87,6 +88,11 @@ export async function handleFindings(
 	if (!existsSync(state.jsonPath)) throw new Error(`insrc_review_step[findings]: no artifact json at ${state.jsonPath}`);
 	if (!existsSync(state.mdPath))   throw new Error(`insrc_review_step[findings]: no artifact md at ${state.mdPath}`);
 
+	// The head is checked (and any write a crash left staged is finished) BEFORE it is read, as in the verdicts phase.
+	const artifactId = basename(state.jsonPath).replace(/\.json$/, '');
+	const lifecycle = lifecycleFor(state.repo);
+	const seen = await lifecycle.inspect(artifactId);
+	if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
 	// A design is not edited by its review: the report becomes the review entry of its log and the lifecycle review names it; the
 	// body is untouched.
 	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
@@ -98,9 +104,8 @@ export async function handleFindings(
 		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
 	}
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
-	const artifactId = basename(state.jsonPath).replace(/\.json$/, '');
 	await persistReview({
-		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle: lifecycleFor(state.repo),
+		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle,
 		report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER, markdown: md,
 	});
 

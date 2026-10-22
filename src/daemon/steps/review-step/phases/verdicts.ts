@@ -44,7 +44,7 @@ const REVIEWER: Actor = { id: 'insrc:review', kind: 'system', properties: {} };
 const CONTROLLER: Actor = { id: 'insrc:controller', kind: 'agent', properties: {} };
 
 /**
- * `lifecycleFor` gives the service of the run's repository The head is checked
+ * `lifecycleFor` gives the service of the run's repository. The head is checked
  * against its change log before anything is recorded, and the review is persisted by `persistReview`.
  */
 export async function handleVerdicts(

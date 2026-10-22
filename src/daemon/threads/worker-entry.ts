@@ -6,8 +6,8 @@
 /**
  * The start of every daemon worker (Epic 86197ac6, Story s1, t10). Module state
  * is per thread, so each worker must declare itself part of the store-owning
- * daemon, join the process's store guard and reach the main thread's hub
- * before it touches a store or a step's state.
+ * daemon, join the process's store guard and named locks and reach the main
+ * thread's hub before it touches a store, a lock or a step's state.
  *
  * Only a worker the daemon started calls this: a client process never runs
  * daemon worker code, so it is still refused on the live stores.
@@ -18,6 +18,7 @@ import type { MessagePort } from 'node:worker_threads';
 
 import { declareLiveStoreOwner } from '../../db/graph/store.js';
 import { installStoreGuard } from '../../db/store-guard.js';
+import { installLockManager } from '../../shared/locks/lock-manager.js';
 import { HubClient } from './channel.js';
 import { HubStepStateStore, installStepStateStore } from './step-state.js';
 import { wireWorkerStoreHealth } from './store-health-hub.js';
@@ -25,6 +26,8 @@ import { wireWorkerStoreHealth } from './store-health-hub.js';
 export interface DaemonWorkerInit {
 	/** The store guard's shared block, created once by the main thread. */
 	readonly guardBlock: SharedArrayBuffer;
+	/** The named locks' shared block (createLockBlock), created once by the main thread. */
+	readonly lockBlock: SharedArrayBuffer;
 	/** This worker's end of its channel to the main thread's hub. */
 	readonly hubPort: MessagePort;
 }
@@ -41,6 +44,7 @@ export function startDaemonWorker(init: DaemonWorkerInit): HubClient {
 	if (isMainThread) throw new NotADaemonWorkerError();
 	declareLiveStoreOwner();
 	installStoreGuard(init.guardBlock);
+	installLockManager(init.lockBlock);
 	const hub = new HubClient(init.hubPort);
 	wireWorkerStoreHealth(hub);
 	installStepStateStore(new HubStepStateStore(hub));

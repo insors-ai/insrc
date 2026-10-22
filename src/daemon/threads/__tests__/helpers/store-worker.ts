@@ -17,11 +17,12 @@ import { upsertEntities } from '../../../../db/entities.js';
 import { getGraphStore, withWriteTxn } from '../../../../db/graph/store.js';
 import { getArtifactById, upsertArtifactVec } from '../../../../db/lance/artifact-vec.js';
 import { getLanceConn } from '../../../../db/lance/conn.js';
+import { getLockManager } from '../../../../shared/locks/lock-manager.js';
 import type { ConfigEntry, Entity } from '../../../../shared/types.js';
 import { startDaemonWorker } from '../../worker-entry.js';
 
-const { declare, guardBlock, hubPort } = workerData as { declare: boolean; guardBlock?: SharedArrayBuffer; hubPort?: MessagePort };
-if (declare) startDaemonWorker({ guardBlock: guardBlock!, hubPort: hubPort! });
+const { declare, guardBlock, lockBlock, hubPort } = workerData as { declare: boolean; guardBlock?: SharedArrayBuffer; lockBlock?: SharedArrayBuffer; hubPort?: MessagePort };
+if (declare) startDaemonWorker({ guardBlock: guardBlock!, lockBlock: lockBlock!, hubPort: hubPort! });
 
 const DIM = loadLocalProviderConfig().embeddingDim;
 const vec = (seed: number): number[] => Array.from({ length: DIM }, (_, i) => Math.sin(seed * (i + 1) * 0.001) * 0.1);
@@ -46,7 +47,8 @@ type Op =
 	| { op: 'write-config-and-artifact'; tag: string }
 	| { op: 'read-config-and-artifact'; tags: string[] }
 	| { op: 'throwing-txn' }
-	| { op: 'open-live' };
+	| { op: 'open-live' }
+	| { op: 'lock-probe'; name: string };
 
 const errorOf = (e: unknown): { name: string; message: string } =>
 	e instanceof Error ? { name: e.name, message: e.message } : { name: 'unknown', message: String(e) };
@@ -88,6 +90,13 @@ parentPort!.on('message', async (m: Op) => {
 			} catch (e) {
 				parentPort!.postMessage({ op: m.op, ok: true, thrown: errorOf(e) });
 			}
+		} else if (m.op === 'lock-probe') {
+			// An ifAvailable exclusive request on this worker's installed lock manager.
+			const outcome = await getLockManager().request(m.name, { ifAvailable: true }, (lock, blockedBy) => ({
+				granted: lock?.mode ?? null,
+				blockedBy: blockedBy.map(b => ({ mode: b.mode, threadId: b.threadId })),
+			}));
+			parentPort!.postMessage({ op: m.op, ok: true, ...outcome });
 		} else if (m.op === 'open-live') {
 			const graph = await getGraphStore().then(() => null, errorOf);
 			const lance = await getLanceConn().then(() => null, errorOf);

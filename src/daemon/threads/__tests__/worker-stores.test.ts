@@ -6,7 +6,8 @@
 /**
  * Daemon workers and the stores (Epic 86197ac6, Story s1, t10): a worker
  * started with startDaemonWorker uses the live LMDB and Lance stores beside
- * the main thread; a thread that never declared the owner is refused.
+ * the main thread; a thread that never declared the owner is refused. It also
+ * joins the process's named locks (Story afcfa027/S001, t5).
  *
  * The home directory is pointed at a temporary one BEFORE any store module is
  * imported, so "the live stores" here are paths inside that home, and every
@@ -32,6 +33,7 @@ const {
 } = await import('../../../db/graph/store.js');
 const { closeLanceConn, getLanceConn, getLanceConnPath } = await import('../../../db/lance/conn.js');
 const { createStoreGuardBlock, installStoreGuard } = await import('../../../db/store-guard.js');
+const { createLockBlock, installLockManager } = await import('../../../shared/locks/lock-manager.js');
 const { addRepo } = await import('../../../db/repos.js');
 const { serveHub } = await import('../channel.js');
 const { LocalStepStateStore, stepStateHubHandlers } = await import('../step-state.js');
@@ -40,6 +42,7 @@ const { NotADaemonWorkerError, startDaemonWorker } = await import('../worker-ent
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = '/repo/worker-stores';
 const guardBlock = createStoreGuardBlock();
+const lockBlock = createLockBlock();
 const steps = new LocalStepStateStore();
 const workers: Worker[] = [];
 
@@ -54,7 +57,7 @@ async function spawn(declare: boolean): Promise<ScriptedWorker> {
 	const { port1, port2 } = new MessageChannel();
 	serveHub(port1, stepStateHubHandlers(steps));
 	const worker = new Worker(join(HERE, 'helpers', 'store-worker.ts'), {
-		workerData: declare ? { declare, guardBlock, hubPort: port2 } : { declare },
+		workerData: declare ? { declare, guardBlock, lockBlock, hubPort: port2 } : { declare },
 		transferList: declare ? [port2] : [],
 	});
 	workers.push(worker);
@@ -93,7 +96,7 @@ test('a worker that has not declared the store owner is refused on the live LMDB
 	// The worker entry declares the owner only inside a worker: a client process's main thread cannot use it.
 	assert.equal(isLiveStoreOwnerDeclared(), false);
 	const { port2 } = new MessageChannel();
-	assert.throws(() => startDaemonWorker({ guardBlock, hubPort: port2 }), NotADaemonWorkerError);
+	assert.throws(() => startDaemonWorker({ guardBlock, lockBlock, hubPort: port2 }), NotADaemonWorkerError);
 	port2.close();
 	assert.equal(isLiveStoreOwnerDeclared(), false, 'the refused call declared nothing');
 
@@ -187,4 +190,26 @@ test('a throwing withWriteTxn callback on a worker leaves none of its writes vis
 	// The store still takes writes afterwards.
 	await store.meta.put('ac4-after', 'ok');
 	assert.equal(store.meta.get('ac4-after'), 'ok');
+});
+
+test('a daemon worker and the main thread contend for the same named lock', async () => {
+	// The main thread joins the same lock block the workers were started with.
+	const main = installLockManager(lockBlock);
+	const worker = await spawn(true);
+	let release!: () => void;
+	const gate = new Promise<void>(r => { release = r; });
+	let held!: () => void;
+	const holding = new Promise<void>(r => { held = r; });
+	const done = main.request('contended', { mode: 'shared' }, async () => { held(); await gate; });
+	await holding;
+
+	const blocked = await worker.run({ op: 'lock-probe', name: 'contended' });
+	assert.equal(blocked.ok, true, JSON.stringify(blocked));
+	assert.equal(blocked['granted'], null, "the worker's exclusive request is refused while the main thread holds the lock");
+	assert.deepEqual(blocked['blockedBy'], [{ mode: 'shared', threadId: 0 }], 'and names the main thread as the holder');
+
+	release();
+	await done;
+	const granted = await worker.run({ op: 'lock-probe', name: 'contended' });
+	assert.equal(granted['granted'], 'exclusive', 'granted once the main thread releases');
 });

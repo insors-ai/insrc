@@ -1,0 +1,1686 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792648664385-274vcg",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T06:04:18.743Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 394330,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s9",
+    "hldBaseRunId": "wf-1792406752203-whj6zi",
+    "hldEffectiveHash": "bd468fd6cd6cbb10f41ed03278a9990a06432e2f2bb796797ade5f7c51974189",
+    "hldAmendmentsApplied": [
+      "AMD-2f27754d4ad00b8e-5",
+      "AMD-2f27754d4ad00b8e-6",
+      "AMD-2f27754d4ad00b8e-7",
+      "AMD-2f27754d4ad00b8e-8",
+      "AMD-2f27754d4ad00b8e-9"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers ac27, ac28 and ac29 (DEF revision 2) and builds no non-goal; the dropped second half of ac29 (older-clone notice) is not built.",
+          "evidence": "DEF.md:254-256: ac27 conversion in one commit with Epic/Story/Task heads and a migrated log; ac28 repeat/preview/verify through the delivery reader; ac29 'new tools ... refuse with a clear message ... builds from before this model are not expected to work'. LLD §2.1-2.9, §3.15 and §7 Backward compat cover each; no notice file or compatibility reader is designed. 'One commit' is met by step 11 (the user commits), with runConversion leaving the tree for one commit. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "runConversion 'verify' mode on its own (after apply has run and the legacy stamps are gone) can build a before-snapshot 'from the converted heads' migrated entries'.",
+          "evidence": "§2.6 verifyConversion takes `before: DeliverySnapshot`, which §2.2 says only legacyDeliveryView builds, from RawHead legacy stamps. After apply those stamps are stripped (§3.6/§3.7), so legacyDeliveryView has nothing to read. §2.7 claims verify mode 'recomputes the before-snapshot from the converted heads' migrated entries', but no function, mapping or test (convert-verify.test.ts covers only apply-then-verify) designs that path. ac28's verification is therefore designed only inside apply. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/S009/LLD.md]",
+          "action": "Add a contract (e.g. snapshotFromMigratedEntries) that rebuilds the DeliverySnapshot from the migrated-<id>-approve/-reject/-review/-mark-stale entries, or state that verify mode is only available inside apply. Add a test for a standalone verify run.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A content write through ArtifactStore on a head with meta.lifecycle moves meta.revision and returns the head to draft when the content hash changes, so the store cannot be the conversion's write path.",
+          "evidence": "src/workflow/storage.ts:252-257 prepareArtifactWrite: `if (reconciled.contentChanged) { meta['revision'] = readRevision(prior) + 1; ...}`; src/workflow/artifact-core/lifecycle.ts:164-168 reconcileLifecycle returns `status: 'draft'` on a content change. [files: src/workflow/storage.ts, src/workflow/artifact-core/lifecycle.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The delivery reader derives approval only from the legacy stamps and reads no meta.lifecycle.",
+          "evidence": "grep for 'lifecycle' under src/workflow/delivery finds no match. src/workflow/delivery/load.ts:50-57 approvalOf reads fields['approvedAt'] / rejectedAt / status; gate.ts:96-98 maps record.approval. [files: src/workflow/delivery/load.ts, src/workflow/delivery/gate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "findings.ts stamps meta.review with a meta-only write and records nothing on the lifecycle; tracker-auto readReview (377-381) reads meta.review raw.",
+          "evidence": "src/daemon/steps/review-step/phases/findings.ts:91 `writeArtifact(state.jsonPath, { ...artifact, meta: { ...artifact.meta, review: report } }, 'meta-only')`. There is no lifecycle call in the file. src/workflow/tracker-auto.ts:378-382 returns `meta?.review` from the raw JSON. [files: src/daemon/steps/review-step/phases/findings.ts, src/workflow/tracker-auto.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "convertLegacyFeedback today builds actor 'unknown:<author>', maps only suggestion vs comment, and reports a foreign target.file as unmapped.",
+          "evidence": "src/workflow/artifact-core/feedback-convert.ts:51-53 pushes target.file to unmapped; :58 `actor: { id: `unknown:${entry.author}`, kind: 'person', properties: {} }`; :61 `kind: entry.kind === 'suggestion' ? 'suggestion' : 'comment'`. The §2.10 changes are real changes to the current code. [files: src/workflow/artifact-core/feedback-convert.ts]",
+          "action": "Note: the current code already maps anchor.sectionSlug to anchor.section (:40). Putting a foreign target.file in anchor.section would overwrite a sectionSlug. State which value wins.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "RepoSchemaGate.require(repo, atLeast) and the RepoSchema { version, convertedAt } shape already exist (sc8), and this Story only adds the writer.",
+          "evidence": "src/workflow/artifact-core/repo-schema.ts:21-47 has read() and require() with the stated return union; types.ts:184-187 has RepoSchema { version; convertedAt? }. There is no writer today. The current message names 'the s9 conversion', not repo.convert, so §2.9's message text is a small change. [files: src/workflow/artifact-core/repo-schema.ts, src/workflow/artifact-core/types.ts]",
+          "action": "Change the require() message to name repo.convert, as §2.9 states.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Reused shapes exist: Review.report is a Reference that supports relation 'reviews'; ChangeLogEntry.outcome carries data; History.appendLog and ArtifactStore.exclusive exist.",
+          "evidence": "types.ts:28-34 Reference.relation includes 'reviews'; :121-129 Review.report?: Reference; :65 outcome { result; summary; data?: unknown }; history.ts:100 appendLog; store.exclusive is used at task-set.ts:338 and comment-sync.ts:153. [files: src/workflow/artifact-core/types.ts, src/workflow/artifact-core/history.ts]",
+          "action": "history.ts:56 validateLogEntry requires outcome.result and outcome.summary as text. The migrated and review entries must set both, not only outcome.data.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "TaskSets.createFromPlan already moves the Plan's Task tracker record onto each Task head and is repeatable, so the conversion needs no Task-record writer.",
+          "evidence": "src/workflow/tasks/task-set.ts:141-146 doc: 'A Task record found on the plan is moved onto its head's binding. A repeat for the same plan revision writes nothing'. :204 ensureTask calls this.moveRecord(p, row, id); :152-153 returns early when the TASKS head exists. [files: src/workflow/tasks/task-set.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The inventory of meta.review / reviewResolutions readers and writers in §3.4, §3.7 and §3.9 is complete.",
+          "evidence": "grep for meta.review / ['review'] / reviewResolutions outside tests finds 19 files. All production readers and writers are listed (gates, resolve, party, tracker-auto, delivery gate/currency/types, artifact-content, workflow-rpc, mcp/server, cli/services/workflow, findings, verdicts, run-artifact, artifact-write-inventory). decode.ts:70 reads lifecycle.review, not the stamp. canonical.ts:92 only deletes a key. code-review/gate.ts mentions it in a comment. [files: src/workflow/gates.ts, src/workflow/artifact-core/decode.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The legacy approval stamps to retire are approvedAt, rejectedAt, rejectReason, reviewOverride, staleAckedAt, review and reviewResolutions; deleting the gates' stamp writing (STAMP_KEYS) leaves nothing else unaccounted for.",
+          "evidence": "src/workflow/gates.ts:876 `const STAMP_KEYS = ['approvedAt', 'rejectedAt', 'rejectReason', 'rangeBase', 'reviewOverride']`. gates.ts:680-687 stamps meta.rangeBase at approval. src/workflow/runners/build/range-base.ts:296-302 reads `meta.rangeBase` to resolve a Story's build range, and completion-record.ts:80 uses it. The LLD lists range-base.ts in §3.6 ('move to LifecycleService and delete the stamp') but never names rangeBase. It is not in the lifecycle fields (§3.3), the strip list, the post-apply legacy-field sweep or the contract source check. The lifecycle has no field for it. Building this as written either strips rangeBase and breaks build-range resolution for approved Stories, or leaves it as an undeclared legacy field. [files: src/workflow/gates.ts, src/workflow/runners/build/range-base.ts, src/workflow/runners/build/completion-record.ts]",
+          "action": "State where meta.rangeBase lives after conversion: kept as a non-lifecycle meta field, moved to the approve change-log entry, or recomputed. Add it to the strip, keep and contract-test lists accordingly.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Appending a revision-bearing migrated-<id> entry with the head's kept revision number and the converted content hash, timestamped with the conversion clock, makes checkIntegrity pass against heads that already have an s4 log.",
+          "evidence": "lifecycle.ts:133-142 checkIntegrity compares the head with the last entry that carries a revision (`[...log].reverse().find(e => e.revision !== undefined)`) by number and hash. history.ts:122-124 says the reader orders entries by timestamp, then id, so the conversion-clock entry is last. Revision-less stamp entries with older original times do not stand in for it. [files: src/workflow/artifact-core/lifecycle.ts, src/workflow/artifact-core/history.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The migration write is conversion-owned and leaves the sc2 ArtifactStore contract unchanged, using only existing primitives (store.exclusive, writeAtomic).",
+          "evidence": "src/workflow/storage.ts:81 exports writeAtomic(absPath, content). store.exclusive is an existing method used by task-set.ts:338 and feedback-service.ts:62. §3.5 and §4 sc2 add no method to the store. Alternative a2 (an sc2 amendment) is rejected. artifactOfUnit (comment-sync.ts:81) is not among s8's private items. [files: src/workflow/storage.ts, src/workflow/artifact-core/store.ts, src/workflow/tracker/comment-sync.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Apply is crash-safe and rerunnable after every rule: 'a crash injected after each step of writeMigratedHead and each rule, then a rerun, gives the same result as an uninterrupted run', given the stated rule order (migrate every head, then convert body.feedback, ..., strip the legacy fields last).",
+          "evidence": "§3.5 and §3.10 say the migration write strips body.feedback and the legacy fields. §2.3 and §7 step 7 run 'migrate every head' before 'convert body.feedback'. The planner reads only the stored files (§2.1). A crash after a head is replaced and before its feedback is converted leaves a head with no body.feedback and no Feedback lines, so the rerun has nothing to convert and the feedback is lost from the working tree; only git still has it. The same order also conflicts with 'strip the legacy fields' as the last rule: if stripping happens later, the contentHash written by writeMigratedHead no longer matches the head and checkHeadIntegrity (lifecycle.ts:122-124) fails. history.ts:106-110 appendFeedback is a separate append, not part of the head write. [files: src/workflow/artifact-core/history.ts, src/workflow/artifact-core/lifecycle.ts, docs/epics/one-common-model-every-artifact-E202610192f27754d/S009/LLD.md]",
+          "action": "Order convert-body.feedback (append the Feedback lines with their deterministic ids) before the migration write of the same head, and make the migration write the single step that strips body.feedback and the legacy fields. Then contentHash is computed once over the final content, and a rerun always finds either the raw entries or the appended lines. Drop or redefine the trailing 'strip the legacy fields' rule.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion (ac27, ac28, ac29) maps to at least one named test that exercises it.",
+          "evidence": "The §6 acceptance mapping gives ac27 → convert-apply, convert-lifecycle-backfill, convert-feedback, convert-ids, convert-tasks, convert-story-history; ac28 → convert-preview, convert-repeat (including the crash-and-rerun case), convert-verify; ac29 → repo-schema-entry-points, convert-marker. These match DEF.md:254-256. The crash-and-rerun test in convert-repeat would expose the rule-order defect reported under error-paths. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md]",
+          "action": "Add a test for standalone verify mode and a rangeBase keep/strip test once those are designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 2,
+        "low": 12,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-22T06:04:30.330Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "questionResolutions": {
+      "qc2b8d3f2": {
+        "question": "The test framework is node:test through tsx, as CLAUDE.md states and the artifact-core tests use; the analyze bundles did not report it. Resolve: confirm (recommended).",
+        "status": "resolved",
+        "choice": "Confirm node:test through tsx (recommended)",
+        "rationale": "CLAUDE.md states it and the artifact-core tests use it.",
+        "resolvedAt": "2026-10-22T06:16:05.171Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story adds one conversion command, repo.convert, that brings a repository onto the common artifact model: a planner computes every change from the stored files (a preview writes nothing), an applier runs the rules in a fixed order, a verifier compares a delivery snapshot computed before from the legacy stamps with one read afterwards by the delivery reader, and the version marker is written last. Heads are written by a conversion-owned migration write that keeps each head's revision number, status and approval as stored, because writing them through ArtifactStore would move revisions and return approved heads to draft. The same Story then retires the legacy approval and review stamps, the body.feedback writers and the s6 to s8 fallbacks, so the repository ends on one code path.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework (a1): a shared artifact envelope with typed payloads, stored as a head file plus two append-only sidecar files whose lines carry the owning artifact id, behind a single identity module, with one upfront conversion and no compatibility code. The envelope carries identity, description, parent, references, a typed lifecycle (revision, approval, review, signoffs, staleness, status) and a tracker binding or attachments; the change log and feedback are separate append-only line files; each existing artifact type shrinks to a payload codec and a renderer. Tracker comment reading and attaching are added to the port and implemented for the GitHub adapter only.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ArtifactIdScheme",
+          "purpose": "The single place artifact ids are made and recognised: the existing hierarchical typed ids extended for Epic, Story, Task, the Tasks file and diagrams, one story and task form, the folder-name date source, and the functional-requirement id helpers that live in id.ts today.",
+          "interfaceSketch": "type ArtifactKind = 'DEF'|'HLD'|'LLD'|'PLAN'|'BUILD'|'CR'|'TESTS'|'EXT'|'AMD'|'SPEC'|'ISSUE'|'EPIC'|'STORY'|'TASK'|'TASKS'|'DIAG';\ninterface ArtifactKey { kind: ArtifactKind; epicHash: string; story?: string; task?: string; seq?: number }\ninterface ArtifactIds { make(key: ArtifactKey): string; parse(id: string): ArtifactKey | undefined; parentOf(key: ArtifactKey): ArtifactKey | undefined }\ninterface RequirementIds { mint(epicHash: string, createdAt: string, ordinal: number, storyId?: string): string; parse(id: string): { epicHash: string; ordinal: number; storyId?: string } | undefined; isRequirementId(s: string): boolean }\n  // + RequirementIds.parse result: { date: string; hash8: string; story?: number | undefined; fr: number } | undefined;  // SUPERSEDES the return type of RequirementIds.parse declared in this sketch ({ epicHash; ordinal; storyId? }): a stored requirement id carries only the date and the first 8 hash characters, so parse returns these parts, story and fr as numbers (amend:AMD-2f27754d4ad00b8e-5)",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "ArtifactEnvelope",
+          "purpose": "The common shape of every stored entity and the one reader and writer for it, with References and namespaced Actors.",
+          "interfaceSketch": "interface Actor { id: string; kind: 'person'|'agent'|'system'; name?: string; properties: Record<string, unknown> }\ninterface Reference { entityId: string; type: string; relation: 'derived-from'|'depends-on'|'tracked-by'|'supersedes'|'documents'|'implements'|'cites'|'reviews'; fragment?: string; quote?: string }\ninterface Artifact<P> { id: string; description: string; parent?: Reference; references: Reference[]; lifecycle: Lifecycle; binding?: TrackerBinding; attachments: Attachment[]; payload: P }\ninterface ArtifactStore { read(id: string): Promise<Artifact<unknown>>; write(a: Artifact<unknown>, by: Actor): Promise<void>; childrenOf(id: string): Promise<string[]> }\n  // + readWithHistory(id: string): Promise<Artifact<unknown> & { changeLog: ChangeLogEntry[]; feedback: Feedback[] }>;  // A read that exposes the artifact together with its change log and feedback in one shape, as DEF ac4 requires; read stays the cheap head-only read. (amend:AMD-2f27754d4ad00b8e-7)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "HistoryRecords",
+          "purpose": "The change log entry and the Feedback entry shapes, the persisted sidecar record that carries the owning artifact id, and the append and read API, including how an update says which feedback it addressed.",
+          "interfaceSketch": "type Operation = 'create'|'update'|'delete'|'reparent'|'request-review'|'review'|'approve'|'reject'|'open-signoff'|'signoff-changes'|'signed-off'|'complete'|'reopen'|'withdraw'|'supersede'|'mark-stale'|'ack-stale';\ninterface ChangeLogEntry { id: string; actor: Actor; timestamp: string; operation: Operation; revision?: { number: number; contentHash: string }; status?: { from: string; to: string }; outcome?: { result: string; summary: string; data?: unknown }; references?: Reference[]; addresses?: 'all' | string[] }\ninterface Feedback { id: string; text: string; actor: Actor; timestamp: string; feedback: Feedback[]; kind: 'comment'|'suggestion'|'revision-request'; anchor?: { quote?: string; section?: string; lines?: [number, number] }; revision?: number; source?: { system: string; externalId: string; url?: string }; batchId?: string }\ninterface SidecarRecord<E> { artifactId: string; entry: E }\ninterface History { appendLog(id: string, e: ChangeLogEntry): Promise<void>; appendFeedback(id: string, f: Feedback): Promise<void>; log(id: string): Promise<ChangeLogEntry[]>; logTail(id: string): Promise<ChangeLogEntry | undefined>; feedback(id: string): Promise<Feedback[]>; openFeedback(id: string): Promise<Feedback[]> }\n  // + Feedback.inReplyTo?: string | undefined;  // The id of the feedback entry this entry replies to. A stored line can never be rewritten, so a reply is its own line that names its parent; the thread is built at read. An entry with no inReplyTo is a thread root. (amend:AMD-2f27754d4ad00b8e-9)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "Lifecycle",
+          "purpose": "The typed lifecycle structures, the ten statuses and their transitions, the revision and content-hash rule, the completion roll-up and the conflict check against the log tail.",
+          "interfaceSketch": "type Status = 'draft'|'pending-review'|'approved'|'in-signoff'|'changes-requested'|'signed-off'|'rejected'|'completed'|'withdrawn'|'superseded';\ninterface Revision { number: number; contentHash: string; at: string; by: Actor }\ninterface Approval { revision: number; by: Actor; at: string; override?: { reason: string } }\ninterface Review { revision: number; reviewer: Actor; party: 'controller'|'daemon'; verdict: 'pass'|'warn'|'block'; counts: Record<string, number>; at: string; report?: Reference }\ninterface Signoff { revision: number; request: Reference; state: 'open'|'changes-requested'|'completed'; actors: Actor[]; at: string }\ninterface Staleness { upstream: Reference; upstreamRevision: number; since: string }\ninterface Lifecycle { status: Status; revision: Revision; approval?: Approval; review?: Review; signoffs: Signoff[]; stale?: Staleness }\ntype Integrity = { ok: true } | { ok: false; reason: 'hash-mismatch'|'head-ahead-of-log'|'log-ahead-of-head' }\ninterface LifecycleRules { transition(a: Artifact<unknown>, op: Operation, by: Actor): Promise<Lifecycle>; checkIntegrity(a: Artifact<unknown>, logTail: ChangeLogEntry | undefined): Integrity; rollUp(id: string): Promise<Status | undefined> }",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s6",
+            "s7",
+            "s8",
+            "s9",
+            "s4"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "SidecarStorage",
+          "purpose": "How an artifact is stored: the head file and the two append-only line files shared by a Tasks file, their location, the merge rule, the per-artifact filtering and the read-time ordering and de-duplication.",
+          "interfaceSketch": "interface ArtifactFiles { head: string; log: string; feedback: string }\ninterface SidecarStore { filesOf(id: string): ArtifactFiles; appendRecord<E>(file: string, record: SidecarRecord<E>): Promise<void>; readRecords<E>(file: string, artifactId: string): Promise<E[]>; mergeAttributes(): string[] }",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc6",
+          "name": "TrackerBinding",
+          "purpose": "The typed binding between a lifecycle artifact and its tracker issue, the attachments of supporting artifacts, and the tracker port operations to read comments and attach, implemented for the GitHub adapter.",
+          "interfaceSketch": "interface TrackerBinding { reference: Reference; createdAtRevision: number; posted: { kind: 'milestone'|'task-list'|'design'|'review'|'plan'; at: string; externalId?: string }[]; pendingLink?: { parent: Reference; child?: Reference; childId?: number } }\ninterface Attachment { target: Reference; revision: number; at: string; externalId?: string }\ninterface TrackerPortAdditions { listComments(issue: string, since?: string): PortResult<{ externalId: string; author: string; text: string; at: string; url?: string }[]>; attach(issue: string, artifact: Reference, link: string): PortResult<{ externalId?: string }> }\n  // + findIssuesByTitleToken(token: string): PortResult<IssueRef[]>;  // exact-token title lookup (title equals the artifact id, or starts with it followed by an em dash and a space); added to TrackerPort by Story s1, which implements it with the GitHub adapter and the fake; s6 builds on it and adds no second title lookup (amend:AMD-2f27754d4ad00b8e-6)",
+          "ownedByStory": "s6",
+          "consumedByStories": [
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c6"
+          ]
+        },
+        {
+          "id": "sc7",
+          "name": "TaskSet",
+          "purpose": "The Tasks file of a plan: the Task artifacts, their ids, and how a re-plan is brought into line without reusing an id.",
+          "interfaceSketch": "interface TaskPayload { title: string; summary: string; size: 'S'|'M'|'L'; order: number; acceptanceChecks: string[]; tests: { level: string; name: string }[] }\ninterface TaskSet { id: string; tasks: Artifact<TaskPayload>[] }\ninterface TaskSets { createFromPlan(planId: string): Promise<TaskSet>; reconcile(planId: string): Promise<{ changed: string[]; withdrawn: string[]; added: string[] }>; edit(taskId: string, patch: Partial<TaskPayload>, by: Actor): Promise<void> }",
+          "ownedByStory": "s7",
+          "consumedByStories": [
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc8",
+          "name": "RepoSchemaVersion",
+          "purpose": "The repository-level marker that records whether a repository has been converted, so the conversion is repeatable and the new tools refuse an unconverted repository.",
+          "interfaceSketch": "interface RepoSchema { version: number; convertedAt?: string }\ninterface RepoSchemaGate { read(repo: string): RepoSchema; require(repo: string, atLeast: number): { ok: true } | { ok: false; message: string } }",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s9"
+          ],
+          "assumptions": [
+            "c7"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s9",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6",
+          "sc7",
+          "sc8"
+        ],
+        "internal": "The conversion command: previews, repeats, back-fills history, renames standalone S001 to s1 rewriting the references it can with no alias, creates Epic, Story and Task artifacts for what exists, verifies through the delivery reader, and sets the repository version. Private to this Story are the per-type conversion mappings and the verification report."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The id module and its removal of the second scheme: the folder-name formatter moved into the path scheme, the date source fixed to the epic's creation time, the functional-requirement id helpers and their callers moved with stored FR ids staying valid, issue titles switched to the artifact id, and the delivery module's ordinals. The old issue-body marker is not read. Private to this Story are the exact text of the issue title and the relocation of the helpers."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2",
+            "sc3",
+            "sc8"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The envelope model, the one reader and writer, the History API and the sidecar record shape as a contract, and the repository version marker. Private to this Story are the head-file schema, the per-type payload codec registry and how the old per-type read functions delegate to the reader."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The lifecycle rules: status transitions, the revision and content-hash computation, the staleness record, the completion roll-up and the integrity check against the log tail on approve, review and complete. Private to this Story are the hash canonicalisation and how a roll-up is cached or recomputed."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The physical sidecar storage: file layout, the merge attributes for the line files, per-artifact filtering, read-time ordering and de-duplication, and the write order of log entry before head with the repair of a log that is ahead of its head. Private to this Story are the line format and the file naming beside a head."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5"
+          ],
+          "internal": "People-facing feedback: adding feedback and replies from a client, listing open feedback, the addresses rule at revision time, and the per-user identity declaration with alias linking. Private to this Story are the identity file format and the display of linked identities."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The typed binding and attachments, the tracker port additions implemented for GitHub, the retry of pending links and posts, and the switch of unit-issue bookkeeping to the binding. Private to this Story are the permalink construction and the retry bookkeeping."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6"
+          ],
+          "internal": "Task artifacts: creation of the Tasks file and the Task issues at plan approval, direct edits of a Task's own content with local re-approval, refusal of structural edits, and the re-plan reconciliation. Private to this Story are the diff of a Task against the new plan and the build-round recording in a Task's history."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Comment sync: reading human comments into feedback at implement, validate or on request, classifying a revision request or a suggestion from the first line, and posting feedback once. Private to this Story are the first-line commands, the derived since point and the filter for the framework's own posts."
+        }
+      ],
+      "rolloutPhase": "Phase E — conversion and cutover",
+      "nonFunctional": {
+        "performance": "Reading an artifact reads its head; the log tail is read only on approve, review and complete, and counts, open feedback and status are computed on read. The delivery loader still reads each artifact once. Loading a repository of about a thousand artifacts must stay within twice today's load time on the same machine.",
+        "security": "Gates use the live tracker identity only; declared aliases are never trusted for a decision. The identity file is local and read for attribution. Tracker comments are read through the existing gh path of the GitHub adapter, with no new credential and no direct REST call.",
+        "observability": "Every state change appends a change log entry with actor, operation and, where relevant, revision and status; a conflict, a log-ahead-of-head repair, a failed attach and a pending link are logged and surfaced in the unit's result, not hidden.",
+        "durability": "Heads are replaced atomically as today; sidecar lines are append-only and de-duplicated by (artifactId, entry id) so a repeated append is harmless; a write appends its log entry before it replaces the head so a failure between the two leaves a detectable, repairable gap; the conversion is one commit, repeatable, and reverts with one git revert."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "planConversion",
+          "signature": "planConversion(repo: string, options?: { tracker?: TrackerPort | undefined }): Promise<ConversionPlan>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute path of the repository to convert.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "{ tracker?: TrackerPort | undefined }",
+              "purpose": "A tracker port, when the optional issue relabel and pre-s8 comment listing may be planned; without one those steps are reported as skipped.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ConversionPlan",
+            "meaning": "The typed changes per artifact, the renames, the unmapped values, the problems and the before-snapshot. Nothing is written."
+          },
+          "errors": [
+            {
+              "type": "ConversionRefused",
+              "condition": "A merge is in progress, the working tree has uncommitted changes under .insrc/artifacts or docs/epics, or the marker file cannot be read."
+            },
+            {
+              "type": "ConversionUnreadable",
+              "condition": "A stored file is not JSON or has merge conflict markers; it is listed as a problem in the plan, never skipped silently."
+            }
+          ],
+          "preconditions": [
+            "The working tree is clean under .insrc/artifacts and docs/epics"
+          ],
+          "postconditions": [
+            "No file is created, changed or removed",
+            "The same tree gives equal plans",
+            "A converted tree gives a plan with no changes",
+            "The before-snapshot is computed from the raw legacy heads by legacyDeliveryView, not by the delivery reader"
+          ]
+        },
+        {
+          "name": "legacyDeliveryView",
+          "signature": "legacyDeliveryView(heads: readonly RawHead[]): DeliverySnapshot",
+          "parameters": [
+            {
+              "name": "heads",
+              "type": "readonly RawHead[]",
+              "purpose": "The raw parsed legacy heads the planner read.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DeliverySnapshot",
+            "meaning": "Per unit: status, revision number, approval, review verdict and blocking, open feedback count, derived from meta.approvedAt, rejectedAt, review and reviewResolutions the way the old delivery reader did."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Pure: no file is read or written",
+            "Used only by the conversion; it is the one place the legacy stamp rules are kept, and it is deleted with the conversion"
+          ]
+        },
+        {
+          "name": "applyConversion",
+          "signature": "applyConversion(repo: string, plan: ConversionPlan, deps: ConversionDeps): Promise<ConversionResult>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute path of the repository.",
+              "optional": false
+            },
+            {
+              "name": "plan",
+              "type": "ConversionPlan",
+              "purpose": "The plan from planConversion; it is recomputed inside the call and compared, so a tree that changed since the preview is refused.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "ConversionDeps",
+              "purpose": "The store, history, lifecycle service, task sets, the clock and the migration actor.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ConversionResult",
+            "meaning": "What each rule wrote, what was reported, and whether the marker was written."
+          },
+          "errors": [
+            {
+              "type": "ConversionRefused",
+              "condition": "The recomputed plan differs from the one passed in."
+            },
+            {
+              "type": "ConversionIncomplete",
+              "condition": "A head still carries a legacy field, or fails checkHeadIntegrity or checkIntegrity, after its rules ran; the marker is not written and the heads are listed."
+            }
+          ],
+          "preconditions": [
+            "The plan has no unreadable files and no open problem"
+          ],
+          "postconditions": [
+            "Rules run in this order: rename ids and files, stamp epicCreatedAt, convert flat amendments, migrate every head (log entries, then the head), convert body.feedback, create EPIC and STORY heads, create Task heads for earlier Stories through TaskSets.createFromPlan, move the Epic and Story bindings, move story history, strip the legacy fields",
+            "The marker is written last and only when every head is clean",
+            "A second run writes nothing"
+          ]
+        },
+        {
+          "name": "writeMigratedHead",
+          "signature": "writeMigratedHead(repo: string, converted: ConvertedHead, deps: ConversionDeps): Promise<'written' | 'unchanged'>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute path of the repository.",
+              "optional": false
+            },
+            {
+              "name": "converted",
+              "type": "ConvertedHead",
+              "purpose": "The converted artifact: its id, the full head bytes, and the migrated log entries to record first.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "ConversionDeps",
+              "purpose": "The store (for exclusive), the history and the clock.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "'written' | 'unchanged'",
+            "meaning": "written when the head or an entry changed, unchanged when both already hold the converted state."
+          },
+          "errors": [
+            {
+              "type": "ConversionIncomplete",
+              "condition": "An append or the atomic replace failed; entries already appended stay and a rerun finishes the head."
+            }
+          ],
+          "preconditions": [
+            "Called only by applyConversion"
+          ],
+          "postconditions": [
+            "Under ArtifactStore.exclusive, each migrated log entry whose id is not found in History.log is appended (stamp and review entries first, the revision-bearing migrated-<artifact id> entry last), and only then is the head replaced with writeAtomic",
+            "meta.revision, the lifecycle status, approval and review binding are kept as stored; revision.contentHash is the hash of the converted content; lifecycle.review.report references the review entry",
+            "The head write appends nothing, so a head has each migrated entry once however often it runs"
+          ]
+        },
+        {
+          "name": "migratedEntryId",
+          "signature": "migratedEntryId(artifactId: string, part?: 'approve' | 'reject' | 'review' | 'mark-stale'): string",
+          "parameters": [
+            {
+              "name": "artifactId",
+              "type": "string",
+              "purpose": "The converted artifact's id.",
+              "optional": false
+            },
+            {
+              "name": "part",
+              "type": "'approve' | 'reject' | 'review' | 'mark-stale'",
+              "purpose": "Which recorded legacy fact the entry carries; absent for the revision-bearing entry.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "migrated-<artifact id>, or migrated-<artifact id>-<part>: stable across runs, so a rerun finds the entry instead of adding one."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The same inputs give the same id"
+          ]
+        },
+        {
+          "name": "verifyConversion",
+          "signature": "verifyConversion(repo: string, before: DeliverySnapshot): Promise<VerifyReport>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute path of the repository.",
+              "optional": false
+            },
+            {
+              "name": "before",
+              "type": "DeliverySnapshot",
+              "purpose": "The snapshot the planner computed with legacyDeliveryView before the apply.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "VerifyReport",
+            "meaning": "Each unit whose status, revision number, approval, review verdict or feedback count differs between the before-snapshot and the snapshot the delivery reader builds from the converted repository, with the reason; a contentHash difference is expected and not reported."
+          },
+          "errors": [
+            {
+              "type": "RepoSchemaError",
+              "condition": "The marker is missing or below version 2."
+            }
+          ],
+          "preconditions": [
+            "The marker is at version 2",
+            "The delivery reader already reads the lifecycle (the reader group is done before the conversion is first run)"
+          ],
+          "postconditions": [
+            "Nothing is written",
+            "A difference is reported, never corrected"
+          ]
+        },
+        {
+          "name": "runConversion",
+          "signature": "runConversion(repo: string, mode: 'preview' | 'apply' | 'verify', deps: ConversionDeps): Promise<ConversionReport>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute path of the repository.",
+              "optional": false
+            },
+            {
+              "name": "mode",
+              "type": "'preview' | 'apply' | 'verify'",
+              "purpose": "preview plans only; apply plans, applies, verifies and writes the marker; verify reads back only (it recomputes the before-snapshot from the converted heads' migrated entries).",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "ConversionDeps",
+              "purpose": "The collaborators.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ConversionReport",
+            "meaning": "The plan or result, the verification and the counts printed to the user."
+          },
+          "errors": [
+            {
+              "type": "ConversionRefused",
+              "condition": "A precondition of the stage that mode runs is not met."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "preview and verify write nothing",
+            "apply leaves the working tree changed for one commit and does not commit"
+          ]
+        },
+        {
+          "name": "handleRepoConvert",
+          "signature": "handleRepoConvert(params: unknown, repoEnv: string | undefined): Promise<ConversionReport | { error: string }>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "{ repo?: string; mode?: 'preview' | 'apply' | 'verify' }",
+              "purpose": "The IPC parameters of repo.convert.",
+              "optional": false
+            },
+            {
+              "name": "repoEnv",
+              "type": "string | undefined",
+              "purpose": "INSRC_REPO fallback.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ConversionReport | { error: string }",
+            "meaning": "The report, or an error that says why nothing was attempted."
+          },
+          "errors": [
+            {
+              "type": "invalid-params",
+              "condition": "No repo, or a mode that is not preview, apply or verify."
+            }
+          ],
+          "preconditions": [
+            "The daemon owns all file access; the CLI calls this through IPC",
+            "repo.convert is the only method that does not require the marker"
+          ],
+          "postconditions": [
+            "The default mode is preview"
+          ]
+        },
+        {
+          "name": "RepoSchemaGate.require",
+          "signature": "require(repo: string, atLeast: number): { ok: true } | { ok: false; message: string }",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Repository path.",
+              "optional": false
+            },
+            {
+              "name": "atLeast",
+              "type": "number",
+              "purpose": "2 for every daemon method and MCP step that reads or writes artifacts, except repo.convert.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ ok: true } | { ok: false; message: string }",
+            "meaning": "ok, or a message that names the conversion and the repo.convert command."
+          },
+          "errors": [
+            {
+              "type": "RepoSchemaError",
+              "condition": "The marker exists and is not valid."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The new tools refuse an unconverted repository with that message"
+          ]
+        },
+        {
+          "name": "convertLegacyFeedback",
+          "signature": "convertLegacyFeedback(entry: FeedbackEntry, ownDocument?: string | undefined): ConvertedFeedback",
+          "parameters": [
+            {
+              "name": "entry",
+              "type": "FeedbackEntry",
+              "purpose": "A stored body.feedback entry.",
+              "optional": false
+            },
+            {
+              "name": "ownDocument",
+              "type": "string | undefined",
+              "purpose": "The artifact's own document path.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ConvertedFeedback",
+            "meaning": "The Feedback line, the decision of its batch and the values with no home."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The actor id is the author text when it is already an os:, git: or github: id (lower-cased), otherwise legacy:<slug of the author> with the author text in actor.properties.name",
+            "kind is revision-request for an entry whose decision or kind is feedback, suggestion stays suggestion, everything else is comment",
+            "A target.file other than ownDocument is stored in anchor.section; nothing is reported unmapped for it",
+            "id, timestamp, batchId and revision are kept"
+          ]
+        },
+        {
+          "name": "persistReview",
+          "signature": "persistReview(input: PersistReviewInput): Promise<PersistedReview>",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "PersistReviewInput",
+              "purpose": "The artifact, the review report, the reviewer actor and party, an optional auto-fix, and the markdown to render.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PersistedReview",
+            "meaning": "What was stored: the fix revision if any, the lifecycle review, the id of the review change-log entry, and the markdown path."
+          },
+          "errors": [
+            {
+              "type": "ReviewPersistError",
+              "condition": "A step failed; the error names the step (inspect, fix, record-review, render) and what is already stored."
+            }
+          ],
+          "preconditions": [
+            "The reviewer is the other party"
+          ],
+          "postconditions": [
+            "Steps run in this order: inspect, head conflict check, store the fix through updateContent with addresses [], record the review (a 'review' log entry whose outcome.data holds the full report, then lifecycle.review with a report Reference to that entry), render the markdown; the lifecycle record comes before the markdown so a failure leaves a state the next run repairs",
+            "src/daemon/steps/review-step/phases/findings.ts, src/daemon/steps/review-step/phases/verdicts.ts and src/workflow/review/run-artifact.ts all call it"
+          ]
+        },
+        {
+          "name": "readReviewReport",
+          "signature": "readReviewReport(history: History, artifactId: string, review: Review): Promise<ReviewReport | undefined>",
+          "parameters": [
+            {
+              "name": "history",
+              "type": "History",
+              "purpose": "The artifact's history reader.",
+              "optional": false
+            },
+            {
+              "name": "artifactId",
+              "type": "string",
+              "purpose": "The reviewed artifact.",
+              "optional": false
+            },
+            {
+              "name": "review",
+              "type": "Review",
+              "purpose": "The lifecycle review whose report Reference names the entry.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReviewReport | undefined",
+            "meaning": "The full report and its resolutions, read from the review log entry the Reference names; undefined when the Reference or the entry is absent."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Replaces every read of meta.review: effectiveReviewVerdict, readReview in tracker-auto, the delivery gate, reviewerPartyOf and the currency check read the report through it"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ConversionPlan",
+        "change": "new",
+        "details": "{ changes: ConversionChange[]; renames: { from: string; to: string }[]; unmapped: UnmappedField[]; problems: { file: string; reason: string }[]; legacyAttachComments: { issue: string; commentId: string }[]; snapshot: DeliverySnapshot }. snapshot is the before-snapshot from legacyDeliveryView. ConversionChange is a union keyed by rule (rename-id, stamp-epic-created-at, convert-amendment, migrate-head, convert-feedback, create-epic, create-story, create-tasks, move-binding, move-story-history, strip-legacy-field, relabel-issue); each names the artifact id and the stored state that makes the rule apply.",
+        "callSites": [
+          "src/workflow/artifact-core/feedback-convert.ts",
+          "src/workflow/tasks/task-set.ts",
+          "src/workflow/tracker/binding.ts",
+          "src/workflow/delivery/snapshot.ts"
+        ]
+      },
+      {
+        "entity": "MigratedLogEntry",
+        "change": "new",
+        "details": "Deterministic ids: migrated-<artifact id> is the revision-bearing entry (operation create when the artifact has no log, update otherwise; revision { number: the head's meta.revision, contentHash: the hash of the converted content }; actor insrc:migration; outcome.data.kind 'migrated'; timestamp = the conversion's clock, so it is the last revision-bearing entry and checkIntegrity compares the head against it). migrated-<artifact id>-approve, -reject and -mark-stale are revision-less entries carrying the legacy fact (original time from the stamp, actor legacy:unknown, status from/to). migrated-<artifact id>-review is a revision-less 'review' entry whose outcome.data holds { kind: 'review', report: the stored ReviewReport, resolutions: reviewResolutions }. An entry is appended only when its id is not found in History.log.",
+        "callSites": [
+          "src/workflow/artifact-core/history.ts",
+          "src/workflow/artifact-core/lifecycle.ts",
+          "src/workflow/artifact-core/sidecar.ts"
+        ]
+      },
+      {
+        "entity": "Lifecycle (converted head)",
+        "change": "field-modify",
+        "details": "status, approval, review and stale are computed from meta.approvedAt, rejectedAt, rejectReason, reviewOverride, staleAckedAt and meta.review with reviewResolutions applied (as effectiveReviewVerdict decides), bound to the head's current meta.revision; a review dated before the revision is not bound to it. The revision number, status and approval are kept as stored; revision.contentHash is contentHash of the converted description, body and citations. lifecycle.review keeps verdict, counts, party and at, and its report is a Reference { entityId: the artifact id, type: 'change-log-entry', relation: 'reviews', fragment: the review entry id }. Current behaviour kept (invariant): approval and review bind to a revision number, not to a hash, so a changed hash does not unbind them (src/workflow/storage.ts, src/workflow/artifact-core/lifecycle.ts).",
+        "callSites": [
+          "src/workflow/artifact-core/lifecycle.ts",
+          "src/workflow/artifact-core/types.ts",
+          "src/workflow/storage.ts",
+          "src/workflow/gates.ts",
+          "src/workflow/review/resolve.ts"
+        ]
+      },
+      {
+        "entity": "Review report location",
+        "change": "field-modify",
+        "details": "The full ReviewReport (findings, claims, model, reviewedBy) and the resolutions leave meta.review and meta.reviewResolutions and live in the outcome.data of the artifact's 'review' change-log entry; new reviews written by persistReview do the same, and a later resolution is a further log entry with outcome.data.kind 'review-resolution'. Readers use readReviewReport: src/workflow/review/resolve.ts (effectiveReviewVerdict), src/workflow/tracker-auto.ts (readReview, 377-381), src/workflow/delivery/gate.ts (103), src/workflow/delivery/currency.ts (80, 181), src/workflow/review/party.ts (reviewerPartyOf), src/workflow/gates.ts (641, 746, 889), src/workflow/artifact-content.ts.",
+        "callSites": [
+          "src/workflow/review/resolve.ts",
+          "src/workflow/tracker-auto.ts",
+          "src/workflow/delivery/gate.ts",
+          "src/workflow/delivery/currency.ts",
+          "src/workflow/review/party.ts",
+          "src/workflow/gates.ts",
+          "src/workflow/artifact-content.ts"
+        ]
+      },
+      {
+        "entity": "Migration write (head)",
+        "change": "new",
+        "details": "A head is written by writeMigratedHead, not by ArtifactStore.write: the store's content write moves meta.revision and returns the head to draft when the content hash changes (src/workflow/storage.ts, prepareArtifactWrite), and the conversion changes the body (it strips body.feedback and rewrites ids). The migration write sets meta.envelope and meta.lifecycle, strips the legacy fields, keeps meta.revision, and writes by writeAtomic after the log entries; it does not touch the sc2 store contract.",
+        "callSites": [
+          "src/workflow/artifact-core/store.ts",
+          "src/workflow/storage.ts",
+          "src/workflow/artifact-core/history.ts"
+        ]
+      },
+      {
+        "entity": "meta legacy stamps: writers and gates",
+        "change": "field-remove",
+        "details": "Move to LifecycleService (apply, updateContent) and delete the stamp: src/workflow/gates.ts (approveArtifactByJsonPath, reject and ack-stale gates, STAMP_KEYS, mirrorLegacyReview, headConflict becomes the full log check), src/workflow/review-decision.ts, src/workflow/review/resolve.ts, src/workflow/bugfix/stamp.ts, src/workflow/bugfix/mount.ts, src/workflow/artifacts/issue.ts, src/daemon/tasks-sync.ts, src/daemon/index.ts, src/workflow/runners/build/completion-record.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/range-base.ts. LifecycleService becomes mandatory on WorkflowApproveRequest and ReviewArtifactOpts.",
+        "callSites": [
+          "src/workflow/gates.ts",
+          "src/workflow/review-decision.ts",
+          "src/workflow/review/resolve.ts",
+          "src/workflow/bugfix/stamp.ts",
+          "src/workflow/bugfix/mount.ts",
+          "src/workflow/artifacts/issue.ts",
+          "src/daemon/tasks-sync.ts",
+          "src/daemon/index.ts",
+          "src/workflow/runners/build/completion-record.ts",
+          "src/workflow/runners/build/standalone-record.ts",
+          "src/workflow/runners/build/range-base.ts"
+        ]
+      },
+      {
+        "entity": "meta legacy stamps: readers",
+        "change": "field-remove",
+        "details": "Read the lifecycle (status, approval, review, stale) instead; ordered before the conversion is first run: src/workflow/delivery/load.ts (approvalOf), src/workflow/delivery/gate.ts, src/workflow/delivery/currency.ts, src/workflow/delivery/types.ts, src/workflow/pending.ts, src/workflow/bugfix/admit.ts, src/workflow/chain.ts, src/workflow/artifact-content.ts, src/workflow/artifact-core/completion-evidence.ts, src/workflow/runners/tracker/context.ts, src/workflow/tracker/conventions.ts, src/workflow/types.ts, src/shared/access.ts, src/mcp/server.ts, src/cli/services/workflow.ts, src/workflow/tracker-auto.ts, src/workflow/review/party.ts, src/daemon/workflow-rpc.ts, src/workflow/artifact-write-inventory.ts (the findings.ts entry changes with persistReview).",
+        "callSites": [
+          "src/workflow/delivery/load.ts",
+          "src/workflow/delivery/gate.ts",
+          "src/workflow/delivery/currency.ts",
+          "src/workflow/delivery/types.ts",
+          "src/workflow/pending.ts",
+          "src/workflow/bugfix/admit.ts",
+          "src/workflow/chain.ts",
+          "src/workflow/artifact-content.ts",
+          "src/workflow/artifact-core/completion-evidence.ts",
+          "src/workflow/runners/tracker/context.ts",
+          "src/workflow/tracker/conventions.ts",
+          "src/workflow/types.ts",
+          "src/shared/access.ts",
+          "src/mcp/server.ts",
+          "src/cli/services/workflow.ts",
+          "src/workflow/tracker-auto.ts",
+          "src/workflow/review/party.ts",
+          "src/daemon/workflow-rpc.ts",
+          "src/workflow/artifact-write-inventory.ts"
+        ]
+      },
+      {
+        "entity": "Amendment records (flat) and their stamps",
+        "change": "new",
+        "details": "Each flat AMD file becomes a { meta, body, citations } head with a lifecycle from its own approval and rejection stamps; approveAmendment and the other amendment functions move to the head shape and the lifecycle in the same change.",
+        "callSites": [
+          "src/workflow/amendments/store.ts",
+          "src/workflow/amendments/types.ts",
+          "src/workflow/amendments/effective.ts",
+          "src/workflow/amendments/staleness.ts",
+          "src/workflow/artifact-core/decode.ts"
+        ]
+      },
+      {
+        "entity": "Review persist path",
+        "change": "field-modify",
+        "details": "persistReview replaces the three copies of inspect, head conflict check, fix, stamp, lifecycle record and markdown. src/daemon/steps/review-step/phases/findings.ts, which today stamps meta.review with a meta-only write and records nothing on the lifecycle, joins it, so HLD and LLD design reviews are bound to the lifecycle without the approval-time mirror. The lifecycle record comes before the markdown; a failure names the step.",
+        "callSites": [
+          "src/daemon/steps/review-step/phases/findings.ts",
+          "src/daemon/steps/review-step/phases/verdicts.ts",
+          "src/workflow/review/run-artifact.ts",
+          "src/workflow/gates.ts"
+        ]
+      },
+      {
+        "entity": "body.feedback",
+        "change": "field-remove",
+        "details": "Each entry becomes a Feedback line through convertLegacyFeedback and the decision of each batch the outcome of a change log entry; the field is stripped by the migration write from DEF, HLD, LLD and PLAN heads. appendFeedback, appendFeedbackBatch and the tool artifact_feedback_append are removed; the companion headers and the delivery text read FeedbackService threads. convertLegacyFeedback changes: actor id (namespaced id kept, else legacy:<slug>, author text in actor.properties.name), kind by decision, foreign target.file in anchor.section.",
+        "callSites": [
+          "src/workflow/artifact-core/feedback-convert.ts",
+          "src/workflow/artifacts/provenance/writer.ts",
+          "src/workflow/artifacts/provenance/tool.ts",
+          "src/workflow/artifacts/provenance/schema.ts",
+          "src/workflow/artifacts/provenance/types.ts",
+          "src/workflow/artifacts/define.ts",
+          "src/workflow/artifacts/hld.ts",
+          "src/workflow/artifacts/lld.ts",
+          "src/workflow/artifacts/plan.ts",
+          "src/workflow/artifact-content.ts",
+          "src/workflow/artifact-core/history.ts",
+          "src/workflow/feedback/feedback-service.ts",
+          "src/workflow/runners/build/standalone-record.ts"
+        ]
+      },
+      {
+        "entity": "meta.tracker unit records",
+        "change": "field-remove",
+        "details": "epicRef and storyRef(s) move to the binding of the EPIC and STORY head they describe (move-binding, limited to Define to EPIC and LLD to STORY); taskRefs and units for Tasks are moved by TaskSets.createFromPlan alone (no second writer). All are removed with their readers: src/workflow/tracker/unit-issue.ts (older-refs rebind, Task branch of recordUnit, bindingHome's Plan fallback), refs.ts, resolve.ts, sync.ts, link.ts, conventions.ts, src/workflow/orchestrator.ts, chain.ts, questions.ts, storage.ts, tracker-auto.ts, the artifact renderers define.ts, hld.ts, lld.ts, tracker.ts, the tracker runners context.ts, index.ts, schemas.ts, runners/build/changed-files.ts, code-review/grounding.ts, tasks/task-set.ts, daemon/steps/build-step/render.ts.",
+        "callSites": [
+          "src/workflow/tracker/unit-issue.ts",
+          "src/workflow/tracker/refs.ts",
+          "src/workflow/tracker/resolve.ts",
+          "src/workflow/tracker/sync.ts",
+          "src/workflow/tracker/link.ts",
+          "src/workflow/tracker/conventions.ts",
+          "src/workflow/orchestrator.ts",
+          "src/workflow/chain.ts",
+          "src/workflow/questions.ts",
+          "src/workflow/storage.ts",
+          "src/workflow/tracker-auto.ts",
+          "src/workflow/artifacts/define.ts",
+          "src/workflow/artifacts/hld.ts",
+          "src/workflow/artifacts/lld.ts",
+          "src/workflow/artifacts/tracker.ts",
+          "src/workflow/runners/tracker/context.ts",
+          "src/workflow/runners/tracker/index.ts",
+          "src/workflow/runners/tracker/schemas.ts",
+          "src/workflow/runners/build/changed-files.ts",
+          "src/workflow/code-review/grounding.ts",
+          "src/workflow/tasks/task-set.ts",
+          "src/daemon/steps/build-step/render.ts"
+        ]
+      },
+      {
+        "entity": "Story history on the LLD",
+        "change": "field-modify",
+        "details": "The move-story-history rule copies, for each Story, the LLD's attachments, its tracker:<comment id> feedback lines and its feedback-post receipts to the STORY head (sidecar lines are append-only, so the LLD keeps its copies as history; feedback ids de-duplicate). artifactOfUnit in src/workflow/tracker/comment-sync.ts then answers the STORY head, so the sync reads and posts there. The unmarked pre-s8 'Attached ...' comments are not rewritten: when a tracker port is supplied the plan lists them in legacyAttachComments and the report names them.",
+        "callSites": [
+          "src/workflow/tracker/comment-sync.ts",
+          "src/workflow/tracker/binding.ts",
+          "src/workflow/tracker/unit-issue.ts"
+        ]
+      },
+      {
+        "entity": "EPIC and STORY heads",
+        "change": "new",
+        "details": "One EPIC head per Define and one STORY head per Story in it, created with the pass-through codecs; parent chain Epic, Story, LLD; the Epic binding moves from the Define's envelope and the Story binding from the LLD's, with their attachments; status by rollUp. Folders under docs/epics keep their names.",
+        "callSites": [
+          "src/workflow/artifact-core/codecs.ts",
+          "src/workflow/artifact-core/store.ts",
+          "src/workflow/tracker/binding.ts"
+        ]
+      },
+      {
+        "entity": "Task heads for earlier Stories",
+        "change": "new",
+        "details": "TaskSets.createFromPlan runs for each approved PLAN that has no TASKS head (plan row ids kept); it already moves the Plan's Task tracker record onto each head's binding (src/workflow/tasks/task-set.ts, doc at lines 140-146), so the conversion adds no Task-record writer. One revision-less build round (kind build-round) is back-filled per BUILD task result that passed. bindingHome's Plan fallback and taskBuildPassed's BUILD-record branch are then deleted.",
+        "callSites": [
+          "src/workflow/tasks/task-set.ts",
+          "src/workflow/tracker/unit-issue.ts",
+          "src/workflow/artifact-core/completion-evidence.ts"
+        ]
+      },
+      {
+        "entity": "RepoSchema marker",
+        "change": "new",
+        "details": "writeRepoSchema writes .insrc/schema.json as { version: 2, convertedAt } by a temporary file and a rename, only after every head is clean. The RepoSchema shape is the sc8 shape unchanged; this Story is the only writer. No other file is written for older builds, which are not expected to work with a converted repository (owner ruling, ac29 revision 2).",
+        "callSites": [
+          "src/workflow/artifact-core/repo-schema.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "The rename rule uses ArtifactIds.parse and make to turn S001 into s1 and derives EPIC, STORY and TASK ids with make; no other id is formed by hand (the single rename k2 allows)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "The planner and the verifier read through ArtifactStore (read, readWithHistory, childrenOf); heads are written by the conversion-owned migration write, so the store contract is unchanged. EPIC, STORY and Task heads are created through the store."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Migrated log entries (including the review entry that carries the full report) and build rounds are appended with History.appendLog, converted and moved feedback with History.appendFeedback; entries de-duplicate by id."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Statuses are computed with the lifecycle rules and rollUp; checkHeadIntegrity and checkIntegrity must pass for every head before the marker; the revision-bearing migrated entry is the last revision-bearing entry. lifecycle.review.report uses the Review type's existing report Reference."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Uses the sidecar store for the log and feedback files and relies on its merge rules, ordering and de-duplication; the conversion commit includes the new line files."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Moves the Epic and Story bindings and attachments with bindArtifact and readBinding; the optional relabel and legacy-comment listing use the tracker port only when one is supplied and never block the marker."
+      },
+      {
+        "contractId": "sc7",
+        "role": "consumes",
+        "howDetails": "Creates the Task heads of earlier Stories with TaskSets.createFromPlan, which is also the only mover of Task records; the TaskSet contract is unchanged."
+      },
+      {
+        "contractId": "sc8",
+        "role": "consumes",
+        "howDetails": "Writes the marker RepoSchemaGate reads and uses RepoSchemaGate.require as the refusal at every entry point of the new tools."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The working tree has uncommitted changes under .insrc/artifacts or docs/epics, or a merge is in progress, when a run starts",
+          "detection": "planConversion runs git status on those paths and checks for MERGE_HEAD before it reads any file",
+          "response": "Refuse with ConversionRefused naming the paths; write nothing",
+          "userImpact": "The user commits or stashes first, so the conversion's diff holds only conversion changes and reverts with one git revert",
+          "recoverable": true
+        },
+        {
+          "scenario": "A stored file is not valid JSON, has merge conflict markers, or has meta but no body",
+          "detection": "The planner reads raw JSON per file and records a problem instead of passing the file to the strict decoder",
+          "response": "The plan lists the file as a problem; apply refuses while any problem is open and the marker is not written",
+          "userImpact": "The user fixes or removes the file and previews again",
+          "recoverable": true
+        },
+        {
+          "scenario": "The tree changed between preview and apply",
+          "detection": "applyConversion recomputes the plan and compares it with the plan it was given",
+          "response": "Refuse with ConversionRefused and show what differs",
+          "userImpact": "Preview again, then apply",
+          "recoverable": true
+        },
+        {
+          "scenario": "Apply stops after a migrated log entry was appended and before the head was replaced",
+          "detection": "On the rerun the planner finds the entry by its deterministic id (migrated-<artifact id>) in History.log while the head still lacks the envelope or lifecycle or still carries a legacy field",
+          "response": "The rerun appends no second entry and runs the migration write for the head only",
+          "userImpact": "A rerun finishes the head; until then the marker is absent and the new tools refuse the repository",
+          "recoverable": true
+        },
+        {
+          "scenario": "Apply stops before any entry was appended, or between two stamp entries",
+          "detection": "The planner finds some of the ids migrated-<artifact id>, -approve, -reject, -review, -mark-stale and not others",
+          "response": "Only the missing entries are appended, stamp and review entries first and the revision-bearing entry last, then the head is written",
+          "userImpact": "None beyond running the command again",
+          "recoverable": true
+        },
+        {
+          "scenario": "The migration write would change an approved head's revision number, status or approval",
+          "detection": "writeMigratedHead compares the converted head's meta.revision, lifecycle status and approval with the stored ones before the replace",
+          "response": "Refuse that head with ConversionIncomplete, write nothing for it and list it; this is a conversion bug, not a user error",
+          "userImpact": "The marker is not written and the head is named",
+          "recoverable": false
+        },
+        {
+          "scenario": "A head still carries a legacy field, or fails checkHeadIntegrity or checkIntegrity, after its rules ran",
+          "detection": "The post-apply sweep re-reads every head and runs both checks",
+          "response": "ConversionIncomplete lists the heads and the field or reason; the marker is not written",
+          "userImpact": "The conversion is reported unfinished; the user sees which artifacts need attention",
+          "recoverable": true
+        },
+        {
+          "scenario": "The after-snapshot differs from the before-snapshot for a unit (an approval is missing, a review is no longer blocking)",
+          "detection": "verifyConversion compares the planner's legacyDeliveryView snapshot with the snapshot the delivery reader builds from the lifecycle of the converted heads",
+          "response": "Report each difference with the unit and the reason; never correct it; a contentHash difference is expected and not reported",
+          "userImpact": "The user decides whether a difference is expected",
+          "recoverable": true
+        },
+        {
+          "scenario": "The conversion is run before the delivery readers were moved to the lifecycle",
+          "detection": "verifyConversion reads the converted heads through the delivery reader and finds no approval on any approved unit; apply checks, before it starts, that the delivery reader's approval source is the lifecycle (a build-time guard in the plan: the reader group is a precondition)",
+          "response": "Refuse to apply with ConversionRefused naming the unmoved reader",
+          "userImpact": "The reader group is finished first",
+          "recoverable": true
+        },
+        {
+          "scenario": "A review report cannot be placed (the review stamp has no verdict, or its findings are malformed)",
+          "detection": "The lifecycle back-fill validates the stored report the way the delivery gate does and drops malformed findings into the report's own list of dropped values",
+          "response": "The review entry carries the report as stored plus the dropped values; the lifecycle gets the verdict only when it is valid; the report counts these heads",
+          "userImpact": "Nothing is lost silently",
+          "recoverable": true
+        },
+        {
+          "scenario": "An uppercase story id would rename onto an existing file or onto another rename's target",
+          "detection": "The planner builds the rename map first and checks every target name against existing files and other renames",
+          "response": "A collision is a problem in the plan and no rename is applied",
+          "userImpact": "The user resolves the collision by hand",
+          "recoverable": true
+        },
+        {
+          "scenario": "A reference to a renamed id sits where the planner cannot rewrite it (free text, an issue body on the tracker)",
+          "detection": "After the rename map is built, the planner searches heads and docs for each old id",
+          "response": "References in structured fields are rewritten; references in prose are listed in the report and left as they are",
+          "userImpact": "The report names each remaining place",
+          "recoverable": true
+        },
+        {
+          "scenario": "The optional tracker step fails (no gh access, rate limit, the issue was deleted)",
+          "detection": "The tracker port returns a failed PortResult",
+          "response": "Record the failure in the report with the issue and the reason; do not block the marker; the next run retries",
+          "userImpact": "A possible duplicate issue is accepted until the step succeeds, as the s1 hand-off says",
+          "recoverable": true
+        },
+        {
+          "scenario": "Pre-s8 'Attached ...' comments exist on a bound issue",
+          "detection": "With a tracker port supplied, the planner lists the issue's comments and matches the legacy attach shape (no insrc marker)",
+          "response": "They are listed in legacyAttachComments and in the report; nothing is rewritten or deleted and no reader recognises them",
+          "userImpact": "The first comment sync records each as a person's comment; the owner may delete them on the issue first",
+          "recoverable": true
+        },
+        {
+          "scenario": "A legacy review is dated before the head's current revision, or reviewResolutions contradict the stored verdict",
+          "detection": "The lifecycle back-fill applies the same rule as effectiveReviewVerdict and the gate's mirror: a review older than the revision is not bound to it",
+          "response": "The lifecycle gets no review for that head and the report counts it under unbound reviews; the review entry still records the report",
+          "userImpact": "The other-party review gate asks for a new review, as it would have before",
+          "recoverable": true
+        },
+        {
+          "scenario": "A body.feedback entry has an author that is not a namespaced id, or a target.file that is not the artifact's own document",
+          "detection": "convertLegacyFeedback inspects the author text and the target",
+          "response": "The author becomes legacy:<slug> with the text in actor.properties.name; a foreign file goes to anchor.section; both are counted in the report",
+          "userImpact": "Nothing is dropped",
+          "recoverable": true
+        },
+        {
+          "scenario": "A new tool runs on an unconverted repository",
+          "detection": "RepoSchemaGate.require(repo, 2) at the entry of each daemon method and MCP step",
+          "response": "Return the message that names the conversion and repo.convert",
+          "userImpact": "A clear refusal instead of a decoder error",
+          "recoverable": true
+        },
+        {
+          "scenario": "A step of persistReview fails (the fix is stored, the lifecycle review is not)",
+          "detection": "persistReview wraps each of its steps and records which completed",
+          "response": "ReviewPersistError names the failed step and what is stored; the lifecycle record comes before the markdown, so a rerun repairs the rest",
+          "userImpact": "The reviewer sees which step to repeat",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A repository that is already converted",
+          "expected": "preview and apply report no changes and write nothing; the marker's convertedAt is not touched"
+        },
+        {
+          "input": "A repository with no artifacts",
+          "expected": "apply writes the marker only and reports zero changes"
+        },
+        {
+          "input": "A head that already has meta.lifecycle (written after s3) and a log from s4",
+          "expected": "Only the legacy fields are stripped and the hash refreshed; the migrated entry is operation update and revision-bearing, so checkIntegrity compares against it"
+        },
+        {
+          "input": "A head with no log at all",
+          "expected": "The migrated entry is operation create and is the first entry; the head and the log agree"
+        },
+        {
+          "input": "A head with meta.rejectedAt and a later meta.approvedAt",
+          "expected": "Status follows the later stamp; both stamp entries are recorded with their original times"
+        },
+        {
+          "input": "A design artifact with a review and resolutions for some findings",
+          "expected": "The review entry holds the report and resolutions; effectiveReviewVerdict computed from it equals the verdict the old stamp gave"
+        },
+        {
+          "input": "A Define whose Stories were never designed",
+          "expected": "An EPIC head and STORY heads are created in draft with no binding; no Task heads"
+        },
+        {
+          "input": "A PLAN that was never approved",
+          "expected": "No Task heads are created; its tasks stay rows of the PLAN"
+        },
+        {
+          "input": "A PLAN whose Task already has a TASK head",
+          "expected": "createFromPlan is not run again; only missing back-fills are written"
+        },
+        {
+          "input": "A BUILD record with a task result that did not pass",
+          "expected": "No build round is back-filled for it"
+        },
+        {
+          "input": "An LLD whose tracker feedback lines were already copied to its STORY head",
+          "expected": "Feedback ids de-duplicate, so nothing is appended twice"
+        },
+        {
+          "input": "A feedback entry with no kind, or kind and decision feedback",
+          "expected": "No kind becomes comment; kind or decision feedback becomes revision-request"
+        },
+        {
+          "input": "A standalone design with no Define and no epicCreatedAt",
+          "expected": "The stamp is taken from the design's own createdAt; none is a problem"
+        },
+        {
+          "input": "Thousands of files",
+          "expected": "The plan is held in memory; the report prints counts and the first problems, the full list is in the result"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A revision moves only when content changes: the conversion keeps every head's meta.revision, status and approval as stored, and only the contentHash (of the converted content) changes (k3; src/workflow/storage.ts reconciles the hash on a content write, which is why the store is not the write path)",
+          "source": "c1"
+        },
+        {
+          "text": "Approval and review bind to a revision number, not to a hash, so the new contentHash does not unbind them (src/workflow/artifact-core/lifecycle.ts)",
+          "source": "c1"
+        },
+        {
+          "text": "The delivery reader reads one shape after the reader group is done: the lifecycle; the legacy stamp rules live only in the conversion's legacyDeliveryView and go with it (src/workflow/delivery/load.ts approvalOf is the behaviour that is reproduced once)",
+          "source": "c2"
+        },
+        {
+          "text": "An artifact id never changes once created, except the single rename of an uppercase story id to lowercase by this conversion (k2)",
+          "source": "c3"
+        },
+        {
+          "text": "The marker is written last and only when every head passes the head and log integrity checks, so a half-converted repository is refused by the new tools",
+          "source": "c4"
+        },
+        {
+          "text": "The conversion is repeatable: every rule tests the stored state and every migrated log entry has a deterministic id, so a second run writes nothing",
+          "source": "c1"
+        },
+        {
+          "text": "Feedback entries are immutable and append-only; converting or copying them stores each id once (the sidecar reader de-duplicates by id)",
+          "source": "c1"
+        },
+        {
+          "text": "Folder names under docs/epics stay as they are (k7)",
+          "source": "c4"
+        },
+        {
+          "text": "The daemon owns all file access; the command is an IPC method and the CLI only calls it",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Each conversion rule on a small fixture: it applies to the stored state it names, changes nothing when that state is absent, and is repeatable.",
+          "subjects": [
+            "convertLegacyFeedback: a namespaced author is kept lower-cased, any other author becomes legacy:<slug> with the text in actor.properties.name",
+            "convertLegacyFeedback: decision or kind feedback is revision-request, suggestion stays, the rest comment",
+            "convertLegacyFeedback: a foreign target.file goes to anchor.section and is not reported unmapped; id, timestamp, batchId and revision are kept",
+            "rename of uppercase story ids with collision and prose-reference reporting",
+            "epicCreatedAt stamping from the work item head",
+            "flat amendment to head conversion",
+            "lifecycle computed from approvedAt, rejectedAt, reviewOverride, staleAckedAt and review with reviewResolutions, including a review older than the revision and a rejection followed by an approval",
+            "migratedEntryId is stable; the stamp entries carry the original times; the review entry carries the full report and the resolutions",
+            "readReviewReport returns the report from the entry the lifecycle Reference names, and effectiveReviewVerdict computed from it equals the verdict the old stamp gave",
+            "legacyDeliveryView reproduces the old delivery reader's approval, review and blocking for approved, rejected, pending and blocked heads",
+            "writeMigratedHead: an approved head keeps its revision number, status and approval, and contentHash is that of the converted content",
+            "writeRepoSchema writes by temporary file and rename",
+            "RepoSchemaGate.require refusal message"
+          ],
+          "fixturesNeeded": [
+            "a small repository builder with one file per artifact type in the legacy shape",
+            "legacy review and stamp combinations",
+            "heads with and without meta.lifecycle and a log"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The whole command on a repository with every artifact type, through the real store, history, lifecycle service, delivery reader and task sets; the entry points that must refuse an unconverted repository; and the crash and rerun paths.",
+          "subjects": [
+            "preview writes nothing and lists the changes",
+            "apply on a legacy fixture converts every head, creates EPIC, STORY and Task heads, and writes the marker last",
+            "a second apply writes nothing (bytes of every file and line file unchanged)",
+            "a crash injected after each step of writeMigratedHead and each rule, then a rerun, gives the same result as an uninterrupted run with one migrated entry per head",
+            "an approved head keeps its revision number, status and approval after conversion and checkIntegrity passes",
+            "verify: an approved legacy head verifies with no difference (before-snapshot from legacyDeliveryView, after-snapshot from the real delivery reader), and a planted difference is reported",
+            "apply refuses while the delivery reader still reads the legacy stamps",
+            "move-binding (Define to EPIC, LLD to STORY) and move-story-history: the STORY head holds the binding, the attachments, the tracker:<id> feedback lines and the receipts, and artifactOfUnit answers it",
+            "createFromPlan for earlier Stories moves the Plan's Task record, and the conversion writes no Task record itself",
+            "daemon repo.convert default mode is preview",
+            "each daemon method and MCP step refuses an unconverted repository with the conversion message"
+          ],
+          "fixturesNeeded": [
+            "a legacy repository fixture with a Define, HLD, LLD, PLAN, BUILD, CR, TESTS, ISSUE, SPEC, EXT and flat AMD files, uppercase S001 ids, body.feedback, a design review with resolutions and an approved LLD with a bound issue",
+            "a fake tracker port with legacy attach comments"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Retiring the legacy fields: no production file reads or writes the removed stamps, and the gates, delivery board and review paths work from the lifecycle alone.",
+          "subjects": [
+            "a source check that no production file under src names meta.approvedAt, rejectedAt, staleAckedAt, reviewOverride, reviewResolutions, rejectReason, meta.review or the body.feedback writers, outside the conversion module",
+            "approval, rejection, stale acknowledgement and review through LifecycleService only",
+            "persistReview with a failure injected at each of its steps: the error names the step and a rerun repairs the state",
+            "findings, verdicts and run-artifact all call persistReview and HLD and LLD design reviews bind to the lifecycle",
+            "tracker-auto readReview, reviewerPartyOf and the delivery gate read the report through readReviewReport",
+            "the PLAN task table rendered from the Task heads",
+            "delivery board status and counts equal the pre-conversion read on the fixture"
+          ],
+          "fixturesNeeded": [
+            "converted fixture repository"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "The command on this repository's own copy, reported by hand because it needs a real checkout and a person to read the report.",
+          "subjects": [
+            "preview on a copy of this repository lists the expected 444 renames and 56 flat amendments",
+            "apply then verify on the copy reports no unexplained difference and every approved artifact keeps its revision number"
+          ],
+          "fixturesNeeded": [
+            "a clean copy of the repository"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac27",
+          "provingTests": [
+            "convert-apply.test.ts: apply on a legacy fixture converts every artifact, creates Epic, Story and Task heads, computes statuses and fills the log marked as migrated",
+            "convert-lifecycle-backfill.test.ts: the lifecycle and the migrated entries are computed from the legacy fields, an approved head keeps its revision number, status and approval, and the review report is read back from its entry",
+            "convert-feedback.test.ts: each mapping of convertLegacyFeedback from the s5 hand-off",
+            "convert-ids.test.ts: uppercase story ids are renamed once with references rewritten and none left as an alias",
+            "convert-tasks.test.ts: Task heads, bindings and build rounds are created for Stories planned before s7 and createFromPlan alone moves the Task records",
+            "convert-story-history.test.ts: bindings, attachments, tracker feedback lines and receipts move to the STORY head"
+          ]
+        },
+        {
+          "criterionId": "ac28",
+          "provingTests": [
+            "convert-preview.test.ts: a preview writes nothing and lists what would change",
+            "convert-repeat.test.ts: a second apply, and an apply crashed at each step then rerun, write nothing more and leave one migrated entry per head",
+            "convert-verify.test.ts: an approved legacy head verifies with no difference through the delivery reader and a planted difference is reported"
+          ]
+        },
+        {
+          "criterionId": "ac29",
+          "provingTests": [
+            "repo-schema-entry-points.test.ts: each daemon method and MCP step refuses an unconverted repository with a message naming the conversion",
+            "convert-marker.test.ts: the marker is written last and only when every head is clean"
+          ]
+        }
+      ],
+      "testFramework": "node:test run with tsx (npx tsx --test), tests co-located in __tests__ directories, as for the rest of src/workflow"
+    },
+    "migration": {
+      "stateBefore": "Repository at schema version 1 (no .insrc/schema.json). Heads carry the legacy stamps (meta.approvedAt, rejectedAt, rejectReason, reviewOverride, staleAckedAt, review, reviewResolutions) beside or instead of meta.lifecycle; body.feedback holds pre-s5 feedback; the Epic and Story bindings and attachments sit on the Define and the LLD; a Story's tracker feedback lines and receipts sit on the LLD; the Plan keeps the Task tracker records; no EPIC, STORY, TASKS or TASK heads exist for Stories planned before s7; AMD files are flat records; 444 files carry uppercase S0nn ids. The delivery reader derives approval and review only from the legacy stamps (src/workflow/delivery/load.ts approvalOf, gate.ts, currency.ts). A content write through ArtifactStore moves meta.revision and returns the head to draft when the content hash changes (src/workflow/storage.ts). The gates still write the legacy fields while the readers read them (s1 bundles 'how a head is written', 'the delivery reader derives approval and review only from the legacy stamps', 'the legacy stamp surface after s1-s8, by role', 'the lifecycle Review keeps only a summary of a review', 'tracker records, story history and feedback that move or go').",
+      "stateAfter": "Repository at schema version 2. Every head has meta.envelope and meta.lifecycle with the revision number, status and approval it had, a contentHash of the converted content, a revision-bearing migrated log entry (migrated-<artifact id>), stamp entries that record the legacy approval, rejection and stale marks, and a review entry that carries the full review report and resolutions (lifecycle.review.report references it). Feedback is in sidecar lines with namespaced actors; EPIC, STORY, TASKS and TASK heads exist and hold the bindings, attachments, tracker feedback lines and receipts; AMD records are heads; ids are lowercase. The legacy stamps, meta.review, the body.feedback writers, the Plan Task records and the head-less fallbacks are gone from heads and production code; the delivery reader and every other reader read the lifecycle; LifecycleService is the only approval path; persistReview is the one review path; new tools refuse a repository without the marker.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Build the conversion engine behind the daemon method repo.convert (default mode preview): the planner with legacyDeliveryView, the per-rule converters, the migration write, the applier, the verifier and the marker writer. Change convertLegacyFeedback to the s5 mapping. Add readReviewReport and persistReview. Nothing is switched on for a repository yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Move the readers to the lifecycle, delivery readers first (load, gate, currency, types), then pending, admit, chain, artifact-content, completion-evidence, the tracker readers, party, workflow-rpc, access, mcp server and cli service; the review readers use readReviewReport. Update the write inventory for findings.ts. This group is a precondition of the first run of the conversion.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Move the writers and gates to LifecycleService and delete the stamps (STAMP_KEYS, mirrorLegacyReview, headConflict becomes the full log check); findings, verdicts and run-artifact call persistReview; make LifecycleService mandatory.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Remove body.feedback writers and the tool artifact_feedback_append; remove the Plan Task record readers, bindingHome's Plan fallback, taskBuildPassed's BUILD-record branch and the older tracker refs (epicRef, storyRef, storyRefs, taskRefs, units); point artifactOfUnit at the STORY head; render the PLAN task table from the Task heads; add the RepoSchemaGate.require guards at each daemon method and MCP step (repo.convert is exempt).",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Run the Story's full test sweep and build, code-review and approve the BUILD with the previous daemon still running; the daemon that drives the build keeps its old code until it is restarted, so the build tooling is not refused by its own guards.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Restart the daemon on the new code, then on a clean working tree run preview and read the plan: renames, problems, unmapped values, reviews that cannot be bound, prose references to renamed ids, legacy attach comments.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "clean working tree",
+            "no merge in progress",
+            "steps 2 to 4 built"
+          ]
+        },
+        {
+          "order": 7,
+          "action": "Run apply. Rules run in order: rename uppercase ids and files; stamp epicCreatedAt; convert flat amendments; for each head, under the artifact's lock, append the missing migrated log entries (stamp and review entries first, the revision-bearing entry last) and then replace the head with the migration write; convert body.feedback; create EPIC and STORY heads; create Task heads for earlier Stories through TaskSets.createFromPlan and back-fill build rounds; move the Epic and Story bindings and attachments; move story history; strip the legacy fields. The working tree is left changed.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 6 preview read"
+          ]
+        },
+        {
+          "order": 8,
+          "action": "Run the post-apply sweep: every head decodes, carries no legacy field and passes checkHeadIntegrity and checkIntegrity, and every approved head has its stored revision number, status and approval. Only then write .insrc/schema.json (version 2) by temporary file and rename.",
+          "rollbackable": true
+        },
+        {
+          "order": 9,
+          "action": "Run verify: the before-snapshot the planner computed from the legacy stamps against the snapshot the delivery reader builds from the converted repository; print each difference.",
+          "rollbackable": true
+        },
+        {
+          "order": 10,
+          "action": "Optional, with a tracker: relabel and retitle old issues so the create guard recognises them and list the pre-s8 attach comments; report failures.",
+          "rollbackable": false,
+          "prerequisiteFlags": [
+            "gh access"
+          ]
+        },
+        {
+          "order": 11,
+          "action": "Commit the result as one commit (the data changes, the new line files and the marker). Reverting it with git revert returns the tree to version 1 for the tools of the previous release.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "None is kept in the new tools: a repository without the marker is refused, and the old shapes are not read after this Story. Builds from before this model are not expected to work with a converted repository (the owner's ruling, recorded in docs/plans/core-data-model.md and in ac29 revision 2 of the DEF); no notice file or compatibility reader is added. The IPC method names are unchanged; repo.convert is added; artifact_feedback_append and the legacy-stamp parameters of the gates are removed.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": true
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Conversion engine with its own migration write and planner-side before-snapshot",
+        "oneLineSummary": "A planner, an applier, a verifier and a marker writer in src/workflow/convert; heads are written by a conversion-owned migration write that keeps revision, status and approval as stored; the before-snapshot is computed from the raw legacy heads and the after-snapshot is read with the real delivery reader.",
+        "approach": "A new module src/workflow/convert holds planConversion, applyConversion, verifyConversion and a migration writer. The planner reads raw JSON files (not through the strict decoder), returns a typed list of changes per artifact, and computes the BEFORE snapshot with a pure conversion-owned function legacyDeliveryView over the legacy stamps (status, revision number, approval, review verdict, blocking, open feedback count). The applier runs the rules in a fixed order. For each head it takes ArtifactStore.exclusive, appends the missing migrated log entries with deterministic ids (migrated-<artifact id>-approve, -reject, -review, -mark-stale, then the revision-bearing migrated-<artifact id>) through History.appendLog, then replaces the head with the migration write. The migration write builds meta.envelope and meta.lifecycle, strips the legacy body and meta fields, keeps meta.revision, status and approval as stored, sets revision.contentHash to the hash of the converted content, sets lifecycle.review.report to a Reference to the review change-log entry (which carries the full review report and resolutions as outcome.data), and writes by writeAtomic; it appends nothing. EPIC and STORY heads, Task heads (TaskSets.createFromPlan, which also moves the Plan's Task record), the Epic and Story bindings and the Story history are created or moved by the same applier. The AFTER snapshot is read with the real delivery reader, which by then reads the lifecycle only, because the reader move is ordered before the first run of the conversion; the new tools refuse an unconverted repository and repo.convert is exempt. The marker is written last, only when every head passes the integrity checks. The retirement of the legacy stamps and fallbacks is a separate, ordered group of changes in the same Story.",
+        "pros": [
+          "No change to the sc2 store contract, so no HLD amendment",
+          "Revision, status and approval survive the conversion because the store's content-write rule is never applied",
+          "The before and after snapshots use no dual-shape reader, so no compatibility code remains",
+          "A rerun is safe: each rule tests stored state and every migrated entry has a deterministic id",
+          "A preview is the planner alone"
+        ],
+        "cons": [
+          "A second code path writes heads (the migration write), so it needs its own checks that mirror the store's invariants",
+          "legacyDeliveryView must reproduce the old reader's approval and review rules, and is a copy of that logic used once",
+          "It writes under ArtifactStore.exclusive but not through the store's journal, so a crash between the entry and the head is repaired by a rerun",
+          "Large: the engine and the retirement work are both in one Story"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Add a migrate method to ArtifactStore and a dual-shape delivery reader",
+        "oneLineSummary": "The store gets a migration write of its own (added to sc2 by an amendment) and the delivery reader reads both the legacy stamps and the lifecycle, so the snapshots use the one reader.",
+        "approach": "ArtifactStore gains migrate(a, by, options) that writes the envelope and lifecycle and the stripped body without moving the revision, through the same staged operation and journal as write, with a caller-chosen operation id (a sharedContract.methodAdd amendment on sc2). The delivery reader gains a mode that reads the lifecycle when a head has one and the legacy stamps otherwise, so the same reader produces the before and after snapshots. The rest follows a1.",
+        "pros": [
+          "One writer of heads, with the journal giving crash repair for free",
+          "One delivery reader for both snapshots, no copied logic"
+        ],
+        "cons": [
+          "Changes a contract another Story owns (sc2) and needs an approved amendment first",
+          "Keeps the legacy stamp reading in the delivery reader, which is the compatibility code the owner ruled out",
+          "Reopens the staged-operation code that s4 owns"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Equal on the criteria but partial on sc2 and sc5, and it keeps a dual-shape delivery reader the owner ruled out."
+      },
+      {
+        "id": "a3",
+        "name": "Write through the store and re-approve",
+        "oneLineSummary": "Use ArtifactStore.write for every converted head and accept that stripped bodies move revisions and return heads to draft; approvals are re-granted by script.",
+        "approach": "The converter calls ArtifactStore.write with the converted artifact. Because the body changes, the store moves meta.revision and sets the head to draft; the conversion then re-applies each recorded approval and review through LifecycleService.apply with the migration actor.",
+        "pros": [
+          "Smallest: only existing APIs",
+          "The store's journal and log rules are used as they are"
+        ],
+        "cons": [
+          "Breaks k3 (a revision moves only when content changes by a person) and rewrites the history of every approved artifact",
+          "Approvals become migration approvals by a system actor, not the people who gave them",
+          "A stripped feedback list would address open feedback unless addresses is passed on every call"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Smallest, but violates k3, k5 and sc4."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "The test framework is node:test through tsx, as CLAUDE.md states and the artifact-core tests use; the analyze bundles did not report it. Resolve: confirm (recommended)."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "how a head is written, and why the store cannot be the conversion's write path",
+      "quotedText": "a 'content' write on a head that carries meta.lifecycle reconciles the lifecycle by the canonical hash of description, body and citations: when it changes, meta.revision becomes the prior revision plus one and the head returns to draft"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "the delivery reader derives approval and review only from the legacy stamps",
+      "quotedText": "Nothing under src/workflow/delivery reads meta.lifecycle."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "what a conversion has to convert in this repository",
+      "quotedText": "444 files carry an uppercase S0nn story id"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "the recorded s9 inputs and the no-compatibility ruling",
+      "quotedText": "the second half of ac29 (an older clone reading the converted repository with a clear message) is dropped"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "the legacy stamp surface after s1-s8, by role",
+      "quotedText": "src/daemon/steps/review-step/phases/findings.ts writes meta.review with a meta-only write and records nothing on the lifecycle"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "tracker records, story history and feedback that move or go",
+      "quotedText": "artifactOfUnit in src/workflow/tracker/comment-sync.ts answers the LLD for a Story"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "the legacy feedback converter as it stands",
+      "quotedText": "convertLegacyFeedback ... builds the actor as { id: 'unknown:<author>', kind: 'person', properties: {} }"
+    }
+  ]
+}

@@ -565,20 +565,23 @@ Common parts as in a1, but a single indexing worker runs IndexQueue with both la
 - Supervision boundary: s2 supervises the workers it introduces (exit handling, lock reclaim, replacement, restart limit) so no s2 worker crash leaves the daemon broken until s4; s4 extends it to every worker class. Recorded as an HLD boundary note on 2026-10-22.
 - Depends on the lock framework (standalone Story afcfa027, LLD approved 2026-10-22); s2's build starts after that Story's build. Session workers (s3) need no pause registry: they take the maintenance lock shared per request and are registered with watchWorker.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q036f006e` — Pause-acknowledgement limit for maintenance (default 10 minutes) and the maintenance thresholds (30 min idle, 25% and 256 MB reclaimable) are config values; confirm the defaults after the first live runs.
+  - **resolved**: Ship defaults + instrument for tuning — Stakeholder 2026-10-22: keep 30 min idle, 25%/256 MB, 10 min pause-ack as config defaults and log each maintenance decision (pause-ack time, idle duration, reclaimable % and bytes) to tune from live runs. _(2026-10-22T04:39:45.951Z)_
+- `q2590bbb2` — Supervision boundary: s2 supervises the workers it introduces (exit handling, lock reclaim, replacement, restart limit) so no s2 worker crash leaves the daemon broken until s4; s4 extends it to every worker class. Recorded as an HLD boundary note on 2026-10-22.
+  - **resolved**: A: s2 owns full supervision of its own workers, built as an extensible supervisor — Stakeholder 2026-10-22: s2 builds one supervisor (exit handling, watchWorker lock reclaim plus StoreGuard.reclaim, replacement, restart limit) for the admin and two indexing workers; s4 registers the session workers with the same supervisor. _(2026-10-22T07:16:54.121Z)_
 
-### ✅ Review `PASS` — design.story (design.story)
+## Citations
 
-**0 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-22T06:11:44.698Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `code` `src/daemon/shutdown.ts:115-168`
+- **[[c2]]** `code` `src/daemon/server.ts:16-32`
+- **[[c3]]** `step-output` `s1`
+- **[[c4]]** `step-output` `s4`
+- **[[c5]]** `step-output` `s5`
+- **[[c6]]** `code` `src/daemon/threads/worker-entry.ts:40-48`
+- **[[c7]]** `code` `src/db/graph/store.ts:831-890`
+- **[[c8]]** `code` `src/daemon/server.ts:201-293`
+- **[[c13]]** `code` `src/daemon/queue.ts:251-318`
+- **[[c15]]** `code` `src/daemon/shutdown.ts:64-71`
+- **[[c16]]** `code` `src/db/entities.ts:223-330`

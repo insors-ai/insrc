@@ -221,6 +221,13 @@
         "choice": "Ship defaults + instrument for tuning",
         "rationale": "Stakeholder 2026-10-22: keep 30 min idle, 25%/256 MB, 10 min pause-ack as config defaults and log each maintenance decision (pause-ack time, idle duration, reclaimable % and bytes) to tune from live runs.",
         "resolvedAt": "2026-10-22T04:39:45.951Z"
+      },
+      "q2590bbb2": {
+        "question": "Supervision boundary: s2 supervises the workers it introduces (exit handling, lock reclaim, replacement, restart limit) so no s2 worker crash leaves the daemon broken until s4; s4 extends it to every worker class. Recorded as an HLD boundary note on 2026-10-22.",
+        "status": "resolved",
+        "choice": "A: s2 owns full supervision of its own workers, built as an extensible supervisor",
+        "rationale": "Stakeholder 2026-10-22: s2 builds one supervisor (exit handling, watchWorker lock reclaim plus StoreGuard.reclaim, replacement, restart limit) for the admin and two indexing workers; s4 registers the session workers with the same supervisor.",
+        "resolvedAt": "2026-10-22T07:16:54.121Z"
       }
     },
     "amendments": [

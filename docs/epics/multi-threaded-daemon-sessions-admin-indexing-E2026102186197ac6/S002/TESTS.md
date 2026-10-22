@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 65 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -336,3 +336,34 @@ Run at 2026-10-22T08:55:51.332Z on commit `b4c98ee7`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/indexing-worker.test.ts` | 0 | 4 | 9.9 s |  |
+
+## t12
+
+Run at 2026-10-22T09:01:42.169Z on commit `3602a797`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result | `src/daemon/threads/__tests__/indexing-port.test.ts` |
+
+**integration: a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker | `src/daemon/threads/__tests__/indexing-port.test.ts` |
+
+**integration: daemon.status queue fields reflect the code-indexing worker's real lanes**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | daemon.status queue fields reflect the code-indexing worker's real lanes | `src/daemon/threads/__tests__/indexing-port.test.ts` |
+| pass | No indexing object is constructed on the main thread with the flag on | `src/daemon/threads/__tests__/indexing-port.test.ts` |
+| pass | the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down | `src/daemon/threads/__tests__/threads-boot.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/indexing-port.test.ts` | 0 | 4 | 2 s |  |
+| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 1 | 3.1 s |  |

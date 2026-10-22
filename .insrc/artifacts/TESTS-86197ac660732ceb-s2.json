@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:55:51.332Z",
+    "updatedAt": "2026-10-22T09:01:42.169Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -1368,6 +1368,103 @@
               },
               {
                 "title": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "3602a797",
+        "ranAt": "2026-10-22T09:01:42.169Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+                "title": "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+                "title": "a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "daemon.status queue fields reflect the code-indexing worker's real lanes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+                "title": "daemon.status queue fields reflect the code-indexing worker's real lanes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+                "title": "No indexing object is constructed on the main thread with the flag on",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1971,
+            "titles": [
+              {
+                "title": "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
+                "result": "pass"
+              },
+              {
+                "title": "a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.status queue fields reflect the code-indexing worker's real lanes",
+                "result": "pass"
+              },
+              {
+                "title": "No indexing object is constructed on the main thread with the flag on",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3070,
+            "titles": [
+              {
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
                 "result": "pass"
               }
             ],

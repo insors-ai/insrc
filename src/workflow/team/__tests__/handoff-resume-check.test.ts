@@ -36,7 +36,7 @@ afterEach(() => { _setGateDepsForTests(); _clearWorkflowStateStoreForTests(); })
 
 const git = (cwd: string, ...a: string[]): string => execFileSync('git', a, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const put = (repo: string, id: string, doc: unknown): string => { const p = artifactJsonPath(repo, id); mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, JSON.stringify(doc)); return p; };
-const meta = (workflow: string, revision?: number) => ({ workflow, runId: `${workflow}-1`, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', approvedAt: '2026-10-18T00:00:00.000Z', ...(revision !== undefined ? { revision } : {}) });
+const meta = (workflow: string, revision?: number) => ({ workflow, runId: `${workflow}-1`, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', ...(revision !== undefined ? { revision } : {}) });
 const hldBody = {
 	frameworkSummary: 'x', architectureShape: 'x',
 	sharedContracts: [{ id: 'sc1', name: 'API', purpose: 'p', interfaceSketch: 'interface API { fn(): void; }', ownedByStory: 's1', consumedByStories: [], assumptions: [] }],

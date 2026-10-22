@@ -26,7 +26,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { defineArtifactPaths, hldArtifactPaths } from '../../../../workflow/storage.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
@@ -37,7 +37,6 @@ import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
 import {
 	ackStaleArtifact,
-	approveArtifactByJsonPath,
 	jsonPathForMd,
 	readBaseHld,
 } from '../../../../workflow/gates.js';
@@ -46,6 +45,9 @@ import {
 	listAmendments,
 } from '../../../../workflow/amendments/store.js';
 import { scanLldStaleness } from '../../../../workflow/amendments/staleness.js';
+import { approveJson, repoOfHead } from '../../../../workflow/__tests__/helpers/approve.js';
+import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
+import { staleAckOf } from '../../../../workflow/artifact-core/stale-ack.js';
 import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
 
 interface Envelope { readonly content: readonly { readonly type: 'text'; readonly text: string }[]; readonly isError?: boolean }
@@ -59,7 +61,7 @@ function payload(env: Envelope): Record<string, unknown> {
 // Seed
 // ---------------------------------------------------------------------------
 
-function seed(repo: string, epicHash: string): void {
+async function seed(repo: string, epicHash: string): Promise<void> {
 	const definePaths = defineArtifactPaths(repo, epicHash, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(definePaths.json), { recursive: true });
 	const defPath = definePaths.json;
@@ -81,7 +83,7 @@ function seed(repo: string, epicHash: string): void {
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
 	stampOtherPartyReview(defPath);   // approval requires an other-party review
-	approveArtifactByJsonPath(defPath);
+	await approveJson(defPath);
 
 	const hldPaths = hldArtifactPaths(repo, epicHash, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(hldPaths.json), { recursive: true });
@@ -117,7 +119,7 @@ function seed(repo: string, epicHash: string): void {
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
 	stampOtherPartyReview(hldPath);   // approval requires an other-party review
-	approveArtifactByJsonPath(hldPath);
+	await approveJson(hldPath);
 }
 
 // ---------------------------------------------------------------------------
@@ -272,7 +274,7 @@ test('LLD s4 amendment proposal lands as pending AmendmentRecord', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-amend-e2e-'));
 	const slug = HASH;
 	try {
-		seed(repo, slug);
+		await seed(repo, slug);
 		const state = await walkLld(repo, slug, 's1', S4_WITH_PROPOSAL);
 		const done = payload(await handleWorkflowStep({
 			phase: 'synthesize', artifact: makeArtifact(), state,
@@ -298,7 +300,7 @@ test('Bad amendment proposal is dropped; the LLD still synthesizes', async () =>
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-amend-e2e-'));
 	const slug = HASH;
 	try {
-		seed(repo, slug);
+		await seed(repo, slug);
 		const state = await walkLld(repo, slug, 's1', S4_BAD_PROPOSAL);
 		const out = payload(await handleWorkflowStep({
 			phase: 'synthesize', artifact: makeArtifact(), state,
@@ -317,7 +319,7 @@ test('Approving amendment marks existing LLD stale via effective-hash mismatch',
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-amend-e2e-'));
 	const slug = HASH;
 	try {
-		seed(repo, slug);
+		await seed(repo, slug);
 		const state = await walkLld(repo, slug, 's1', S4_WITH_PROPOSAL);
 		const done = payload(await handleWorkflowStep({
 			phase: 'synthesize', artifact: makeArtifact(), state,
@@ -340,13 +342,13 @@ test('Approving amendment marks existing LLD stale via effective-hash mismatch',
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('ack-stale writes staleAckedAt onto LLD meta', async () => {
+test('ack-stale records the acknowledgement in the LLD\'s log', async () => {
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-amend-e2e-'));
 	const slug = HASH;
 	try {
-		seed(repo, slug);
+		await seed(repo, slug);
 		const state = await walkLld(repo, slug, 's1', S4_WITH_PROPOSAL);
 		const done = payload(await handleWorkflowStep({
 			phase: 'synthesize', artifact: makeArtifact(), state,
@@ -354,9 +356,10 @@ test('ack-stale writes staleAckedAt onto LLD meta', async () => {
 		const lldPath = jsonPathForMd(done['path'] as string);
 		const before = JSON.parse(readFileSync(lldPath, 'utf8'));
 		assert.equal(before.meta.staleAckedAt, undefined);
-		const r = ackStaleArtifact(lldPath, 'known-inconsistency; scheduled to re-run');
+		const r = await ackStaleArtifact(lldPath, 'known-inconsistency; scheduled to re-run', { lifecycle: createRepoLifecycle(repoOfHead(lldPath)).service });
 		assert.match(r.ackedAt, /^\d{4}-\d{2}-\d{2}T/);
 		const after = JSON.parse(readFileSync(lldPath, 'utf8'));
-		assert.equal(after.meta.staleAckedReason, 'known-inconsistency; scheduled to re-run');
+		assert.equal(after.meta.staleAckedReason, undefined, 'the head keeps no copy of the acknowledgement');
+		assert.deepEqual(staleAckOf(repoOfHead(lldPath), basename(lldPath, '.json')), { at: r.ackedAt, reason: 'known-inconsistency; scheduled to re-run' });
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

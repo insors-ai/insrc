@@ -28,9 +28,11 @@ import { dirname, join } from 'node:path';
 import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
-import { approveArtifactByJsonPath, requireApprovedHld } from '../../../../workflow/gates.js';
+import { requireApprovedHld } from '../../../../workflow/gates.js';
 import { approveAmendment } from '../../../../workflow/amendments/store.js';
 import { defineArtifactPaths, extendArtifactPaths, hldArtifactPaths, ARTIFACTS_DIR } from '../../../../workflow/storage.js';
+import { approveJson } from '../../../../workflow/__tests__/helpers/approve.js';
+import { approvalStateOf } from '../../../../workflow/artifact-core/approval-view.js';
 import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
 
 interface Envelope {
@@ -50,7 +52,7 @@ const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-18T00:00:00.000Z';
 
 /** Seed an approved Define + approved HLD for the extend target. */
-function seed(repo: string): void {
+async function seed(repo: string): Promise<void> {
 	const definePaths = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(definePaths.json), { recursive: true });
 	writeFileSync(definePaths.json, JSON.stringify({
@@ -69,7 +71,7 @@ function seed(repo: string): void {
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
 	stampOtherPartyReview(definePaths.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(definePaths.json);
+	await approveJson(definePaths.json);
 
 	const hldPaths = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(hldPaths.json), { recursive: true });
@@ -99,7 +101,7 @@ function seed(repo: string): void {
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
 	stampOtherPartyReview(hldPaths.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(hldPaths.json);
+	await approveJson(hldPaths.json);
 }
 
 const s1Extend = {
@@ -138,7 +140,7 @@ test('define EXTEND: scope=extend → skip frame/compose → append Story + pend
 	_clearWorkflowStateStoreForTests();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-extend-'));
 	try {
-		seed(repo);
+		await seed(repo);
 
 		const startOut = payload(await handleWorkflowStep({ phase: 'start', workflow: 'define', focus: 'add a clear-filter button to tag filtering', repo }));
 		assert.equal(startOut['next'], 'emit_plan');
@@ -180,10 +182,10 @@ test('define EXTEND: scope=extend → skip frame/compose → append Story + pend
 		assert.match(md, /Extends Epic `tag-filtering`/);
 		assert.match(md, /Clear the active tag filter/);
 
-		// The Story was appended to the target Define (s2), approval retained.
-		const define = JSON.parse(readFileSync(defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering').json, 'utf8')) as { meta: { approvedAt?: string }; body: { stories: { id: string }[] } };
+		// The Story was appended to the target Define (s2); the content changed, so the Epic is back to draft for its re-approval.
+		const define = JSON.parse(readFileSync(defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering').json, 'utf8')) as { meta: Record<string, unknown>; body: { stories: { id: string }[] } };
 		assert.deepEqual(define.body.stories.map(s => s.id), ['s1', 's2']);
-		assert.ok(define.meta.approvedAt, 'target Epic approval retained');
+		assert.equal(approvalStateOf(define.meta), 'pending', 'the Epic awaits its re-approval');
 
 		// A pending storyBoundary.addStory amendment was filed.
 		const amdFiles = readdirSync(join(repo, ARTIFACTS_DIR)).filter(n => n.startsWith(`AMD-${HASH}-`));
@@ -207,7 +209,7 @@ test('define EXTEND: a Define that carries a stamp but no creation time fails wi
 	_clearWorkflowStateStoreForTests();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-extend-noanchor-'));
 	try {
-		seed(repo);
+		await seed(repo);
 		// the head's own creation time is what anchors the Epic: take it away (the stamp alone does not)
 		const defineJson = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering').json;
 		const before = JSON.parse(readFileSync(defineJson, 'utf8')) as { meta: Record<string, unknown> };
@@ -248,7 +250,7 @@ test('define EXTEND: s4 scope-boundary hard-fail refuses synthesize (no Story ap
 	_clearWorkflowStateStoreForTests();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-extend-fail-'));
 	try {
-		seed(repo);
+		await seed(repo);
 		const startOut = payload(await handleWorkflowStep({ phase: 'start', workflow: 'define', focus: 'add clear-filter', repo }));
 		let state = startOut['state'] as string;
 		const planOut = payload(await handleWorkflowStep({

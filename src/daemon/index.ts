@@ -640,7 +640,7 @@ async function main(): Promise<void> {
 			return { path: repoContainingCwd(repos, cwd) ?? null };
 		},
 
-		// In-CLI, controller-driven approval: stamp approvedAt (enforcing the
+		// In-CLI, controller-driven approval: approve the artifact's lifecycle (enforcing the
 		// review block-verdict via approveArtifactByJsonPath) for a single
 		// artifact by path, or batch every still-pending artifact under an epic.
 		// Non-lossy — review-blocked artifacts come back in `skipped[]`.
@@ -677,7 +677,7 @@ async function main(): Promise<void> {
 
 		// sc1 (ide-artifact-review-panel S001): the pending-approval artifact
 		// list the JetBrains review panel polls. A pure scan of the canonical
-		// `.insrc/artifacts` store (approvedAt absent AND rejectedAt absent) —
+		// `.insrc/artifacts` store (a head whose lifecycle is neither approved nor rejected) —
 		// the single source of truth, so the panel can never disagree with real
 		// approval state (k1/k5). Read-only; one bounded readdir per call, no
 		// push stream (k7). A store the scanner cannot READ maps to a structured

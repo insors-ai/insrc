@@ -45,7 +45,7 @@ const hldBody = {
 };
 
 function seedChain(repo: string, revisions: { def?: number; hld?: number; lld?: number }): void {
-	const meta = (workflow: string, revision: number | undefined) => ({ workflow, runId: `${workflow}-1`, epicHash: HASH, epicSlug: 'e', storyId: 's1', approvedAt: '2026-10-18T00:00:00.000Z', ...(revision !== undefined ? { revision } : {}) });
+	const meta = (workflow: string, revision: number | undefined) => ({ workflow, runId: `${workflow}-1`, epicHash: HASH, epicSlug: 'e', storyId: 's1', ...(revision !== undefined ? { revision } : {}) });
 	seed(repo, defineArtifactId(HASH), { meta: meta('define', revisions.def), body: {}, citations: [] });
 	seed(repo, hldArtifactId(HASH), { meta: meta('design.epic', revisions.hld), body: hldBody, citations: [] });
 	seed(repo, lldArtifactId(HASH, 's1'), { meta: meta('design.story', revisions.lld), body: {}, citations: [] });

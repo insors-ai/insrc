@@ -5,7 +5,8 @@ import { join } from 'node:path';
 
 import { approve } from '../../../cli/services/workflow.js';
 import { followOnTasksSync } from '../../../daemon/tasks-sync.js';
-import { approveArtifactByJsonPath } from '../../gates.js';
+import { approveJson } from '../../__tests__/helpers/approve.js';
+import { approvalStateOf } from '../../artifact-core/approval-view.js';
 import { _setAutoPushDepsForTests } from '../../tracker-auto.js';
 import { ARTIFACTS_DIR } from '../../storage.js';
 import { readBinding } from '../../tracker/binding.js';
@@ -76,7 +77,7 @@ test("approving a plan creates the Task set and each Task's issue is bound on it
 		anchorAll(fy.repo); groundPlan(fy.plan);
 		const { t, links } = trackedFake();
 		withPort(t);
-		const approval = approveArtifactByJsonPath(fy.plan);
+		const approval = await approveJson(fy.plan);
 		const outcomes = await followOnTasksSync([{ path: approval.path, result: approval }], fy.repo);
 		assert.equal(outcomes.length, 1);
 		assert.deepEqual([outcomes[0]?.kind, outcomes[0]?.ok], ['tasks-sync', true], JSON.stringify(outcomes));
@@ -97,10 +98,32 @@ test("approving a plan creates the Task set and each Task's issue is bound on it
 		assert.equal(out.approval.workflow, 'plan');
 		assert.ok(out.tasks !== undefined && 'error' in out.tasks && /order is not 1\.\.2/.test(out.tasks.error), JSON.stringify(out.tasks));
 		assert.equal(readdirSync(join(fz.repo, ARTIFACTS_DIR)).some(n => n.startsWith('TASK-')), false);
-		assert.ok(JSON.parse(readFileSync(fz.plan, 'utf8')).meta.approvedAt !== undefined, 'the plan is approved');
+		assert.equal(approvalStateOf(JSON.parse(readFileSync(fz.plan, 'utf8')).meta), 'approved', 'the plan is approved');
 		// the daemon seam reports it as a failed follow-on, not a throw
 		const seam = await followOnTasksSync([{ path: fz.plan, result: { workflow: 'plan', path: fz.plan, approvedAt: 'x' } }], fz.repo);
 		assert.deepEqual([seam[0]?.kind, seam[0]?.ok], ['tasks-sync', false]);
 		assert.match(seam[0]?.note ?? '', /order is not 1\.\.2/);
 	} finally { fz.cleanup(); }
+});
+
+test('task-set-approve.test.ts: plan approval syncs Task heads from the lifecycle approval', async () => {
+	const fx = seed({ pushTasks: false });
+	try {
+		anchorAll(fx.repo); groundPlan(fx.plan);
+		const { t } = trackedFake();
+		withPort(t);
+		// the gate approves the plan's lifecycle and writes no stamp of its own
+		const approval = await approveJson(fx.plan);
+		const plan = JSON.parse(readFileSync(fx.plan, 'utf8'));
+		assert.equal(approvalStateOf(plan.meta), 'approved');
+		assert.equal(plan.meta.approvedAt, undefined, 'the plan carries no legacy approval stamp');
+		// the sync reads that approval and makes the Task heads approved with it
+		const outcomes = await followOnTasksSync([{ path: approval.path, result: approval }], fx.repo);
+		assert.deepEqual([outcomes[0]?.kind, outcomes[0]?.ok], ['tasks-sync', true], JSON.stringify(outcomes));
+		assert.deepEqual(outcomes[0]?.tasks?.created, ['t1', 't2']);
+		for (const n of [1, 2]) {
+			const head = JSON.parse(readFileSync(join(fx.repo, ARTIFACTS_DIR, `${T(n)}.json`), 'utf8'));
+			assert.equal(approvalStateOf(head.meta), 'approved', `Task t${n} is approved from the plan's approval`);
+		}
+	} finally { fx.cleanup(); }
 });

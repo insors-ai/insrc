@@ -43,13 +43,6 @@ export async function syncPlanTasks(planJsonPath: string): Promise<SyncResult> {
 	if (repoPath === undefined) return { error: `${basename(planJsonPath)} has no repoPath in its meta` };
 	try {
 		const entry = lifecycleFor(repoPath);
-		// The terminal's approval stamps the plan's own approval fields only; the Task set is made from the plan's lifecycle, so the
-		// approval is applied to it here, as the daemon's approval does, before the Tasks are made.
-		const planId = basename(planJsonPath).replace(/\.json$/, '');
-		const stamped = (JSON.parse(readFileSync(planJsonPath, 'utf8')) as { meta?: { approvedAt?: unknown } }).meta?.approvedAt;
-		if (typeof stamped === 'string' && stamped.length > 0 && (await entry.service.inspect(planId))?.status === 'draft') {
-			await entry.service.apply(planId, 'approve', APPROVAL_ACTOR);
-		}
 		const sets = new TaskSets({ repoPath, store: entry.store, service: entry.service, history: new History(createFileSidecarStore(repoPath)) });
 		const gate = openTracker(repoPath);
 		const closeIssue: CloseIssue | undefined = 'port' in gate

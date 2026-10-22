@@ -15,6 +15,7 @@ import { decodeState, encodeState } from '../state.js';
 import type { TriageDone, TriageEmitClassification } from '../types.js';
 import { SPEC_SCHEMA_VERSION, type SpecArtifact } from '../../../../workflow/artifacts/spec.js';
 import { specArtifactPaths, writeAtomic } from '../../../../workflow/storage.js';
+import { approvedMeta } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 
 const REPO = '/tmp/some-repo';
 
@@ -157,7 +158,7 @@ function specRepo(approved: boolean): { repo: string; cleanup: () => void } {
 			workflow: 'brainstorm', runId: 'wf-spec', repoPath: repo, createdAt: '2026-10-01T00:00:00.000Z', epicCreatedAt: '2026-10-01T00:00:00.000Z',
 			elapsedMs: 1, repoIndexedAt: null, schemaVersion: SPEC_SCHEMA_VERSION,
 			specHash: SPEC_HASH, epicSlug: 'a-converged-spec',
-			...(approved ? { approvedAt: '2026-10-01T01:00:00.000Z' } : {}),
+			...(approved ? approvedMeta({ at: '2026-10-01T01:00:00.000Z' }) : {}),
 		},
 		body: { category: 'requirements', intent: 'Do the thing.', scopeBoundary: 'Only the thing.', nonGoals: [], decisions: [], openItems: [] },
 		citations: [{ id: 'c1', kind: 'step-output', ref: 's1' }],

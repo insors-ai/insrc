@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1792668911659-n6f8f4",
+    "runId": "cr-1792669184951-zon2df",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-10-22T11:35:17.237Z",
+    "createdAt": "2026-10-22T11:39:50.880Z",
     "model": "claude:opus",
-    "elapsedMs": 108206,
+    "elapsedMs": 128001,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "2f27754d4ad00b8e",
@@ -347,7 +347,15 @@
     "dimensions": [
       {
         "dimension": "adherence",
-        "findings": []
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/repo-convert.ts:43",
+            "message": "A preview (the default mode of repo.convert) calls `planConversion(repoPath, { rules: CONVERSION_RULES })` without a tracker port, even when the repository has a GitHub tracker configured. The tracker is opened only on the apply path. So the preview never lists the pre-s8 'Attached ...' comments in `legacyAttachComments`, and it never plans the optional relabel either. The design makes preview the step where the user reads the legacy attach comments before applying. The s9 hand-off (docs/plans/core-data-model.md) also tells the owner to 'check the preview on the real repository with the tracker configured', but the preview as built cannot show them.",
+            "expectationRef": "LLD planConversion options.tracker ('A tracker port, when the optional issue relabel and pre-s8 comment listing may be planned'); migration step 6 (the preview read covers 'legacy attach comments'); PLAN t11 ('when a tracker port is supplied list the pre-s8 attach comments in the plan and the report')"
+          }
+        ]
       },
       {
         "dimension": "conventions",
@@ -355,33 +363,41 @@
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/daemon/__tests__/repo-convert.test.ts:1",
-            "message": "This new test file starts straight with imports. Most test files in src/daemon/__tests__ (for example artifact-feedback-handler-contract.test.ts) open with the copyright header and a docblock giving the test's purpose and its `Run:` line. This file has neither.",
-            "expectationRef": "module-idiom:file-header-docblock",
+            "location": "src/daemon/repo-convert.ts:27",
+            "message": "RepoConvertParams declares `readonly repo?: string;` and `readonly mode?: ConversionMode;` (line 28) without the explicit `| undefined` that the documented exactOptionalPropertyTypes rule asks for. The neighbouring TrackerAttachParams uses the same short form, so the local code drifts here too, but the documented rule is the baseline.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts:24",
+            "message": "`approveJson` (helpers/approve.js) and `approvalStateOf` (approval-view.js) are imported but never used. A grep finds only the import line for each. They look like leftovers from a mechanical import swap; the other changed tests import only the helpers they call.",
+            "expectationRef": "module-idiom:no-unused-imports",
             "confidence": "observation"
           },
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/daemon/__tests__/repo-schema-entry-points.test.ts:1",
-            "message": "This new test file has no copyright header and no purpose/`Run:` docblock. Its sibling tests in src/daemon/__tests__ have both.",
-            "expectationRef": "module-idiom:file-header-docblock",
+            "location": "src/daemon/steps/build-step/__tests__/comment-sync-callers.test.ts:21",
+            "message": "`approveJson` and `approvalStateOf` are imported but never used; each name appears only on its import line. This is the same leftover import block as in gate-call-sites.test.ts.",
+            "expectationRef": "module-idiom:no-unused-imports",
             "confidence": "observation"
           },
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/mcp/__tests__/repo-schema-guard.test.ts:1",
-            "message": "This new test file has no copyright header and no purpose/`Run:` docblock. Other src/mcp/__tests__ files, such as workflow-approve-dispatch.test.ts, have a docblock.",
-            "expectationRef": "module-idiom:file-header-docblock",
+            "location": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts:20",
+            "message": "`approveJson` and `approvalStateOf` are imported but never used; each name appears only on its import line. The same file also has a spacing slip, `lldEffectiveHash: 'x'},`, where the surrounding literals use `'x' },`.",
+            "expectationRef": "module-idiom:no-unused-imports",
             "confidence": "observation"
           },
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/daemon/steps/review-step/__tests__/review-fixture.ts:1",
-            "message": "This new fixture module has a one-line doc comment but no copyright header. The touched source and test modules otherwise carry the header.",
-            "expectationRef": "module-idiom:file-header-docblock",
+            "location": "src/daemon/steps/review-step/phases/findings.ts:33",
+            "message": "The value import of `LifecycleConflictError` from artifact-core/types.js comes after the local `../state-store.js` and `../types.js` imports, apart from the other workflow imports at the top. Line 23 already imports `type { Actor }` from the same module. In verdicts.ts, the matching phase, both imports from artifact-core/types.js sit together in the workflow import group.",
+            "expectationRef": "module-idiom:import-grouping",
             "confidence": "observation"
           }
         ]
@@ -392,25 +408,41 @@
           {
             "dimension": "coverage",
             "severity": "MED",
-            "location": "docs/plans/core-data-model.md:467",
-            "message": "The promised smoke test is unverified. It has no entry in the test record: no daemon run and no `reported: { result, evidence }` mapping. The only evidence is prose in the s9 hand-offs section of the plans document. That section also counts 453 renames where the promised test names 444, and explains the difference as an earlier analyzer count. The document and the test name disagree, and nothing records which count is correct.",
+            "location": "src/workflow/convert/run.ts:1",
+            "message": "The coverage grounding has no graph data. Every changed entry (about 250) is a diff-level 'file' entity with empty callers, callees and testsReaching, and most have no hunk text. So empty testsReaching here says nothing about whether the code is tested; it only shows the graph was not indexed for this change set. I judged coverage from the test record instead. All 49 promised unit and integration tests are listed there as passing, across 46 build tasks. I did not raise one HIGH per file, because that would turn a gap in the grounding into invented findings. Re-run this review on a fresh index to get real per-symbol reach.",
+            "expectationRef": "testsReaching (all changed symbols)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "docs/plans/core-data-model.md:466",
+            "message": "Promised smoke test 'smoke: preview on a copy of this repository lists the expected 444 renames and 56 flat amendments' is present but unverified. It is a smoke test with no run result and no reported { result, evidence } entry in the test record. The s9 hand-off text also says the smoke preview found 453 heads with the old story id form, not the 444 the plan's test name expects. Its stated assertion (444) therefore does not match the recorded outcome. Record the smoke result with evidence and update the expected count, or explain the difference in the test record.",
             "expectationRef": "smoke: preview on a copy of this repository lists the expected 444 renames and 56 flat amendments",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
             "severity": "MED",
-            "location": "docs/plans/core-data-model.md:467",
-            "message": "The promised smoke test is unverified. The test record has no reported result or evidence for the apply run on the copy. The hand-off prose says the run found no difference between the before and after delivery facts, but it does not say that every approved artifact kept its revision number. No pass state can be confirmed from the record.",
+            "location": "docs/plans/core-data-model.md:466",
+            "message": "Promised smoke test 'smoke: apply on the copy reports no unexplained difference and every approved artifact keeps its revision number' is present but unverified. The plans document describes this outcome in prose, but the test record has no reported result or evidence for it.",
             "expectationRef": "smoke: apply on the copy reports no unexplained difference and every approved artifact keeps its revision number",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
             "severity": "LOW",
-            "location": "src/cli/services/workflow.ts:232",
-            "message": "The graph grounding is hollow. Every changed entity is a file-level diff entry with empty testsReaching (the diff-mode fallback), so the graph cannot confirm coverage for any symbol. Coverage was judged from the test record instead: all 49 promised unit and integration tests are present and passing, and the new entry points (repo-convert, repo-schema-guard, the MCP refusal, persistReview through the findings phase) each have a named passing test. One gap remains. The TUI service paths for reject and ackStale through lifecycleOfArtifact, the refusal for a path outside a repository, and reviewFindings through readReviewRecordOf have no named test in the record. The command and tui tests only swap in async fakes for them, which leaves these paths unverified, not proven untested.",
-            "expectationRef": "src/cli/services/workflow.ts lifecycleOfArtifact / reject / ackStale / reviewFindings",
+            "location": "src/cli/services/workflow.ts:142",
+            "message": "The code-review round-1 fix to the CLI approve flow has no confirmed pass-state. It adds headFiles/unitHeadOf: the check-in and attachment commits now include the head's .log.jsonl and feedback files and the EPIC or STORY unit head. src/workflow/__tests__/approve-attach.test.ts was changed but is not in the test record. task-set-approve.test.ts (passing) exercises the cli approve flow, but nothing recorded shows the attachment commit's file set.",
+            "expectationRef": "headFiles / unitHeadOf / attachApprovedDocuments",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts:106",
+            "message": "This test now asserts a behaviour change: the BUILD record no longer answers taskBuildPassed for a Task with no head. Many other changed test files are also missing from the test record, including build-step.test.ts, build-start.test.ts, review-step-routing.test.ts, review-step.test.ts, verdicts-lifecycle.test.ts, amendments-e2e.test.ts, define-extend-e2e.test.ts and tracker-tasks-coarse.test.ts. Their pass-state is unverified in this record, even though the end-of-story sweep commit suggests they were run.",
+            "expectationRef": "createCompletionEvidence.taskBuildPassed (Task with no head)",
             "confidence": "observation"
           }
         ]
@@ -421,48 +453,44 @@
           {
             "dimension": "quality",
             "severity": "MED",
-            "location": "src/cli/services/workflow.ts:165",
-            "message": "attachApprovedDocuments now commits only `.insrc/artifacts/<headId>.json` for the attachment record. Recording an attachment on a unit head through the lifecycle can also append to that head's sidecar log (and feedback file). commitApprovedArtifacts' addHead helper commits those files, but this path drops them. The second check-in can therefore leave the head's `.log.jsonl` uncommitted and out of step with the committed head, which is the condition the head/log integrity check later refuses (log-ahead-of-head / head-ahead-of-log). Reuse addHead's file set (head json plus the sidecar log and feedback files) here.",
-            "counterpartRef": "addHead (commitApprovedArtifacts, src/cli/services/workflow.ts)",
+            "location": "src/daemon/repo-schema-guard.ts:40",
+            "message": "repoSchemaRefusalOfInput reads only `input.repo` and otherwise falls back to INSRC_REPO. The later phases of the review, workflow and analyze steps (claims / verdicts / findings / plan / step / synthesize) carry only a `state` token and no `repo`. On those phases the gate checks the INSRC_REPO repository, not the repository the run's state belongs to. If the daemon's INSRC_REPO names a different repository than the one the run started on, two things can happen: a converted repository's later phase is refused, or an unconverted repository passes the gate after `start`. The guard should resolve the repo from the decoded state, or apply only where `repo` is present.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "MED",
-            "location": "src/cli/services/workflow.ts:332",
-            "message": "reviewArtifact builds a fresh, uncached store with `createRepoLifecycle(repoPath).service`. approve, reject and ackStale in the same file go through `lifecycleOfArtifact` → `lifecycleFor(repoPath)`, which uses the cached registry entry keyed by realpath. Two ArtifactStore/LifecycleService instances over one repository in the same process can diverge on in-memory state. The review is also resolved by the passed `repoPath` rather than the repository that holds the artifact. Use the same `lifecycleOfArtifact(jsonPath)` path.",
-            "counterpartRef": "lifecycleOfArtifact (src/cli/services/workflow.ts)",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "quality",
-            "severity": "MED",
-            "location": "src/daemon/steps/review-step/phases/findings.ts:100",
-            "message": "handleFindings now writes through persistReview to the lifecycle but does not first run `lifecycle.inspect(artifactId)` and refuse a head whose integrity is not ok. handleVerdicts does this check before recording, so a head that is out of step with its change log is refused on the verdicts path. Unless persistReview performs the check itself, the findings path can record a review on that same head. Hoist the integrity check into persistReview, or repeat it here.",
-            "counterpartRef": "handleVerdicts (src/daemon/steps/review-step/phases/verdicts.ts)",
+            "location": "src/cli/services/workflow.ts:140",
+            "message": "`addHead(basename(approval.path).replace(/\\.json$/, ''))` takes the head id from approval.path by stripping only a `.json` suffix. If approval.path is ever the rendered `.md` path (for example `docs/epics/.../LLD.md`), the id comes out as `LLD.md`. headFiles then looks for `.insrc/artifacts/LLD.md.json`, and its existsSync filter drops it without any error. The approved head's log and feedback files are then left out of the check-in commit, and nothing reports it. Derive the id from jsonPathForMd(approval.path), or assert that the file exists.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/cli/services/workflow.ts:143",
-            "message": "The unit-head selection expression `unitHeadId({ unit: approval.workflow === 'design.epic' || typeof storyId !== 'string' ? 'epic' : 'story', epicHash, ...storyId })` is written out twice, in commitApprovedArtifacts and attachApprovedDocuments. Inside addHead, `sidecar.filesOf(id)` is computed twice per call. A small helper would remove the repetition.",
-            "counterpartRef": "attachApprovedDocuments (src/cli/services/workflow.ts)",
+            "location": "src/daemon/steps/review-step/phases/findings.ts:91",
+            "message": "The pre-read integrity check (inspect → `!integrity.ok` → throw LifecycleConflictError) and the REVIEWER/CONTROLLER actor constants are copied verbatim from the verdicts phase. They could live with persistReview or in a shared helper, so that the two phases cannot drift apart.",
+            "counterpartRef": "handleVerdicts",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/daemon/repo-convert.ts:45",
-            "message": "The apply path builds a second `new History(createFileSidecarStore(repoPath))` next to the history that createRepoLifecycle already made for the cached `lifecycleFor` entry. syncPlanTasks in tasks-sync.ts does the same, giving two History instances over one sidecar. Exposing `history` on the registry entry would remove the duplicate construction.",
-            "counterpartRef": "createRepoLifecycle (src/workflow/artifact-core/repo-lifecycle.ts)",
+            "location": "src/daemon/steps/review-step/phases/verdicts.ts:103",
+            "message": "The headConflict(jsonPath) check was removed, so a head is now refused only when lifecycle.inspect returns a result whose integrity fails. When inspect returns undefined (a head with no lifecycle record), nothing checks whether the head's stored hash matches its content any more. Before this change, headConflict still guarded that path.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/daemon/steps/review-step/phases/verdicts.ts:47",
-            "message": "The doc comment is missing a period: \"gives the service of the run's repository The head is checked\". This is a matter of taste, not a risk.",
+            "location": "src/daemon/repo-convert.ts:46",
+            "message": "In apply mode the handler builds a second `new History(createFileSidecarStore(repoPath))` next to the History that lifecycleFor(repoPath) already built through createRepoLifecycle. The handler also passes the raw repoPath, while the registry stores a realpath. TaskSets and the conversion therefore get a History instance that the registry's store and FeedbackService do not share. Reuse the registry entry's history instead.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/repo-convert.ts:36",
+            "message": "`params` is cast to RepoConvertParams without checking types. A non-string `repo` (for example a number) reaches `.length` and existsSync and fails with a confusing message or a TypeError, instead of the handler's own 'repo is required' error.",
             "confidence": "observation"
           }
         ]
@@ -471,8 +499,8 @@
     "verdict": "warn",
     "counts": {
       "high": 0,
-      "med": 5,
-      "low": 8
+      "med": 6,
+      "low": 11
     }
   }
 }

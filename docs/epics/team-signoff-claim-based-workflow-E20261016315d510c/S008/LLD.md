@@ -436,6 +436,8 @@ openSignoff always opens a new request; when an earlier request exists for an ar
 
 - `q3aaa4bf0` — The lifecycle table has no way back from changes-requested for an unchanged artifact, so an artifact the reviewers did not object to must still change before it can rejoin a changes-requested request; should the common artifact model allow open-signoff also from changes-requested at an unchanged approved revision? The table belongs to the common artifact model, not to this Story, so it is not designed here.
   - **resolved**: Allow re-signoff at unchanged revision — Decided by the user: handle the model change now, in s8, to avoid extra work later. Add a lifecycle step so open-signoff is also allowed from changes-requested when the artifact's approval and other-party review are still of its current revision (unchanged content); prerequisiteFailure and openSignoff accept such a head; the revise-together rule then no longer applies, because an artifact nobody objected to rejoins the request unchanged. Includes the lifecycle.ts table change, its tests, and the changes to the s8 tests that assumed an unchanged changes-requested artifact is refused. _(2026-10-22T20:24:58.121Z)_
+- `q1ee1d286` — Re-running define on an existing Epic is not a claim unit, so a DEF in signoff is not gated against changes by non-holders; should define on an existing Epic be gated, and if so with which unit?
+  - **deferred**: deferred for review — Decided by the user: define on an existing Epic stays ungated for now; recorded in docs/plans/team-workflow.md as a deferred item so it is not forgotten. _(2026-10-22T20:25:26.323Z)_
 
 ## Citations
 

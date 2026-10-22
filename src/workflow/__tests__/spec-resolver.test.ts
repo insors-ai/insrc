@@ -23,7 +23,6 @@ import {
 	requireApprovedSpec,
 	SpecArtifactNotFoundError,
 	SpecNotApprovedError,
-	approveArtifactByJsonPath,
 } from '../gates.js';
 import {
 	renderSpecMarkdown,
@@ -31,6 +30,9 @@ import {
 	type SpecArtifact,
 } from '../artifacts/spec.js';
 import { specArtifactPaths, writeAtomic } from '../storage.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
+import { approvedMeta } from './lifecycle-fixtures.js';
+import { approveJson } from './helpers/approve.js';
 
 const SPEC_HASH = 'abcd1234ef567890';
 
@@ -47,7 +49,7 @@ function specArtifact(approved: boolean): SpecArtifact {
 			schemaVersion: SPEC_SCHEMA_VERSION,
 			specHash:      SPEC_HASH,
 			epicSlug:      'brainstorm-stage',
-			...(approved ? { approvedAt: '2026-08-02T01:00:00.000Z' } : {}),
+			...(approved ? approvedMeta({ at: '2026-08-02T01:00:00.000Z' }) : {}),
 		},
 		body: {
 			category:      'requirements',
@@ -69,21 +71,21 @@ function writeSpec(repo: string, artifact: SpecArtifact): { md: string; json: st
 	return paths;
 }
 
-function withRepo(fn: (repo: string) => void): void {
+async function withRepo(fn: (repo: string) => void | Promise<void>): Promise<void> {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-spec-res-'));
-	try { fn(repo); } finally { rmSync(repo, { recursive: true, force: true }); }
+	try { await fn(repo); } finally { rmSync(repo, { recursive: true, force: true }); }
 }
 
 // ---------------------------------------------------------------------------
 // readSpecArtifact + requireApprovedSpec
 // ---------------------------------------------------------------------------
 
-test('requireApprovedSpec: returns the record when meta.approvedAt is set', () => {
+test('requireApprovedSpec: returns the record when its lifecycle is approved', () => {
 	withRepo(repo => {
 		writeSpec(repo, specArtifact(true));
 		const spec = requireApprovedSpec(repo, SPEC_HASH);
 		assert.equal(spec.meta.specHash, SPEC_HASH);
-		assert.ok(spec.meta.approvedAt);
+		assert.equal(approvalStateOf(spec.meta), 'approved');
 		assert.equal(spec.body.intent.length > 0, true);
 	});
 });
@@ -129,16 +131,16 @@ test('readSpecArtifact: throws a plain Error (not the typed ones) on a corrupt b
 // ac3 — approval is never auto-granted; only an explicit approve stamps it
 // ---------------------------------------------------------------------------
 
-test('ac3: a freshly persisted spec is unapproved and cannot be consumed until an explicit approve stamps it', () => {
-	withRepo(repo => {
+test('ac3: a freshly persisted spec is unapproved and cannot be consumed until an explicit approve records it', async () => {
+	await withRepo(async repo => {
 		const paths = writeSpec(repo, specArtifact(false));
 		// Freshly persisted: not consumable — nothing auto-approved it.
 		assert.throws(() => requireApprovedSpec(repo, SPEC_HASH), SpecNotApprovedError);
-		// Only an explicit approve stamps approvedAt (review is clean → no override needed).
-		const res = approveArtifactByJsonPath(paths.json);
+		// Only an explicit approve approves the lifecycle (review is clean → no override needed).
+		const res = await approveJson(paths.json);
 		assert.ok(res.approvedAt);
 		// Now it resolves.
 		const spec = requireApprovedSpec(repo, SPEC_HASH);
-		assert.equal(spec.meta.approvedAt, res.approvedAt);
+		assert.equal(approvalStateOf(spec.meta), 'approved');
 	});
 });

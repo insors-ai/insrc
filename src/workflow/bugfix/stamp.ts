@@ -24,7 +24,7 @@ import type { StampDeps } from './types.js';
  * `meta.parentRef` with the result. Returns the sc3 decision.
  *
  * @throws issue-not-found — `deps.readIssue` returns null.
- * @throws not-approved — the issue has no `meta.approvedAt`.
+ * @throws not-approved — the issue is not approved in its lifecycle.
  * A `deps.locateParent` rejection (infra failure) propagates WITHOUT writing —
  * a guessed/partial parentRef is never stamped.
  */

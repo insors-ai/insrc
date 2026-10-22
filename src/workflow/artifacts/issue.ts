@@ -20,7 +20,7 @@
  *   - `meta.magnitude`  — carried from sc1 (read by the s4 router);
  *   - `meta.parentRef`  — stamped by the s3 locator once found (null = standalone);
  *   - `meta.issueHash`  — the canonical identity (peer of specHash);
- *   - `meta.approvedAt` — the standard approve stamp.
+ *   - `meta.lifecycle` — the approval, like every artifact's.
  * Keeping them on meta means s3 can stamp `parentRef` without rewriting the
  * reviewed body, and `renderIssueMarkdown` never leaks routing metadata into
  * the GitHub issue body.

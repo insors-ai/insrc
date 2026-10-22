@@ -32,6 +32,8 @@ import type { IssueArtifact } from '../artifacts/issue.js';
 import type { ParentLocation } from '../locate/index.js';
 import { artifactJsonPath, issueArtifactId, codeReviewArtifactId } from '../storage.js';
 import { approveWorkflowTarget } from '../gates.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
+import { approvedMeta } from './lifecycle-fixtures.js';
 import type { BugfixMagnitude, WorkItemRef } from '../types.js';
 
 // --- fixtures --------------------------------------------------------------
@@ -49,7 +51,7 @@ function issue(over: {
 		elapsedMs:     1, repoIndexedAt: null, schemaVersion: 1,
 	};
 	if (over.magnitude !== undefined)  meta['magnitude']  = over.magnitude;
-	if (over.approvedAt !== undefined) meta['approvedAt'] = over.approvedAt;
+	if (over.approvedAt !== undefined) Object.assign(meta, approvedMeta({ at: over.approvedAt }));
 	// distinguish "absent" from "explicit null": only set when hasParentRef or a value given
 	if (over.hasParentRef === true || over.parentRef !== undefined) meta['parentRef'] = over.parentRef ?? null;
 	return {
@@ -132,6 +134,17 @@ test('admitBugfixAdvance: approved + parentRef ABSENT -> not admitted', () => {
 	assert.match(r.reason ?? '', /parent not resolved/);
 });
 
+test('bugfix-orchestration.test.ts: the bugfix chain advances from a lifecycle approval', () => {
+	// an approved lifecycle issue is admitted
+	assert.equal(admitBugfixAdvance(issue({ approvedAt: APPROVED, parentRef: { slug: 'o' } })).admitted, true);
+	// a legacy approvedAt stamp with no lifecycle is not an approval
+	const legacy = issue({ parentRef: { slug: 'o' } });
+	(legacy.meta as unknown as Record<string, unknown>)['approvedAt'] = APPROVED;
+	const r = admitBugfixAdvance(legacy);
+	assert.equal(r.admitted, false);
+	assert.match(r.reason ?? '', /not approved/);
+});
+
 test('admitBugfixAdvance: not approved -> not admitted', () => {
 	const r = admitBugfixAdvance(issue({ parentRef: { slug: 'o' } }));
 	assert.equal(r.admitted, false);
@@ -172,7 +185,7 @@ test('locateAndStampParent: readIssue null -> throws issue-not-found, no write',
 });
 
 test('locateAndStampParent: not approved -> throws not-approved, no write', async () => {
-	const { deps, writes } = stampDeps({ issue: issue({}) }); // no approvedAt
+	const { deps, writes } = stampDeps({ issue: issue({}) }); // not approved
 	await assert.rejects(() => locateAndStampParent({ repoPath: '/repo', issueHash: 'h' }, deps), /not-approved/);
 	assert.equal(writes.length, 0);
 });
@@ -268,10 +281,10 @@ function writeBuild(dir: string, storyId: string): string {
 }
 function writeCR(repo: string, storyId: string, verdict: 'pass' | 'block'): void {
 	const json = artifactJsonPath(repo, codeReviewArtifactId(HASH, storyId));
-	writeFileSync(json, JSON.stringify({ body: { verdict, counts: { high: verdict === 'block' ? 2 : 0, med: 0, low: 0 } } }, null, 2));
+	writeFileSync(json, JSON.stringify({ meta: { workflow: 'code-review', epicHash: HASH, storyId, reviewedBy: 'daemon' }, body: { kind: 'code-review', epicHash: HASH, storyId, verdict, counts: { high: verdict === 'block' ? 2 : 0, med: 0, low: 0 } } }, null, 2));
 }
 const isApproved = (p: string): boolean =>
-	(JSON.parse(readFileSync(p, 'utf8')) as { meta?: { approvedAt?: string } }).meta?.approvedAt !== undefined;
+	approvalStateOf((JSON.parse(readFileSync(p, 'utf8')) as { meta?: unknown }).meta) === 'approved';
 
 test('ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)', async () => {
 	await withRepo(async (repo, dir) => {

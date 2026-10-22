@@ -91,7 +91,7 @@ function readApprovedMeta(jsonPath: string): ApprovedMetaLite | null {
  * `FollowOnOutcome` per artifact the seam acted on (an empty array when none was a
  * bugfix artifact). Each seam call is wrapped: a throw becomes an `ok:false`
  * outcome + note and NEVER propagates, so a seam failure can never undo an
- * approval that already stamped `approvedAt`.
+ * approval that the lifecycle already took.
  *
  * - An approved **issue** artifact (`meta.workflow === 'issue'` + `meta.issueHash`)
  *   → `advanceBugfixAfterIssue` (locate + stamp parent, admit, route next stage).

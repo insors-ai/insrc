@@ -37,6 +37,7 @@ import {
 import { renderIssueMarkdown, type IssueArtifact } from '../artifacts/issue.js';
 import { _setTrackerExecForTests, ghCloseIssue, type CreatedIssue } from '../tracker/github.js';
 import { GithubConfigError, type ResolvedGithubConfig } from '../config/github.js';
+import { approvedMeta } from './lifecycle-fixtures.js';
 import { artifactJsonPath, issueArtifactId } from '../storage.js';
 import type { WorkItemRef } from '../types.js';
 
@@ -46,7 +47,7 @@ function issue(over: { parentRef?: WorkItemRef | null | undefined; hasParentRef?
 	const meta: Record<string, unknown> = {
 		workflow: 'issue', runId: 'r', repoPath: '/repo', createdAt: '2026-01-01T00:00:00.000Z',
 		elapsedMs: 1, repoIndexedAt: null, schemaVersion: 1, issueHash: 'abcd1234abcd1234',
-		approvedAt: '2026-01-02T00:00:00.000Z',
+		...approvedMeta({ at: '2026-01-02T00:00:00.000Z' }),
 	};
 	if (over.hasParentRef === true || over.parentRef !== undefined) meta['parentRef'] = over.parentRef ?? null;
 	return {

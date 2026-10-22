@@ -41,10 +41,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
-	approveArtifactByJsonPath,
 	resolveApprovedSpec,
 	ReviewBlockedError,
 } from '../gates.js';
+import { approveJson } from './helpers/approve.js';
+import { approvedMeta, blockedMeta, recordReviewSync, reviewedMeta } from './lifecycle-fixtures.js';
 import { reviewArtifactFile } from '../review/run-artifact.js';
 import {
 	renderSpecMarkdown,
@@ -58,7 +59,7 @@ import { envelopeProvider } from '../review-pipeline/__tests__/enveloped.js';
 
 const SPEC_HASH = 'abcd1234ef567890';
 
-function specArtifact(opts: { approved?: boolean; review?: ReviewReport } = {}): SpecArtifact {
+function specArtifact(opts: { approved?: boolean } = {}): SpecArtifact {
 	return {
 		meta: {
 			workflow:      'brainstorm',
@@ -71,8 +72,7 @@ function specArtifact(opts: { approved?: boolean; review?: ReviewReport } = {}):
 			schemaVersion: SPEC_SCHEMA_VERSION,
 			specHash:      SPEC_HASH,
 			epicSlug:      'brainstorm-stage',
-			...(opts.approved ? { approvedAt: '2026-08-02T01:00:00.000Z' } : {}),
-			...(opts.review ? { review: opts.review } : {}),
+			...(opts.approved ? approvedMeta({ at: '2026-08-02T01:00:00.000Z' }) : {}),
 		},
 		body: {
 			category:      'requirements',
@@ -102,9 +102,12 @@ function blockReview(): ReviewReport {
 	};
 }
 
-function writeSpec(repo: string, artifact: SpecArtifact): { md: string; json: string } {
+function writeSpec(repo: string, artifact: SpecArtifact, review?: ReviewReport): { md: string; json: string } {
 	const paths = specArtifactPaths(repo, artifact.meta.specHash!, artifact.meta.epicCreatedAt!, 'standalone', artifact.meta.epicSlug);
-	writeAtomic(paths.json, JSON.stringify(artifact, null, 2) + '\n');
+	// a review of the spec is the lifecycle's: its report is the review entry of the spec's log
+	const withReview = review === undefined ? artifact
+		: { ...artifact, meta: { ...artifact.meta, ...(review.verdict === 'block' ? blockedMeta : reviewedMeta)({ report: recordReviewSync(repo, `SPEC-${artifact.meta.specHash!}`, review) }) } };
+	writeAtomic(paths.json, JSON.stringify(withReview, null, 2) + '\n');
 	writeAtomic(paths.md, renderSpecMarkdown(artifact));
 	return paths;
 }
@@ -152,16 +155,16 @@ test('ac1: reviewArtifactFile reviews a SPEC md generically (stage = meta.workfl
 // ac2 — approve refuses a block-verdict SPEC without an override
 // ---------------------------------------------------------------------------
 
-test('ac2: approve refuses a block-verdict SPEC without an override, approves with one', () => {
-	withRepo(repo => {
-		const paths = writeSpec(repo, specArtifact({ review: blockReview() }));
+test('ac2: approve refuses a block-verdict SPEC without an override, approves with one', async () => {
+	await withRepo(async repo => {
+		const paths = writeSpec(repo, specArtifact(), blockReview());
 		// No override → refused, with the blocking reason surfaced.
-		assert.throws(
-			() => approveArtifactByJsonPath(paths.json),
+		await assert.rejects(
+			approveJson(paths.json),
 			(e: unknown) => e instanceof ReviewBlockedError && /1 HIGH/.test((e as Error).message),
 		);
 		// With an explicit override → approved + the override recorded.
-		const res = approveArtifactByJsonPath(paths.json, { overrideReview: 'accepted risk for the demo' });
+		const res = await approveJson(paths.json, 'accepted risk for the demo');
 		assert.ok(res.approvedAt);
 	});
 });
@@ -170,8 +173,8 @@ test('ac2: approve refuses a block-verdict SPEC without an override, approves wi
 // ac4 — the resolveApprovedSpec error-mapper maps throws to { error, code }
 // ---------------------------------------------------------------------------
 
-test('ac4: resolveApprovedSpec maps unapproved → not-approved, missing → not-found, approved → { spec }', () => {
-	withRepo(repo => {
+test('ac4: resolveApprovedSpec maps unapproved → not-approved, missing → not-found, approved → { spec }', async () => {
+	await withRepo(async repo => {
 		writeSpec(repo, specArtifact({ approved: false }));
 
 		const unapproved = resolveApprovedSpec(repo, SPEC_HASH);
@@ -183,7 +186,7 @@ test('ac4: resolveApprovedSpec maps unapproved → not-approved, missing → not
 
 		// Approve, then it resolves to { spec }.
 		const paths = specArtifactPaths(repo, SPEC_HASH, '2026-08-02T00:00:00.000Z', 'standalone', 'brainstorm-stage');
-		approveArtifactByJsonPath(paths.json);
+		await approveJson(paths.json);
 		const ok = resolveApprovedSpec(repo, SPEC_HASH);
 		assert.ok('spec' in ok && ok.spec.meta.specHash === SPEC_HASH);
 	});

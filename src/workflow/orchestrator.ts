@@ -128,9 +128,6 @@ import { UX_DEFINITION_PROPERTY_SCHEMA, UX_CONTENT_GATE_RULE } from './artifacts
 import { SEQUENCE_DEFINITION_PROPERTY_SCHEMA, SEQUENCE_CONTENT_GATE_RULE } from './artifacts/companion/sequence-schema.js';
 import { COMPONENT_DEFINITION_PROPERTY_SCHEMA, COMPONENT_CONTENT_GATE_RULE } from './artifacts/companion/component-schema.js';
 import { ADHERENCE_PROPERTY_SCHEMA } from './artifacts/companion/adherence.js';
-import { FEEDBACK_PROPERTY_SCHEMA, FEEDBACK_NEVER_AUTHOR_RULE } from './artifacts/provenance/schema.js';
-import { priorFeedback } from './artifacts/provenance/writer.js';
-import type { FeedbackRecord } from './artifacts/provenance/types.js';
 import { linkDocsToIssues } from './tracker/link.js';
 import { patchTrackerMeta } from './tracker/refs.js';
 import { bindArtifact } from './tracker/binding.js';
@@ -992,7 +989,6 @@ function defineSynthesizer(
 		'  name the SUBJECT — never a preamble about the process ("Fully converged spec ...").',
 		'- `body.summary` MUST be carried verbatim from s2.summary when s2 emitted one (a `{ prose, audience? }` object). Omit `body.summary` when s2 has none — do NOT invent it.',
 		'- Do NOT emit `functionalDefinition` (or any FR ids) in the body: the framework assembles the functional-definition record from the FR statements elicited in s2/s3 and mints its stable ids deterministically after this step.',
-		FEEDBACK_NEVER_AUTHOR_RULE,
 	].join('\n');
 	const userTurn = [
 		`Focus: ${intent.focus}`,
@@ -1029,7 +1025,6 @@ function defineSynthesizer(
 					constraints:  { type: 'array' },
 					stories:      { type: 'array', minItems: 1 },
 					openQuestions: { type: 'array', items: { type: 'string' } },
-					feedback:     FEEDBACK_PROPERTY_SCHEMA,
 				},
 				additionalProperties: false,
 			},
@@ -1489,7 +1484,6 @@ function designEpicSynthesizer(
 		UX_CONTENT_GATE_RULE,
 		SEQUENCE_CONTENT_GATE_RULE,
 		COMPONENT_CONTENT_GATE_RULE,
-		FEEDBACK_NEVER_AUTHOR_RULE,
 		'- `citations[]` MUST reference analyze bundles from s1 for every module/api name that appears in the framework body.',
 		PATH_FORM_RULE,
 	].join('\n');
@@ -1536,7 +1530,6 @@ function designEpicSynthesizer(
 					sequenceDefinition:            SEQUENCE_DEFINITION_PROPERTY_SCHEMA,
 					componentDependencyDefinition: COMPONENT_DEFINITION_PROPERTY_SCHEMA,
 					adherence:         ADHERENCE_PROPERTY_SCHEMA,
-					feedback:          FEEDBACK_PROPERTY_SCHEMA,
 				},
 			},
 			citations: {
@@ -1761,16 +1754,6 @@ function withCompanions<T extends { readonly companions?: readonly CompanionArti
 	return refs.reduce((b, ref) => withCompanion(b, ref), body);
 }
 
-/** Carry a document's saved comments into its re-authored version: the feedback
- *  list of the JSON at `jsonPath` (the artifact's own path, read before the new
- *  version is written over it) replaces the new body's. Read-only. Returns the
- *  artifact unchanged when there is none, so a first authoring is what it was. */
-function withPriorFeedback<A extends { readonly body: { readonly feedback?: FeedbackRecord | undefined } }>(artifact: A, jsonPath: string): A {
-	const prior = priorFeedback(jsonPath);
-	if (prior.length === 0) return artifact;
-	return { ...artifact, body: { ...artifact.body, feedback: prior } };
-}
-
 async function finalizeDesignEpic(
 	intent:      WorkflowIntent,
 	stepOutputs: Readonly<Record<string, unknown>>,
@@ -1892,12 +1875,9 @@ async function finalizeDesignEpic(
 	const renderedBody = renderHldMarkdown(authored);
 	const check = validateBodyAndCitations(authored, renderedBody);
 	if (!check.ok) return { ok: false, failure: check };
-	// The comments saved on the earlier version of this document are carried into
-	// the new one. They are added after the checks above, which judge the
-	// authored text only: a reviewer's wording must not fail an authoring.
-	const artifact = withPriorFeedback(authored, artifactJsonPath(intent.repoPath, hldArtifactId(epicHash)));
+	const artifact = authored;
 	// sc3 (S002): the renderer emits an in-body References section (no separate append).
-	const renderedMd = artifact === authored ? renderedBody : renderHldMarkdown(artifact);
+	const renderedMd = renderedBody;
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 	log.info(
 		{ workflow: 'design.epic', runId, size: renderedMd.length, citations: citations.length, contracts: body.sharedContracts.length },
@@ -2035,7 +2015,6 @@ function designStorySynthesizer(
 		UX_CONTENT_GATE_RULE,
 		SEQUENCE_CONTENT_GATE_RULE,
 		COMPONENT_CONTENT_GATE_RULE,
-		FEEDBACK_NEVER_AUTHOR_RULE,
 		'- Citation ids `cN` reference `citations[]`; every claim in body cites at least one.',
 		PATH_FORM_RULE,
 	].join('\n');
@@ -2101,7 +2080,6 @@ function designStorySynthesizer(
 					sequenceDefinition:            SEQUENCE_DEFINITION_PROPERTY_SCHEMA,
 					componentDependencyDefinition: COMPONENT_DEFINITION_PROPERTY_SCHEMA,
 					adherence:             ADHERENCE_PROPERTY_SCHEMA,
-					feedback:              FEEDBACK_PROPERTY_SCHEMA,
 				},
 			},
 			citations: {
@@ -2271,12 +2249,9 @@ async function finalizeDesignStory(
 	const renderedBody = renderLldMarkdown(authored);
 	const check = validateBodyAndCitations({ meta: authored.meta, body: authored.body as LldBody, citations: authored.citations }, renderedBody);
 	if (!check.ok) return { ok: false, failure: check };
-	// The comments saved on the earlier version of this document are carried into
-	// the new one. They are added after the checks above, which judge the
-	// authored text only: a reviewer's wording must not fail an authoring.
-	const artifact = withPriorFeedback(authored, artifactJsonPath(intent.repoPath, lldArtifactId(epicHash, storyId)));
+	const artifact = authored;
 	// sc3 (S002): the renderer emits an in-body References section (no separate append).
-	const renderedMd = artifact === authored ? renderedBody : renderLldMarkdown(artifact);
+	const renderedMd = renderedBody;
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 
 	// Collect any amendment proposals from s4 / s5 outputs + persist
@@ -2463,12 +2438,9 @@ async function finalizeStandaloneLld(
 		renderedBody,
 	);
 	if (!check.ok) return { ok: false, failure: check };
-	// The comments saved on the earlier version of this document are carried into
-	// the new one. They are added after the checks above, which judge the
-	// authored text only: a reviewer's wording must not fail an authoring.
-	const artifact = withPriorFeedback(authored, artifactJsonPath(intent.repoPath, lldArtifactId(epicHash, storyId)));
+	const artifact = authored;
 	// sc3 (S002): the renderer emits an in-body References section (no separate append).
-	const renderedMd = artifact === authored ? renderedBody : renderLldMarkdown(artifact);
+	const renderedMd = renderedBody;
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 
 	log.info(
@@ -2582,7 +2554,6 @@ function planSynthesizer(
 		'- `body.summary` MUST be carried verbatim from s5.summary when s5 emitted one (a `{ prose, audience? }` object). Omit it when s5 has none.',
 		'- `citations[]` define the `derivedFrom` grounding ids (c1, c2, ...). Every id used in any Task\'s `derivedFrom` MUST appear in `citations[]`, and every citation MUST be referenced by at least one Task (no dead citations). Each citation grounds an LLD handoff item — cite it as { kind: "prior-artifact", ref: "LLD <storyId> <handoff item>" } or an analyze bundle from s1.',
 		PATH_FORM_RULE,
-		FEEDBACK_NEVER_AUTHOR_RULE,
 	].join('\n');
 	const userTurn = [
 		`Focus: ${intent.focus}   Epic: ${epicHash}   Story: ${storyId}`,
@@ -2614,7 +2585,6 @@ function planSynthesizer(
 					},
 					tasks:                { type: 'array', minItems: 1 },
 					testStrategyCoverage: { type: 'array' },
-					feedback:             FEEDBACK_PROPERTY_SCHEMA,
 				},
 			},
 			citations: {
@@ -2716,12 +2686,9 @@ function finalizePlan(
 	const renderedBody = renderPlanMarkdown(authored);
 	const check = validateBodyAndCitations({ meta: authored.meta, body: authored.body as PlanBody, citations: authored.citations }, renderedBody);
 	if (!check.ok) return { ok: false, failure: check };
-	// The comments saved on the earlier version of this document are carried into
-	// the new one. They are added after the checks above, which judge the
-	// authored text only: a reviewer's wording must not fail an authoring.
-	const artifact = withPriorFeedback(authored, artifactJsonPath(intent.repoPath, planArtifactId(epicHash, storyId)));
+	const artifact = authored;
 	// sc3 (S002): the renderer emits an in-body References section (no separate append).
-	const renderedMd = artifact === authored ? renderedBody : renderPlanMarkdown(artifact);
+	const renderedMd = renderedBody;
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 	log.info(
 		{ workflow: 'plan', runId, epicHash, storyId, tasks: body.tasks.length, citations: citations.length },

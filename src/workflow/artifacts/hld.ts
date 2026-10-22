@@ -22,9 +22,8 @@ import type { Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
 import type { DocumentSummary } from './format/types.js';
-import type { FeedbackRecord } from './provenance/types.js';
 import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
-import { citationBodyLines, frBodyLines, companionBodyLines, uxCompanionBodyLines, feedbackBodyLines } from './format/bindings.js';
+import { citationBodyLines, frBodyLines, companionBodyLines, uxCompanionBodyLines } from './format/bindings.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 import type { ErDefinition } from './companion/er.js';
 import type { UxDefinition } from './companion/ux.js';
@@ -129,10 +128,6 @@ export interface HldBody {
 	/** sc4 (S004): the explicit, recorded selectable adherence set. Additive +
 	 *  absent-safe — the completion check unions it with the content-derived gates. */
 	readonly adherence?: AdherenceSelection | undefined;
-	/** S001 (provenance/feedback): post-hoc, human-authored feedback entries,
-	 *  populated append-only by the feedback API — NEVER by the synthesizer.
-	 *  Additive + absent-safe: an absent field renders byte-identically to before. */
-	readonly feedback?: FeedbackRecord | undefined;
 }
 
 export type HldArtifact = WorkflowArtifact<HldBody>;
@@ -226,7 +221,6 @@ export function renderHldMarkdown(artifact: HldArtifact): string {
 		ux:             () => { const l = uxCompanionBodyLines(body.companions); return l.length > 0 ? { lines: l } : { omit: true }; },
 		references:     () => ({ lines: citationBodyLines(artifact.citations) }),
 		openQuestions:  () => body.openQuestions.length > 0 ? { lines: body.openQuestions.map(q => `- ${q}`) } : { omit: true },
-		feedback:       () => { const l = feedbackBodyLines(body.feedback); return l.length > 0 ? { lines: l } : { omit: true }; },
 	};
 	const format = resolveDocumentFormat('hld', artifact.meta.repoPath);
 	return renderFromFormat(format, bindings, marker !== undefined ? { h1, marker } : { h1 });

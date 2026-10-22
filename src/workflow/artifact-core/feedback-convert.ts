@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * The pure conversion of a stored legacy `FeedbackEntry` (`body.feedback`) into a
+ * The pure conversion of a stored legacy `FeedbackEntry` (an entry of the feedback list a design record used to carry) into a
  * `Feedback` for the s9 conversion, by the s5 mapping: the author becomes a namespaced
  * actor (`legacy:<slug>` with the text in `properties.name`, unless it already is an
  * `os:`, `git:` or `github:` id), a feedback decision or kind is a revision request, and

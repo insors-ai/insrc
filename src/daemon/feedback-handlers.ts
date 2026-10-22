@@ -12,9 +12,8 @@
 import { basename, resolve } from 'node:path';
 
 import { ArtifactIds } from '../workflow/artifact-ids.js';
-import { ArtifactFeedbackError } from '../workflow/artifacts/provenance/writer.js';
-import { coerceRequest } from '../workflow/artifacts/provenance/tool.js';
-import type { AppendFeedbackRequest, AppendFeedbackResult } from '../workflow/artifacts/provenance/writer.js';
+import { ArtifactFeedbackError, coerceRequest } from '../workflow/feedback/legacy-request.js';
+import type { AppendFeedbackRequest, AppendFeedbackResult } from '../workflow/feedback/legacy-request.js';
 import { feedbackAnchorOf } from '../workflow/feedback/legacy-anchor.js';
 import { approvalActorOf } from '../workflow/artifact-core/approval-actor.js';
 import type { Actor, Feedback } from '../workflow/artifact-core/types.js';

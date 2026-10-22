@@ -35,7 +35,6 @@ import { registerDataTools } from './data/index.js';
 import { registerCodeTools } from './code/index.js';
 import { registerDocsTools } from './docs/index.js';
 import { registerDocgenTool } from '../../../docgen/tool.js';
-import { registerArtifactFeedbackTool } from '../../../workflow/artifacts/provenance/tool.js';
 
 export function registerBuiltinTools(): void {
 	registerGitTools();
@@ -57,5 +56,4 @@ export function registerBuiltinTools(): void {
 	registerCodeTools();
 	registerDocsTools();
 	registerDocgenTool();
-	registerArtifactFeedbackTool();
 }

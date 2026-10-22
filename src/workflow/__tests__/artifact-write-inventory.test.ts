@@ -65,8 +65,8 @@ test('every writer file is inventoried, annotated and classified as the design s
 	// an amendment is a head written through the lifecycle service, so its store has no writer of its own
 	assert.equal(byFile.has('src/workflow/amendments/store.ts'), false, 'the amendment store needs no entry');
 	assert.equal(classOf('src/daemon/steps/workflow-step/resume.ts'), 'migration');
-	// feedback is human provenance: appending it never mints a revision
-	assert.equal(classOf('src/workflow/artifacts/provenance/writer.ts'), 'meta-only');
+	// feedback is a sidecar line of the FeedbackService: no body writer is left to inventory
+	assert.equal(byFile.has('src/workflow/artifacts/provenance/writer.ts'), false, 'the body writer is gone');
 
 	// the code-review step handler injects the runner's revision-minting writer and holds no raw writer
 	const handler = read('src/daemon/steps/code-review-step/handler.ts');
@@ -222,7 +222,7 @@ test('the identity file writer is classified and appendSidecarLine remains the o
 	assert.equal(identity.rawCalls.filter(c => c.name === 'appendFileSync').length, 0, 'the identity module appends nothing');
 
 	// the feedback service writes through History, never a file of its own, so it is not a writer at all
-	for (const f of ['src/workflow/feedback/feedback-service.ts', 'src/workflow/feedback/threads.ts', 'src/workflow/feedback/legacy-anchor.ts', 'src/daemon/feedback-handlers.ts']) {
+	for (const f of ['src/workflow/feedback/feedback-service.ts', 'src/workflow/feedback/threads.ts', 'src/workflow/feedback/legacy-anchor.ts', 'src/workflow/feedback/legacy-request.ts', 'src/daemon/feedback-handlers.ts']) {
 		assert.equal(byFile.has(f), false, `${f} needs no entry`);
 		assert.deepEqual(checkInventoryEntry(read(f), undefined, f), [], `${f} writes no file`);
 	}

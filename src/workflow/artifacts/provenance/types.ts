@@ -4,20 +4,15 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * S001 (provenance/feedback) — the provenance vocabulary.
+ * The provenance vocabulary.
  *
- * A FEEDBACK entry is a post-hoc, human-authored note attached to an artifact
- * (a design DEF/HLD/LLD/PLAN). It is NEVER authored by the synthesizer — the
- * document-generation path leaves `body.feedback` absent, and the append API
- * (writer.ts) populates it later, append-only, preserving every other key.
+ * A FeedbackEntry is the shape of a feedback entry as the repositories stored it before the common artifact model, in the body of a
+ * design record. Nothing writes it any more: the conversion reads it once and turns it into a Feedback line of the FeedbackService,
+ * and the legacy `artifact.feedback.append` request is still shaped like one. A FileChangeEntry is one entry of a build's
+ * change log.
  *
- * A CHANGELOG entry is declared here for Story s2 (the build change-log); it is
- * UNUSED in s1 — no reader/writer references it yet, and it is defined only so
- * s2 extends this vocabulary rather than redefining it.
- *
- * Types and three constants — no logic, no runtime deps — so the artifact body modules + the
- * render binding import them without a cycle. The additive optional `feedback?`
- * body field is added (additively + absent-safe) to each XBody in its own module.
+ * Types and three constants — no logic, no runtime deps — so the artifact body modules and the render bindings import them
+ * without a cycle.
  */
 
 /** Where a provenance entry points: a file, optionally a version + a line span. */
@@ -52,7 +47,7 @@ export const FEEDBACK_DECISIONS: readonly FeedbackDecision[] = ['approve', 'reje
 export const FEEDBACK_QUOTE_MAX = 500;
 export const FEEDBACK_CONTEXT_MAX = 40;
 
-/** One post-hoc feedback/suggestion/comment entry attached to an artifact. */
+/** One feedback/suggestion/comment entry, as the legacy request and the stored legacy records shape it. */
 export interface FeedbackEntry extends ProvenanceAuthorship {
 	readonly id:      string;
 	readonly target:  ProvenanceTarget;
@@ -66,11 +61,10 @@ export interface FeedbackEntry extends ProvenanceAuthorship {
 	readonly batchId?:  string | undefined;
 }
 
-/** One change-log entry (declared for s2 — unused in s1). */
+/** One entry of a build's change log. */
 export interface FileChangeEntry extends ProvenanceAuthorship {
 	readonly target:   ProvenanceTarget;
 	readonly summary?: string | undefined;
 }
 
-export type FeedbackRecord = readonly FeedbackEntry[];
 export type FileChangeLog      = readonly FileChangeEntry[];

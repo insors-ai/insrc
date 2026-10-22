@@ -4,13 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Story 8d4b90c9/S001 t2 — a document's saved comments survive its re-authoring.
- *
- * A re-authored HLD, epic LLD, standalone LLD or PLAN is written over the JSON at
- * its own artifact path, so the finalizer reads that JSON's feedback list first
- * and puts it into the new body. A Define is not carried: a re-authored Define is
- * a new work item. Each case drives the real finalizer (finalizeArtifact) over a
- * JSON a real earlier finalize produced and the real writer added comments to.
+ * A document's saved comments survive its re-authoring where they are: they are Feedback lines stored beside the head, so a
+ * re-authored HLD, epic LLD, standalone LLD or PLAN needs no carrying. The finalizer writes no feedback into the new body, the
+ * new document has no Feedback section, the lines are still there afterwards, and the prior JSON is only read. Each case drives
+ * the real finalizer (finalizeArtifact) over a head a real earlier finalize produced and the FeedbackService added comments to.
  *
  * Run: npx tsx --test --test-force-exit src/workflow/__tests__/feedback-carry-finalize.test.ts
  */
@@ -26,10 +23,9 @@ import {
 	artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths,
 	lldArtifactId, planArtifactId,
 } from '../storage.js';
-import { appendFeedbackBatch } from '../artifacts/provenance/writer.js';
-import type { FeedbackEntry } from '../artifacts/provenance/types.js';
+import { lifecycleFor, resetLifecycleRegistry } from '../../daemon/lifecycle-registry.js';
 import type { WorkflowIntent } from '../types.js';
-import { approvedMeta, markApprovedSync } from './lifecycle-fixtures.js';
+import { approvedMeta, draftMeta, markApprovedSync } from './lifecycle-fixtures.js';
 
 const HASH    = 'f1e2d3c4b5a69788';
 const CREATED = '2026-07-17T07:42:28.275Z';
@@ -38,7 +34,7 @@ const FIRST_COMMENT  = 'Say what the header shows.';
 const SECOND_COMMENT = 'The second phase needs an owner.';
 
 interface Finalized {
-	readonly artifact: { readonly meta: Record<string, unknown>; readonly body: { readonly feedback?: readonly FeedbackEntry[] } };
+	readonly artifact: { readonly meta: Record<string, unknown>; readonly body: Record<string, unknown> };
 	readonly renderedMd: string;
 	readonly renderedJson: string;
 }
@@ -187,58 +183,52 @@ const CASES: readonly CarryCase[] = [
 	},
 ];
 
-/** Store the first authoring where the workflow writes it and save two comments on it. */
-function storeWithComments(jsonPath: string, first: Finalized, mdRel: string): FeedbackEntry[] {
-	writeFileSync(jsonPath, first.renderedJson);
-	appendFeedbackBatch({
-		artifactPath: jsonPath,
-		entries: [
-			{ author: 'Rev', comment: FIRST_COMMENT, target: { file: mdRel }, decision: 'feedback', batchId: 'b1', anchor: { quote: 'cut to 8 lines' } },
-			{ author: 'Rev', comment: SECOND_COMMENT, target: { file: mdRel }, decision: 'feedback', batchId: 'b1' },
-		],
-	});
-	const stored = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { body: { feedback: FeedbackEntry[] } }).body.feedback;
+/** Store the first authoring where the workflow writes it, as a head, and save two comments on it through the FeedbackService. */
+async function storeWithComments(repo: string, artifactId: string, first: Finalized, mdRel: string): Promise<string[]> {
+	const jsonPath = artifactJsonPath(repo, artifactId);
+	const head = JSON.parse(first.renderedJson) as { meta: Record<string, unknown> };
+	writeFileSync(jsonPath, JSON.stringify({ ...head, meta: { ...head.meta, epicCreatedAt: CREATED, ...draftMeta() } }, null, 2) + '\n');
+	const service = lifecycleFor(repo).feedback;
+	const actor = { id: 'github:rev', kind: 'person' as const, properties: {} };
+	await service.add(artifactId, { text: FIRST_COMMENT, kind: 'revision-request', batchId: 'b1', anchor: { quote: 'cut to 8 lines', section: mdRel } }, actor);
+	await service.add(artifactId, { text: SECOND_COMMENT, kind: 'revision-request', batchId: 'b1' }, actor);
+	const stored = (await service.entries(artifactId)).map(f => f.text);
 	assert.equal(stored.length, 2, 'fixture: two comments are stored');
 	return stored;
 }
 
-test('finalize: a re-authored HLD, epic LLD, standalone LLD and PLAN each keep the feedback entries of the JSON at their own artifact path, in order, and render them in the Feedback section; a first authoring has none; a re-authored Define carries none', async () => {
+test('finalize: a re-authored HLD, epic LLD, standalone LLD and PLAN carry no feedback in the body or the document, and the comments saved on them are still stored beside the head', async () => {
 	for (const c of CASES) {
 		const repo = mkdtempSync(join(tmpdir(), 'insrc-carry-'));
 		try {
 			c.seed(repo);
-			const jsonPath = artifactJsonPath(repo, c.artifactId);
 
 			const first = await finalize(c.intent(repo), c.emit(), `wf-first-${c.name}`);
-			assert.equal(first.artifact.body.feedback, undefined, `${c.name}: a first authoring has no feedback`);
+			assert.equal(first.artifact.body['feedback'], undefined, `${c.name}: a first authoring has no feedback`);
 			assert.doesNotMatch(first.renderedMd, /^#+ .*Feedback/m, `${c.name}: a first authoring has no Feedback section`);
-			assert.equal('feedback' in (JSON.parse(first.renderedJson) as { body: object }).body, false, `${c.name}: and none in its JSON`);
 
-			const stored = storeWithComments(jsonPath, first, `docs/${c.name}.md`);
+			const stored = await storeWithComments(repo, c.artifactId, first, `docs/${c.name}.md`);
 
 			const again = await finalize(c.intent(repo), c.emit(), `wf-again-${c.name}`);
-			assert.deepEqual(again.artifact.body.feedback, stored, `${c.name}: the re-authored body keeps the stored entries, in order`);
-			assert.deepEqual((JSON.parse(again.renderedJson) as { body: { feedback?: unknown } }).body.feedback, stored, `${c.name}: and so does its JSON`);
+			assert.equal(again.artifact.body['feedback'], undefined, `${c.name}: the re-authored body holds none`);
+			assert.equal('feedback' in (JSON.parse(again.renderedJson) as { body: object }).body, false, `${c.name}: nor does its JSON`);
 			assert.notEqual(again.artifact.meta['runId'], first.artifact.meta['runId'], `${c.name}: it is a new authoring`);
-			assert.match(again.renderedMd, /^#+ .*Feedback/m, `${c.name}: the Feedback section is rendered`);
-			const a = again.renderedMd.indexOf(`on "cut to 8 lines": ${FIRST_COMMENT}`);
-			const b = again.renderedMd.indexOf(SECOND_COMMENT);
-			assert.ok(a > 0 && b > a, `${c.name}: both comments are rendered, in the stored order`);
-		} finally { rmSync(repo, { recursive: true, force: true }); }
+			assert.doesNotMatch(again.renderedMd, /^#+ .*Feedback/m, `${c.name}: and the document has no Feedback section`);
+			assert.ok(!again.renderedMd.includes(FIRST_COMMENT) && !again.renderedMd.includes(SECOND_COMMENT), `${c.name}: the comments are not copied into the document`);
+			assert.deepEqual((await lifecycleFor(repo).feedback.entries(c.artifactId)).map(f => f.text), stored, `${c.name}: the comments are still stored, in order`);
+		} finally { resetLifecycleRegistry(); rmSync(repo, { recursive: true, force: true }); }
 	}
 
-	// A Define is not carried: comments saved on the stored Define do not reach a
-	// Define authored again, whichever hash the new one is given.
+	// a re-authored Define is a new work item: it has no comments of the old one
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-carry-def-'));
 	try {
 		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 		const first = await finalize(intent('define', repo, {}), defineEmit(), 'wf-first-def');
-		const jsonPath = artifactJsonPath(repo, defineArtifactId(String(first.artifact.meta['epicHash'])));
-		storeWithComments(jsonPath, first, 'docs/DEFINE.md');
+		await storeWithComments(repo, defineArtifactId(String(first.artifact.meta['epicHash'])), first, 'docs/DEFINE.md');
 		const again = await finalize(intent('define', repo, {}), defineEmit(), 'wf-again-def');
-		assert.equal(again.artifact.body.feedback, undefined, 'a re-authored Define carries no feedback');
+		assert.equal(again.artifact.body['feedback'], undefined, 'a re-authored Define carries no feedback');
 		assert.ok(!again.renderedMd.includes(FIRST_COMMENT), 'and renders none');
-	} finally { rmSync(repo, { recursive: true, force: true }); }
+	} finally { resetLifecycleRegistry(); rmSync(repo, { recursive: true, force: true }); }
 });
 
 test('finalize: the prior artifact JSON is byte-identical after the finalizer has run', async () => {
@@ -248,12 +238,11 @@ test('finalize: the prior artifact JSON is byte-identical after the finalizer ha
 			c.seed(repo);
 			const jsonPath = artifactJsonPath(repo, c.artifactId);
 			const first = await finalize(c.intent(repo), c.emit(), `wf-first-${c.name}`);
-			storeWithComments(jsonPath, first, `docs/${c.name}.md`);
+			await storeWithComments(repo, c.artifactId, first, `docs/${c.name}.md`);
 			const before = readFileSync(jsonPath);
 
-			const again = await finalize(c.intent(repo), c.emit(), `wf-again-${c.name}`);
-			assert.equal(again.artifact.body.feedback?.length, 2, `${c.name}: the carry-forward ran`);
+			await finalize(c.intent(repo), c.emit(), `wf-again-${c.name}`);
 			assert.ok(readFileSync(jsonPath).equals(before), `${c.name}: the finalizer only read the prior JSON`);
-		} finally { rmSync(repo, { recursive: true, force: true }); }
+		} finally { resetLifecycleRegistry(); rmSync(repo, { recursive: true, force: true }); }
 	}
 });

@@ -30,7 +30,7 @@ import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { approvalStateOf, lifecycleReviewOf } from './artifact-core/approval-view.js';
 import { FileSidecarStore } from './artifact-core/sidecar-store.js';
-import type { ChangeLogEntry, Review } from './artifact-core/types.js';
+import type { ChangeLogEntry, Feedback, Review } from './artifact-core/types.js';
 import { jsonPathForMd } from './gates.js';
 import { openQuestions, type OpenQuestionStatus } from './questions.js';
 import { reviewRecordOf } from './review/report-log.js';
@@ -43,7 +43,6 @@ import type { SequenceDefinition } from './artifacts/companion/sequence.js';
 import type { UxDefinition } from './artifacts/companion/ux.js';
 import type { CompanionArtifactRef } from './artifacts/companion/types.js';
 import { resolveReviewer, type Reviewer, type ReviewerDeps } from './artifacts/companion/header.js';
-import type { FeedbackEntry } from './artifacts/provenance/types.js';
 
 // ---------------------------------------------------------------------------
 // sc2 contract types (internal-shared; mirrored as Kotlin data classes plugin-side)
@@ -89,8 +88,8 @@ export interface ArtifactReviewView {
 	readonly docPath:        string;
 	/** First 16 hex characters of the SHA-256 of `renderedMarkdown`. */
 	readonly contentVersion: string;
-	/** body.feedback as stored; absent when the artifact has none. */
-	readonly feedback?:      readonly FeedbackEntry[] | undefined;
+	/** The artifact's Feedback lines, as its FeedbackService stores them (reader order); absent when it has none. */
+	readonly feedback?:      readonly Feedback[] | undefined;
 	/** The name a comment saved now would carry. */
 	readonly reviewer:       Reviewer;
 	/** From the lifecycle: approved, rejected or pending. */
@@ -231,7 +230,7 @@ export function handleArtifactContent(
 	const stored = reviewRecordOfLog(repoPath, artifactId, lifecycleReview);
 	const blocked = stored !== undefined ? effectiveReviewVerdict(stored.report, stored.resolutions) === 'block' : lifecycleReview?.['verdict'] === 'block';
 
-	const feedback = Array.isArray(body['feedback']) ? body['feedback'] as readonly FeedbackEntry[] : [];
+	const feedback = feedbackLinesOf(repoPath, artifactId);
 
 	return {
 		artifactId,
@@ -247,6 +246,12 @@ export function handleArtifactContent(
 		reviewer: resolveReviewer(repoPath, deps),
 		state: approvalStateOf(meta),
 	};
+}
+
+/** The Feedback lines of an artifact, read from its sidecar (synchronously, as the content view is built in one pass); none when the file cannot be read. */
+function feedbackLinesOf(repoPath: string, artifactId: string): readonly Feedback[] {
+	try { return new FileSidecarStore(repoPath).readRecordsSync<Feedback>('feedback', artifactId); }
+	catch { return []; }
 }
 
 /** The report a lifecycle review names and its resolutions, from the artifact's log (read synchronously, as the content view is built in one pass). */

@@ -28,6 +28,7 @@ import { reviewReference } from '../review/report-log.js';
 import type { ReviewReport } from '../review/types.js';
 import { ARTIFACTS_DIR } from '../storage.js';
 import { approvedMeta, blockedMeta, draftMeta, lifecycleMeta, recordReview, rejectedMeta } from './lifecycle-fixtures.js';
+import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
 
 const HASH = '1703991c69967193';
 const ID = `LLD-${HASH}-s1`;
@@ -453,17 +454,19 @@ test('t1: a malformed sequenceDefinition travels through as written — the read
 
 test('review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion', () => {
 	const REVIEWER = { gitUserName: () => 'Rev Iewer\n', osUserName: () => 'rev' };
+	// the comments are Feedback lines stored beside the head; the body holds none
 	const entries = [
-		{ id: 'f1', author: 'Rev Iewer', timestamp: '2026-10-13T09:00:00.000Z', target: { file: MD_REL }, comment: 'First.', decision: 'feedback', batchId: 'b1', anchor: { quote: 'rendered' } },
-		{ id: 'f2', author: 'Rev Iewer', timestamp: '2026-10-13T09:00:00.000Z', target: { file: MD_REL }, comment: 'Second.', decision: 'feedback', batchId: 'b1' },
+		{ id: 'f1', text: 'First.', actor: { id: 'github:rev', kind: 'person', properties: {} }, timestamp: '2026-10-13T09:00:00.000Z', feedback: [], kind: 'revision-request', revision: 1, batchId: 'b1', anchor: { quote: 'rendered' } },
+		{ id: 'f2', text: 'Second.', actor: { id: 'github:rev', kind: 'person', properties: {} }, timestamp: '2026-10-13T09:00:01.000Z', feedback: [], kind: 'revision-request', revision: 1, batchId: 'b1' },
 	];
-	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: { openQuestions: ['First?'], feedback: entries } } });
+	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: { openQuestions: ['First?'] } } });
+	for (const entry of entries) new FileSidecarStore(repo).appendRecordSync('feedback', { artifactId: ID, entry });
 	try {
 		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined, REVIEWER));
 		assert.equal(v.docPath, MD_REL);
 		assert.equal(v.contentVersion, createHash('sha256').update(MD_BODY, 'utf8').digest('hex').slice(0, 16));
 		assert.match(v.contentVersion, /^[0-9a-f]{16}$/);
-		assert.deepEqual(v.feedback, entries, 'as stored, in order');
+		assert.deepEqual(v.feedback, entries, 'the FeedbackService\'s lines, in order');
 		assert.deepEqual(v.reviewer, { name: 'Rev Iewer', source: 'git' });
 		assert.equal(v.state, 'pending');
 		// The existing fields are what they were.

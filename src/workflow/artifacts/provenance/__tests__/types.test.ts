@@ -16,7 +16,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import type { FileChangeEntry, FeedbackEntry, FeedbackRecord, ProvenanceTarget } from '../types.js';
+import type { FileChangeEntry, FeedbackEntry, ProvenanceTarget } from '../types.js';
 
 test('FeedbackEntry carries the full authorship + target + comment shape', () => {
 	const target: ProvenanceTarget = { file: 'src/x.ts', version: 'v2', segment: { startLine: 10, endLine: 20 } };
@@ -33,9 +33,7 @@ test('a FeedbackEntry with a bare target (no version/segment/kind) is valid', ()
 	const entry: FeedbackEntry = {
 		id: 'x', author: 'a', timestamp: 't', target: { file: 'f' }, comment: 'c',
 	};
-	const record: FeedbackRecord = [entry];
-	assert.equal(record.length, 1);
-	assert.equal(record[0]!.target.version, undefined);
+	assert.equal(entry.target.version, undefined);
 });
 
 test('FileChangeEntry (s2-reserved) shares the authorship stamp', () => {

@@ -13,7 +13,7 @@ import type { Citation } from '../../types.js';
 import type { FunctionalDefinition } from '../functional-definition.js';
 import { renderFunctionalRequirementsSection } from '../functional-definition.js';
 import type { CompanionArtifactRef } from '../companion/types.js';
-import type { FileChangeLog, FeedbackRecord } from '../provenance/types.js';
+import type { FileChangeLog } from '../provenance/types.js';
 
 /**
  * S001's FR section content WITHOUT its own '## Functional requirements' heading
@@ -72,38 +72,12 @@ export function uxCompanionBodyLines(companions: readonly CompanionArtifactRef[]
 }
 
 /**
- * S001 (provenance/feedback): the Feedback section body — each post-hoc, human-
- * authored entry rendered as one bullet showing author, timestamp, target (file +
- * optional `:startLine-endLine`), optional kind, and the comment. `[]` when there
- * is no feedback (the renderer then omits the section — absent-safe/forward-only,
- * k6), so an artifact with no feedback renders byte-identically to before.
- */
-/** An inline comment's quoted text on one line, cut to 120 characters. */
-function cutQuote(quote: string): string {
-	const oneLine = quote.replace(/\s+/g, ' ').trim();
-	return oneLine.length > 120 ? `${oneLine.slice(0, 120)}…` : oneLine;
-}
-
-export function feedbackBodyLines(feedback: FeedbackRecord | undefined): string[] {
-	if (feedback === undefined || feedback.length === 0) return [];
-	return feedback.map(f => {
-		const seg = f.target.segment !== undefined ? `:${f.target.segment.startLine}-${f.target.segment.endLine}` : '';
-		const kind = f.kind !== undefined ? ` \`${f.kind}\`` : '';
-		// Story E202610138d4b90c9:S001: the decision an entry was saved with, and the text an
-		// inline comment was made on. An entry with neither renders exactly as before.
-		const decision = f.decision !== undefined ? ` \`${f.decision}\`` : '';
-		const quote = f.anchor !== undefined ? `on "${cutQuote(f.anchor.quote)}": ` : '';
-		return `- **${f.author}** (${f.timestamp})${kind}${decision} — \`${f.target.file}${seg}\`: ${quote}${f.comment}`;
-	});
-}
-
-/**
  * S002 (provenance/feedback): the Changes section body — each change-log entry
  * rendered as one bullet showing the target file (+ optional `:startLine-endLine`
  * when a segment is present), author, timestamp, and the optional summary. `[]`
  * when the change-log is absent/empty (the renderer then omits the section —
  * absent-safe/forward-only), so a build with no recorded changes renders
- * byte-identically to before. Mirrors {@link feedbackBodyLines}.
+ * byte-identically to before.
  */
 export function changeLogBodyLines(changeLog: FileChangeLog | undefined): string[] {
 	if (changeLog === undefined || changeLog.length === 0) return [];

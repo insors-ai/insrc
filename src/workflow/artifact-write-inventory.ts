@@ -59,7 +59,6 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/workflow/code-review/runner.ts', class: 'content', via: 'both', note: 'the code-review record is signoff-covered: its default writer (writeRecordFile) writes the json as content; the step handler uses the same writer' },
 
 	// --- meta-only: stamps, review stamps, tracker patches, resolutions -------------
-	{ file: 'src/workflow/artifacts/provenance/writer.ts', class: 'meta-only', via: 'writeArtifact', note: 'feedback is human provenance, not the stage content: appending it never mints a revision' },
 	{ file: 'src/workflow/questions.ts', class: 'meta-only', via: 'both', note: 'meta.questionResolutions only' },
 	{ file: 'src/workflow/tracker/refs.ts', class: 'meta-only', via: 'writeArtifact', note: 'patchTrackerMeta' },
 	{ file: 'src/workflow/tracker/binding.ts', class: 'meta-only', via: 'writeArtifact', note: 'the tracker binding: the one writer of meta.envelope.binding after creation; a synchronous patch that moves no revision, refused while the store has a write staged' },

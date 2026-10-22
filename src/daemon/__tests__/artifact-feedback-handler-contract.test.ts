@@ -4,31 +4,29 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Source-scan contract test for the inline `artifact.feedback.append` IPC handler
- * + the `artifact_feedback_append` daemon tool (Story S001 — provenance/feedback).
+ * Source-scan contract test for the inline `artifact.feedback.append` IPC handler.
  * The daemon handler map is defined inside main() and is not headlessly bootable,
  * so — the repo-stats-handler-contract idiom — we assert the load-bearing wiring
- * against source text: the handler is registered, delegates to appendFeedback,
- * returns {error} (not throw) on failure, and the tool is mounted at boot.
+ * against source text: the handler is registered, stores the entry through the
+ * FeedbackService, returns {error} (not throw) on failure, and the tool
+ * `artifact_feedback_append` and the body writers are gone.
  *
  * Run: npx tsx --test src/daemon/__tests__/artifact-feedback-handler-contract.test.ts
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const INDEX = resolve(HERE, '..', 'index.ts');                                    // src/daemon/index.ts
 const BUILTINS = resolve(HERE, '..', 'tools', 'builtins', 'index.ts');            // builtins aggregator
-const TOOL = resolve(HERE, '..', '..', 'workflow', 'artifacts', 'provenance', 'tool.ts');
-const WRITER = resolve(HERE, '..', '..', 'workflow', 'artifacts', 'provenance', 'writer.ts');
+const PROVENANCE = resolve(HERE, '..', '..', 'workflow', 'artifacts', 'provenance');
+const REQUEST = resolve(HERE, '..', '..', 'workflow', 'feedback', 'legacy-request.ts');
 
 const indexSrc = readFileSync(INDEX, 'utf8');
 const builtinsSrc = readFileSync(BUILTINS, 'utf8');
-const toolSrc = readFileSync(TOOL, 'utf8');
-const writerSrc = readFileSync(WRITER, 'utf8');
 
 /** Slice out the `'artifact.feedback.append': async (...) => { ... }` handler body. */
 function handlerBody(): string {
@@ -66,17 +64,11 @@ test("the append handler returns { error } (not throw) on a bad request / Artifa
 	assert.match(body, /ArtifactFeedbackError/, 'discriminates the typed error');
 });
 
-test("the artifact-feedback tool is mounted at boot and single-sources appendFeedback", () => {
-	assert.match(builtinsSrc, /import \{ registerArtifactFeedbackTool \} from '\.\.\/\.\.\/\.\.\/workflow\/artifacts\/provenance\/tool\.js'/, 'the register fn is imported');
-	assert.match(builtinsSrc, /registerArtifactFeedbackTool\(\);/, 'the tool is registered in registerBuiltinTools()');
-	assert.match(toolSrc, /export function registerArtifactFeedbackTool\(\)/, 'registerArtifactFeedbackTool is exported');
-	assert.match(toolSrc, /registerTool\(/, 'it registers a Tool');
-	assert.match(toolSrc, /appendFeedback\(/, "the tool's execute delegates to appendFeedback");
-	assert.match(toolSrc, /id:\s*ARTIFACT_FEEDBACK_TOOL_ID/, 'the tool carries a canonical id');
-});
-
-test("the writer exports the append-only API + typed error", () => {
-	assert.match(writerSrc, /export function appendFeedback\(/, 'appendFeedback is exported');
-	assert.match(writerSrc, /export function writeArtifactJson\(/, 'writeArtifactJson is exported');
-	assert.match(writerSrc, /export class ArtifactFeedbackError extends Error/, 'ArtifactFeedbackError is exported');
+test("the artifact-feedback tool and the body writers are gone, and the request type is the feedback module's", () => {
+	assert.doesNotMatch(builtinsSrc, /registerArtifactFeedbackTool|artifact_feedback_append/, 'the tool is not mounted at boot');
+	for (const gone of ['tool.ts', 'writer.ts', 'schema.ts']) assert.equal(existsSync(resolve(PROVENANCE, gone)), false, `provenance/${gone} is gone`);
+	const requestSrc = readFileSync(REQUEST, 'utf8');
+	assert.match(requestSrc, /export class ArtifactFeedbackError extends Error/, 'ArtifactFeedbackError is exported');
+	assert.match(requestSrc, /export function coerceRequest\(/, 'coerceRequest is exported');
+	assert.doesNotMatch(requestSrc, /writeArtifact|writeFileSync|appendFeedback\(/, 'and the module writes nothing');
 });

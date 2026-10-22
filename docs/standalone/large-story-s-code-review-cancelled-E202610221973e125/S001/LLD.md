@@ -270,13 +270,11 @@ The step starts the daemon review and returns at once; a new phase polls for the
 - **[[c6]]** `code` `src/mcp/server.ts:207-224`
 - **[[c7]]** `code` `src/workflow/code-review/runner.ts:119-124`
 - **[[c8]]** `code` `src/workflow/review/template.ts:61-62`
-
 - **[[c9]]** `code` `src/daemon/steps/daemon-client.ts:123-147`
 - **[[c10]]** `code` `src/shared/review-stream.ts:182-245`
 - **[[c11]]** `code` `src/workflow/review-pipeline/driver.ts:27-75`
 - **[[c12]]** `code` `src/workflow/review-pipeline/code-review.ts:262`
 - **[[c13]]** `code` `src/workflow/code-review/types.ts:130-138`
-
 - **[[c14]]** `code` `src/daemon/steps/host.ts:69`
 - **[[c15]]** `code` `src/daemon/steps/code-review-step/__tests__/routing.test.ts:25`
 - **[[c16]]** `code` `src/daemon/steps/code-review-step/__tests__/routing.test.ts:289`
@@ -286,20 +284,26 @@ The step starts the daemon review and returns at once; a new phase polls for the
 - cd1 (partial): codeReviewWaitLimits is a new function replacing DAEMON_CODE_REVIEW_WAIT_MS, not an existing symbol.
 - dm1 (partial): src/config/config-catalog.ts, where the two keys are declared, is not cited in s1, though the file exists.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qe720ca27` — cd1 (partial): codeReviewWaitLimits is a new function replacing DAEMON_CODE_REVIEW_WAIT_MS, not an existing symbol.
+  - **resolved**: Accept as new symbol — User 2026-10-23: codeReviewWaitLimits is new; the plan removes DAEMON_CODE_REVIEW_WAIT_MS and moves its callers (incl. routing.test.ts) onto it. _(2026-10-22T20:23:21.199Z)_
 
-### ✅ Review `PASS` — design.story (design.story)
+## Citations
 
-**0 do not hold · 0 could not be verified · 7 hold** · template `design-issue` · model `cli-claude:opus` · reviewed 2026-10-22T20:11:03.302Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `code` `src/workflow/review-pipeline/job.ts:187-212`
+- **[[c2]]** `code` `src/daemon/steps/code-review-step/handler.ts:713-741`
+- **[[c3]]** `code` `src/shared/review-stream.ts:174-230`
+- **[[c4]]** `code` `src/daemon/code-review-rpc.ts:120-136`
+- **[[c5]]** `code` `src/daemon/steps/host.ts:89-117`
+- **[[c6]]** `code` `src/mcp/server.ts:207-224`
+- **[[c7]]** `code` `src/workflow/code-review/runner.ts:119-124`
+- **[[c8]]** `code` `src/workflow/review/template.ts:61-62`
+- **[[c9]]** `code` `src/daemon/steps/daemon-client.ts:123-147`
+- **[[c10]]** `code` `src/shared/review-stream.ts:182-245`
+- **[[c11]]** `code` `src/workflow/review-pipeline/driver.ts:27-75`
+- **[[c12]]** `code` `src/workflow/review-pipeline/code-review.ts:262`
+- **[[c13]]** `code` `src/workflow/code-review/types.ts:130-138`
+- **[[c14]]** `code` `src/daemon/steps/host.ts:69`
+- **[[c15]]** `code` `src/daemon/steps/code-review-step/__tests__/routing.test.ts:25`
+- **[[c16]]** `code` `src/daemon/steps/code-review-step/__tests__/routing.test.ts:289`

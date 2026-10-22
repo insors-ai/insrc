@@ -129,7 +129,16 @@
       "reviewedBy": "daemon"
     },
     "approvedAt": "2026-10-22T20:18:56.046Z",
-    "rangeBase": "41bfc79d853b83e7a4fa5eb920ffd9c73381e783"
+    "rangeBase": "41bfc79d853b83e7a4fa5eb920ffd9c73381e783",
+    "questionResolutions": {
+      "qe720ca27": {
+        "question": "cd1 (partial): codeReviewWaitLimits is a new function replacing DAEMON_CODE_REVIEW_WAIT_MS, not an existing symbol.",
+        "status": "resolved",
+        "choice": "Accept as new symbol",
+        "rationale": "User 2026-10-23: codeReviewWaitLimits is new; the plan removes DAEMON_CODE_REVIEW_WAIT_MS and moves its callers (incl. routing.test.ts) onto it.",
+        "resolvedAt": "2026-10-22T20:23:21.199Z"
+      }
+    }
   },
   "body": {
     "summary": {

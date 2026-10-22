@@ -151,7 +151,7 @@ interface BuildFacts {
 	readonly exists:     boolean;
 	/** The record could not be parsed into the shape below. */
 	readonly unreadable: boolean;
-	readonly approvedAt: string | undefined;
+	readonly approvedTime: string | undefined;
 	readonly tasks:      ReadonlyArray<{ readonly id: string; readonly passed: boolean }>;
 }
 
@@ -160,23 +160,23 @@ interface BuildFacts {
  *  which imports this file, so a runtime import here would be a cycle. */
 function readBuildFacts(repoPath: string, epicHash: string, storyId: string): BuildFacts {
 	const p = join(repoPath, ARTIFACTS_DIR, `${buildArtifactId(epicHash, storyId)}.json`);
-	if (!existsSync(p)) return { exists: false, unreadable: false, approvedAt: undefined, tasks: [] };
+	if (!existsSync(p)) return { exists: false, unreadable: false, approvedTime: undefined, tasks: [] };
 	try {
 		const parsed = JSON.parse(readFileSync(p, 'utf8')) as { meta?: unknown; body?: { tasks?: unknown } };
 		// the approval is the head's lifecycle approval; the BUILD record carries no other stamp
-		const approvedAt = approvedAtOf(parsed.meta);
+		const approvedTime = approvedAtOf(parsed.meta);
 		const rawTasks = parsed.body?.tasks;
-		if (rawTasks !== undefined && !Array.isArray(rawTasks)) return { exists: true, unreadable: true, approvedAt, tasks: [] };
+		if (rawTasks !== undefined && !Array.isArray(rawTasks)) return { exists: true, unreadable: true, approvedTime, tasks: [] };
 		const tasks: Array<{ id: string; passed: boolean }> = [];
 		for (const t of rawTasks ?? []) {
 			const id = (t as { id?: unknown } | null)?.id;
-			if (typeof id !== 'string') return { exists: true, unreadable: true, approvedAt, tasks: [] };
+			if (typeof id !== 'string') return { exists: true, unreadable: true, approvedTime, tasks: [] };
 			// `passed` is optional on the record; only a literal true counts.
 			tasks.push({ id, passed: (t as { passed?: unknown }).passed === true });
 		}
-		return { exists: true, unreadable: false, approvedAt, tasks };
+		return { exists: true, unreadable: false, approvedTime, tasks };
 	} catch {
-		return { exists: true, unreadable: true, approvedAt: undefined, tasks: [] };
+		return { exists: true, unreadable: true, approvedTime: undefined, tasks: [] };
 	}
 }
 
@@ -205,7 +205,7 @@ function readPlanTaskIds(repoPath: string, epicHash: string, storyId: string): r
  *
  * Approval alone is not enough. The batch approval sweep approves every
  * unapproved BUILD record under an epic, including one whose Story has validated
- * one task of several, or whose task failed — so `approvedAt` can precede the end
+ * one task of several, or whose task failed — so the approval time can precede the end
  * of the build. FINISHED therefore also requires that the record shows the work
  * done: at least one task, every task passed, and the plan covered.
  *
@@ -220,7 +220,7 @@ function readPlanTaskIds(repoPath: string, epicHash: string, storyId: string): r
  */
 function isFinished(facts: BuildFacts, plan: readonly string[] | 'none' | 'unreadable', storyId: string): boolean {
 	if (!facts.exists || facts.unreadable) return false;
-	if (facts.approvedAt === undefined) return false;
+	if (facts.approvedTime === undefined) return false;
 	if (facts.tasks.length === 0) return false;
 	if (!facts.tasks.every(t => t.passed)) return false;
 	if (plan === 'unreadable') return false;
@@ -262,8 +262,8 @@ export function stampBuildStart(repoPath: string, epicHash: string, storyId: str
 		const finished = isFinished(facts, readPlanTaskIds(repoPath, epicHash, storyId), storyId);
 
 		if (read.kind === 'valid') {
-			// A NaN on either side compares false, so an unparseable approvedAt keeps.
-			const rebuilt = finished && Date.parse(facts.approvedAt ?? '') > Date.parse(read.stamp.stampedAt);
+			// A NaN on either side compares false, so an unparseable approval time keeps.
+			const rebuilt = finished && Date.parse(facts.approvedTime ?? '') > Date.parse(read.stamp.stampedAt);
 			if (!rebuilt) return 'kept';
 		} else {
 			const showsWork = facts.unreadable || facts.tasks.length > 0;

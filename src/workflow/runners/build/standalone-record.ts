@@ -142,9 +142,9 @@ export function standaloneEpicHashFromFocus(focus: string): string {
  *
  * Every section is an OMIT-SLOT keyed on its OWN content, so no route can lose
  * content it carries. TWO parts always render — the title and the meta line — and
- * SEVEN are conditional: Commit, Scope, Triage rationale, Summary, Tasks
- * validated, Changes, Feedback. (The LLD's test strategy says "eight omit-slots";
- * it is seven, counted here rather than inherited.)
+ * SIX are conditional: Commit, Scope, Triage rationale, Summary, Tasks
+ * validated, Changes. (The LLD's test strategy says "eight omit-slots";
+ * it is six, counted here rather than inherited.)
  *
  * The ordering is the union of both predecessors, and because no real record
  * carries sections from both groups interleaved, each predecessor's relative order

@@ -18,7 +18,9 @@ import { dirname, join } from 'node:path';
 
 import { buildStartRelPath, readBuildStart, resolveStoryRangeBase, stampBuildStart } from '../range-base.js';
 import { ARTIFACTS_DIR, buildArtifactId, lldArtifactId, planArtifactId } from '../../../storage.js';
-import { approvedMeta } from '../../../__tests__/lifecycle-fixtures.js';
+import { approvedMeta, draftMeta } from '../../../__tests__/lifecycle-fixtures.js';
+import { approveJson } from '../../../__tests__/helpers/approve.js';
+import { approvalStateOf } from '../../../artifact-core/approval-view.js';
 
 const HASH = 'abc123def4567890';
 const SHA40 = /^[0-9a-f]{40}$/;
@@ -53,6 +55,21 @@ test('t6: the STAMPED base on the PLAN is used, without needing the artifact com
 		// Deliberately NOT committed — this is the state that defeats a
 		// history-based lookup, and the stamp exists precisely for it.
 		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), stamped);
+	} finally { s.cleanup(); }
+});
+
+test('range-base.test.ts: a Story\'s build range still resolves from meta.rangeBase', async () => {
+	const s = mkRepo();
+	try {
+		// a plan approved through the lifecycle: the approval stamps only the range base, and the range resolves from it
+		const base = s.git('rev-parse', 'HEAD');
+		seedArtifact(s.repo, planArtifactId(HASH, 's1'), { workflow: 'plan', epicHash: HASH, storyId: 's1', ...draftMeta() });
+		await approveJson(join(s.repo, ARTIFACTS_DIR, `${planArtifactId(HASH, 's1')}.json`));
+		const meta = (JSON.parse(readFileSync(join(s.repo, ARTIFACTS_DIR, `${planArtifactId(HASH, 's1')}.json`), 'utf8')) as { meta: Record<string, unknown> }).meta;
+		assert.equal(approvalStateOf(meta), 'approved');
+		assert.equal(meta['rangeBase'], base, 'the approval stamps meta.rangeBase');
+		for (const gone of ['approvedAt', 'approvedBy', 'rejectedAt', 'reviewOverride']) assert.equal(meta[gone], undefined, `and no ${gone}`);
+		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), base);
 	} finally { s.cleanup(); }
 });
 

@@ -504,7 +504,7 @@ test('T28 (WORKING-TREE derivation): a tree dirty ONLY with an artifact json is 
 		writeFileSync(join(repo, artifact), '{"v":1}\n');
 		execFileSync('git', ['add', '-A'], { cwd: repo });
 		execFileSync('git', ['commit', '-qm', 'the plan'], { cwd: repo });
-		writeFileSync(join(repo, artifact), '{"v":2,"approvedAt":"now"}\n');   // unstaged
+		writeFileSync(join(repo, artifact), '{"v":2,"status":"approved"}\n');   // unstaged
 
 		assert.deepEqual([...await changedFiles(repo, { base })].sort(), [artifact, 'shipped.ts'],
 			'fixture precondition: without the globs the artifact is a file of the range, so its uncommitted edit joins');

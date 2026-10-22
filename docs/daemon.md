@@ -194,6 +194,20 @@ Everything routes through `daemon-ctl.sh`:
 ./daemon-ctl.sh --help
 ```
 
+#### Choosing the repository and branch the update follows
+
+By default the update follows `origin` and the branch the installed checkout is on. To deploy a fork or another branch, set
+two optional keys in `~/.insrc/config.json` (an empty string means unset):
+
+```json
+{ "daemonUpdate": { "repoUrl": "https://github.com/someone/insrc.git", "branch": "v2" } }
+```
+
+Both the in-daemon update (`daemon.update`) and the TUI update read them; `daemon-ctl.sh` takes the same as flags,
+`--repo-url <url> --branch <name>`. The update refuses a dirty checkout and a checkout with commits no remote branch has, then
+points `origin` at the URL, fetches the branch (the install is a single-branch clone, so the branch is fetched with an explicit
+refspec), and switches to it or fast-forwards. A URL is https, ssh, git or file, `git@host:path`, or an absolute path.
+
 Or drive the underlying CLI directly if you want more granularity:
 
 ```bash

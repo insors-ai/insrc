@@ -26,6 +26,8 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 import { rpc } from '../client.js';
+import { readUpdateSource } from '../../shared/update-source.js';
+import type { UpdateSource } from '../../shared/update-source.js';
 import type { RegisteredRepo } from '../../shared/types.js';
 import { describeStop, startDaemon, stopDaemon } from './daemon.js';
 import type { StartResult, StopOutcome } from './daemon.js';
@@ -41,6 +43,10 @@ export interface UpdateOptions {
 	readonly skipInstall?: boolean;
 	readonly skipBuild?:   boolean;
 	readonly branch?:      string;
+	/** The git remote URL origin must point at; wins over the config. */
+	readonly repoUrl?:     string;
+	/** The configured update source; read from ~/.insrc/config.json when absent (a test injects it). */
+	readonly source?:      UpdateSource;
 }
 
 export interface MaintenanceResult {
@@ -83,27 +89,52 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 	}
 
 	try {
-		const branch = opts.branch ?? (await capture('git', ['-C', root, 'rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim();
+		let source: UpdateSource;
+		try { source = opts.source ?? readUpdateSource(); }
+		catch (err) { return { ok: false, steps, error: `invalid daemonUpdate config: ${(err as Error).message}` }; }
+		const currentBranch = (await capture('git', ['-C', root, 'rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim();
+		const branch = opts.branch ?? source.branch ?? currentBranch;
+		const repoUrl = opts.repoUrl ?? source.repoUrl;
 		const lockBefore = (await capture('git', ['-C', root, 'hash-object', 'package-lock.json'])).stdout.trim();
 
 		if (opts.skipSync !== true) {
-			onLog(`syncing ${root} against origin/${branch}`);
-			if (await stream('git', ['-C', root, 'fetch', '--quiet', 'origin', branch], onLog) !== 0) {
-				return { ok: false, steps, error: `git fetch origin/${branch} failed` };
-			}
-			// `npm install` rewrites package-lock.json; the install mirrors origin
-			// exactly, so discard that churn before the cleanliness check + FF
-			// (otherwise every post-install update would refuse as "dirty" and the
-			// merge --ff-only would fail on the local lockfile edit). Mirrors
-			// `daemon-ctl.sh sync_repo`. Failure (no changes / file absent) is fine.
+			// `npm install` rewrites package-lock.json; the install mirrors origin exactly, so discard that churn before the
+			// cleanliness check (otherwise every post-install update would refuse as "dirty" and the merge --ff-only would
+			// fail on the local lockfile edit). Mirrors `daemon-ctl.sh sync_repo`, including its order: a dirty tree is
+			// refused before origin is touched.
 			await capture('git', ['-C', root, 'checkout', '--', 'package-lock.json']);
 			const dirty = (await capture('git', ['-C', root, 'status', '--porcelain'])).stdout.trim();
 			if (dirty.length > 0) {
 				return { ok: false, steps, error: 'daemon checkout has uncommitted changes; refusing to overwrite' };
 			}
+			if (repoUrl !== undefined) {
+				const origin = (await capture('git', ['-C', root, 'remote', 'get-url', 'origin'])).stdout.trim();
+				if (origin !== repoUrl) {
+					onLog(`pointing origin at ${repoUrl}`);
+					if (await stream('git', ['-C', root, 'remote', 'set-url', 'origin', repoUrl], onLog) !== 0) {
+						return { ok: false, steps, error: 'git remote set-url origin failed' };
+					}
+				}
+			}
+			onLog(`syncing ${root} against origin/${branch}`);
+			// An explicit refspec: the install is a single-branch clone, so a plain `fetch origin <branch>` of any other
+			// branch would not create origin/<branch>.
+			if (await stream('git', ['-C', root, 'fetch', '--quiet', 'origin', `+refs/heads/${branch}:refs/remotes/origin/${branch}`], onLog) !== 0) {
+				return { ok: false, steps, error: `git fetch origin/${branch} failed` };
+			}
 			const current  = (await capture('git', ['-C', root, 'rev-parse', 'HEAD'])).stdout.trim();
 			const incoming = (await capture('git', ['-C', root, 'rev-parse', `origin/${branch}`])).stdout.trim();
-			if (current === incoming) {
+			if (branch !== currentBranch) {
+				// Switching branch: never discard commits that exist only here.
+				const contained = (await capture('git', ['-C', root, 'branch', '-r', '--contains', 'HEAD'])).stdout.trim();
+				if (contained.length === 0) {
+					return { ok: false, steps, error: `HEAD has commits no remote branch has; refusing to switch to ${branch}` };
+				}
+				onLog(`switching branch: ${currentBranch} -> ${branch} (${incoming.slice(0, 8)})`);
+				if (await stream('git', ['-C', root, 'checkout', '--quiet', '-B', branch, `origin/${branch}`], onLog) !== 0) {
+					return { ok: false, steps, error: `git checkout ${branch} failed` };
+				}
+			} else if (current === incoming) {
 				onLog(`already at ${incoming.slice(0, 8)} (no-op)`);
 			} else {
 				const anc = await capture('git', ['-C', root, 'merge-base', '--is-ancestor', current, incoming]);

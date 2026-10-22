@@ -29,6 +29,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { PATHS } from '../shared/paths.js';
+import { readUpdateSource, updateSourceArgs } from '../shared/update-source.js';
+import type { UpdateSource } from '../shared/update-source.js';
 import { getLogger } from '../shared/logger.js';
 import type { DaemonUpdateOutcome, DaemonUpdateResult } from '../shared/types.js';
 
@@ -71,6 +73,8 @@ export interface UpdateRunnerDeps {
   daemonRoot?:   string;
   /** where the terminal outcome record is read/written (default: PATHS.updateOutcome). */
   outcomePath?:  string;
+  /** the configured update source (default: readUpdateSource over PATHS.config). */
+  readSource?:   () => UpdateSource;
   /** the concurrent-launch marker file (default: PATHS.updateLock). */
   lockPath?:     string;
   /** clock, for the marker timestamp + staleness check (default: Date.now). */
@@ -146,6 +150,12 @@ export function launchUpdate(deps: UpdateRunnerDeps = {}): DaemonUpdateResult {
   //    nothing started and no marker written.
   const daemonCtl = resolveDaemonCtl(root);
 
+  // 1b. The configured update source (daemonUpdate.repoUrl / branch). An unreadable or invalid config
+  //     fails the launch with nothing started and no marker written.
+  let sourceArgs: string[];
+  try { sourceArgs = updateSourceArgs((deps.readSource ?? (() => readUpdateSource()))()); }
+  catch (err) { throw new Error(`daemon.update: invalid daemonUpdate config: ${(err as Error).message}`); }
+
   // 2. Concurrent-launch guard — reject a second update while one is in flight.
   if (isUpdateInProgress({ lockPath, now, isPidAlive, staleAfterMs })) {
     throw new Error('daemon.update: update already in progress');
@@ -158,7 +168,7 @@ export function launchUpdate(deps: UpdateRunnerDeps = {}): DaemonUpdateResult {
   const sink = openLog();
   const child = spawnFn(
     process.execPath,
-    [...process.execArgv, __filename, daemonCtl, 'restart'],
+    [...process.execArgv, __filename, daemonCtl, 'restart', ...sourceArgs],
     {
       detached: true,
       stdio: ['ignore', sink, sink],
@@ -221,7 +231,7 @@ export function writeUpdateOutcome(outcome: DaemonUpdateOutcome, deps: UpdateRun
  * thrown) and recorded as state:'failed' with the raw error — no retry, no
  * rollback (k5). Resolves once the outcome has been written.
  */
-export function runDetachedUpdate(daemonCtl: string, deps: UpdateRunnerDeps = {}, subcommand = 'restart'): Promise<DaemonUpdateOutcome> {
+export function runDetachedUpdate(daemonCtl: string, deps: UpdateRunnerDeps = {}, subcommand = 'restart', extraArgs: readonly string[] = []): Promise<DaemonUpdateOutcome> {
   const spawnFn = deps.spawn ?? (nodeSpawn as unknown as SpawnFn);
   return new Promise<DaemonUpdateOutcome>((resolveP) => {
     let stderrTail = '';
@@ -235,7 +245,7 @@ export function runDetachedUpdate(daemonCtl: string, deps: UpdateRunnerDeps = {}
       resolveP(outcome);
     };
     // `bash <daemon-ctl.sh> <subcommand>` — the one proven update+build+respawn.
-    const child = spawnFn('bash', [daemonCtl, subcommand], { stdio: ['ignore', 'pipe', 'pipe'] }) as SpawnedChild & {
+    const child = spawnFn('bash', [daemonCtl, subcommand, ...extraArgs], { stdio: ['ignore', 'pipe', 'pipe'] }) as SpawnedChild & {
       stderr?: { on(ev: 'data', cb: (c: Buffer) => void): void };
       on(ev: 'error' | 'close', cb: (arg: unknown) => void): void;
     };
@@ -286,7 +296,7 @@ const invokedEntry = process.argv[1] ? resolve(process.argv[1]) : '';
 if (invokedEntry === __filename && process.argv[2]) {
   const daemonCtl = process.argv[2];
   const subcommand = process.argv[3] ?? 'restart';
-  void runDetachedUpdate(daemonCtl, {}, subcommand).then((outcome) => {
+  void runDetachedUpdate(daemonCtl, {}, subcommand, process.argv.slice(4)).then((outcome) => {
     log.info({ outcome }, 'daemon.update helper finished');
     process.exit(outcome.state === 'succeeded' ? 0 : 1);
   });

@@ -78,6 +78,8 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	// ── main config (src/daemon/index.ts first-boot default + Config type) ──
 	{ path: 'logLevel',              type: 'enum',   default: 'info',                    desc: "daemon log level: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' (matches shared/logger VALID_LEVELS)", enumValues: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'], group: 'General' },
 	{ path: 'ollama.host',           type: 'string', default: 'http://localhost:11434',  desc: 'Ollama server URL (daemon-wide)', group: 'General' },
+	{ path: 'daemonUpdate.repoUrl',  type: 'string', default: '',                        desc: 'git remote URL the daemon update follows (a fork can be deployed); empty keeps the checkout\'s origin', group: 'General' },
+	{ path: 'daemonUpdate.branch',   type: 'string', default: '',                        desc: 'branch the daemon update follows; empty keeps the checkout\'s current branch', group: 'General' },
 	// NOTE: the model config is a single flat models.* surface. The former
 	// models.analyze.* / models.providers.local nesting is MIGRATED to models.*
 	// (see CONFIG_MIGRATIONS) and its residue (incl. the derived shaperProvider/

@@ -26,7 +26,8 @@
 #   --skip-sync       skip the git fetch / merge step
 #   --skip-install    skip npm install even if the lock changed
 #   --skip-build      skip the tsc build step
-#   --branch <name>   sync against a branch other than the current one
+#   --branch <name>   sync against a branch other than the current one (switches to it)
+#   --repo-url <url>  point origin at this git URL before the fetch (deploy a fork)
 #
 # Exit codes:
 #   0 success
@@ -81,21 +82,42 @@ usage() {
 
 sync_repo() {
 	local branch="$1"
-	log "syncing $DAEMON_ROOT against origin/$branch"
-	git -C "$DAEMON_ROOT" fetch --quiet origin "$branch"
+	local current_branch
+	current_branch=$(git -C "$DAEMON_ROOT" rev-parse --abbrev-ref HEAD)
 
 	# `npm install` rewrites package-lock.json; the install mirrors
 	# origin exactly, so discard that churn before the cleanliness check
 	# (otherwise every post-install update would refuse as "dirty").
 	git -C "$DAEMON_ROOT" checkout -- package-lock.json 2>/dev/null || true
 
+	# A dirty tree is refused BEFORE origin is touched.
 	if ! git -C "$DAEMON_ROOT" diff --quiet || ! git -C "$DAEMON_ROOT" diff --cached --quiet; then
 		die "$DAEMON_ROOT has uncommitted local changes; refusing to overwrite" 3
 	fi
 
+	if [ -n "$REPO_URL" ] && [ "$(git -C "$DAEMON_ROOT" remote get-url origin 2>/dev/null || true)" != "$REPO_URL" ]; then
+		log "pointing origin at $REPO_URL"
+		git -C "$DAEMON_ROOT" remote set-url origin "$REPO_URL"
+	fi
+
+	log "syncing $DAEMON_ROOT against origin/$branch"
+	# An explicit refspec: the install is a single-branch clone, so a plain
+	# `fetch origin <branch>` of any other branch would not create origin/<branch>.
+	git -C "$DAEMON_ROOT" fetch --quiet origin "+refs/heads/$branch:refs/remotes/origin/$branch"
+
 	local current incoming
 	current=$(git -C "$DAEMON_ROOT" rev-parse HEAD)
 	incoming=$(git -C "$DAEMON_ROOT" rev-parse "origin/$branch")
+
+	if [ "$branch" != "$current_branch" ]; then
+		# Switching branch: never discard commits that exist only here.
+		if [ -z "$(git -C "$DAEMON_ROOT" branch -r --contains HEAD 2>/dev/null)" ]; then
+			die "$DAEMON_ROOT/HEAD has commits no remote branch has; refusing to switch to $branch" 3
+		fi
+		log "switching branch: $current_branch -> $branch (${incoming:0:8})"
+		git -C "$DAEMON_ROOT" checkout --quiet -B "$branch" "origin/$branch" >>"$LOG_FILE" 2>&1
+		return 0
+	fi
 
 	if [ "$current" = "$incoming" ]; then
 		log "already at ${incoming:0:8} (no-op)"
@@ -310,6 +332,7 @@ SKIP_SYNC=0
 SKIP_INSTALL=0
 SKIP_BUILD=0
 BRANCH=""
+REPO_URL=""
 CMD=""
 
 while [ $# -gt 0 ]; do
@@ -319,6 +342,8 @@ while [ $# -gt 0 ]; do
 		--skip-install) SKIP_INSTALL=1 ;;
 		--skip-build)   SKIP_BUILD=1 ;;
 		--branch)       shift; BRANCH="${1:-}"; [ -n "$BRANCH" ] || die "--branch requires a value" ;;
+		--repo-url)     shift; REPO_URL="${1:-}"; [ -n "$REPO_URL" ] || die "--repo-url requires a value"
+		                case "$REPO_URL" in -*) die "--repo-url must not start with '-'" ;; esac ;;
 		-h|--help)      usage ;;
 		*)              die "unknown arg: $1 (see --help)" ;;
 	esac

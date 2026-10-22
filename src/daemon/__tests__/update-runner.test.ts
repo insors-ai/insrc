@@ -217,3 +217,50 @@ test('t2: runDetachedUpdate writes state:failed with the raw stderr on a non-zer
   assert.equal(existsSync(lockPath), false, 'the marker is cleared even on failure');
   rmSync(outcomePath, { force: true });
 });
+
+// ---------------------------------------------------------------------------
+// the configured update source
+// ---------------------------------------------------------------------------
+
+test('update-runner.test.ts: launchUpdate passes --repo-url and --branch only for the keys that are set, and an invalid config spawns nothing and writes no marker', () => {
+  const { root, daemonCtl, cleanup } = makeDaemonRoot();
+  try {
+    const run = (source: () => { repoUrl?: string; branch?: string }) => {
+      const rec = recordingSpawn();
+      const lockPath = tmpFile('update.lock');
+      return { rec, lockPath, call: () => launchUpdate({ spawn: rec.spawn, daemonRoot: root, lockPath, openLog: () => 'ignore', readSource: source }) };
+    };
+
+    const none = run(() => ({}));
+    none.call();
+    assert.deepEqual(none.rec.calls[0]!.args.slice(-2), [daemonCtl, 'restart']);
+
+    const both = run(() => ({ repoUrl: 'https://example.com/fork.git', branch: 'v2' }));
+    both.call();
+    assert.deepEqual(both.rec.calls[0]!.args.slice(-6), [daemonCtl, 'restart', '--repo-url', 'https://example.com/fork.git', '--branch', 'v2']);
+
+    const branchOnly = run(() => ({ branch: 'v2' }));
+    branchOnly.call();
+    assert.deepEqual(branchOnly.rec.calls[0]!.args.slice(-4), [daemonCtl, 'restart', '--branch', 'v2']);
+
+    const invalid = run(() => { throw new Error('daemonUpdate.repoUrl must not start with "-"'); });
+    assert.throws(() => invalid.call(), /daemon\.update: invalid daemonUpdate config: daemonUpdate\.repoUrl must not start/);
+    assert.equal(invalid.rec.calls.length, 0, 'nothing is spawned');
+    assert.equal(existsSync(invalid.lockPath), false, 'no marker is written');
+  } finally { cleanup(); }
+});
+
+test('runDetachedUpdate appends the extra arguments after the subcommand', async () => {
+  const seen: Array<readonly string[]> = [];
+  const spawn: SpawnFn = (_command, args) => {
+    seen.push(args);
+    const child = new EventEmitter() as unknown as SpawnedChild & EventEmitter;
+    (child as unknown as { stderr: EventEmitter }).stderr = new EventEmitter();
+    setImmediate(() => child.emit('close', 0));
+    return child;
+  };
+  const outcomePath = tmpFile('outcome.json');
+  const outcome = await runDetachedUpdate('/x/daemon-ctl.sh', { spawn, outcomePath }, 'restart', ['--branch', 'v2']);
+  assert.equal(outcome.state, 'succeeded');
+  assert.deepEqual(seen[0], ['/x/daemon-ctl.sh', 'restart', '--branch', 'v2']);
+});

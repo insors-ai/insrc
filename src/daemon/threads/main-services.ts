@@ -35,14 +35,14 @@ import { wireMainStoreHealth } from './store-health-hub.js';
 import { DEFAULT_MAINTENANCE_CONFIG } from './maintenance.js';
 import type { MaintenanceConfig } from './maintenance.js';
 
-/** Read daemon.threads.enabled from ~/.insrc/config.json. Fail-safe: off when absent, unreadable or not true. */
+/** Read daemon.threads.enabled from ~/.insrc/config.json. On by default: only an explicit false turns it off. */
 export function threadsEnabled(): boolean {
 	try {
-		if (!existsSync(PATHS.config)) return false;
+		if (!existsSync(PATHS.config)) return true;
 		const raw = JSON.parse(readFileSync(PATHS.config, 'utf8')) as { daemon?: { threads?: { enabled?: unknown } } };
-		return raw.daemon?.threads?.enabled === true;
+		return raw.daemon?.threads?.enabled !== false;
 	} catch {
-		return false;
+		return true;
 	}
 }
 

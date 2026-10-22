@@ -116,18 +116,20 @@ test('a worker started before the embedding bootstrap settles embeds with the de
 	assert.deepEqual(await late.next(forRequest('b3')), { kind: 'reply', requestId: 'b3', result: 'onnx' }, 'a worker started after the decision gets it when it connects');
 });
 
-test('daemon.threads.enabled is a config schema key defaulting to off and daemon.info returns its four fields', async () => {
+test('daemon.threads.enabled is a config schema key defaulting to on and daemon.info returns its four fields', async () => {
 	const row = CONFIG_CATALOG.find(o => o.path === 'daemon.threads.enabled');
-	assert.deepEqual(row && { type: row.type, default: row.default, group: row.group }, { type: 'boolean', default: false, group: 'General' });
+	assert.deepEqual(row && { type: row.type, default: row.default, group: row.group }, { type: 'boolean', default: true, group: 'General' });
 
-	assert.equal(threadsEnabled(), false, 'no config file: off');
+	assert.equal(threadsEnabled(), true, 'no config file: on (the default)');
 	mkdirSync(dirname(PATHS.config), { recursive: true });
+	writeFileSync(PATHS.config, JSON.stringify({ daemon: { threads: { enabled: false } } }));
+	assert.equal(threadsEnabled(), false, 'an explicit false turns it off');
 	writeFileSync(PATHS.config, JSON.stringify({ daemon: { threads: { enabled: true } } }));
 	assert.equal(threadsEnabled(), true);
-	writeFileSync(PATHS.config, JSON.stringify({ daemon: { threads: { enabled: 'yes' } } }));
-	assert.equal(threadsEnabled(), false, 'only true turns it on');
+	writeFileSync(PATHS.config, JSON.stringify({ daemon: { threads: { enabled: 'no' } } }));
+	assert.equal(threadsEnabled(), true, 'only false turns it off');
 	writeFileSync(PATHS.config, '{not json');
-	assert.equal(threadsEnabled(), false, 'an unreadable config: off');
+	assert.equal(threadsEnabled(), true, 'an unreadable config: the default');
 
 	const conn = services.connectWorker();
 	const hub = new HubClient(conn.workerData.hubPort);

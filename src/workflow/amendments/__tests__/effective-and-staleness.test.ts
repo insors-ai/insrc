@@ -29,6 +29,7 @@ import { computeHldEffectiveHash } from '../../artifacts/lld.js';
 import { getEffectiveHld, getEffectiveHash } from '../effective.js';
 import { scanLldStaleness } from '../staleness.js';
 import { approveAmendment, proposeAmendment } from '../store.js';
+import { mkAmendmentRepo } from './epic-head.js';
 import type { AmendmentRecord } from '../types.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
@@ -137,26 +138,26 @@ test('getEffectiveHld with no amendments returns base unchanged', () => {
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('getEffectiveHld applies approved amendments to body', () => {
-	const repo = mkdtempSync(join(tmpdir(), 'insrc-eff-'));
+test('getEffectiveHld applies approved amendments to body', async () => {
+	const repo = mkAmendmentRepo(HASH);
 	try {
 		const base = seedHld(repo, HASH, 'hld-1', baseBody(), true);
-		proposeAmendment(repo, pendingAmendmentRecord(HASH, AMD1));
-		approveAmendment(repo, AMD1, 'alice');
+		await proposeAmendment(repo, pendingAmendmentRecord(HASH, AMD1));
+		await approveAmendment(repo, AMD1, 'alice');
 		const effective = getEffectiveHld(repo, HASH, base);
 		assert.match(effective.body.sharedContracts[0]!.interfaceSketch, /batchSize\?/);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('getEffectiveHash changes when an amendment is approved', () => {
-	const repo = mkdtempSync(join(tmpdir(), 'insrc-eff-'));
+test('getEffectiveHash changes when an amendment is approved', async () => {
+	const repo = mkAmendmentRepo(HASH);
 	try {
 		const base = seedHld(repo, HASH, 'hld-1', baseBody(), true);
 		const before = getEffectiveHash(repo, HASH, base);
-		proposeAmendment(repo, pendingAmendmentRecord(HASH, AMD1));
+		await proposeAmendment(repo, pendingAmendmentRecord(HASH, AMD1));
 		const midPending = getEffectiveHash(repo, HASH, base);
 		assert.equal(midPending, before);
-		approveAmendment(repo, AMD1, 'alice');
+		await approveAmendment(repo, AMD1, 'alice');
 		const after = getEffectiveHash(repo, HASH, base);
 		assert.notEqual(before, after);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
@@ -178,14 +179,14 @@ test('scanLldStaleness reports up-to-date when LLD hash matches current effectiv
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('scanLldStaleness reports amendment-<id> when a new amendment lands', () => {
-	const repo = mkdtempSync(join(tmpdir(), 'insrc-eff-'));
+test('scanLldStaleness reports amendment-<id> when a new amendment lands', async () => {
+	const repo = mkAmendmentRepo(HASH);
 	try {
 		const base = seedHld(repo, HASH, 'hld-1', baseBody(), true);
 		const preHash = computeHldEffectiveHash('hld-1', []);
 		seedLld(repo, HASH, 's1', 'hld-1', preHash, []);
-		proposeAmendment(repo, pendingAmendmentRecord(HASH, AMD1));
-		approveAmendment(repo, AMD1, 'alice');
+		await proposeAmendment(repo, pendingAmendmentRecord(HASH, AMD1));
+		await approveAmendment(repo, AMD1, 'alice');
 		const rows = scanLldStaleness(repo, HASH, base);
 		assert.equal(rows[0]!.stale, true);
 		assert.equal(rows[0]!.staleReason, `amendment-${AMD1}`);

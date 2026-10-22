@@ -24,13 +24,12 @@ import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { approveArtifactByJsonPath } from '../gates.js';
 import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, writeAtomic } from '../storage.js';
 import { buildChainReport, formatChainReport } from '../chain.js';
 import { computeHldEffectiveHash } from '../artifacts/lld.js';
 import { proposeAmendment } from '../amendments/store.js';
 import type { AmendmentRecord } from '../amendments/types.js';
-import { stampOtherPartyReview } from './helpers/other-party-review.js';
+import { markApprovedSync } from './lifecycle-fixtures.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';   // stable anchor for the nested md-path resolver
@@ -39,10 +38,9 @@ const CREATED = '2026-07-17T07:42:28.275Z';   // stable anchor for the nested md
 // Fixtures
 // ---------------------------------------------------------------------------
 
-/** Approve a fixture the way a real one is approved: reviewed by the other party first. */
+/** A fixture that is already approved: its head carries an approved lifecycle. */
 function approveReviewed(jsonPath: string): void {
-	stampOtherPartyReview(jsonPath);
-	approveArtifactByJsonPath(jsonPath);
+	markApprovedSync(jsonPath);
 }
 
 function writeDefine(repo: string, epicHash: string, opts: { stories: string[] } = { stories: ['s1', 's2'] }): string {
@@ -192,12 +190,12 @@ test('chain: unapproved LLD blocks the chain → approve-lld', () => {
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('chain: pending amendment surfaces before further LLDs', () => {
+test('chain: pending amendment surfaces before further LLDs', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-chain-'));
 	try {
 		approveReviewed(writeDefine(repo, HASH));
 		approveReviewed(writeHld(repo, HASH, 'hld-1').path);
-		proposeAmendment(repo, pendingAmendment(HASH, `AMD-${HASH}-1`, 'hld-1'));
+		await proposeAmendment(repo, pendingAmendment(HASH, `AMD-${HASH}-1`, 'hld-1'));
 		const r = buildChainReport(repo, HASH);
 		assert.equal(r.nextAction.kind, 'review-amendment');
 		assert.equal(r.amendments.pending, 1);

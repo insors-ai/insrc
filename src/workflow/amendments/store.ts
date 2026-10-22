@@ -6,30 +6,53 @@
 /**
  * On-disk store for HLD amendments.
  *
- * Layout (post-hash migration):
- *   .insrc/artifacts/AMD-<epicHash>-<n>.json     — one file per amendment
+ * Layout:
+ *   .insrc/artifacts/AMD-<epicHash>-<n>.json     — one head per amendment
  *
- * Each record is written once when proposed. The immutability
- * contract:
- *   - `amendment` + `rationale` + `citations` + `proposedBy` +
- *     `proposedAt` NEVER change after the initial write.
- *   - `status` transitions pending → approved | rejected exactly once.
- *   - approve fills `approvedAt`, reject fills `rejectedAt` +
- *     `rejectedReason`. No un-reject; a rejected id is dead.
+ * An amendment is a head like every other artifact: `{ meta, body, citations }`, with the proposal in the body (`amendment`,
+ * `rationale`, `proposedBy`, `proposedAt`, `hldBaseRunId`, `epicSlug`, `sideEffects`) and its decision in the lifecycle. The
+ * {@link AmendmentRecord} the rest of the system reads is a VIEW of that head: its `status` is the lifecycle's (a draft is
+ * `pending`), `approvedAt` and `approvedBy` are the lifecycle approval's, and the reason a rejection was given is the 'reject'
+ * entry of the amendment's log.
+ *
+ * The proposal is immutable. The head is written once, when proposed; a decision is a lifecycle step (approve or reject) that
+ * leaves the content alone, and a decided amendment is never decided again. A rejected id is dead.
  */
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { ArtifactIds } from '../artifact-ids.js';
+import { approvalStateOf, approvedAtOf, lifecycleOfMeta } from '../artifact-core/approval-view.js';
+import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
+import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
+import type { LifecycleService } from '../artifact-core/lifecycle-service.js';
+import type { Actor, ChangeLogEntry } from '../artifact-core/types.js';
 import {
 	amendmentArtifactPath,
 	amendmentFilenamePrefix,
 	amendmentsRootDir,
-	writeAtomic,
 } from '../storage.js';
 import { isAmendmentRecord } from './types.js';
 import type { AmendmentRecord, AmendmentStatus } from './types.js';
+
+type Obj = Record<string, unknown>;
+const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** What a decision is made through: the repository's lifecycle service, or one built over its files. */
+export interface AmendmentDecisionOptions {
+	readonly lifecycle?: LifecycleService | undefined;
+}
+
+const serviceFor = (repoPath: string, opts: AmendmentDecisionOptions | undefined): LifecycleService =>
+	opts?.lifecycle ?? createRepoLifecycle(repoPath).service;
+
+/** The actor a decision names: a namespaced id as it is, any other name as `local:<name>` carrying the name it was given. */
+function personOf(who: string): Actor {
+	if (/^[a-z][a-z0-9-]*:\S+$/.test(who) && who === who.toLowerCase()) return { id: who, kind: 'person', properties: {} };
+	const slug = who.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
+	return { id: `local:${slug.length > 0 ? slug : 'unknown'}`, kind: 'person', name: who, properties: {} };
+}
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -78,12 +101,72 @@ export function nextAmendmentId(repoPath: string, epicHash: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// The head and its view
+// ---------------------------------------------------------------------------
+
+/** The body of an amendment's head: the proposal, which never changes. */
+function bodyOf(record: AmendmentRecord): Obj {
+	return {
+		id: record.id, epicSlug: record.epicSlug, hldBaseRunId: record.hldBaseRunId,
+		amendment: record.amendment, rationale: record.rationale, proposedBy: record.proposedBy, proposedAt: record.proposedAt,
+		...(record.sideEffects !== undefined ? { sideEffects: record.sideEffects } : {}),
+	};
+}
+
+/** The latest 'reject' entry of an amendment's log: when, and the reason given. */
+function rejectionOf(repoPath: string, id: string): { readonly at: string; readonly reason: string } | undefined {
+	try {
+		const entry = [...new FileSidecarStore(repoPath).readRecordsSync<ChangeLogEntry>('log', id)].reverse().find(e => e.operation === 'reject');
+		return entry === undefined ? undefined : { at: entry.timestamp, reason: entry.outcome?.summary ?? '' };
+	} catch { return undefined; }
+}
+
+/**
+ * The record a head is, or undefined when the file is not a converted amendment head (a flat record from before the s9
+ * conversion has no `meta`). The epic hash is the id's, so it needs nothing the head does not carry.
+ */
+export function amendmentOfHead(repoPath: string, raw: unknown): AmendmentRecord | undefined {
+	if (!isObj(raw) || !isObj(raw['meta']) || !isObj(raw['body'])) return undefined;
+	const meta = raw['meta'];
+	const body = raw['body'];
+	const id = typeof body['id'] === 'string' ? body['id'] : undefined;
+	const epicHash = typeof meta['epicHash'] === 'string' ? meta['epicHash'] : undefined;
+	if (id === undefined || epicHash === undefined) return undefined;
+	const state = approvalStateOf(meta);
+	const approvedAt = approvedAtOf(meta);
+	const approval = lifecycleOfMeta(meta)?.['approval'];
+	const actor = isObj(approval) && isObj(approval['by']) ? approval['by'] : undefined;
+	const by = typeof actor?.['name'] === 'string' ? actor['name'] : typeof actor?.['id'] === 'string' ? actor['id'] : undefined;
+	const approvedBy = by ?? (typeof body['approvedBy'] === 'string' ? body['approvedBy'] : undefined);
+	const rejection = state === 'rejected' ? rejectionOf(repoPath, id) : undefined;
+	const rec: unknown = {
+		id, epicHash,
+		epicSlug:     typeof meta['epicSlug'] === 'string' ? meta['epicSlug'] : typeof body['epicSlug'] === 'string' ? body['epicSlug'] : '',
+		hldBaseRunId: body['hldBaseRunId'],
+		amendment:    body['amendment'],
+		rationale:    body['rationale'],
+		citations:    Array.isArray(raw['citations']) ? raw['citations'] : [],
+		proposedBy:   body['proposedBy'],
+		proposedAt:   body['proposedAt'],
+		...(body['sideEffects'] !== undefined ? { sideEffects: body['sideEffects'] } : {}),
+		status:       (state === 'approved' ? 'approved' : state === 'rejected' ? 'rejected' : 'pending') satisfies AmendmentStatus,
+		...(approvedAt !== undefined ? { approvedAt } : {}),
+		...(approvedBy !== undefined && state === 'approved' ? { approvedBy } : {}),
+		...(rejection !== undefined ? { rejectedAt: rejection.at, rejectedReason: rejection.reason } : {}),
+	};
+	return isAmendmentRecord(rec) ? rec : undefined;
+}
+
+function readHead(repoPath: string, path: string): AmendmentRecord | undefined {
+	try { return amendmentOfHead(repoPath, JSON.parse(readFileSync(path, 'utf8'))); } catch { return undefined; }
+}
+
+// ---------------------------------------------------------------------------
 // Writes
 // ---------------------------------------------------------------------------
 
-/** Propose an amendment. Fails if an amendment with the same id
- *  already exists on disk. */
-export function proposeAmendment(repoPath: string, record: AmendmentRecord): void {
+/** Propose an amendment: write its head, a draft. Fails if an amendment with the same id already exists on disk. */
+export async function proposeAmendment(repoPath: string, record: AmendmentRecord, opts?: AmendmentDecisionOptions): Promise<void> {
 	const path = amendmentPath(repoPath, record.id);
 	if (existsSync(path)) {
 		throw new AmendmentIdConflictError(
@@ -95,81 +178,47 @@ export function proposeAmendment(repoPath: string, record: AmendmentRecord): voi
 			`proposeAmendment: status must be 'pending' at write time (got '${record.status}')`,
 		);
 	}
-	writeAtomic(path, JSON.stringify(record, null, 2) + '\n');
+	const proposer: Actor = { id: `insrc:${record.proposedBy.workflow}`, kind: 'agent', properties: {} };
+	await serviceFor(repoPath, opts).updateContent(
+		record.id, proposer, { body: bodyOf(record), citations: record.citations }, { create: true },
+	);
 }
 
-/** Mark an amendment approved. Refuses if it's already resolved. */
-export function approveAmendment(
+/** Approve an amendment. Refuses if it's already resolved. */
+export async function approveAmendment(
 	repoPath:    string,
 	amendmentId: string,
 	approvedBy:  string,
-): AmendmentRecord {
-	return transition(repoPath, amendmentId, prev => {
-		if (prev.status !== 'pending') {
-			throw new AmendmentImmutabilityError(
-				`amendment '${amendmentId}' is ${prev.status}; cannot transition to approved`,
-			);
-		}
-		return {
-			...prev,
-			status:     'approved' as AmendmentStatus,
-			approvedAt: new Date().toISOString(),
-			approvedBy,
-		};
-	});
+	opts?:       AmendmentDecisionOptions,
+): Promise<AmendmentRecord> {
+	const prev = readAmendment(repoPath, amendmentId);
+	if (prev.status !== 'pending') {
+		throw new AmendmentImmutabilityError(
+			`amendment '${amendmentId}' is ${prev.status}; cannot transition to approved`,
+		);
+	}
+	await serviceFor(repoPath, opts).apply(amendmentId, 'approve', personOf(approvedBy));
+	return readAmendment(repoPath, amendmentId);
 }
 
-/** Mark an amendment rejected. Refuses if it's already resolved. */
-export function rejectAmendment(
+/** Reject an amendment. Refuses if it's already resolved. */
+export async function rejectAmendment(
 	repoPath:    string,
 	amendmentId: string,
 	reason:      string,
-): AmendmentRecord {
+	opts?:       AmendmentDecisionOptions & { readonly rejectedBy?: string | undefined },
+): Promise<AmendmentRecord> {
 	if (typeof reason !== 'string' || reason.trim().length === 0) {
 		throw new Error(`rejectAmendment: reason is required`);
 	}
-	return transition(repoPath, amendmentId, prev => {
-		if (prev.status !== 'pending') {
-			throw new AmendmentImmutabilityError(
-				`amendment '${amendmentId}' is ${prev.status}; cannot transition to rejected`,
-			);
-		}
-		return {
-			...prev,
-			status:         'rejected' as AmendmentStatus,
-			rejectedAt:     new Date().toISOString(),
-			rejectedReason: reason,
-		};
-	});
-}
-
-function transition(
-	repoPath:    string,
-	amendmentId: string,
-	mutate:      (prev: AmendmentRecord) => AmendmentRecord,
-): AmendmentRecord {
-	const path = amendmentPath(repoPath, amendmentId);
-	if (!existsSync(path)) {
-		throw new AmendmentNotFoundError(`amendment '${amendmentId}' not found at ${path}`);
+	const prev = readAmendment(repoPath, amendmentId);
+	if (prev.status !== 'pending') {
+		throw new AmendmentImmutabilityError(
+			`amendment '${amendmentId}' is ${prev.status}; cannot transition to rejected`,
+		);
 	}
-	const raw = readFileSync(path, 'utf8');
-	const prev = JSON.parse(raw) as unknown;
-	if (!isAmendmentRecord(prev)) {
-		throw new AmendmentImmutabilityError(`file at ${path} is not a valid AmendmentRecord`);
-	}
-	const next = mutate(prev);
-	assertFrozen(prev, next);
-	writeAtomic(path, JSON.stringify(next, null, 2) + '\n');
-	return next;
-}
-
-function assertFrozen(prev: AmendmentRecord, next: AmendmentRecord): void {
-	const frozen: (keyof AmendmentRecord)[] = ['id', 'epicHash', 'epicSlug', 'hldBaseRunId', 'amendment', 'rationale', 'citations', 'proposedBy', 'proposedAt', 'sideEffects'];
-	for (const k of frozen) {
-		if (JSON.stringify(prev[k]) !== JSON.stringify(next[k])) {
-			throw new AmendmentImmutabilityError(`amendment field '${String(k)}' cannot change`);
-		}
-	}
+	await serviceFor(repoPath, opts).apply(amendmentId, 'reject', personOf(opts?.rejectedBy ?? 'insrc:amendments'), { reason });
+	return readAmendment(repoPath, amendmentId);
 }
 
 // ---------------------------------------------------------------------------
@@ -181,10 +230,9 @@ export function readAmendment(repoPath: string, amendmentId: string): AmendmentR
 	if (!existsSync(path)) {
 		throw new AmendmentNotFoundError(`amendment '${amendmentId}' not found at ${path}`);
 	}
-	const raw = readFileSync(path, 'utf8');
-	const rec = JSON.parse(raw) as unknown;
-	if (!isAmendmentRecord(rec)) {
-		throw new Error(`file at ${path} is not a valid AmendmentRecord`);
+	const rec = amendmentOfHead(repoPath, JSON.parse(readFileSync(path, 'utf8')));
+	if (rec === undefined) {
+		throw new Error(`file at ${path} is not a valid amendment head (a flat record has to be converted by the s9 conversion)`);
 	}
 	return rec;
 }
@@ -200,9 +248,8 @@ export function listAmendments(
 	for (const name of readdirSync(dir)) {
 		if (!name.endsWith('.json')) continue;
 		if (!name.startsWith(prefix)) continue;
-		const raw = readFileSync(join(dir, name), 'utf8');
-		const rec = JSON.parse(raw) as unknown;
-		if (isAmendmentRecord(rec)) out.push(rec);
+		const rec = readHead(repoPath, join(dir, name));
+		if (rec !== undefined) out.push(rec);
 	}
 	// Deterministic order: `AMD-<hash>-<n>` sorted by n ascending.
 	return out.sort((a, b) => amendmentSuffixNum(a.id) - amendmentSuffixNum(b.id));

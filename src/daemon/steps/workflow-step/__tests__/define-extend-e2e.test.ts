@@ -188,15 +188,15 @@ test('define EXTEND: scope=extend → skip frame/compose → append Story + pend
 		assert.equal(approvalStateOf(define.meta), 'pending', 'the Epic awaits its re-approval');
 
 		// A pending storyBoundary.addStory amendment was filed.
-		const amdFiles = readdirSync(join(repo, ARTIFACTS_DIR)).filter(n => n.startsWith(`AMD-${HASH}-`));
+		const amdFiles = readdirSync(join(repo, ARTIFACTS_DIR)).filter(n => n.startsWith(`AMD-${HASH}-`) && n.endsWith('.json'));
 		assert.equal(amdFiles.length, 1);
-		const amd = JSON.parse(readFileSync(join(repo, ARTIFACTS_DIR, amdFiles[0]!), 'utf8')) as { status: string; amendment: { type: string; storyId: string } };
-		assert.equal(amd.status, 'pending');
-		assert.equal(amd.amendment.type, 'storyBoundary.addStory');
-		assert.equal(amd.amendment.storyId, 's2');
+		const amd = JSON.parse(readFileSync(join(repo, ARTIFACTS_DIR, amdFiles[0]!), 'utf8')) as { meta: Record<string, unknown>; body: { amendment: { type: string; storyId: string } } };
+		assert.equal(approvalStateOf(amd.meta), 'pending');
+		assert.equal(amd.body.amendment.type, 'storyBoundary.addStory');
+		assert.equal(amd.body.amendment.storyId, 's2');
 
 		// After approving the amendment, the new Story is in the effective HLD.
-		approveAmendment(repo, `AMD-${HASH}-1`, 'tester');
+		await approveAmendment(repo, `AMD-${HASH}-1`, 'tester');
 		const eff = requireApprovedHld(repo, HASH);
 		assert.ok(eff.body.storyBoundaries.some(b => b.storyId === 's2'), 'effective HLD carries the new Story boundary');
 	} finally {
@@ -275,7 +275,7 @@ test('define EXTEND: s4 scope-boundary hard-fail refuses synthesize (no Story ap
 		// No side effects: the target Define was NOT mutated, no amendment filed.
 		const define = JSON.parse(readFileSync(defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering').json, 'utf8')) as { body: { stories: { id: string }[] } };
 		assert.deepEqual(define.body.stories.map(s => s.id), ['s1']);
-		const amdFiles = readdirSync(join(repo, ARTIFACTS_DIR)).filter(n => n.startsWith(`AMD-${HASH}-`));
+		const amdFiles = readdirSync(join(repo, ARTIFACTS_DIR)).filter(n => n.startsWith(`AMD-${HASH}-`) && n.endsWith('.json'));
 		assert.equal(amdFiles.length, 0);
 	} finally {
 		rmSync(repo, { recursive: true, force: true });

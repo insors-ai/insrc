@@ -440,7 +440,7 @@ async function finalizeByWorkflow(
 			case 'stub':         return finalizeStub(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'brainstorm':   return finalizeBrainstorm(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'issue':        return finalizeIssue(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
-			case 'define':       return finalizeDefine(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
+			case 'define':       return await finalizeDefine(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'design.epic':  return await finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'design.story': return await finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'plan':         return finalizePlan(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
@@ -1155,7 +1155,7 @@ export function assembleFunctionalDefinition(
 	return { fd };
 }
 
-function finalizeDefine(
+async function finalizeDefine(
 	intent:      WorkflowIntent,
 	stepOutputs: Readonly<Record<string, unknown>>,
 	runId:       string,
@@ -1163,9 +1163,9 @@ function finalizeDefine(
 	llmResponse: Record<string, unknown>,
 	model:       string,
 	attribution?: ArtifactModelAttribution,
-): FinalizeResult {
+): Promise<FinalizeResult> {
 	if (defineDecisionOf(stepOutputs) === 'extend') {
-		return finalizeDefineExtend(intent, stepOutputs, runId, elapsedMs, model);
+		return await finalizeDefineExtend(intent, stepOutputs, runId, elapsedMs, model);
 	}
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
@@ -1270,14 +1270,14 @@ function finalizeDefine(
  *  amendment, and emit an ExtendArtifact. All validation returns happen
  *  BEFORE any side effect, so a retryable failure never leaves a partial
  *  write behind. */
-function finalizeDefineExtend(
+async function finalizeDefineExtend(
 	intent:      WorkflowIntent,
 	stepOutputs: Readonly<Record<string, unknown>>,
 	runId:       string,
 	elapsedMs:   number,
 	model:       string,
 	attribution?: ArtifactModelAttribution,
-): FinalizeResult {
+): Promise<FinalizeResult> {
 	const s1 = stepOutputs['s1'] as ScopeAssessOutput | undefined;
 	if (s1 === undefined || s1.decision !== 'extend') {
 		return { ok: false, failure: schemaFailure(`extend finalize requires s1.decision='extend'`) };
@@ -1371,7 +1371,7 @@ function finalizeDefineExtend(
 		proposedAt: new Date().toISOString(),
 		status:     'pending',
 	};
-	proposeAmendment(intent.repoPath, amendmentRec);
+	await proposeAmendment(intent.repoPath, amendmentRec);
 	persistScopeAnalyzeCache(epicHash, s1.analyzeBundles);
 
 	const artifact: ExtendArtifact = {
@@ -2324,7 +2324,7 @@ async function finalizeDesignStory(
 				proposedAt:   new Date().toISOString(),
 				status:       'pending',
 			};
-			proposeAmendment(intent.repoPath, record);
+			await proposeAmendment(intent.repoPath, record);
 			persisted.push(amendmentId);
 		}
 	}

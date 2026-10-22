@@ -84,7 +84,6 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/workflow/artifact-core/store.ts', class: 'store', via: 'injected', note: 'ArtifactStore.write prepares the head with prepareArtifactWrite (the one revision rule) and replaces it with writeAtomic, after staging the operation in the journal and appending its change log entry' },
 
 	// --- record: a change request, not a claim unit or a signoff-covered stage artifact ---
-	{ file: 'src/workflow/amendments/store.ts', class: 'record', via: 'raw', note: 'an amendment is a change request against the HLD; no signoff binds to its revision. If amendments are ever put under signoff this entry becomes content' },
 
 	// --- the conversion (s9): one-time writers that bring a repository onto the common model ----
 	{ file: 'src/workflow/convert/migrated-head.ts', class: 'migration', via: 'raw', note: 'the migration write: replaces a head with its converted bytes under the artifact\'s lock, after the migrated log entries, and keeps meta.revision, the status and the approval as stored (the store would move the revision and return an approved head to draft)' },

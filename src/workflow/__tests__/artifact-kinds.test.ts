@@ -18,7 +18,7 @@ import { scanLldStaleness } from '../amendments/staleness.js';
 import type { HldArtifact } from '../artifacts/hld.js';
 import { loadArtifactRecordSet } from '../delivery/load.js';
 import {
-	approveArtifactByJsonPath, approveWorkflowTarget, epicCatalog, NotApprovableError, NOT_APPROVABLE_REASON, rejectArtifactByJsonPath,
+	approveWorkflowTarget, epicCatalog, NotApprovableError, NOT_APPROVABLE_REASON,
 } from '../gates.js';
 import { buildOwnershipIndex } from '../locate/ownership.js';
 import { listArtifactMdPaths, listWorkItems } from '../path-scheme.js';
@@ -26,6 +26,8 @@ import { listPendingArtifacts } from '../pending.js';
 import { listDeferred, questionId } from '../questions.js';
 import { parseArtifactId } from '../resolve-comment.js';
 import { persistTestRecordTask } from '../runners/build/test-record.js';
+import { draftMeta } from './lifecycle-fixtures.js';
+import { approveJson, rejectJson } from './helpers/approve.js';
 import { artifactIdMarker, artifactJsonPath, testsArtifactId } from '../storage.js';
 import { resolveWorkflowRef } from '../tracker/resolve.js';
 import { approvalStateOf } from '../artifact-core/approval-view.js';
@@ -58,9 +60,13 @@ function seedRepo(): { repo: string; cleanup: () => void } {
 	art(`PLAN-${HASH}-s1`, { workflow: 'plan', storyId: 's1' }, { tasks: [{ id: 't1', title: 'T', summary: 's', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['a'], derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'n' }] }], testStrategyCoverage: [] });
 	art(`BUILD-${HASH}-s1`, { workflow: 'build', storyId: 's1' }, { tasks: [{ id: 't1', passed: true }] });
 	wr(`.insrc/artifacts/AMD-${HASH}-1.json`, JSON.stringify({
-		id: `AMD-${HASH}-1`, epicHash: HASH, epicSlug: 'pay-things', hldBaseRunId: `run-HLD-${HASH}`,
-		amendment: { type: 'nonFunctional.retarget', key: 'latency', newTarget: '100 ms' },
-		rationale: 'r', citations: [], proposedBy: { workflow: 'design.story', storyId: 's1' }, proposedAt: AT, status: 'pending',
+		meta: { workflow: 'design.epic', epicHash: HASH, epicSlug: 'pay-things', createdAt: AT, epicCreatedAt: AT, ...draftMeta() },
+		body: {
+			id: `AMD-${HASH}-1`, hldBaseRunId: `run-HLD-${HASH}`,
+			amendment: { type: 'nonFunctional.retarget', key: 'latency', newTarget: '100 ms' },
+			rationale: 'r', proposedBy: { workflow: 'design.story', storyId: 's1' }, proposedAt: AT,
+		},
+		citations: [],
 	}));
 	// A code review that blocks, for the approval case with enforcement on.
 	art(`CR-${HASH}-s1`, { workflow: 'code-review', storyId: 's1', reviewedBy: 'daemon' }, { verdict: 'block', findings: [{ id: 'f1', severity: 'HIGH', title: 'x', status: 'open' }] });
@@ -173,18 +179,18 @@ test("approval of a TESTS record by its md path and by its json path through the
 		assert.equal(build.codeReview.length, 1);
 
 		// The two functions every approval and rejection go through.
-		assert.throws(() => approveArtifactByJsonPath(json), NotApprovableError);
-		assert.throws(() => approveArtifactByJsonPath(json, { overrideReview: 'because' }), NotApprovableError);
-		assert.throws(() => rejectArtifactByJsonPath(json, 'no'), NotApprovableError);
+		await assert.rejects(approveJson(json), NotApprovableError);
+		await assert.rejects(approveJson(json, 'because'), NotApprovableError);
+		await assert.rejects(rejectJson(json, 'no'), NotApprovableError);
 		// ... also for a path that does not exist: the kind decides, not the file.
-		assert.throws(() => approveArtifactByJsonPath(join(dirname(json), `TESTS-${HASH}-s9.json`)), NotApprovableError);
+		await assert.rejects(approveJson(join(dirname(json), `TESTS-${HASH}-s9.json`)), NotApprovableError);
 		unchanged();
 
 		// The TUI's service, which calls them directly.
 		await assert.rejects(tuiApprove(md, false), (err: unknown) => err instanceof NotApprovableError && err.message.startsWith('not-approvable:'));
 		await assert.rejects(tuiApprove(json, false, 'because'), NotApprovableError);
-		assert.throws(() => tuiReject(md, 'no'), NotApprovableError);
-		assert.throws(() => tuiReject(json, 'no'), NotApprovableError);
+		await assert.rejects(tuiReject(md, 'no'), NotApprovableError);
+		await assert.rejects(tuiReject(json, 'no'), NotApprovableError);
 		unchanged();
 
 		// The batch for the Epic neither stamps nor lists it.

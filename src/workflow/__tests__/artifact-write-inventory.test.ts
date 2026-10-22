@@ -62,7 +62,8 @@ test('every writer file is inventoried, annotated and classified as the design s
 		'src/workflow/runners/build/standalone-record.ts', 'src/workflow/code-review/runner.ts', 'src/workflow/runners/build/test-record.ts', 'src/daemon/steps/code-review-step/handler.ts',
 	]) assert.equal(classOf(f), 'content', f);
 	for (const f of ['src/workflow/gates.ts', 'src/workflow/review/resolve.ts']) assert.equal(classOf(f), 'mixed', f);
-	assert.equal(classOf('src/workflow/amendments/store.ts'), 'record');
+	// an amendment is a head written through the lifecycle service, so its store has no writer of its own
+	assert.equal(byFile.has('src/workflow/amendments/store.ts'), false, 'the amendment store needs no entry');
 	assert.equal(classOf('src/daemon/steps/workflow-step/resume.ts'), 'migration');
 	// feedback is human provenance: appending it never mints a revision
 	assert.equal(classOf('src/workflow/artifacts/provenance/writer.ts'), 'meta-only');

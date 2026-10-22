@@ -170,6 +170,10 @@ export interface AmendmentSideEffects {
 	readonly addedStoryDependencies?: readonly { readonly from: string; readonly to: string }[];
 }
 
+/**
+ * An amendment as the system reads it: a view of its head (see store.ts). The proposal fields come from the head's body; `status`,
+ * `approvedAt` and `approvedBy` are the head's lifecycle, and the rejection time and reason are the 'reject' entry of its log.
+ */
 export interface AmendmentRecord {
 	readonly id:           string;                  // 'AMD-<epicHash>-<n>'
 	readonly epicHash:     string;                  // canonical Epic hash

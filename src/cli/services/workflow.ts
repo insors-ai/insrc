@@ -355,11 +355,11 @@ export function showAmendment(repoPath: string, amendmentId: string): AmendmentR
 	return readAmendment(repoPath, amendmentId);
 }
 
-export function approveAmendmentById(repoPath: string, amendmentId: string, approvedBy: string): AmendmentRecord {
+export function approveAmendmentById(repoPath: string, amendmentId: string, approvedBy: string): Promise<AmendmentRecord> {
 	return approveAmendment(repoPath, amendmentId, approvedBy);
 }
 
-export function rejectAmendmentById(repoPath: string, amendmentId: string, reason: string): AmendmentRecord {
+export function rejectAmendmentById(repoPath: string, amendmentId: string, reason: string): Promise<AmendmentRecord> {
 	return rejectAmendment(repoPath, amendmentId, reason);
 }
 

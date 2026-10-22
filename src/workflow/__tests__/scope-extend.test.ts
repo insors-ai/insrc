@@ -20,13 +20,14 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { approveArtifactByJsonPath, appendStoryToDefine, epicCatalog, nextStoryId } from '../gates.js';
+import { appendStoryToDefine, epicCatalog, nextStoryId } from '../gates.js';
 import { defineArtifactPaths } from '../storage.js';
 import { applyAmendments } from '../amendments/applier.js';
 import type { AmendmentRecord } from '../amendments/types.js';
 import type { DefineArtifact, DefineStory } from '../artifacts/define.js';
 import type { HldBody } from '../artifacts/hld.js';
-import { stampOtherPartyReview } from './helpers/other-party-review.js';
+import { markApprovedSync } from './lifecycle-fixtures.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';
@@ -50,7 +51,7 @@ function seedDefine(repo: string, opts: { approved: boolean; slug?: string; stor
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	};
 	writeFileSync(paths.json, JSON.stringify(define, null, 2) + '\n');
-	if (opts.approved) { stampOtherPartyReview(paths.json); approveArtifactByJsonPath(paths.json); }
+	if (opts.approved) markApprovedSync(paths.json);
 	return paths.json;
 }
 
@@ -105,19 +106,19 @@ test('nextStoryId returns s<max+1>', () => {
 	}
 });
 
-test('appendStoryToDefine appends the Story, re-renders md, and retains approval', () => {
+test('appendStoryToDefine appends the Story, re-renders md, and returns the approved Define to draft', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-app-'));
 	try {
 		const jsonPath = seedDefine(repo, { approved: true });
 		const before = JSON.parse(readFileSync(jsonPath, 'utf8')) as DefineArtifact;
-		assert.ok(before.meta.approvedAt);
+		assert.equal(approvalStateOf(before.meta), 'approved');
 		const story: DefineStory = { id: 's2', title: 'Filter by multiple tags', userValue: 'power users triage faster', acceptanceCriteria: [{ id: 'ac1', given: 'tagged todos', when: 'user picks two tags', then: 'union is shown', operationalizes: [] }] };
 		const next = appendStoryToDefine(repo, HASH, story);
 		assert.equal(next.body.stories.length, 2);
 		assert.equal(next.body.stories[1]!.id, 's2');
-		// approval preserved
-		assert.equal(next.meta.approvedAt, before.meta.approvedAt);
+		// the content changed, so the Epic awaits its re-approval
 		const onDisk = JSON.parse(readFileSync(jsonPath, 'utf8')) as DefineArtifact;
+		assert.equal(approvalStateOf(onDisk.meta), 'pending');
 		assert.equal(onDisk.body.stories.length, 2);
 		// md re-rendered with the new story title
 		const mdPath = defineArtifactPaths(repo, HASH, next.meta.createdAt, 'epic', next.meta.epicSlug).md;

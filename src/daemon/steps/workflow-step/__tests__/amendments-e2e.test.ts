@@ -329,7 +329,7 @@ test('Approving amendment marks existing LLD stale via effective-hash mismatch',
 
 		const amendments = listAmendments(repo, slug);
 		const pending = amendments[0]!;
-		approveAmendment(repo, pending.id, 'human');
+		await approveAmendment(repo, pending.id, 'human');
 
 		// The s1 LLD was written before amendment approval; its
 		// hldEffectiveHash reflects pre-approval state. After approval,

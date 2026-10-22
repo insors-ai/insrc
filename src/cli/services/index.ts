@@ -63,8 +63,8 @@ export interface Services {
 		reject(artifactPath: string, reason: string): Promise<RejectionResult>;
 		ackStale(artifactPath: string, reason: string): Promise<{ readonly path: string; readonly ackedAt: string; readonly reason: string }>;
 		amendments(repoPath: string, epicHash: string): readonly AmendmentRecord[];
-		approveAmendment(repoPath: string, amendmentId: string, approvedBy: string): AmendmentRecord;
-		rejectAmendment(repoPath: string, amendmentId: string, reason: string): AmendmentRecord;
+		approveAmendment(repoPath: string, amendmentId: string, approvedBy: string): Promise<AmendmentRecord>;
+		rejectAmendment(repoPath: string, amendmentId: string, reason: string): Promise<AmendmentRecord>;
 		staleness(repoPath: string, epicHash: string): readonly StaleLldEntry[];
 		sync(repoPath: string, epicHash: string): import('../../workflow/tracker/sync.js').SyncResult;
 		deferredQuestions(repoPath: string, epicHash: string): readonly import('../../workflow/questions.js').DeferredQuestion[];

@@ -20,6 +20,7 @@ import { getDb } from '../../db/client.js';
 import { listRepos } from '../../db/repos.js';
 import { IndexerService } from '../../indexer/index.js';
 import { onIndexRunsChanged } from '../../indexer/run-record.js';
+import type { IndexRunView } from '../../indexer/run-record.js';
 import { Watcher } from '../../indexer/watcher.js';
 import { getLogger } from '../../shared/logger.js';
 import { withBackgroundHold } from '../../shared/locks/maintenance-lock.js';
@@ -67,11 +68,24 @@ indexer = new IndexerService(db, queue, watcher, configStore);
 // A full index's status and completeness change as it starts (status 'indexing',
 // then its state unfinished before it counts its files) and as it ends, so the
 // store slot is published at each of those steps too, not only after the job.
+// The store slot goes out before the runs that follow such a step, so a reader
+// who sees a run's figures also sees its repository's new status.
 let running = '';
+let latest: readonly IndexRunView[] = [];
+let storeFirst: Promise<void> | undefined;
 onIndexRunsChanged(runs => {
-	board.publishIndexRuns(runs);
+	latest = runs;
 	const now = runs.map(r => `${r.repoPath}:${r.filesSelected !== undefined}`).sort().join('\n');
-	if (now !== running) { running = now; void publishStore(); }
+	if (now !== running) {
+		running = now;
+		const pending = publishStore().then(() => {
+			if (storeFirst === pending) storeFirst = undefined;
+			board.publishIndexRuns(latest);
+		});
+		storeFirst = pending;
+		return;
+	}
+	if (storeFirst === undefined) board.publishIndexRuns(runs);
 });
 const service = indexer;
 

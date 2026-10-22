@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -85,3 +85,49 @@ Run at 2026-10-22T06:31:18.142Z on commit `045e7371`. Tests check: **passed**. 6
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/locks/__tests__/lock-manager.test.ts` | 0 | 10 | 0.4 s |  |
+
+## t3
+
+Run at 2026-10-22T06:46:38.033Z on commit `50770364`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: writer preference: a waiting exclusive blocks ifAvailable shared and runs before a waiting shared**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | writer preference: a waiting exclusive blocks ifAvailable shared and runs before a waiting shared | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: timeoutMs rejects with LockTimeoutError naming the holders and leaves no pending entry or count**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | timeoutMs rejects with LockTimeoutError naming the holders and leaves no pending entry or count | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: an already-aborted signal refuses before queuing; an abort while waiting rejects with signal.reason and cleans up**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an already-aborted signal refuses before queuing; an abort while waiting rejects with signal.reason and cleans up | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: requests for one name from one thread are served in arrival order**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | requests for one name from one thread are served in arrival order | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: a full pending table gives LockCapacityError(pending) and queues nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a full pending table gives LockCapacityError(pending) and queues nothing | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: a lock wait keeps its thread alive until it completes**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a lock wait keeps its thread alive until it completes | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/locks/__tests__/lock-manager.test.ts` | 0 | 16 | 1.1 s |  |

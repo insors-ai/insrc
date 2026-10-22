@@ -30,6 +30,7 @@ import { assembleCodeReviewGrounding, assembleDiffCodeReviewGrounding, type Grou
 import { runCodeReview, type CodeReviewRunnerDeps, type JudgeSlot } from '../runner.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, JudgeContext, ReviewDimension } from '../types.js';
 import { codeReviewRunStart, type CodeReviewRunDeps } from '../../../daemon/code-review-rpc.js';
+import { noopRoundWriter } from '../../__tests__/helpers/round-writer.js';
 
 const ENTITIES: readonly GroundedEntity[] = [
 	{ id: '1', file: 'src/a.ts', kind: 'function', name: 'fn', signature: 'fn()' },
@@ -111,7 +112,7 @@ test("every judge slot receives the run's groundingMode and the non-coverage jud
 		resolveProvider: () => ({ provider: {} as LLMProvider, modelLabel: 'm' }),
 		assembleDiffGrounding: (async () => ({ grounding: { symbols: [] }, changedFiles: ['src/a.ts'] })) as never,
 		write: () => {},
-		roundWriterFor: () => undefined,
+		roundWriterFor: () => noopRoundWriter(),
 		runReview: (async (s: CodeReviewSubject, p: LLMProvider, o: Parameters<typeof runCodeReview>[2], d: CodeReviewRunnerDeps | undefined) =>
 			runCodeReview(s, p, o, { judges: spyJudges(seen), assembleGrounding: d!.assembleGrounding, write: d!.write })) as never,
 	};

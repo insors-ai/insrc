@@ -36,7 +36,10 @@ import type { LLMProvider } from '../../../shared/types.js';
 import { reviewArtifactFile, SamePartyReviewError } from '../index.js';
 import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../template.js';
 import { envelopeProvider } from '../../review-pipeline/__tests__/enveloped.js';
+import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
+import { lifecycleReviewOf } from '../../artifact-core/approval-view.js';
 
+const HASH = 'abcd1234ef567890';
 const SPEC = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
 
 /** A provider that counts every call it receives, of either kind. */
@@ -61,18 +64,18 @@ const WORKFLOW: Record<Kind, string> = { DEF: 'define', LLD: 'design.story' };
 /** An artifact in the nested layout, so its md resolves to its json by marker. */
 function fixture(kind: Kind, authorMeta: Record<string, unknown>) {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-same-party-'));
-	const id = kind === 'DEF' ? 'DEF-abcd' : 'LLD-abcd-S001';
+	const id = kind === 'DEF' ? `DEF-${HASH}` : `LLD-${HASH}-s1`;
 	const json = join(repo, '.insrc', 'artifacts', `${id}.json`);
 	const md = join(repo, 'docs', 'epics', 'demo-E20261005abcd', kind === 'DEF' ? 'DEF.md' : join('S001', 'LLD.md'));
 	mkdirSync(dirname(json), { recursive: true });
 	mkdirSync(dirname(md), { recursive: true });
-	writeFileSync(json, JSON.stringify({ meta: { workflow: WORKFLOW[kind], epicHash: 'abcd', storyId: 'S001', ...authorMeta }, body: { note: 'x' }, citations: [] }, null, 2) + '\n');
+	writeFileSync(json, JSON.stringify({ meta: { workflow: WORKFLOW[kind], epicHash: HASH, storyId: 's1', ...authorMeta }, body: { note: 'x' }, citations: [] }, null, 2) + '\n');
 	writeFileSync(md, `<!-- insrc:artifact ${id} -->\n\n# ${kind}\n\nThe body.\n`);
 	return { repo, md, json, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
 const review = (f: ReturnType<typeof fixture>, provider: LLMProvider) =>
-	reviewArtifactFile({ mdPath: f.md, jsonPath: f.json, repo: f.repo, provider, model: 'cli-claude:opus' });
+	reviewArtifactFile({ mdPath: f.md, jsonPath: f.json, repo: f.repo, lifecycle: createRepoLifecycle(f.repo).service, provider, model: 'cli-claude:opus' });
 
 for (const kind of ['DEF', 'LLD'] as const) {
 	for (const [how, meta] of [
@@ -110,7 +113,7 @@ for (const kind of ['DEF', 'LLD'] as const) {
 				const res = await review(f, p.provider);
 				assert.ok(p.calls.length > 0, 'the review ran');
 				assert.equal(res.report.reviewedBy, 'daemon');
-				assert.equal(JSON.parse(readFileSync(f.json, 'utf8')).meta.review.reviewedBy, 'daemon');
+				assert.equal(lifecycleReviewOf(JSON.parse(readFileSync(f.json, 'utf8')).meta)?.['party'], 'daemon');
 			} finally { f.cleanup(); }
 		});
 	}

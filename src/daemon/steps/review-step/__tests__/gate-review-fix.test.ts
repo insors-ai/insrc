@@ -35,6 +35,7 @@ import { _setGateDepsForTests } from '../../../../workflow/team/gate.js';
 import type { PortResult, TrackerPort } from '../../../../workflow/tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../../../../workflow/team/types.js';
 import type { LLMMessage, LLMProvider, LLMResponse, StructuredCompletionOpts, StructuredSchema } from '../../../../shared/types.js';
+import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
 
 afterEach(() => _setGateDepsForTests());
 
@@ -79,7 +80,7 @@ async function verdictsReview(fx: ReturnType<typeof fixture>): Promise<{ next: s
 	_clearReviewStateStoreForTests();
 	const start = JSON.parse((await handleReviewStep({ phase: 'start', artifact: fx.md, repo: fx.repo })).content[0]!.text) as { state: string };
 	await handleReviewStep({ phase: 'claims', claims: CLAIMS, state: start.state });
-	return JSON.parse((await handleReviewStep({ phase: 'verdicts', verdicts: WITH_AUTO_FIX, state: start.state } as never, { lifecycleFor: () => undefined })).content[0]!.text) as { next: string; applied: number };
+	return JSON.parse((await handleReviewStep({ phase: 'verdicts', verdicts: WITH_AUTO_FIX, state: start.state } as never, { lifecycleFor: repo => createRepoLifecycle(repo).service })).content[0]!.text) as { next: string; applied: number };
 }
 
 function provider(): LLMProvider {
@@ -131,7 +132,7 @@ test('a review of a stage held by someone else runs and reports findings, applie
 	const other = fixture('controller');
 	try {
 		hold('bob');
-		const res = await reviewArtifactFile({ mdPath: other.md, jsonPath: other.json, repo: other.repo, provider: provider(), model: 'fake', reviewedAt: '2026-10-18T00:00:00.000Z', reReview: false });
+		const res = await reviewArtifactFile({ mdPath: other.md, jsonPath: other.json, repo: other.repo, lifecycle: createRepoLifecycle(other.repo).service, provider: provider(), model: 'fake', reviewedAt: '2026-10-18T00:00:00.000Z', reReview: false });
 		assert.equal(res.applied.length, 0);
 		const after = read(other.json);
 		assert.ok(readReviewRecordOf(other.json));
@@ -142,7 +143,7 @@ test('a review of a stage held by someone else runs and reports findings, applie
 	const holder = fixture('controller');
 	try {
 		hold('alice');
-		const res = await reviewArtifactFile({ mdPath: holder.md, jsonPath: holder.json, repo: holder.repo, provider: provider(), model: 'fake', reviewedAt: '2026-10-18T00:00:00.000Z', reReview: false });
+		const res = await reviewArtifactFile({ mdPath: holder.md, jsonPath: holder.json, repo: holder.repo, lifecycle: createRepoLifecycle(holder.repo).service, provider: provider(), model: 'fake', reviewedAt: '2026-10-18T00:00:00.000Z', reReview: false });
 		assert.equal(res.applied.length, 1);
 		assert.equal(read(holder.json).meta['revision'], 3);
 	} finally { holder.cleanup(); }

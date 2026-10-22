@@ -35,6 +35,7 @@ import { approveWorkflowTarget } from '../gates.js';
 import { approvalStateOf } from '../artifact-core/approval-view.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
 import type { BugfixMagnitude, WorkItemRef } from '../types.js';
+import { approveTarget } from './helpers/approve.js';
 
 // --- fixtures --------------------------------------------------------------
 
@@ -290,7 +291,7 @@ test('ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTa
 	await withRepo(async (repo, dir) => {
 		const p = writeBuild(dir, 's4');
 		writeCR(repo, 's4', 'pass');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.skipped.length, 0);
 		assert.ok(isApproved(p), 'a bugfix build completes when its CR passes under enforce');
 	});
@@ -299,7 +300,7 @@ test('ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTa
 test('ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeBuild(dir, 's4');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.ok(out.skipped.length >= 1, 'no CR under enforce withholds completion');
 		assert.ok(!isApproved(p));
 	});
@@ -311,11 +312,11 @@ test('ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not 
 test('ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeBuild(dir, 's4');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
 		assert.deepEqual(out.skipped.map(s => s.reason), ['completion requires a code review; none was run']);
 		assert.ok(!isApproved(p));
 		writeCR(repo, 's4', 'pass');
-		const reviewed = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
+		const reviewed = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
 		assert.equal(reviewed.skipped.length, 0);
 		assert.ok(isApproved(p), 'and completes once its code review exists');
 	});

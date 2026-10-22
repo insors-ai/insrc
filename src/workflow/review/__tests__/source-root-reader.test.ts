@@ -20,7 +20,7 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { gatherEvidence } from '../probe.js';
 import { runReview } from '../review.js';
@@ -34,6 +34,7 @@ import { upsertEntities } from '../../../db/entities.js';
 import { makeEntityId } from '../../../indexer/parser/base.js';
 import type { Entity, LLMProvider, LLMResponse } from '../../../shared/types.js';
 import { envelopeProvider } from '../../review-pipeline/__tests__/enveloped.js';
+import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
 
 const base = mkdtempSync(join(tmpdir(), 'insrc-root-reader-'));
 const repo = join(base, 'repo');
@@ -141,23 +142,26 @@ test('CLI review: a rejecting reader falls back to the repository root and the o
 });
 
 test('the reader given to the review of an artifact file reaches the source-root read, and the fallback reaches the written document', async () => {
+	// a head is named by its artifact id, in the repository's store
 	const write = (name: string): { mdPath: string; jsonPath: string } => {
-		const mdPath = join(base, `${name}.md`);
-		const jsonPath = join(base, `${name}.json`);
+		const id = `PLAN-abcd1234ef567890-${name}`;
+		const mdPath = join(base, `${id}.md`);
+		const jsonPath = join(repo, '.insrc', 'artifacts', `${id}.json`);
+		mkdirSync(dirname(jsonPath), { recursive: true });
 		writeFileSync(mdPath, '# Story s1\n\n- t1: the token exists.\n');
-		writeFileSync(jsonPath, JSON.stringify({ meta: { workflow: 'plan' }, body: {} }));
+		writeFileSync(jsonPath, JSON.stringify({ meta: { workflow: 'plan', epicHash: 'abcd1234ef567890', storyId: name }, body: {}, citations: [] }));
 		return { mdPath, jsonPath };
 	};
-	const common = { repo, provider: provider(), model: 'fake', reviewedAt: '2026-10-11T00:00:00.000Z' };
+	const common = { repo, lifecycle: createRepoLifecycle(repo).service, provider: provider(), model: 'fake', reviewedAt: '2026-10-11T00:00:00.000Z' };
 
 	const calls: string[] = [];
-	const ok = write('plan-ok');
+	const ok = write('s1');
 	const res = await reviewArtifactFile({ ...ok, ...common, readEntitiesForRepo: async repoPath => { calls.push(repoPath); return [fileEntity(join(repo, 'elsewhere', 'widget.ts'))]; } });
 	assert.deepEqual(calls, [repo], 'the reader was asked, so the store was not');
 	assert.equal('sourceRootFallback' in res.report, false);
 	assert.doesNotMatch(readFileSync(ok.mdPath, 'utf8'), /source roots could not be derived/);
 
-	const bad = write('plan-fallback');
+	const bad = write('s2');
 	const fell = await reviewArtifactFile({ ...bad, ...common, readEntitiesForRepo: async () => { throw new Error('daemon is not running'); } });
 	assert.match(fell.report.sourceRootFallback ?? '', /daemon is not running/);
 	assert.match(readFileSync(bad.mdPath, 'utf8'), /The source roots could not be derived from the index: the index could not be read \(daemon is not running\)/);

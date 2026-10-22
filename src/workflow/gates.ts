@@ -23,7 +23,6 @@ import { dirname } from 'node:path';
 import { basename, join } from 'node:path';
 
 import { approvalStateOf, lifecycleReviewOf } from './artifact-core/approval-view.js';
-import { createRepoLifecycle } from './artifact-core/repo-lifecycle.js';
 import { staleAckOf } from './artifact-core/stale-ack.js';
 import { getEffectiveHld } from './amendments/effective.js';
 import { listApprovedAmendments } from './amendments/store.js';
@@ -603,22 +602,6 @@ function headFullSha(cwd: string): string | undefined {
 	}
 }
 
-/**
- * The conflict of the head at `jsonPath`: its stored content hash no longer matches its content. The synchronous half of the
- * integrity check, for the paths that have no History. Undefined when the head has no stored hash, or cannot be decoded (those
- * gates behave as they always have).
- */
-export function headConflict(jsonPath: string): { readonly artifactId: string; readonly reason: IntegrityReason } | undefined {
-	try {
-		const artifactId = basename(jsonPath).replace(/\.json$/, '');
-		const { artifact } = decodeArtifactHead(artifactId, readFileSync(jsonPath, 'utf8'));
-		const integrity = checkHeadIntegrity({ description: artifact.description, payload: artifact.payload, lifecycle: artifact.lifecycle });
-		return integrity.ok ? undefined : { artifactId, reason: integrity.reason };
-	} catch {
-		return undefined;
-	}
-}
-
 /** What the approval needs besides the path: the repository's lifecycle service, who approves, and an override reason. */
 export interface ApproveOptions {
 	readonly overrideReview?: string | undefined;
@@ -836,12 +819,11 @@ export interface WorkflowApproveRequest {
 	readonly epicHash?:      string;
 	readonly overrideReview?: string;
 	/**
-	 * The lifecycle service. With it the full integrity check (the head against the change log) runs before a BUILD record is
-	 * touched or anything is stamped, the approval is also applied through the service, the log is kept in step with the BUILD
-	 * record hook, and a BUILD approval completes the Story (and then the Epic) once its roll-up is true. Without it the gates
-	 * run the synchronous head-only check and behave as before.
+	 * The lifecycle service. The full integrity check (the head against the change log) runs through it before a BUILD record is
+	 * touched or anything is approved, the approval is applied through it, the log is kept in step with the BUILD record hook, and a
+	 * BUILD approval completes the Story (and then the Epic) once its roll-up is true.
 	 */
-	readonly lifecycle?:     LifecycleService | undefined;
+	readonly lifecycle:      LifecycleService;
 	/** The actor the service records; the approval gate itself when absent. */
 	readonly actor?:         Actor | undefined;
 }
@@ -944,16 +926,7 @@ export async function approveWorkflowTarget(
 		return true;
 	};
 
-	/** A BUILD target whose stored hash differs from its content goes to skipped[] before the hook rewrites its record. */
-	const refuseConflict = (jsonPath: string): boolean => {
-		const conflict = headConflict(jsonPath);
-		if (conflict === undefined) return false;
-		skipped.push({ path: jsonPath, reason: new LifecycleConflictError(conflict.artifactId, conflict.reason).message });
-		return true;
-	};
-
-	// a caller that names no service gets one built over the repository's files
-	const lifecycle: LifecycleService = req.lifecycle ?? createRepoLifecycle(req.repoPath).service;
+	const lifecycle: LifecycleService = req.lifecycle;
 	const actor = req.actor ?? GATE_ACTOR;
 	/** The head and its change log must agree before a BUILD record is touched or anything is approved. */
 	const refuseLogConflict = async (jsonPath: string): Promise<boolean> => {
@@ -1034,7 +1007,6 @@ export async function approveWorkflowTarget(
 		if (basename(jsonPath).startsWith('BUILD-')) {
 			// Authorize BEFORE the record is created or merged: a refused target changes nothing.
 			if (refuseBeforeRecord(jsonPath)) return { approved, skipped, codeReview };
-			if (refuseConflict(jsonPath)) return { approved, skipped, codeReview };
 			if (await refuseLogConflict(jsonPath)) return { approved, skipped, codeReview };
 			await runBuildHook(jsonPath);
 		}
@@ -1046,7 +1018,6 @@ export async function approveWorkflowTarget(
 		for (const p of pending) {
 			if (basename(p).startsWith('BUILD-')) {
 				if (refuseBeforeRecord(p)) continue;
-				if (refuseConflict(p)) continue;
 				if (await refuseLogConflict(p)) continue;
 				await runBuildHook(p);
 			}

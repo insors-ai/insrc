@@ -20,7 +20,6 @@ import { basename } from 'node:path';
 
 import { getLogger } from '../../../../shared/logger.js';
 import type { LifecycleService } from '../../../../workflow/artifact-core/lifecycle-service.js';
-import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
 import type { Actor } from '../../../../workflow/artifact-core/types.js';
 import { persistReview } from '../../../../workflow/review/persist-review.js';
 import {
@@ -42,7 +41,7 @@ const CONTROLLER: Actor = { id: 'insrc:controller', kind: 'agent', properties: {
 
 export async function handleFindings(
 	input: ReviewStepInputFindings,
-	lifecycleFor?: ((repoPath: string) => LifecycleService | undefined) | undefined,
+	lifecycleFor: (repoPath: string) => LifecycleService,
 ): Promise<ReviewStepDone | ReviewStepError> {
 	if (typeof input.state !== 'string' || input.state.length === 0) {
 		throw new Error(`insrc_review_step[findings]: missing \`state\` token from the prior start response.`);
@@ -101,7 +100,7 @@ export async function handleFindings(
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
 	const artifactId = basename(state.jsonPath).replace(/\.json$/, '');
 	await persistReview({
-		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle: lifecycleFor?.(state.repo) ?? createRepoLifecycle(state.repo).service,
+		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle: lifecycleFor(state.repo),
 		report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER, markdown: md,
 	});
 

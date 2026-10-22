@@ -24,6 +24,7 @@ import { createRoleRouter } from '../analyze/context/role-router.js';
 import { runWithRoutingContext } from '../analyze/context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../config/analyze.js';
 import { getLogger } from '../shared/logger.js';
+import { lifecycleFor } from './lifecycle-registry.js';
 import type { IpcStreamMessage, LLMProvider } from '../shared/types.js';
 import type { Actor } from '../workflow/artifact-core/types.js';
 import type { LifecycleService } from '../workflow/artifact-core/lifecycle-service.js';
@@ -103,11 +104,11 @@ export async function workflowReviewStart(
 			data: { kind: 'stage', operation: 'workflow.review', stageId: label, stageLabel: label, index: stageIndex++, total: null },
 		});
 
-		const lifecycle = deps.lifecycleFor?.(repoPath);
+		const lifecycle = (deps.lifecycleFor ?? (r => lifecycleFor(r).service))(repoPath);
 		const run = async (provider: LLMProvider, model: string): Promise<ReviewArtifactResult> =>
 			(deps.review ?? reviewArtifactFile)({
 				mdPath, jsonPath, repo: repoPath, provider, model,
-				...(lifecycle !== undefined ? { lifecycle, actor: REVIEW_ACTOR } : {}),
+				lifecycle, actor: REVIEW_ACTOR,
 				reviewedAt: new Date().toISOString(),
 				onProgress: progress,
 				signal,

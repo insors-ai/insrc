@@ -32,6 +32,7 @@ import { codeReviewRunStart, type CodeReviewRunDeps } from '../code-review-rpc.j
 import { handleCodeReviewStep, type CodeReviewStepDeps } from '../steps/code-review-step/handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../steps/code-review-step/state-store.js';
 import type { CodeReviewStepOutput } from '../steps/code-review-step/types.js';
+import { noopRoundWriter } from '../../workflow/__tests__/helpers/round-writer.js';
 
 const EPIC = 'abcd1234ef567890';
 const STORY = 's1';
@@ -67,7 +68,7 @@ function rpcDeps() {
 		resolveProvider: () => ({ provider: {} as LLMProvider, modelLabel: 'cli-codex:gpt' }),
 		assembleDiffGrounding: (async () => ({ grounding: DIFF, changedFiles: ['src/a.ts'] })) as never,
 		write: (path, content) => { writes.push({ path, content }); },
-		roundWriterFor: () => undefined,
+		roundWriterFor: () => noopRoundWriter(),
 		runReview: (async (subject: CodeReviewSubject, provider: LLMProvider, o: RunCodeReviewOpts, runnerDeps: typeof DEFAULT_DEPS | undefined) => {
 			opts.push(o);
 			return runCodeReview(subject, provider, o, { judges: judges as never, assembleGrounding: runnerDeps!.assembleGrounding, write: runnerDeps!.write });

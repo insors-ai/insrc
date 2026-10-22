@@ -37,6 +37,7 @@ import {
 	autoPushTasksOnPlan,
 	type AutoPushResult,
 } from '../../workflow/tracker-auto.js';
+import { createRepoLifecycle } from '../../workflow/artifact-core/repo-lifecycle.js';
 import {
 	listAmendments,
 	readAmendment,
@@ -321,6 +322,7 @@ export async function reviewArtifact(
 			mdPath:     artifactPath,
 			jsonPath:   jsonPathForMd(artifactPath),
 			repo:       repoPath,
+			lifecycle:  createRepoLifecycle(repoPath).service,
 			provider,
 			model:      `${resolution.runner}:${resolution.model}`,
 			reviewedAt: new Date().toISOString(),

@@ -42,6 +42,7 @@ import { idOfWorkflow, writeDesign } from './review-fixture.js';
 import { DESIGN_REVIEW_WAIT_MS, PIPELINE_REVIEW_WAIT_MS } from '../phases/start.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import type { ReviewStepDeps } from '../types.js';
+import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
 
 const SPEC = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
 const MIN = 60_000;
@@ -280,7 +281,7 @@ test('T12 the verdicts phase refuses a controller-authored DEF and stamps nothin
 		const claims = parse(await handleReviewStep({ phase: 'claims', state, claims: { claims: [] } }));
 		assert.equal(claims['next'], 'emit_verdicts', JSON.stringify(claims));
 		const before = { json: readFileSync(fx.jsonPath, 'utf8'), md: readFileSync(fx.mdPath, 'utf8') };
-		const out = parse(await handleReviewStep({ phase: 'verdicts', state: claims['state'] as string, verdicts: { verdicts: [] } }, { lifecycleFor: () => undefined }));
+		const out = parse(await handleReviewStep({ phase: 'verdicts', state: claims['state'] as string, verdicts: { verdicts: [] } }, { lifecycleFor: repo => createRepoLifecycle(repo).service }));
 		assert.equal(out['next'], 'error');
 		assert.equal((out['error'] as { code: string }).code, 'same-party-review');
 		assert.equal(readFileSync(fx.jsonPath, 'utf8'), before.json);
@@ -296,7 +297,7 @@ test('T12/T4 on a daemon-authored DEF the verdicts phase stamps the controller, 
 		const d = fakeDaemon();
 		const s1 = (await start(def, d.deps))['state'] as string;
 		const claims = parse(await handleReviewStep({ phase: 'claims', state: s1, claims: { claims: [] } }));
-		const done = parse(await handleReviewStep({ phase: 'verdicts', state: claims['state'] as string, verdicts: { verdicts: [] } }, { lifecycleFor: () => undefined }));
+		const done = parse(await handleReviewStep({ phase: 'verdicts', state: claims['state'] as string, verdicts: { verdicts: [] } }, { lifecycleFor: repo => createRepoLifecycle(repo).service }));
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 		assert.equal(done['reviewedBy'], undefined, 'the tool reviewed it itself: not a daemon review');
 		const review = readReviewRecordOf(def.jsonPath)!.report;

@@ -36,6 +36,7 @@ import { reviewArtifactFile } from '../review/run-artifact.js';
 import { artifactJsonPath } from '../storage.js';
 import { H, alice, artifact, bob, clock, kit } from '../artifact-core/__tests__/store-kit.js';
 import { EPIC, RECORDS, STORY, T1, T2, seedEpic } from '../artifact-core/__tests__/lifecycle-kit.js';
+import { approveTarget } from './helpers/approve.js';
 
 const BUILD = `BUILD-${H}-s1`;
 const CR = `CR-${H}-s1`;
@@ -105,7 +106,7 @@ const fixProvider = (): LLMProvider => envelopeProvider({
 	},
 });
 
-async function reviewedPlan(withService: boolean): Promise<{ approvalError: unknown; logTail: number | undefined; headRevision: number; reviewed: number | undefined; operations: string[] }> {
+async function reviewedPlan(): Promise<{ approvalError: unknown; logTail: number | undefined; headRevision: number; reviewed: number | undefined; operations: string[] }> {
 	const k = kit();
 	try {
 		await k.store.write(artifact(`DEF-${H}`), alice);
@@ -117,7 +118,7 @@ async function reviewedPlan(withService: boolean): Promise<{ approvalError: unkn
 		const svc = serviceFor(k);
 		const res = await reviewArtifactFile({
 			mdPath: md, jsonPath: artifactJsonPath(k.repo, PLAN), repo: k.repo, provider: fixProvider(), model: 'fake',
-			reviewedAt: '2026-07-20T00:00:00.000Z', reReview: false, ...(withService ? { lifecycle: svc, actor: bob } : {}),
+			reviewedAt: '2026-07-20T00:00:00.000Z', reReview: false, lifecycle: svc, actor: bob,
 		});
 		assert.equal(res.applied.length, 1, 'the auto-fix was applied');
 		const head = await k.store.readWithHistory(PLAN);
@@ -128,20 +129,14 @@ async function reviewedPlan(withService: boolean): Promise<{ approvalError: unkn
 	} finally { k.done(); }
 }
 
-test('with a service, a review auto-fix or BUILD hook rewrite keeps the log in step so the next approval is not head-ahead-of-log', async () => {
-	// control: a writer outside the store with no service leaves the log behind the head, and the next approval is refused
-	const without = await reviewedPlan(false);
-	assert.equal(without.logTail, 1);
-	assert.ok(without.approvalError instanceof LifecycleConflictError && without.approvalError.reason === 'head-ahead-of-log', String(without.approvalError));
-
+test('a review auto-fix or BUILD hook rewrite keeps the log in step so the next approval is not head-ahead-of-log', async () => {
 	// with the service the auto-fix write is followed by its log entry, and the approval goes through
-	const withService = await reviewedPlan(true);
+	const withService = await reviewedPlan();
 	assert.equal(withService.logTail, withService.headRevision);
 	assert.equal(withService.approvalError, undefined);
 	// the review itself is recorded on the lifecycle too, bound to the revision the auto-fix left
 	assert.equal(withService.reviewed, withService.headRevision);
-	assert.deepEqual(withService.operations, ['create', 'update', 'review']);
-	assert.equal(without.reviewed, undefined, 'without a service the review stays in meta.review only');
+	assert.deepEqual(withService.operations, ['create', 'update', 'review', 'review'], 'the review report is an entry of the log, and the lifecycle review that names it follows');
 
 	// the BUILD hook: a record rewritten by ensureBuildRecordOnCompletion is followed by its entry as well
 	const k = kit();
@@ -163,12 +158,12 @@ test('with a service, a review auto-fix or BUILD hook rewrite keeps the log in s
 	} finally { k.done(); }
 });
 
-test('without a service one is built over the repository files, and the approval is the lifecycle\'s', async () => {
+test('a service built over the repository files approves through the lifecycle, and the approval is the lifecycle\'s', async () => {
 	const k = kit();
 	try {
 		await k.store.write(artifact(`DEF-${H}`), alice);
 		await k.store.write(artifact(PLAN), alice);
-		const result = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: artifactJsonPath(k.repo, PLAN) }, { enforce: false });
+		const result = await approveTarget({ repoPath: k.repo, artifactPath: artifactJsonPath(k.repo, PLAN) }, { enforce: false });
 		assert.equal(result.approved.length, 1);
 		assert.equal(result.skipped.length, 0);
 		assert.equal(readHead(k, PLAN).meta['approvedAt'], undefined, 'no stamp');

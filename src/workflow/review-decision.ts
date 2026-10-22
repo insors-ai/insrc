@@ -183,10 +183,9 @@ export async function handleReviewDecision(
 	let approved: WorkflowApproveResult['approved'] = [];
 	try {
 		if (decision === 'approve') {
-			const lifecycle = deps.lifecycleFor?.(repoPath);
 			const res = await (deps.approve ?? approveWorkflowTarget)({
 				repoPath, artifactPath: jsonPath, actor: named ?? approvalActorOf(undefined),
-				...(lifecycle !== undefined ? { lifecycle } : {}),
+				lifecycle: deps.lifecycleFor?.(repoPath) ?? createRepoLifecycle(repoPath).service,
 			});
 			approved = res.approved;
 			if (res.approved.length > 0) {

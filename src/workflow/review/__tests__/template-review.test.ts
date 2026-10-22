@@ -43,6 +43,9 @@ import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewDeadlineMs, reviewTemplateFor } f
 const LIMIT = { issue: reviewDeadlineMs('issue'), feature: reviewDeadlineMs('feature'), epic: reviewDeadlineMs('epic') };
 import type { ReviewTemplate } from '../template.js';
 import { envelopeProvider } from '../../review-pipeline/__tests__/enveloped.js';
+import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
+import { lifecycleReviewOf } from '../../artifact-core/approval-view.js';
+import { readReviewRecordOf } from '../report-file.js';
 
 const MIN = 60_000;
 const SPEC = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
@@ -291,20 +294,22 @@ test('T16 a review whose deadline has passed fails before a repeat is started', 
 
 // --- reviewArtifactFile ----------------------------------------------------------
 
+const HASH = 'abcd1234ef567890';
+
 function designRepo(opts: { issue?: boolean; def?: boolean } = {}): { repo: string; md: string; json: string; cleanup: () => void } {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-design-review-'));
-	const json = artifactJsonPath(repo, 'LLD-abcd-S001');
+	const json = artifactJsonPath(repo, `LLD-${HASH}-s1`);
 	mkdirSync(dirname(json), { recursive: true });
-	writeFileSync(json, JSON.stringify({ meta: { workflow: 'design.story', epicHash: 'abcd', storyId: 'S001' }, body: { note: 'untouched' }, citations: [] }, null, 2) + '\n');
-	if (opts.issue === true) writeFileSync(artifactJsonPath(repo, 'ISSUE-abcd'), '{}');
-	if (opts.def === true) writeFileSync(artifactJsonPath(repo, 'DEF-abcd'), '{}');
+	writeFileSync(json, JSON.stringify({ meta: { workflow: 'design.story', epicHash: HASH, storyId: 's1' }, body: { note: 'untouched' }, citations: [] }, null, 2) + '\n');
+	if (opts.issue === true) writeFileSync(artifactJsonPath(repo, `ISSUE-${HASH}`), '{}');
+	if (opts.def === true) writeFileSync(artifactJsonPath(repo, `DEF-${HASH}`), '{}');
 	const md = join(repo, 'LLD.md');
 	writeFileSync(md, DESIGN + '\n');
 	return { repo, md, json, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
 function reviewFile(d: ReturnType<typeof designRepo>, f: ReturnType<typeof fakeProvider>) {
-	return reviewArtifactFile({ mdPath: d.md, jsonPath: d.json, repo: d.repo, provider: f.provider, model: 'cli-claude:opus', reviewedAt: '2026-10-05T00:00:00.000Z' });
+	return reviewArtifactFile({ mdPath: d.md, jsonPath: d.json, repo: d.repo, lifecycle: createRepoLifecycle(d.repo).service, provider: f.provider, model: 'cli-claude:opus', reviewedAt: '2026-10-05T00:00:00.000Z' });
 }
 
 test('a design answering an ISSUE is reviewed once with the ISSUE template and the ISSUE limit, and is not edited', async () => {
@@ -323,12 +328,13 @@ test('a design answering an ISSUE is reviewed once with the ISSUE template and t
 		assert.deepEqual(res.applied, [], 'a design is never edited by its review');
 
 		const stored = JSON.parse(readFileSync(d.json, 'utf8'));
-		assert.equal(stored.meta.review.template, 'design-issue');
+		const recorded = readReviewRecordOf(d.json)?.report;
+		assert.equal(recorded?.template, 'design-issue');
 		// T4 (LLD-1716f77ba9ba017b-S001): reviewArtifactFile is the daemon's review,
 		// on its template path (this LLD) as on its pipeline path (a DEF, below).
-		assert.equal(stored.meta.review.reviewedBy, 'daemon');
+		assert.equal(lifecycleReviewOf(stored.meta)?.['party'], 'daemon');
 		assert.equal(res.report.reviewedBy, 'daemon', 'the returned report says so too');
-		assert.equal(stored.meta.review.counts.unverified, 1);
+		assert.equal(recorded?.counts.unverified, 1);
 		assert.deepEqual(stored.body, { note: 'untouched' });
 		const md = readFileSync(d.md, 'utf8');
 		assert.ok(md.startsWith(DESIGN));
@@ -369,9 +375,9 @@ test('a failed design review stamps nothing', async () => {
 test('T4 reviewArtifactFile stamps the daemon on its pipeline path too (a DEF)', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-def-review-'));
 	try {
-		const json = artifactJsonPath(repo, 'DEF-abcd');
+		const json = artifactJsonPath(repo, `DEF-${HASH}`);
 		mkdirSync(dirname(json), { recursive: true });
-		writeFileSync(json, JSON.stringify({ meta: { workflow: 'define', epicHash: 'abcd' }, body: { note: 'x' }, citations: [] }, null, 2) + '\n');
+		writeFileSync(json, JSON.stringify({ meta: { workflow: 'define', epicHash: HASH }, body: { note: 'x' }, citations: [] }, null, 2) + '\n');
 		const md = join(repo, 'DEF.md');
 		writeFileSync(md, '# DEF\n\nThe definition.\n');
 		// The pipeline's extract step finds no premises, so no probe or verify call follows.
@@ -381,11 +387,11 @@ test('T4 reviewArtifactFile stamps the daemon on its pipeline path too (a DEF)',
 			async completeStructured() { return { claims: [] }; },
 			async runReviewSession() { sessions.push('session'); throw new Error('a DEF is not reviewed in a session'); },
 		} as unknown as LLMProvider);
-		const res = await reviewArtifactFile({ mdPath: md, jsonPath: json, repo, provider, model: 'cli-claude:opus' });
+		const res = await reviewArtifactFile({ mdPath: md, jsonPath: json, repo, lifecycle: createRepoLifecycle(repo).service, provider, model: 'cli-claude:opus' });
 		assert.equal(res.report.stage, 'define');
 		assert.equal(res.report.template, undefined, 'the pipeline path, not a template review');
 		assert.deepEqual(sessions, []);
 		assert.equal(res.report.reviewedBy, 'daemon');
-		assert.equal(JSON.parse(readFileSync(json, 'utf8')).meta.review.reviewedBy, 'daemon');
+		assert.equal(lifecycleReviewOf(JSON.parse(readFileSync(json, 'utf8')).meta)?.['party'], 'daemon');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

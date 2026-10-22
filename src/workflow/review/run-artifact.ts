@@ -19,9 +19,7 @@ import { basename } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
-import { headConflict } from '../gates.js';
 import type { LifecycleService } from '../artifact-core/lifecycle-service.js';
-import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 import { LifecycleConflictError } from '../artifact-core/types.js';
 import type { Actor } from '../artifact-core/types.js';
 import { applyAutoFixes, pendingUserFindings } from './apply.js';
@@ -56,10 +54,9 @@ export interface ReviewArtifactOpts {
 	readonly readEntitiesForRepo?: EntitiesForRepoReader | undefined;
 	/**
 	 * The lifecycle service the review is recorded through: the full integrity check (the head against its change log) runs before the
-	 * review, and the auto-fix, the review entry and the lifecycle review are written through it. One is built over the repository's
-	 * files when the caller names none.
+	 * review, and the auto-fix, the review entry and the lifecycle review are written through it.
 	 */
-	readonly lifecycle?: LifecycleService | undefined;
+	readonly lifecycle: LifecycleService;
 	/** The actor the service records; the review itself when absent. */
 	readonly actor?: Actor | undefined;
 }
@@ -81,14 +78,11 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 	if (!existsSync(opts.mdPath))   throw new Error(`No artifact md at ${opts.mdPath}`);
 	const artifactId = basename(opts.jsonPath).replace(/\.json$/, '');
 	const reviewer: Actor = opts.actor ?? { id: 'insrc:review', kind: 'system', properties: {} };
-	// A review is recorded through the lifecycle of the repository that holds the artifact: the caller's, else one built over its files.
-	const lifecycle = opts.lifecycle ?? createRepoLifecycle(opts.repo).service;
+	// A review is recorded through the lifecycle of the repository that holds the artifact.
+	const lifecycle = opts.lifecycle;
 	// inspect first: it finishes a write a crash left staged, so a state the journal repairs is not refused below. This is before any model is called.
 	const seen = await lifecycle.inspect(artifactId);
 	if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
-	// A head whose stored content hash no longer matches its content is not reviewed or stamped until a person resolves it.
-	const conflict = headConflict(opts.jsonPath);
-	if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
 
 	const artifact = JSON.parse(readFileSync(opts.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
 	const stage = typeof artifact.meta.workflow === 'string' ? artifact.meta.workflow : 'unknown';

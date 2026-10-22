@@ -28,7 +28,6 @@ import type { LifecycleService } from '../artifact-core/lifecycle-service.js';
 import type { ArtifactStore } from '../artifact-core/store.js';
 import { LifecycleConflictError } from '../artifact-core/types.js';
 import type { Actor, Review } from '../artifact-core/types.js';
-import { headConflict } from '../gates.js';
 import { writeAtomic } from '../storage.js';
 import { authorPartyOf, SamePartyReviewError } from './party.js';
 import { reviewEntryOf, reviewReference } from './report-log.js';
@@ -47,7 +46,7 @@ export function stripReviewSection(md: string): string {
 }
 
 
-export type PersistStep = 'inspect' | 'conflict' | 'fix' | 'record-review' | 'render';
+export type PersistStep = 'inspect' | 'fix' | 'record-review' | 'render';
 
 /** A step of persistReview failed. `stored` says what is already on disk, so the caller can tell what the rerun repairs. */
 export class ReviewPersistError extends Error {
@@ -99,13 +98,10 @@ export async function persistReview(input: PersistReviewInput): Promise<Persiste
 	const stored: string[] = [];
 	let step: PersistStep = 'inspect';
 	try {
-		// inspect: finishes a write a crash left staged, then the head against its log
+		// inspect: finishes a write a crash left staged, then the head against its log (its stored hash and its change log)
 		const seen = await input.lifecycle.inspect(artifactId);
 		if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
 
-		step = 'conflict';
-		const conflict = headConflict(input.jsonPath);
-		if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
 		const meta = (JSON.parse(readFileSync(input.jsonPath, 'utf8')) as { meta?: unknown }).meta;
 		if (authorPartyOf(meta) === input.party) throw new SamePartyReviewError(input.party, `the artifact ${artifactId}`);
 

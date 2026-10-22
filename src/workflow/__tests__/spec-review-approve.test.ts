@@ -56,6 +56,7 @@ import { specArtifactPaths, writeAtomic } from '../storage.js';
 import type { ReviewReport } from '../review/types.js';
 import type { LLMProvider } from '../../shared/types.js';
 import { envelopeProvider } from '../review-pipeline/__tests__/enveloped.js';
+import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 
 const SPEC_HASH = 'abcd1234ef567890';
 
@@ -141,7 +142,7 @@ test('ac1: reviewArtifactFile reviews a SPEC md generically (stage = meta.workfl
 	await withRepo(async repo => {
 		const paths = writeSpec(repo, specArtifact());
 		const result = await reviewArtifactFile({
-			repo, jsonPath: paths.json, mdPath: paths.md,
+			repo, lifecycle: createRepoLifecycle(repo).service, jsonPath: paths.json, mdPath: paths.md,
 			provider: zeroClaimsProvider(), model: 'test',
 		});
 		// The review ran (no per-type rejection) and derived its stage from

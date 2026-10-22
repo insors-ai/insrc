@@ -34,6 +34,7 @@ import { runCodeReview, type JudgeSlot } from '../../../../workflow/code-review/
 import type { CodeReviewArtifact, CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../../workflow/code-review/types.js';
 import { codeReviewRunStart, type CodeReviewRunDeps } from '../../../code-review-rpc.js';
 import { enveloped, unenveloped } from '../../../../workflow/review-pipeline/__tests__/enveloped.js';
+import { noopRoundWriter } from '../../../../workflow/__tests__/helpers/round-writer.js';
 
 const EPIC = 'b47dadc7cf0cccb1';
 const STORY = 's1';
@@ -74,7 +75,7 @@ test('on both the controller and daemon paths a lowered graph-gap finding is LOW
 		assembleDiffGrounding: async () => { throw new Error('the graph path is under test'); },
 		runReview: runCodeReview,
 		write: (path, content) => { writes.push({ path, content }); },
-		roundWriterFor: () => undefined,
+		roundWriterFor: () => noopRoundWriter(),
 		sleep: async () => {}, now: () => 0, freshnessTimeoutMs: () => 120000,
 		readBuildAuthor: () => 'daemon',
 	};
@@ -119,7 +120,7 @@ test('the daemon diff path reaches the coverage judge as degraded, also with an 
 		resolveProvider: () => ({ provider, modelLabel: 'm' }),
 		assembleDiffGrounding: (async () => ({ grounding: { symbols: [] }, changedFiles: ['src/a.ts'] })) as never,
 		write: (path) => { writes.push(path); },
-		roundWriterFor: () => undefined,
+		roundWriterFor: () => noopRoundWriter(),
 	};
 	const frames: IpcStreamMessage[] = [];
 	await codeReviewRunStart({ repo: '/repo', epicHash: EPIC, storyId: STORY, groundingMode: 'degraded' }, m => frames.push(m), new AbortController().signal, rpcDeps);

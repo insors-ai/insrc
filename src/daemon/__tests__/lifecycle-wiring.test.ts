@@ -40,6 +40,7 @@ import { artifactJsonPath } from '../../workflow/storage.js';
 import { lifecycleFor, resetLifecycleRegistry } from '../lifecycle-registry.js';
 import { handleWorkflowApprove } from '../workflow-approve.js';
 import { workflowReviewStart } from '../workflow-review-rpc.js';
+import { approveTarget } from '../../workflow/__tests__/helpers/approve.js';
 
 const alice: Actor = { id: 'github:alice', kind: 'person', properties: {} };
 const PLAN_A = `PLAN-${H}-s1`;
@@ -94,7 +95,7 @@ test('the daemon approve handler, the review-decision step and workflowReviewSta
 	assert.match(String(((await handleWorkflowApprove({ repo, artifactPath: artifactJsonPath(repo, PLAN_C), actor: { id: 'Alice' } }, undefined)) as { error: string }).error), /actor/);
 	let approveCalls = 0;
 	const missing = join(tmpdir(), 'lifecycle-wiring-no-such-repo');
-	const noEntry = await handleWorkflowApprove({ repo: missing, artifactPath: join(missing, '.insrc', 'artifacts', `${PLAN_A}.json`) }, undefined, { approve: () => { approveCalls++; return approveWorkflowTarget({ repoPath: missing }); } });
+	const noEntry = await handleWorkflowApprove({ repo: missing, artifactPath: join(missing, '.insrc', 'artifacts', `${PLAN_A}.json`) }, undefined, { approve: () => { approveCalls++; return approveTarget({ repoPath: missing }); } });
 	assert.match((noEntry as { error: string }).error, /no lifecycle store/);
 	assert.equal(approveCalls, 0);
 

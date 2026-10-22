@@ -25,6 +25,7 @@ import type { CodeReviewStepOutput } from '../types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../../workflow/code-review/types.js';
 import type { UxDefinition } from '../../../../workflow/artifacts/companion/ux.js';
 import type { AdherenceSelection } from '../../../../workflow/artifacts/companion/adherence.js';
+import { noopRoundWriter } from '../../../../workflow/__tests__/helpers/round-writer.js';
 
 const EPIC = 'e1a2b3c4d5e6f7a8';
 const STORY = 's4';
@@ -54,7 +55,7 @@ function makeDeps(subj: CodeReviewSubject): { deps: CodeReviewStepDeps; writes: 
 		assembleDiffGrounding: async () => ({ grounding, changedFiles: CHANGED }),
 		runReview:      runCodeReview,
 		write:          (path, content) => { writes.push({ path, content }); },
-		roundWriterFor: () => undefined,
+		roundWriterFor: () => noopRoundWriter(),
 		sleep:          async () => {},
 		now:            () => 0,
 		freshnessTimeoutMs: () => 120000,

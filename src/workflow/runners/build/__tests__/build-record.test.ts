@@ -43,6 +43,7 @@ import {
 import { stampOtherPartyReview } from '../../../__tests__/helpers/other-party-review.js';
 import { approvalStateOf, lifecycleOfMeta } from '../../../artifact-core/approval-view.js';
 import { approvedMeta, rejectedMeta } from '../../../__tests__/lifecycle-fixtures.js';
+import { approveTarget } from '../../../__tests__/helpers/approve.js';
 
 const HASH = 'abc123def4567890';
 
@@ -190,7 +191,7 @@ test('approveWorkflowTarget completes the persisted plan-driven BUILD record (ke
 		const { json } = await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		stampOtherPartyReview(json);   // completion requires an other-party code review
 		// enforce off → the code-review gate is advisory; completion proceeds + approves the head.
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: json }, { enforce: false });
+		const out = await approveTarget({ repoPath: repo, artifactPath: json }, { enforce: false });
 		assert.deepEqual(out.approved.map(a => a.path), [json], 'the BUILD record is approved');
 		assert.equal(out.skipped.length, 0);
 		assert.equal(approvalStateOf(readJson(json).meta), 'approved', 'the head is approved');
@@ -208,7 +209,7 @@ test('build-record.test.ts: the completion record needs no legacy stamp', async 
 			assert.equal(written.meta[key], undefined, `a fresh completion record carries no ${key}`);
 		}
 		stampOtherPartyReview(paths.json);
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: paths.json }, { enforce: false });
+		const out = await approveTarget({ repoPath: repo, artifactPath: paths.json }, { enforce: false });
 		assert.equal(out.skipped.length, 0);
 		const approved = readJson(paths.json);
 		assert.equal(approvalStateOf(approved.meta), 'approved');

@@ -24,7 +24,6 @@ import { getLogger } from '../../../../shared/logger.js';
 import type { LifecycleService } from '../../../../workflow/artifact-core/lifecycle-service.js';
 import { LifecycleConflictError } from '../../../../workflow/artifact-core/types.js';
 import type { Actor } from '../../../../workflow/artifact-core/types.js';
-import { headConflict } from '../../../../workflow/gates.js';
 import {
 	applyAutoFixes, computeReviewVerdict, DEFAULT_BLOCK_ON_SEVERITIES, normalizeFinding,
 	pendingUserFindings, renderReviewReport, stripReviewSection, tallyFindings,
@@ -32,7 +31,6 @@ import {
 import type { Claim, Finding, RawFinding, ReviewReport } from '../../../../workflow/review/index.js';
 import { authorPartyOf, SamePartyReviewError } from '../../../../workflow/review/party.js';
 import { persistReview } from '../../../../workflow/review/persist-review.js';
-import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
 import { reviewFixModeFor } from '../../../../workflow/team/approval-gate.js';
 import { loadState, releaseState } from '../state-store.js';
 import type { ReviewStepDone, ReviewStepInputVerdicts } from '../types.js';
@@ -46,12 +44,12 @@ const REVIEWER: Actor = { id: 'insrc:review', kind: 'system', properties: {} };
 const CONTROLLER: Actor = { id: 'insrc:controller', kind: 'agent', properties: {} };
 
 /**
- * `lifecycleFor` gives the service of the run's repository (one is built over its files when it gives none). The head is checked
+ * `lifecycleFor` gives the service of the run's repository The head is checked
  * against its change log before anything is recorded, and the review is persisted by `persistReview`.
  */
 export async function handleVerdicts(
 	input: ReviewStepInputVerdicts,
-	lifecycleFor?: ((repoPath: string) => LifecycleService | undefined) | undefined,
+	lifecycleFor: (repoPath: string) => LifecycleService,
 ): Promise<ReviewStepDone> {
 	if (typeof input.state !== 'string' || input.state.length === 0) {
 		throw new Error(`insrc_review_step[verdicts]: missing \`state\` token from the prior claims response.`);
@@ -102,11 +100,9 @@ export async function handleVerdicts(
 	// The head is checked (and any write a crash left staged is finished) BEFORE it is read: everything below works on the head as it is afterwards.
 	// A head whose stored hash no longer matches its content, or that is out of step with its change log, is not reviewed until a person resolves it.
 	const artifactId = basename(state.jsonPath).replace(/\.json$/, '');
-	const lifecycle = lifecycleFor?.(state.repo) ?? createRepoLifecycle(state.repo).service;
+	const lifecycle = lifecycleFor(state.repo);
 	const seen = await lifecycle.inspect(artifactId);
 	if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
-	const conflict = headConflict(state.jsonPath);
-	if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
 	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown; citations?: unknown };
 	// This phase records the CONTROLLER's review, so it does not record one on work
 	// the controller authored. `start` already sends such work to the daemon; this

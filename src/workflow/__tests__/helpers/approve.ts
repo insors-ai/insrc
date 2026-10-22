@@ -5,8 +5,8 @@
 import { dirname } from 'node:path';
 
 import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
-import { approveArtifactByJsonPath, rejectArtifactByJsonPath } from '../../gates.js';
-import type { ApprovalResult, RejectionResult } from '../../gates.js';
+import { approveArtifactByJsonPath, approveWorkflowTarget, rejectArtifactByJsonPath } from '../../gates.js';
+import type { ApprovalResult, RejectionResult, WorkflowApproveRequest } from '../../gates.js';
 
 /** The repository root of a head at `<repo>/.insrc/artifacts/<id>.json`. */
 export const repoOfHead = (jsonPath: string): string => dirname(dirname(dirname(jsonPath)));
@@ -17,4 +17,9 @@ export function approveJson(jsonPath: string, overrideReview?: string): Promise<
 
 export function rejectJson(jsonPath: string, reason: string): Promise<RejectionResult> {
 	return rejectArtifactByJsonPath(jsonPath, reason, { lifecycle: createRepoLifecycle(repoOfHead(jsonPath)).service });
+}
+
+/** Approve a target the way the daemon's route does, through the lifecycle of the repository it names. */
+export function approveTarget(req: Omit<WorkflowApproveRequest, 'lifecycle'>, opts?: Parameters<typeof approveWorkflowTarget>[1]): ReturnType<typeof approveWorkflowTarget> {
+	return approveWorkflowTarget({ ...req, lifecycle: createRepoLifecycle(req.repoPath).service }, opts);
 }

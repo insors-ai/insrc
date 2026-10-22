@@ -39,6 +39,7 @@ import type { DimensionResult } from '../../workflow/code-review/types.js';
 import { artifactJsonPath, buildArtifactId } from '../../workflow/storage.js';
 import { buildAuthorParty, codeReviewRunStart } from '../code-review-rpc.js';
 import type { CodeReviewRunDeps } from '../code-review-rpc.js';
+import { noopRoundWriter } from '../../workflow/__tests__/helpers/round-writer.js';
 
 const EPIC = 'abcd1234ef567890';
 const STORY = 's1';
@@ -167,7 +168,7 @@ function realRunnerDeps(diff: 'ok' | 'unavailable' | 'broken' = 'ok') {
 			return { grounding: DIFF_GROUNDING, changedFiles: ['src/from-diff.ts'] };
 		}) as never,
 		write: (path, content) => { writes.push({ path, content }); },
-		roundWriterFor: () => undefined,
+		roundWriterFor: () => noopRoundWriter(),
 		runReview: (async (subject: { changedFiles: readonly string[] }, provider: LLMProvider, opts: RunCodeReviewOpts, runnerDeps: typeof DEFAULT_DEPS | undefined) => {
 			seen.opts.push(opts); seen.subjects.push(subject);
 			return runCodeReview(subject as never, provider, opts, {

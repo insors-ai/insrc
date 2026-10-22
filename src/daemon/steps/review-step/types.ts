@@ -142,7 +142,7 @@ export interface ReviewStepDeps {
 	/** Ask the daemon to review an existing design artifact (`workflow.review`). */
 	readonly reviewByDaemon?: ((params: ReviewArtifactStreamParams, opts: ReviewStreamOpts) => Promise<WorkflowReviewDone>) | undefined;
 	/** The repository's durable LifecycleService for the verdicts phase; the daemon's registry by default. Answering undefined means no service: the review is persisted head-only (for tests of that path). */
-	readonly lifecycleFor?: ((repoPath: string) => LifecycleService | undefined) | undefined;
+	readonly lifecycleFor?: ((repoPath: string) => LifecycleService) | undefined;
 	/** Aborts the daemon review wait, and with it the review run. */
 	readonly signal?: AbortSignal | undefined;
 }

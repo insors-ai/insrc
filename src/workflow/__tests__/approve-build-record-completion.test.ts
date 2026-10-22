@@ -26,6 +26,7 @@ import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../stor
 import { approvalStateOf } from '../artifact-core/approval-view.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import { approvedMeta, reviewedMeta } from './lifecycle-fixtures.js';
+import { approveTarget } from './helpers/approve.js';
 
 const HASH = 'abc123def4567890';
 
@@ -52,7 +53,7 @@ test('single BUILD target with no prior json => the hook CREATES the record, the
 		// what is missing is only the BUILD record, which the hook creates.
 		mkdirSync(dirname(json), { recursive: true });
 		writeFileSync(artifactJsonPath(repo, codeReviewArtifactId(HASH, 's7')), JSON.stringify({ meta: { reviewedBy: 'daemon' }, body: { verdict: 'pass', counts: { high: 0, med: 0, low: 0 } } }));
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: json }, { enforce: false });
+		const out = await approveTarget({ repoPath: repo, artifactPath: json }, { enforce: false });
 		assert.ok(existsSync(json), 'the completion hook created the BUILD json');
 		assert.equal(out.approved.length, 1, 'the created BUILD is approved (not skipped)');
 		assert.equal(out.skipped.length, 0);
@@ -69,7 +70,7 @@ test('non-BUILD (LLD) target => no BUILD json is written (the hook is BUILD-scop
 		const lld = join(dir, `LLD-${HASH}-s7.json`);
 		writeFileSync(lld, JSON.stringify({ meta: { workflow: 'design.story', epicHash: HASH, storyId: 's7' }, body: {}, citations: [] }, null, 2));
 		stampOtherPartyReview(lld);   // approval requires an other-party review
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: lld }, { enforce: false });
+		const out = await approveTarget({ repoPath: repo, artifactPath: lld }, { enforce: false });
 		assert.equal(out.approved.length, 1, 'the LLD is approved');
 		const builds = readdirSync(dir).filter((f) => f.startsWith('BUILD-'));
 		assert.deepEqual(builds, [], 'no BUILD json was written for a non-BUILD approval');

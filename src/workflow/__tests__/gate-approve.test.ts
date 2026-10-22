@@ -25,6 +25,7 @@ import type { UnitRef } from '../tracker/refs.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';
 import { approveJson } from './helpers/approve.js';
 import { blockedMeta, recordReviewSync } from './lifecycle-fixtures.js';
+import { approveTarget } from './helpers/approve.js';
 
 afterEach(() => _setGateDepsForTests());
 
@@ -113,7 +114,7 @@ test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder bef
 		const plan = put(dir, `PLAN-${HASH}-s1.json`, planDoc(repo, ['t1', 't2']));
 		const buildPath = join(dir, `BUILD-${HASH}-s1.json`);
 		const seen = inject({ 'task:s1/t2': 'bob', 'story:s1': 'alice' });
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: buildPath });
+		const out = await approveTarget({ repoPath: repo, artifactPath: buildPath });
 		assert.equal(out.approved.length, 0);
 		assert.equal(out.skipped.length, 1);
 		assert.equal(out.skipped[0]!.path, buildPath);
@@ -123,7 +124,7 @@ test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder bef
 
 		// a batch: the refused BUILD target is skipped (its record exists already) and the PLAN is still approved
 		put(dir, `BUILD-${HASH}-s1.json`, { meta: { workflow: 'build', repoPath: repo, epicHash: HASH, storyId: 's1' }, body: { tasks: [] }, citations: [] });
-		const batch = await approveWorkflowTarget({ repoPath: repo, epicHash: HASH });
+		const batch = await approveTarget({ repoPath: repo, epicHash: HASH });
 		assert.deepEqual(batch.approved.map(a => a.path), [plan]);
 		assert.ok(batch.skipped.some(s => s.path === buildPath && /task t2: held by bob/.test(s.reason)));
 		assert.ok(isApproved(plan) && !isApproved(buildPath));
@@ -135,7 +136,7 @@ test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder bef
 		put(dir, `PLAN-${HASH}-s1.json`, planDoc(repo, ['t1']));
 		const buildPath = join(dir, `BUILD-${HASH}-s1.json`);
 		const seen = inject({ 'story:s1': 'bob', 'task:s1/t1': 'alice' });
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: buildPath });
+		const out = await approveTarget({ repoPath: repo, artifactPath: buildPath });
 		assert.match(out.skipped[0]?.reason ?? '', /held by bob/);
 		assert.deepEqual(seen.reads, ['story:s1'], 'the Story unit was checked, not the Tasks');
 		assert.ok(!existsSync(buildPath), 'a refused standalone BUILD leaves no record');
@@ -146,12 +147,12 @@ test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder bef
 		writeFileSync(join(dir, `PLAN-${HASH}-s1.json`), '{ not json');
 		const buildPath = join(dir, `BUILD-${HASH}-s1.json`);
 		inject({ 'story:s1': 'alice' });
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: buildPath });
+		const out = await approveTarget({ repoPath: repo, artifactPath: buildPath });
 		assert.match(out.skipped[0]?.reason ?? '', /plan of Story s1 cannot be read/);
 		assert.ok(!existsSync(buildPath));
 		// and with no policy the unreadable plan changes nothing
 		inject({}, none);
-		const free = await approveWorkflowTarget({ repoPath: repo, artifactPath: buildPath }).catch((e: Error) => e);
+		const free = await approveTarget({ repoPath: repo, artifactPath: buildPath }).catch((e: Error) => e);
 		assert.ok(!(free instanceof Error && /plan of Story/.test(free.message)), 'no policy: the plan is not even looked at');
 	});
 
@@ -165,7 +166,7 @@ test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder bef
 			put(dir, `PLAN-${HASH}-s1.json`, { meta: { workflow: 'plan', repoPath: repo, epicHash: HASH, storyId: 's1' }, body, citations: [] });
 			const buildPath = join(dir, `BUILD-${HASH}-s1.json`);
 			inject({ 'story:s1': 'alice' });
-			const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: buildPath });
+			const out = await approveTarget({ repoPath: repo, artifactPath: buildPath });
 			assert.match(out.skipped[0]?.reason ?? '', why, label);
 			assert.ok(!existsSync(buildPath), label);
 		});
@@ -176,7 +177,7 @@ test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder bef
 		put(dir, `PLAN-${HASH}-s1.json`, planDoc(repo, []));
 		const buildPath = join(dir, `BUILD-${HASH}-s1.json`);
 		const seen = inject({ 'story:s1': 'bob' });
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: buildPath });
+		const out = await approveTarget({ repoPath: repo, artifactPath: buildPath });
 		assert.match(out.skipped[0]?.reason ?? '', /held by bob/);
 		assert.deepEqual(seen.reads, ['story:s1']);
 		assert.ok(!existsSync(buildPath));

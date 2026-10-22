@@ -10,7 +10,10 @@ import { _clearCodeReviewStateStoreForTests } from '../../../daemon/steps/code-r
 import { runCodeReview, writeRecordFile as DEFAULT_WRITE } from '../../code-review/runner.js';
 import type { CodeReviewRunnerDeps } from '../../code-review/runner.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../code-review/types.js';
-import { buildArtifactId, codeReviewArtifactId, testsArtifactId } from '../../storage.js';
+import { artifactJsonPath, buildArtifactId, codeReviewArtifactId, planArtifactId, testsArtifactId } from '../../storage.js';
+import { approveWorkflowTarget } from '../../gates.js';
+import { reviewArtifactFile } from '../../review/run-artifact.js';
+import { LifecycleConflictError } from '../types.js';
 import { LifecycleService } from '../lifecycle-service.js';
 import { persistBuildRecord } from '../../runners/build/standalone-record.js';
 import type { BuildRecord } from '../../runners/build/standalone-record.js';
@@ -246,5 +249,34 @@ describe('round-recording', () => {
 			await persistStandaloneBuildRecord(repo, rec, roundWriterFor(repo));
 			assert.deepEqual((await lifecycleFor(repo).store.readWithHistory(BUILD)).changeLog.map(e => e.operation), ['create']);
 		} finally { resetLifecycleRegistry(); rmSync(repo, { recursive: true, force: true }); }
+	});
+
+	it('round-recording.test.ts: round recording runs with a mandatory lifecycle service', async () => {
+		const { k, through, service } = await seeded();
+		try {
+			// a round is recorded through the service the request names
+			await persistBuildRecord(k.repo, buildRec(T1, true), through);
+			assert.deepEqual((await logOf(k, BUILD)).map(e => e.operation), ['create']);
+
+			// a head edited behind the store is out of step with its log: the full log check refuses it on every path, with the service in hand
+			const PLAN = planArtifactId(H, 's1');
+			await k.store.write(artifact(PLAN, { payload: { body: { text: 'one' }, citations: [] } }), alice);
+			const planPath = artifactJsonPath(k.repo, PLAN);
+			const head = JSON.parse(readFileSync(planPath, 'utf8'));
+			head.body.text = 'edited behind the store';
+			writeFileSync(planPath, JSON.stringify(head, null, 2) + '\n');
+
+			const approved = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: planPath, lifecycle: service }, { enforce: false });
+			assert.deepEqual(approved.approved, []);
+			assert.match(approved.skipped[0]?.reason ?? '', /out of step|changed|integrity|hash|log/i);
+
+			const md = join(k.repo, 'PLAN.md');
+			writeFileSync(md, '# Plan\n');
+			await assert.rejects(
+				reviewArtifactFile({ mdPath: md, jsonPath: planPath, repo: k.repo, lifecycle: service, provider: {} as LLMProvider, model: 'm' }),
+				(e: unknown) => e instanceof LifecycleConflictError,
+			);
+			assert.equal((await k.store.readWithHistory(PLAN)).lifecycle.status, 'draft', 'and nothing was approved');
+		} finally { k.done(); }
 	});
 });

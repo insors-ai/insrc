@@ -31,6 +31,7 @@ import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
 import { idOfWorkflow, writeDesign } from './review-fixture.js';
 import { handleReviewStep } from '../handler.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
+import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
 
 // ---------------------------------------------------------------------------
 // Fixture: a temp repo + a persisted artifact (md + json with meta.workflow).
@@ -148,7 +149,7 @@ test('review-step drives the full loop and records the review with model=client'
 		assert.ok(verifyPrompt.user.includes('c-inv') && verifyPrompt.user.includes('c-cite'), 'batched prompt names both claims');
 
 		// --- verdicts ---
-		const doneOut = parse(await handleReviewStep({ phase: 'verdicts', verdicts: VERDICTS, state: state1 }, { lifecycleFor: () => undefined }));
+		const doneOut = parse(await handleReviewStep({ phase: 'verdicts', verdicts: VERDICTS, state: state1 }, { lifecycleFor: repo => createRepoLifecycle(repo).service }));
 		assert.equal(doneOut['next'], 'done');
 		assert.equal(doneOut['verdict'], 'block', 'a HIGH finding blocks (default blockOn HIGH+MED)');
 		assert.deepEqual(doneOut['counts'], { high: 1, med: 0, low: 1 });

@@ -35,6 +35,7 @@ import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../../workflo
 import { workflowReviewStart } from '../workflow-review-rpc.js';
 import type { WorkflowReviewDeps, WorkflowReviewDone } from '../workflow-review-rpc.js';
 import { envelopeProvider } from '../../workflow/review-pipeline/__tests__/enveloped.js';
+import { lifecycleReviewOf } from '../../workflow/artifact-core/approval-view.js';
 
 const SPEC = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
 
@@ -58,14 +59,16 @@ function countingProvider() {
 	return { provider: envelopeProvider(provider), calls };
 }
 
+const HASH = 'abcd1234ef567890';
+
 function fixture(kind: 'DEF' | 'LLD', authorMeta: Record<string, unknown>) {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-review-'));
-	const id = kind === 'DEF' ? 'DEF-abcd' : 'LLD-abcd-S001';
+	const id = kind === 'DEF' ? `DEF-${HASH}` : `LLD-${HASH}-s1`;
 	const json = join(repo, '.insrc', 'artifacts', `${id}.json`);
 	const md = join(repo, 'docs', 'epics', 'demo-E20261005abcd', kind === 'DEF' ? 'DEF.md' : join('S001', 'LLD.md'));
 	mkdirSync(dirname(json), { recursive: true });
 	mkdirSync(dirname(md), { recursive: true });
-	writeFileSync(json, JSON.stringify({ meta: { workflow: kind === 'DEF' ? 'define' : 'design.story', epicHash: 'abcd', storyId: 'S001', ...authorMeta }, body: { note: 'x' }, citations: [] }, null, 2) + '\n');
+	writeFileSync(json, JSON.stringify({ meta: { workflow: kind === 'DEF' ? 'define' : 'design.story', epicHash: HASH, storyId: 's1', ...authorMeta }, body: { note: 'x' }, citations: [] }, null, 2) + '\n');
 	writeFileSync(md, `<!-- insrc:artifact ${id} -->\n\n# ${kind}\n\nThe body.\n`);
 	return { repo, md, json, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
@@ -101,9 +104,9 @@ test('T12 a controller-authored LLD: progress frames, then done with the verdict
 		assert.ok(done.report.includes('Does not hold'));
 		assert.deepEqual(p.calls, ['runReviewSession']);
 
-		const stored = JSON.parse(readFileSync(f.json, 'utf8')).meta.review;
-		assert.equal(stored.reviewedBy, 'daemon');
-		assert.equal(stored.verdict, 'block');
+		const stored = lifecycleReviewOf(JSON.parse(readFileSync(f.json, 'utf8')).meta);
+		assert.equal(stored?.['party'], 'daemon');
+		assert.equal(stored?.['verdict'], 'block');
 	} finally { f.cleanup(); }
 });
 

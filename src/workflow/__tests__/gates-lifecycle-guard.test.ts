@@ -19,6 +19,8 @@ import { contentHash } from '../artifact-core/lifecycle.js';
 import { reviewArtifactFile } from '../review/run-artifact.js';
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../storage.js';
 import type { LLMProvider } from '../../shared/types.js';
+import { approveTarget } from './helpers/approve.js';
+import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 
 const HASH = 'abc123def4567890';
 const actor = { id: 'insrc:system', kind: 'system', properties: {} };
@@ -55,7 +57,7 @@ test('approveWorkflowTarget refuses a conflicted BUILD target in both branches b
 		const before = read(build);
 
 		// the single-target branch
-		const single = await approveWorkflowTarget({ repoPath: repo, artifactPath: build }, { enforce: false });
+		const single = await approveTarget({ repoPath: repo, artifactPath: build }, { enforce: false });
 		assert.deepEqual(single.approved, []);
 		assert.equal(single.skipped.length, 1);
 		assert.equal(single.skipped[0]?.path, build);
@@ -63,7 +65,7 @@ test('approveWorkflowTarget refuses a conflicted BUILD target in both branches b
 		assert.equal(read(build), before, 'the record bytes are unchanged by the completion hook');
 
 		// the epic sweep branch
-		const sweep = await approveWorkflowTarget({ repoPath: repo, epicHash: HASH }, { enforce: false });
+		const sweep = await approveTarget({ repoPath: repo, epicHash: HASH }, { enforce: false });
 		assert.deepEqual(sweep.approved, []);
 		assert.equal(sweep.skipped.length, 1);
 		assert.match(sweep.skipped[0]?.reason ?? '', /hash-mismatch/);
@@ -71,7 +73,7 @@ test('approveWorkflowTarget refuses a conflicted BUILD target in both branches b
 
 		// control: the same record with a matching hash goes through the hook and the approval, not the conflict refusal
 		writeFileSync(build, head('build', 'matching'));
-		const ok = await approveWorkflowTarget({ repoPath: repo, artifactPath: build }, { enforce: false });
+		const ok = await approveTarget({ repoPath: repo, artifactPath: build }, { enforce: false });
 		assert.ok(ok.skipped.every(s => !/hash-mismatch|in conflict/.test(s.reason)), JSON.stringify(ok.skipped));
 		assert.notEqual(read(build), head('build', 'matching'), 'the hook ran on the consistent record');
 		void dir;
@@ -88,7 +90,7 @@ test('approveArtifactByJsonPath and reviewArtifactFile refuse a conflicted head 
 		await assert.rejects(approveJson(plan), (e: unknown) => e instanceof LifecycleConflictError && e.reason === 'hash-mismatch');
 		assert.equal(read(plan), before, 'nothing was approved');
 		// on the workflow path the same head comes back in skipped[]
-		const viaWorkflow = await approveWorkflowTarget({ repoPath: repo, artifactPath: plan }, { enforce: false });
+		const viaWorkflow = await approveTarget({ repoPath: repo, artifactPath: plan }, { enforce: false });
 		assert.deepEqual(viaWorkflow.approved, []);
 		assert.match(viaWorkflow.skipped[0]?.reason ?? '', /hash-mismatch/);
 		assert.equal(read(plan), before);
@@ -98,7 +100,7 @@ test('approveArtifactByJsonPath and reviewArtifactFile refuse a conflicted head 
 		writeFileSync(md, '# plan\n');
 		const provider = new Proxy({}, { get: () => { throw new Error('the provider must not be reached'); } }) as unknown as LLMProvider;
 		await assert.rejects(
-			reviewArtifactFile({ mdPath: md, jsonPath: plan, repo, provider, model: 'm' }),
+			reviewArtifactFile({ mdPath: md, jsonPath: plan, repo, lifecycle: createRepoLifecycle(repo).service, provider, model: 'm' }),
 			(e: unknown) => e instanceof LifecycleConflictError && e.reason === 'hash-mismatch',
 		);
 		assert.equal(read(plan), before);

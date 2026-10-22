@@ -15,7 +15,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
-import { approveArtifactByJsonPath, ReviewBlockedError } from '../../gates.js';
+import { ReviewBlockedError } from '../../gates.js';
+import { approvalOverrideReasonOf, approvalStateOf } from '../../artifact-core/approval-view.js';
+import { approveJson } from '../../__tests__/helpers/approve.js';
+import { writeReviewedHead } from '../../__tests__/lifecycle-fixtures.js';
 import {
 	computeReviewVerdict, pendingUserFindings, renderReviewReport, severityForOutcome, tallyFindings,
 } from '../index.js';
@@ -38,14 +41,15 @@ function report(findings: readonly Finding[]): ReviewReport {
 	};
 }
 
-/** Write an artifact carrying `review` and try to approve it. */
-function approve(review: ReviewReport, opts?: { overrideReview?: string }): { approved: boolean; meta: Record<string, unknown> } {
+const HASH = 'abcd1234ef567890';
+
+/** Write a design head whose lifecycle review names `review` and try to approve it. */
+async function approve(review: ReviewReport, opts?: { overrideReview?: string }): Promise<{ approved: boolean; meta: Record<string, unknown> }> {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-outcome-'));
 	try {
-		const p = join(dir, 'LLD-x-S001.json');
-		writeFileSync(p, JSON.stringify({ meta: { workflow: 'design.story', review }, body: {}, citations: [] }, null, 2) + '\n');
+		const p = writeReviewedHead(dir, `LLD-${HASH}-s1`, { meta: { workflow: 'design.story', epicHash: HASH, storyId: 's1' }, report: review });
 		let approved = true;
-		try { approveArtifactByJsonPath(p, opts); } catch (e) {
+		try { await approveJson(p, opts?.overrideReview); } catch (e) {
 			if (!(e instanceof ReviewBlockedError)) throw e;
 			approved = false;
 		}
@@ -114,32 +118,32 @@ test('T6 an empty list says so rather than disappearing', () => {
 	assert.ok(wrongList.includes('_None._'));
 });
 
-test('T7 a design with only unverified premises is approvable', () => {
+test('T7 a design with only unverified premises is approvable', async () => {
 	const r = report([finding('a', 'could-not-verify'), finding('b', 'holds')]);
 	assert.equal(r.verdict, 'warn');
 	assert.equal(effectiveReviewVerdict(r, undefined), 'pass');
-	const res = approve(r);
+	const res = await approve(r);
 	assert.equal(res.approved, true);
-	assert.ok(res.meta['approvedAt']);
-	assert.equal(res.meta['reviewOverride'], undefined, 'no override was needed');
+	assert.equal(approvalStateOf(res.meta), 'approved');
+	assert.equal(approvalOverrideReasonOf(res.meta), undefined, 'no override was needed');
 });
 
-test('T7 a premise that does not hold refuses approval until resolved or overridden', () => {
+test('T7 a premise that does not hold refuses approval until resolved or overridden', async () => {
 	const r = report([finding('a', 'does-not-hold'), finding('b', 'could-not-verify')]);
 	assert.equal(effectiveReviewVerdict(r, undefined), 'block');
-	const refused = approve(r);
+	const refused = await approve(r);
 	assert.equal(refused.approved, false);
-	assert.equal(refused.meta['approvedAt'], undefined);
+	assert.equal(approvalStateOf(refused.meta), 'pending');
 
-	const overridden = approve(r, { overrideReview: 'accepted: the anchor is cosmetic' });
+	const overridden = await approve(r, { overrideReview: 'accepted: the anchor is cosmetic' });
 	assert.equal(overridden.approved, true);
-	assert.equal((overridden.meta['reviewOverride'] as { reason: string }).reason, 'accepted: the anchor is cosmetic');
+	assert.equal(approvalOverrideReasonOf(overridden.meta), 'accepted: the anchor is cosmetic');
 
 	// A resolution on the one blocking finding clears the block; the unverified one needs none.
 	assert.equal(effectiveReviewVerdict(r, { a: { action: 'accept', at: '2026-10-05T00:00:00.000Z' } as never }), 'pass');
 });
 
-test('T8 a review record written before this change keeps its verdict, rendering and gate result', () => {
+test('T8 a review record written before this change keeps its verdict, rendering and gate result', async () => {
 	const old: ReviewReport = {
 		artifact: 'LLD', stage: 'design.story', verdict: 'block', reviewedAt: '2026-09-01T00:00:00.000Z', model: 'client',
 		findings: [finding('a', undefined, 'MED'), finding('b', undefined, 'LOW')],
@@ -148,7 +152,7 @@ test('T8 a review record written before this change keeps its verdict, rendering
 	assert.equal(computeReviewVerdict(old.findings), 'block');
 	assert.deepEqual(tallyFindings(old.findings), old.counts);
 	assert.equal(effectiveReviewVerdict(old, undefined), 'block');
-	assert.equal(approve(old).approved, false);
+	assert.equal((await approve(old)).approved, false);
 	const md = renderReviewReport(old);
 	assert.ok(md.includes('**0 HIGH · 1 MED · 1 LOW**'));
 	assert.ok(md.includes('| Ref | Kind | Severity | Fixability | Premise | Evidence | Action |'));

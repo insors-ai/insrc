@@ -28,6 +28,7 @@ import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
 import { handleReviewStep } from '../handler.js';
 import { idOfWorkflow, writeDesign } from './review-fixture.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
+import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
 
 const MD = '# Story s1\n\n- t1: extend the two exported constants in foo.\n- t2: beta constant defined at src/foo.ts:2.\n';
 
@@ -64,7 +65,7 @@ async function review(fx: ReturnType<typeof fixture>, verdicts: unknown): Promis
 	_clearReviewStateStoreForTests();
 	const start = JSON.parse((await handleReviewStep({ phase: 'start', artifact: fx.mdPath, repo: fx.repo })).content[0]!.text) as { state: string };
 	await handleReviewStep({ phase: 'claims', claims: CLAIMS, state: start.state });
-	const done = JSON.parse((await handleReviewStep({ phase: 'verdicts', verdicts, state: start.state } as never, { lifecycleFor: () => undefined })).content[0]!.text) as { next: string };
+	const done = JSON.parse((await handleReviewStep({ phase: 'verdicts', verdicts, state: start.state } as never, { lifecycleFor: repo => createRepoLifecycle(repo).service })).content[0]!.text) as { next: string };
 	assert.equal(done.next, 'done');
 }
 

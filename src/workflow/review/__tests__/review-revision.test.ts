@@ -15,7 +15,7 @@ import { envelopeProvider } from '../../review-pipeline/__tests__/enveloped.js';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdtempSync as mkdtempRaw, rmSync as rmRaw } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { after as afterAll, test } from 'node:test';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 
@@ -31,7 +31,11 @@ import type { LLMMessage, LLMProvider, LLMResponse, StructuredCompletionOpts, St
 import { reviewArtifactFile } from '../run-artifact.js';
 import { resolveReviewFinding } from '../resolve.js';
 import type { Finding, ReviewReport } from '../types.js';
+import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
+import { lifecycleReviewOf } from '../../artifact-core/approval-view.js';
+import { draftMeta, writeReviewedHead } from '../../__tests__/lifecycle-fixtures.js';
 
+const HASH = 'abcd1234ef567890';
 const ARTIFACT = '# Story s1\n\n- t1: extend the two exported constants in foo.\n';
 
 const EXTRACT_JSON = {
@@ -74,9 +78,10 @@ function planFixture(): { repo: string; md: string; json: string; cleanup: () =>
 	mkdirSync(join(repo, 'src'), { recursive: true });
 	writeFileSync(join(repo, 'src', 'foo.ts'), 'export const alpha = 1;\nexport const beta = 2;\nexport const gamma = 3;\n');
 	const md = join(repo, 'PLAN.md');
-	const json = join(repo, 'PLAN.json');
+	const json = join(repo, '.insrc', 'artifacts', `PLAN-${HASH}-s1.json`);
+	mkdirSync(dirname(json), { recursive: true });
 	writeFileSync(md, ARTIFACT);
-	writeFileSync(json, JSON.stringify({ meta: { workflow: 'plan', authoredBy: 'controller', revision: 3 }, body: { tasks: ['extend the two exported constants in foo.'] }, citations: [] }, null, 2) + '\n');
+	writeFileSync(json, JSON.stringify({ meta: { workflow: 'plan', epicHash: HASH, storyId: 's1', authoredBy: 'controller', ...draftMeta({ revision: 3 }) }, body: { tasks: ['extend the two exported constants in foo.'] }, citations: [] }, null, 2) + '\n');
 	return { repo, md, json, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
@@ -91,7 +96,7 @@ test('auto-fix review and apply resolution bump the revision, report-only review
 	// run-artifact: a review that applies an auto-fix is a content write.
 	const fixed = planFixture();
 	try {
-		const res = await reviewArtifactFile({ mdPath: fixed.md, jsonPath: fixed.json, repo: fixed.repo, provider: provider(true), model: 'fake', reviewedAt: '2026-07-20T00:00:00.000Z', reReview: false });
+		const res = await reviewArtifactFile({ mdPath: fixed.md, jsonPath: fixed.json, repo: fixed.repo, lifecycle: createRepoLifecycle(fixed.repo).service, provider: provider(true), model: 'fake', reviewedAt: '2026-07-20T00:00:00.000Z', reReview: false });
 		assert.equal(res.applied.length, 1);
 		const after = read(fixed.json);
 		assert.equal(after.meta['revision'], 4, 'an applied auto-fix mints the next revision');
@@ -102,32 +107,32 @@ test('auto-fix review and apply resolution bump the revision, report-only review
 	const only = planFixture();
 	try {
 		const before = read(only.json);
-		const res = await reviewArtifactFile({ mdPath: only.md, jsonPath: only.json, repo: only.repo, provider: provider(false), model: 'fake', reviewedAt: '2026-07-20T00:00:00.000Z', reReview: false });
+		const res = await reviewArtifactFile({ mdPath: only.md, jsonPath: only.json, repo: only.repo, lifecycle: createRepoLifecycle(only.repo).service, provider: provider(false), model: 'fake', reviewedAt: '2026-07-20T00:00:00.000Z', reReview: false });
 		assert.equal(res.applied.length, 0);
 		const after = read(only.json);
 		assert.equal(after.meta['revision'], 3, 'a report-only review keeps the revision');
 		assert.equal(JSON.stringify(after.body), JSON.stringify(before.body));
-		assert.ok(after.meta['review']);
+		assert.ok(lifecycleReviewOf(after.meta), 'the review is recorded on the lifecycle');
 	} finally { only.cleanup(); }
 
 	// resolve: apply is content; accept, override and defer are meta-only.
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-resolve-rev-'));
 	try {
 		const md = join(dir, 'PLAN-x.md');
-		const json = join(dir, 'PLAN-x.json');
 		writeFileSync(md, '# Plan\n\n- t1: extend the two exported constants.\n');
 		const findings = [
 			finding({ claimId: 'apply1', severity: 'HIGH', fixability: 'assisted', proposedFix: { rationale: 'r', artifactEdits: [{ find: 'two exported constants', replace: 'three exported constants' }] } }),
 			finding({ claimId: 'acc', severity: 'MED' }), finding({ claimId: 'ovr', severity: 'MED' }), finding({ claimId: 'def', severity: 'MED' }),
 		];
-		writeFileSync(json, JSON.stringify({ meta: { workflow: 'plan', review: report(findings), revision: 6 }, body: { tasks: [{ id: 't1', desc: 'extend the two exported constants.' }] }, citations: [] }, null, 2));
+		const json = writeReviewedHead(dir, `PLAN-${HASH}-s1`, { meta: { workflow: 'plan', epicHash: HASH, storyId: 's1' }, body: { tasks: [{ id: 't1', desc: 'extend the two exported constants.' }] }, report: report(findings) });
 		const now = () => '2026-07-21T00:00:00.000Z';
+		const revision = read(json).meta['revision'];
 		resolveReviewFinding(md, json, 'acc', 'accept', undefined, now);
 		resolveReviewFinding(md, json, 'ovr', 'override', 'ok', now);
 		resolveReviewFinding(md, json, 'def', 'defer', undefined, now);
-		assert.equal(read(json).meta['revision'], 6, 'accept, override and defer keep the revision');
+		assert.equal(read(json).meta['revision'], revision, 'accept, override and defer keep the revision');
 		resolveReviewFinding(md, json, 'apply1', 'apply', undefined, now);
-		assert.equal(read(json).meta['revision'], 7, 'apply mints the next revision');
+		assert.equal(read(json).meta['revision'], Number(revision) + 1, 'apply mints the next revision');
 		assert.match(JSON.stringify(read(json).body), /three exported constants/);
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });

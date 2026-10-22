@@ -23,6 +23,7 @@ import { approveWorkflowTarget, ReviewBlockedError } from '../gates.js';
 import { approveJson } from './helpers/approve.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import { blockedMeta, recordReviewSync, reviewedMeta } from './lifecycle-fixtures.js';
+import { approveTarget } from './helpers/approve.js';
 
 const HASH = 'abcd1234ef567890';
 type Party = 'controller' | 'daemon';
@@ -186,12 +187,12 @@ for (const enforce of [false, true]) {
 		const r = repo();
 		try {
 			const p = build(r.dir, 'controller');
-			const out = await approveWorkflowTarget({ repoPath: r.root, artifactPath: p }, { enforce });
+			const out = await approveTarget({ repoPath: r.root, artifactPath: p }, { enforce });
 			assert.deepEqual(out.approved, []);
 			assert.deepEqual(out.skipped, [{ path: p, reason: 'completion requires a code review; none was run' }]);
 			assert.ok(!isApproved(p));
 
-			const over = await approveWorkflowTarget({ repoPath: r.root, artifactPath: p, overrideReview: 'tested by hand' }, { enforce });
+			const over = await approveTarget({ repoPath: r.root, artifactPath: p, overrideReview: 'tested by hand' }, { enforce });
 			assert.deepEqual(over.approved.map(a => a.path), [p]);
 			assert.equal(overrideOf(p), 'tested by hand');
 		} finally { r.cleanup(); }
@@ -204,14 +205,14 @@ for (const enforce of [false, true]) {
 			try {
 				const p = build(r.dir, party);
 				writeCR(r.dir, 's1', { reviewedBy: party });
-				const out = await approveWorkflowTarget({ repoPath: r.root, artifactPath: p }, { enforce });
+				const out = await approveTarget({ repoPath: r.root, artifactPath: p }, { enforce });
 				assert.deepEqual(out.approved, []);
 				assert.equal(out.skipped.length, 1);
 				assert.equal(out.skipped[0]!.reason, `the code review was done by the party that authored the work (${party})`);
 				assert.ok(!isApproved(p));
 
 				writeCR(r.dir, 's1', { reviewedBy: other });
-				const ok = await approveWorkflowTarget({ repoPath: r.root, artifactPath: p }, { enforce });
+				const ok = await approveTarget({ repoPath: r.root, artifactPath: p }, { enforce });
 				assert.deepEqual(ok.approved.map(a => a.path), [p]);
 				assert.deepEqual(ok.skipped, []);
 				assert.equal(overrideOf(p), undefined);
@@ -225,15 +226,15 @@ test('T7 for a BUILD record too, an unknown author or reviewer does not withhold
 	try {
 		const p = build(r.dir);                       // an older record: no author
 		writeCR(r.dir, 's1', { model: 'client' });
-		assert.equal((await approveWorkflowTarget({ repoPath: r.root, artifactPath: p }, { enforce: false })).approved.length, 1);
+		assert.equal((await approveTarget({ repoPath: r.root, artifactPath: p }, { enforce: false })).approved.length, 1);
 
 		const q = write(r.dir, `BUILD-${HASH}-s2.json`, { workflow: 'build', storyId: 's2', authoredBy: 'controller' });
 		writeCR(r.dir, 's2', {});                   // a code review that names no reviewer
-		assert.equal((await approveWorkflowTarget({ repoPath: r.root, artifactPath: q }, { enforce: false })).approved.length, 1);
+		assert.equal((await approveTarget({ repoPath: r.root, artifactPath: q }, { enforce: false })).approved.length, 1);
 
 		const s = write(r.dir, `BUILD-${HASH}-s3.json`, { workflow: 'build', storyId: 's3', authoredBy: 'controller' });
 		writeCR(r.dir, 's3', { model: 'client' });  // reviewed by the controller, by its label
-		assert.equal((await approveWorkflowTarget({ repoPath: r.root, artifactPath: s }, { enforce: false })).skipped.length, 1);
+		assert.equal((await approveTarget({ repoPath: r.root, artifactPath: s }, { enforce: false })).skipped.length, 1);
 	} finally { r.cleanup(); }
 });
 
@@ -243,10 +244,10 @@ test('T7 the party of a code review is its lifecycle review\'s when it has one',
 		const p = build(r.dir, 'controller');
 		// a code review whose lifecycle review says the controller did it, over a label that says the daemon
 		writeCR(r.dir, 's1', { reviewedBy: 'daemon', ...reviewedMeta({ party: 'controller' }) });
-		const out = await approveWorkflowTarget({ repoPath: r.root, artifactPath: p }, { enforce: false });
+		const out = await approveTarget({ repoPath: r.root, artifactPath: p }, { enforce: false });
 		assert.equal(out.skipped[0]?.reason, 'the code review was done by the party that authored the work (controller)');
 		writeCR(r.dir, 's1', { reviewedBy: 'controller', ...reviewedMeta({ party: 'daemon' }) });
-		assert.equal((await approveWorkflowTarget({ repoPath: r.root, artifactPath: p }, { enforce: false })).approved.length, 1);
+		assert.equal((await approveTarget({ repoPath: r.root, artifactPath: p }, { enforce: false })).approved.length, 1);
 	} finally { r.cleanup(); }
 });
 
@@ -255,7 +256,7 @@ test('T7 a code review that cannot be read is no code review', async () => {
 	try {
 		const p = build(r.dir, 'controller');
 		writeFileSync(join(r.dir, `CR-${HASH}-s1.json`), '{ not json');
-		const out = await approveWorkflowTarget({ repoPath: r.root, artifactPath: p }, { enforce: false });
+		const out = await approveTarget({ repoPath: r.root, artifactPath: p }, { enforce: false });
 		assert.deepEqual(out.skipped.map(s => s.reason), ['completion requires a code review; none was run']);
 	} finally { r.cleanup(); }
 });
@@ -291,7 +292,7 @@ test('T8 a batch approval lists every withheld artifact in skipped[] with its re
 		const blocking   = write(r.dir, `LLD-${HASH}-s2.json`, { workflow: 'design.story', storyId: 's2', authoredBy: 'controller', review: review('daemon', { block: true }) });
 		const plan       = write(r.dir, `PLAN-${HASH}-s1.json`, { workflow: 'plan', storyId: 's1', authoredBy: 'controller' });
 
-		const out = await approveWorkflowTarget({ repoPath: r.root, epicHash: HASH }, { enforce: false });
+		const out = await approveTarget({ repoPath: r.root, epicHash: HASH }, { enforce: false });
 		assert.deepEqual(out.approved.map(a => a.path).sort(), [reviewed, plan].sort());
 		const reasons = Object.fromEntries(out.skipped.map(s => [s.path, s.reason]));
 		assert.deepEqual(reasons, {
@@ -303,7 +304,7 @@ test('T8 a batch approval lists every withheld artifact in skipped[] with its re
 		for (const p of [unreviewed, sameParty, blocking]) assert.ok(!isApproved(p));
 
 		// With an override reason the same batch approves the three it withheld.
-		const over = await approveWorkflowTarget({ repoPath: r.root, epicHash: HASH, overrideReview: 'batch override' }, { enforce: false });
+		const over = await approveTarget({ repoPath: r.root, epicHash: HASH, overrideReview: 'batch override' }, { enforce: false });
 		assert.deepEqual(over.approved.map(a => a.path).sort(), [unreviewed, sameParty, blocking].sort());
 		for (const p of [unreviewed, sameParty, blocking]) assert.equal(overrideOf(p), 'batch override');
 	} finally { r.cleanup(); }

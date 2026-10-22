@@ -34,6 +34,7 @@ import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
 import type { ChangeLogEntry } from '../artifact-core/types.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import { approvedMeta, rejectedMeta } from './lifecycle-fixtures.js';
+import { approveTarget } from './helpers/approve.js';
 
 const HASH = '8d4b90c9ab301e66';
 const ID = `LLD-${HASH}-s1`;
@@ -125,7 +126,7 @@ test('review decision: approve approves first and then saves the comments with d
 		const { approveWorkflowTarget } = await import('../gates.js');
 		const r = await decide(fx, { decision: 'approve', comments: [INLINE, WHOLE, ON_HTML] }, {
 			...DEPS,
-			approve: async (req, o) => { order.push('approve'); return approveWorkflowTarget(req, o); },
+			approve: async (req, o) => { order.push('approve'); return approveTarget(req, o); },
 			feedbackFor: repo => {
 				const through = feedbackFor(repo);
 				return { ...through, feedback: { add: (id, input, actor) => {
@@ -547,7 +548,7 @@ test("handleReviewDecision on a BUILD record: approve goes through the same appr
 			...DEPS,
 			approve: async (req) => { calls.push(req); return { approved: [], skipped: [{ path: jsonPath, reason: 'code review: reviewed by the party that built it' }] }; },
 		}) as ReviewDecisionResult;
-		assert.deepEqual(calls, [{ repoPath: repo, artifactPath: jsonPath, actor: { id: 'insrc:approval', kind: 'system', properties: {} } }], 'the same call as for any record: the repository, the record and who decides');
+		assert.deepEqual(calls.map(c => { const { lifecycle, ...rest } = c as { lifecycle?: unknown }; assert.ok(lifecycle !== undefined, 'and the repository\'s lifecycle service'); return rest; }), [{ repoPath: repo, artifactPath: jsonPath, actor: { id: 'insrc:approval', kind: 'system', properties: {} } }], 'the same call as for any record: the repository, the record and who decides');
 		assert.equal(held.artifactId, id);
 		assert.equal(held.outcome, 'withheld');
 		assert.equal(held.reason, 'code review: reviewed by the party that built it', 'the reason is relayed');

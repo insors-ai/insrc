@@ -93,8 +93,8 @@ export interface CodeReviewStepDeps {
 	readonly assembleDiffGrounding: typeof assembleDiffCodeReviewGrounding;
 	readonly runReview:      typeof runCodeReview;
 	readonly write:          (absPath: string, content: string) => void;
-	/** The repository's round writer: the record is stored through the lifecycle service first. The daemon's registry by default; answering undefined stores nothing through it (for tests of that path). */
-	readonly roundWriterFor?: ((repoPath: string) => RoundWriter | undefined) | undefined;
+	/** The repository's round writer: the record is stored through the lifecycle service first. The daemon's registry by default. */
+	readonly roundWriterFor?: ((repoPath: string) => RoundWriter) | undefined;
 	readonly sleep:          (ms: number) => Promise<void>;
 	readonly now:            () => number;
 	readonly freshnessTimeoutMs: () => number;

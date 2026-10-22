@@ -41,6 +41,7 @@ import { ensureBuildRecordOnCompletion } from '../../../../workflow/runners/buil
 import { buildStartRelPath, readBuildStart, resolveStoryRangeBase } from '../../../../workflow/runners/build/range-base.js';
 import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
 import { seedSidecarRules } from '../../../../workflow/artifact-core/__tests__/seed-rules.js';
+import { approveTarget } from '../../../../workflow/__tests__/helpers/approve.js';
 
 /** The judge's structured verdict, with the fields a test does not care about filled in. */
 function judgeVerdict(over: Record<string, unknown>): Record<string, unknown> {
@@ -253,7 +254,7 @@ test('T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task
 		commitRecords(fx, 'build record after t1');
 
 		// A batch approval of the epic, aimed at anything else, sweeps this BUILD record up.
-		const swept = await approveWorkflowTarget({ repoPath: fx.repo, epicHash: HASH });
+		const swept = await approveTarget({ repoPath: fx.repo, epicHash: HASH });
 		assert.ok(swept.approved.some(a => a.path.endsWith(`${buildArtifactId(HASH, 's1')}.json`)), 'fixture precondition: the sweep approved the half-built Story\'s BUILD record');
 		assert.equal(approvalStateOf(buildRecord(fx, 's1').meta), 'approved');
 		commitRecords(fx, 'the approval rewrite');
@@ -279,7 +280,7 @@ test('T34: the same mid-build approval with the build-start file DELETED before 
 		await implement(fx, 's1/t1');
 		work(fx, 'task-one.ts', 'source-only');
 		await validate(fx, 's1/t1', 't1');
-		await approveWorkflowTarget({ repoPath: fx.repo, epicHash: HASH });
+		await approveTarget({ repoPath: fx.repo, epicHash: HASH });
 		unlinkSync(stampFile(fx, 's1'));
 		commitRecords(fx, 'records, with the stamp gone');
 
@@ -339,7 +340,7 @@ test('T36 (plan-driven): implement writes NO BUILD record, and a batch approval 
 		// is not an artifact, so the sweep finds NOTHING pending. (T33 shows the
 		// same sweep does approve a BUILD record once one exists.)
 		await assert.rejects(
-			() => approveWorkflowTarget({ repoPath: fx.repo, epicHash: HASH }),
+			() => approveTarget({ repoPath: fx.repo, epicHash: HASH }),
 			(e: unknown) => e instanceof Error && e.name === 'NoPendingArtifactsError',
 			'the sweep must find no pending artifact: nothing to complete',
 		);
@@ -371,7 +372,7 @@ test('T36 (Small route): implement stamps and writes NO BUILD record; a batch ap
 		assert.equal(stampedBase(fx, 's1'), fx.git('rev-parse', 'HEAD'));
 		assert.equal(existsSync(artifact(fx, buildArtifactId(HASH, 's1'))), false);
 		await assert.rejects(
-			() => approveWorkflowTarget({ repoPath: fx.repo, epicHash: HASH }),
+			() => approveTarget({ repoPath: fx.repo, epicHash: HASH }),
 			(e: unknown) => e instanceof Error && e.name === 'NoPendingArtifactsError',
 		);
 	} finally { fx.cleanup(); }

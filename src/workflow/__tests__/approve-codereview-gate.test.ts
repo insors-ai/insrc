@@ -29,6 +29,7 @@ import { artifactJsonPath, codeReviewArtifactId } from '../storage.js';
 import { approvalStateOf } from '../artifact-core/approval-view.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import { approvedMeta, reviewedMeta } from './lifecycle-fixtures.js';
+import { approveTarget } from './helpers/approve.js';
 
 const HASH = 'abc123def4567890';
 
@@ -77,7 +78,7 @@ test('ac1: enforce on + CR block + no override → skipped, not approved, codeRe
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		writeCR(repo, 's1', 'block');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 0);
 		assert.equal(out.skipped.length, 1);
 		assert.equal(out.skipped[0]!.path, p);
@@ -97,7 +98,7 @@ test('ac2: enforce on + CR block + overrideReview → approved, codeReview[] ove
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		writeCR(repo, 's1', 'block');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p, overrideReview: 'verified sound' }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p, overrideReview: 'verified sound' }, { enforce: true });
 		assert.equal(out.approved.length, 1);
 		assert.equal(out.skipped.length, 0);
 		assert.ok(isApproved(p));
@@ -115,7 +116,7 @@ test('ac3: CR warn → approved, codeReview[] warn + counts', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		writeCR(repo, 's1', 'warn');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 1);
 		assert.ok(isApproved(p));
 		assert.equal(out.codeReview[0]!.status, 'warn');
@@ -127,7 +128,7 @@ test('ac3: CR pass → approved, codeReview[] pass + counts', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		writeCR(repo, 's1', 'pass');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 1);
 		assert.equal(out.codeReview[0]!.status, 'pass');
 		assert.deepEqual(out.codeReview[0]!.counts, { high: 0, med: 1, low: 3 });
@@ -145,7 +146,7 @@ test('ac5: absent CR record (non-BUILD) → approved byte-identical, codeReview[
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `LLD-${HASH}-s1.json`, { workflow: 'design.story', storyId: 's1' });
 		// no writeCR — the record is absent
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 1);
 		assert.ok(isApproved(p));
 		assert.equal(out.codeReview[0]!.status, 'no-review');
@@ -156,7 +157,7 @@ test('ac5: DEF/HLD artifact (no storyId) → gate never runs, codeReview empty, 
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `HLD-${HASH}.json`, { workflow: 'design.epic' });   // no storyId
 		writeCR(repo, 's1', 'block');   // a CR for s1 exists but must not be consulted
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 1);
 		assert.ok(isApproved(p));
 		assert.equal(out.codeReview.length, 0, 'gate does not run for a non-story-scoped artifact');
@@ -167,7 +168,7 @@ test('ac5: enforce OFF + CR block → approved (demoted advisory), codeReview[] 
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		writeCR(repo, 's1', 'block');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
 		assert.equal(out.approved.length, 1, 'enforce off never withholds completion');
 		assert.ok(isApproved(p));
 		assert.equal(out.codeReview[0]!.status, 'warn');
@@ -186,7 +187,7 @@ test('batch: story A CR block + story B CR pass (enforce on) → A skipped, B ap
 		const b = writeArtifact(dir, `LLD-${HASH}-s2.json`, { workflow: 'design.story', storyId: 's2' });
 		writeCR(repo, 's1', 'block');
 		writeCR(repo, 's2', 'pass');
-		const out = await approveWorkflowTarget({ repoPath: repo, epicHash: HASH }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, epicHash: HASH }, { enforce: true });
 		assert.deepEqual(out.approved.map(x => x.path), [b], 'only the passing story approved');
 		assert.deepEqual(out.skipped.map(x => x.path), [a], 'the blocked story skipped, not dropped');
 		assert.ok(!isApproved(a) && isApproved(b));
@@ -206,7 +207,7 @@ test('ac6: clean meta.review + CR block → withheld ONLY by the code-review gat
 		const cleanReview = { verdict: 'pass', findings: [], counts: { high: 0, med: 0, low: 0 } };
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1', review: cleanReview });
 		writeCR(repo, 's1', 'block');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.skipped.length, 1);
 		assert.match(out.skipped[0]!.reason, /code review BLOCKS/, 'held by the code-review gate, not meta.review');
 		assert.ok(!isApproved(p));
@@ -221,7 +222,7 @@ test('ac6: corrupt CR record (non-BUILD) → no-review fail-open, approved', asy
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `LLD-${HASH}-s1.json`, { workflow: 'design.story', storyId: 's1' });
 		writeCR(repo, 's1', 'corrupt');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 1, 'an unreadable CR record never manufactures a block');
 		assert.ok(isApproved(p));
 		assert.equal(out.codeReview[0]!.status, 'no-review');

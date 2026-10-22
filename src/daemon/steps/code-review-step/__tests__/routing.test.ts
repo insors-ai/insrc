@@ -25,6 +25,7 @@ import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts }
 import { DAEMON_CODE_REVIEW_WAIT_MS, handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../state-store.js';
 import type { CodeReviewStepOutput } from '../types.js';
+import { noopRoundWriter } from '../../../../workflow/__tests__/helpers/round-writer.js';
 
 const EPIC = 'e1a2b3c4d5e6f7a8';
 const STORY = 's8';
@@ -68,7 +69,7 @@ function harness(author: PartyOrUnknown, overrides: Partial<CodeReviewStepDeps> 
 		assembleDiffGrounding: async () => { diffCalls += 1; return { grounding, changedFiles: ['src/a.ts'] }; },
 		runReview: runCodeReview,
 		write: (path) => { writes.push(path); },
-		roundWriterFor: () => undefined,
+		roundWriterFor: () => noopRoundWriter(),
 		sleep: async () => {},
 		now: () => 0,
 		freshnessTimeoutMs: () => 120000,

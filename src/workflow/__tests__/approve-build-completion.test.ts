@@ -30,6 +30,7 @@ import { artifactJsonPath, codeReviewArtifactId } from '../storage.js';
 import { approvalStateOf } from '../artifact-core/approval-view.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import { approvedMeta, reviewedMeta } from './lifecycle-fixtures.js';
+import { approveTarget } from './helpers/approve.js';
 
 const HASH = 'abc123def4567890';
 
@@ -81,7 +82,7 @@ test('ac1: epic-batch sweep includes a pending BUILD; excludes an already-approv
 		Object.assign(j.meta, approvedMeta({ at: new Date(0).toISOString() }));
 		writeFileSync(doneP, JSON.stringify(j));
 
-		const out = await approveWorkflowTarget({ repoPath: repo, epicHash: HASH }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, epicHash: HASH }, { enforce: true });
 		assert.deepEqual(out.approved.map(a => a.path), [pending], 'the pending BUILD is swept + completed');
 		assert.equal(out.skipped.length, 0);
 		assert.ok(isApproved(pending) && isApproved(doneP));
@@ -96,7 +97,7 @@ test('ac2: single BUILD + enforce ON + CR pass => completes, codeReview[] pass',
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		writeCR(repo, 's1', 'pass');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 1);
 		assert.ok(isApproved(p));
 		assert.equal(out.codeReview[0]!.status, 'pass');
@@ -111,7 +112,7 @@ test('ac3: BUILD + enforce ON + absent CR => withheld into skipped[], not approv
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		// no writeCR — the code review never ran
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 0);
 		assert.equal(out.skipped.length, 1);
 		assert.equal(out.skipped[0]!.path, p);
@@ -128,7 +129,7 @@ test('ac3: BUILD + enforce ON + absent CR => withheld into skipped[], not approv
 test('ac4: BUILD + enforce ON + absent CR + overrideReview => completes, override recorded', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p, overrideReview: 'reviewed manually' }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p, overrideReview: 'reviewed manually' }, { enforce: true });
 		assert.equal(out.approved.length, 1, 'an explicit override is a deliberate completion assertion');
 		assert.equal(out.skipped.length, 0);
 		assert.ok(isApproved(p));
@@ -146,7 +147,7 @@ test('ac5: BUILD + enforce ON + CR block => withheld into skipped[], codeReview[
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		writeCR(repo, 's1', 'block');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 0);
 		assert.equal(out.skipped.length, 1);
 		assert.match(out.skipped[0]!.reason, /code review BLOCKS/);
@@ -166,13 +167,13 @@ test('ac5: BUILD + enforce ON + CR block => withheld into skipped[], codeReview[
 test('ac6: BUILD + enforce OFF + absent CR => withheld (completion requires a code review, whatever the setting)', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
 		assert.deepEqual(out.approved, []);
 		assert.deepEqual(out.skipped, [{ path: p, reason: 'completion requires a code review; none was run' }]);
 		assert.ok(!isApproved(p));
 		assert.equal(out.codeReview[0]!.status, 'no-review');
 
-		const overridden = await approveWorkflowTarget({ repoPath: repo, artifactPath: p, overrideReview: 'reviewed by hand' }, { enforce: false });
+		const overridden = await approveTarget({ repoPath: repo, artifactPath: p, overrideReview: 'reviewed by hand' }, { enforce: false });
 		assert.deepEqual(overridden.approved.map(a => a.path), [p]);
 		assert.ok(isApproved(p));
 	});
@@ -182,7 +183,7 @@ test('ac6: BUILD + enforce OFF + a BLOCKING CR => completes: enforcement off sti
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		writeCR(repo, 's1', 'block');
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
 		assert.deepEqual(out.approved.map(a => a.path), [p], 'a code review HAS run; with enforcement off its verdict does not withhold');
 		assert.equal(out.skipped.length, 0);
 	});
@@ -191,7 +192,7 @@ test('ac6: BUILD + enforce OFF + a BLOCKING CR => completes: enforcement off sti
 test('ac6: non-BUILD LLD + enforce ON + absent CR => completes (the withhold is BUILD-scoped)', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `LLD-${HASH}-s1.json`, { workflow: 'design.story', storyId: 's1' });
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 1, 'a non-BUILD artifact is unaffected — gate no-review falls through');
 		assert.ok(isApproved(p));
 		assert.equal(out.codeReview[0]!.status, 'no-review');
@@ -203,7 +204,7 @@ test('ac6: a story-scoped artifact whose basename is NOT BUILD- is not withheld 
 		// A PLAN artifact whose meta.workflow happens to read 'build' must NOT be withheld —
 		// the predicate keys on the BUILD- filename prefix, not meta.workflow.
 		const p = writeArtifact(dir, `PLAN-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 1, 'non-BUILD basename => no withhold, regardless of meta.workflow');
 		assert.equal(out.skipped.length, 0);
 		assert.ok(isApproved(p));
@@ -219,7 +220,7 @@ test('ac7: clean meta.review + BUILD withheld ONLY by the code-review gate (dist
 		const cleanReview = { verdict: 'pass', findings: [], counts: { high: 0, med: 0, low: 0 } };
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1', review: cleanReview });
 		// no CR record => the ONLY thing that can withhold completion is the code-review gate
-		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.skipped.length, 1);
 		assert.match(out.skipped[0]!.reason, /completion requires a code review/, 'withheld by the code-review gate, not meta.review');
 		assert.ok(!isApproved(p));
@@ -230,7 +231,7 @@ test('ac7: epic batch withheld-BUILD + clean-LLD => BUILD skipped, LLD approved 
 	await withRepo(async (repo, dir) => {
 		const build = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });   // no CR => withheld
 		const lld   = writeArtifact(dir, `LLD-${HASH}-s2.json`,   { workflow: 'design.story', storyId: 's2' });
-		const out = await approveWorkflowTarget({ repoPath: repo, epicHash: HASH }, { enforce: true });
+		const out = await approveTarget({ repoPath: repo, epicHash: HASH }, { enforce: true });
 		assert.deepEqual(out.approved.map(a => a.path), [lld], 'the clean LLD is approved');
 		assert.deepEqual(out.skipped.map(s => s.path), [build], 'the review-less BUILD is skipped, not dropped');
 		assert.ok(!isApproved(build) && isApproved(lld));

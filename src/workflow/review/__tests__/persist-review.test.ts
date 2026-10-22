@@ -91,18 +91,14 @@ describe('persist-review', () => {
 			assert.equal(((await stateOf(ref)) as { reportEntries: number }).reportEntries, 1);
 		} finally { ref.kit.done(); }
 
-		const cases: { step: PersistStep; stored: string[]; inject(r: Rig): PersistReviewInput }[] = [
+		const cases: { step: PersistStep; stored: string[]; edited?: boolean; inject(r: Rig): PersistReviewInput }[] = [
 			{ step: 'inspect', stored: [], inject: r => { r.service.inspect = async () => { throw new Error('boom inspect'); }; return r.input; } },
-			{ step: 'conflict', stored: [], inject: r => {
-				const inspect = r.service.inspect.bind(r.service);
-				r.service.inspect = async id => {
-					const seen = await inspect(id);
-					const path = artifactJsonPath(r.kit.repo, LLD);
-					const head = JSON.parse(readFileSync(path, 'utf8'));
-					head.body.text = 'edited behind the store';
-					writeFileSync(path, JSON.stringify(head, null, 2) + '\n');
-					return seen;
-				};
+			{ step: 'inspect', stored: [], edited: true, inject: r => {
+				// the head is edited behind the store: its stored hash no longer matches its content
+				const path = artifactJsonPath(r.kit.repo, LLD);
+				const head = JSON.parse(readFileSync(path, 'utf8'));
+				head.body.text = 'edited behind the store';
+				writeFileSync(path, JSON.stringify(head, null, 2) + '\n');
 				return r.input;
 			} },
 			{ step: 'fix', stored: [], inject: r => { r.service.updateContent = async () => { throw new Error('boom fix'); }; return r.input; } },
@@ -120,7 +116,7 @@ describe('persist-review', () => {
 				const failing = c.inject(r);
 				await assert.rejects(persistReview(failing), (e: unknown) => e instanceof ReviewPersistError && e.step === c.step && new RegExp(`${c.step} step`).test(e.message)
 					&& JSON.stringify(e.stored) === JSON.stringify(c.stored));
-				if (c.step === 'conflict') {
+				if (c.edited === true) {
 					// the head was edited behind the store: a person resolves it, here by bringing the stored hash to the content
 					const path = artifactJsonPath(r.kit.repo, LLD);
 					const head = JSON.parse(readFileSync(path, 'utf8'));

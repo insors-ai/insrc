@@ -17,6 +17,7 @@ import { LEDGER_EXCLUDE_GLOBS } from '../../../../workflow/runners/build/changed
 import { buildStartRelPath } from '../../../../workflow/runners/build/range-base.js';
 import type { CodeReviewStepOutput } from '../types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../../workflow/code-review/types.js';
+import { noopRoundWriter } from '../../../../workflow/__tests__/helpers/round-writer.js';
 
 // ---- fixtures ----
 
@@ -89,7 +90,7 @@ function makeDeps(overrides: Partial<CodeReviewStepDeps> = {}): { deps: CodeRevi
 		assembleDiffGrounding: async () => ({ grounding: diffGrounding, changedFiles: DIFF_CHANGED }),
 		runReview:      runCodeReview,
 		write:          (path, content) => { writes.push({ path, content }); },
-		roundWriterFor: () => undefined,
+		roundWriterFor: () => noopRoundWriter(),
 		sleep:          async () => {},
 		now:            () => 0,
 		freshnessTimeoutMs: () => 120000,

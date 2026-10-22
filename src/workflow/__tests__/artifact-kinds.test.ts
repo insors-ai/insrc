@@ -31,6 +31,7 @@ import { approveJson, rejectJson } from './helpers/approve.js';
 import { artifactIdMarker, artifactJsonPath, testsArtifactId } from '../storage.js';
 import { resolveWorkflowRef } from '../tracker/resolve.js';
 import { approvalStateOf } from '../artifact-core/approval-view.js';
+import { approveTarget } from './helpers/approve.js';
 
 const HASH = 'abc123def4567890';
 const AT = '2026-01-15T00:00:00.000Z';
@@ -163,7 +164,7 @@ test("approval of a TESTS record by its md path and by its json path through the
 		for (const artifactPath of [md, json]) {
 			for (const enforce of [true, false]) {
 				for (const overrideReview of [undefined, 'because']) {
-					const out = await approveWorkflowTarget(
+					const out = await approveTarget(
 						{ repoPath: r.repo, artifactPath, ...(overrideReview !== undefined ? { overrideReview } : {}) }, { enforce },
 					);
 					assert.deepEqual(out.approved, []);
@@ -175,7 +176,7 @@ test("approval of a TESTS record by its md path and by its json path through the
 		}
 		// The same Story's BUILD record IS put through the code-review gate: the
 		// refusal above is by kind, not because the gate is off in this fixture.
-		const build = await approveWorkflowTarget({ repoPath: r.repo, artifactPath: artifactJsonPath(r.repo, `BUILD-${HASH}-s1`) }, { enforce: true });
+		const build = await approveTarget({ repoPath: r.repo, artifactPath: artifactJsonPath(r.repo, `BUILD-${HASH}-s1`) }, { enforce: true });
 		assert.equal(build.codeReview.length, 1);
 
 		// The two functions every approval and rejection go through.
@@ -194,7 +195,7 @@ test("approval of a TESTS record by its md path and by its json path through the
 		unchanged();
 
 		// The batch for the Epic neither stamps nor lists it.
-		const batch = await approveWorkflowTarget({ repoPath: r.repo, epicHash: HASH, overrideReview: 'batch' }, { enforce: false });
+		const batch = await approveTarget({ repoPath: r.repo, epicHash: HASH, overrideReview: 'batch' }, { enforce: false });
 		const touched = [...batch.approved.map(a => a.path), ...batch.skipped.map(s => s.path)];
 		assert.ok(touched.length > 0, 'the batch must have found the Epic\'s pending artifacts');
 		assert.ok(!touched.includes(json), JSON.stringify(touched));

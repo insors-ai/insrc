@@ -70,8 +70,19 @@ test('maintenance-source.test.ts: the CLI update applies the configured repo URL
 		assert.match(r.error ?? '', /commits no remote branch has/);
 		assert.equal(git(f.install, 'rev-parse', 'HEAD'), before);
 
-		// a URL that cannot be fetched from does not stay as origin
+		// commits that exist only on an existing local branch of the target name are not reset either
 		git(f.install, 'reset', '--hard', '-q', 'HEAD~1');
+		git(f.install, 'checkout', '-q', 'dev');   // the local dev made by the first switch above
+		writeFileSync(join(f.install, 'devlocal.txt'), 'x');
+		git(f.install, 'add', '-A'); git(f.install, 'commit', '-q', '-m', 'only on local dev');
+		const localDev = git(f.install, 'rev-parse', 'HEAD');
+		git(f.install, 'checkout', '-q', 'main');
+		r = await run({ source: { branch: 'dev' } });
+		assert.equal(r.ok, false);
+		assert.match(r.error ?? '', /local branch dev has commits/);
+		assert.equal(git(f.install, 'rev-parse', 'refs/heads/dev'), localDev);
+
+		// a URL that cannot be fetched from does not stay as origin
 		const origin = git(f.install, 'remote', 'get-url', 'origin');
 		r = await run({ source: { repoUrl: join(f.root, 'does-not-exist.git') } });
 		assert.equal(r.ok, false);

@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1792670958253-rbp1ct",
+    "runId": "cr-1792671183583-8vi9md",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-10-22T12:09:18.253Z",
+    "createdAt": "2026-10-22T12:13:03.584Z",
     "model": "claude:opus",
-    "elapsedMs": 109996,
+    "elapsedMs": 102728,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "8b5693528b025a55",
@@ -50,19 +50,59 @@
         "findings": [
           {
             "dimension": "coverage",
-            "severity": "LOW",
-            "location": "src/cli/services/maintenance.ts:93",
-            "message": "`update` has no testsReaching edge in the graph, but that is a gap in the graph and not in the tests: maintenance-source.test.ts calls `update` through a dynamic import inside its `run` helper, and that file is passing in the test record. That test covers the configured branch switch, opts.branch winning over the config, the no-config no-op, the unchanged-URL skip, a dirty tree refused before origin is touched, fork fast-forward and the refusal to drop local-only commits. One new branch has no test: when readUpdateSource throws, the CLI should return `invalid daemonUpdate config: …`, and no test checks that. The equivalent path in launchUpdate is tested. The set-url and checkout failure returns are also untested.",
-            "expectationRef": "update (invalid daemonUpdate config path)",
-            "confidence": "observation"
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:83",
+            "message": "`update` was changed (it now reads and checks the update source, repoints origin, restores origin when the fetch fails, fetches with an explicit refspec, and switches branch with a guard for local-only commits), but the graph shows no test reaching it. Caveat: the passing title in src/cli/__tests__/maintenance-source.test.ts ('the CLI update applies the configured repo URL and branch the same way…') suggests its `run` helper calls `update`. The graph has no callee edge for that helper, so this is not confirmed by the grounding. The paths with no test named for them are the origin restore on a failed fetch and the refusal of an invalid direct value.",
+            "expectationRef": "update",
+            "confidence": "breach"
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
-            "location": "src/config/__tests__/config-catalog-contract.test.ts:1",
-            "message": "The two new CONFIG_CATALOG rows (`daemonUpdate.repoUrl`, `daemonUpdate.branch`) are checked by config-catalog-contract.test.ts, and this Story changed that file. The build gate's test record does not list the file, so whether it passes is unverified. The test exists; its result is not confirmed.",
-            "expectationRef": "CONFIG_CATALOG daemonUpdate.repoUrl / daemonUpdate.branch entries",
-            "confidence": "observation"
+            "severity": "HIGH",
+            "location": "src/shared/update-source.ts:48",
+            "message": "`readUpdateSource` is new, and the graph shows no test reaching it. Caveat: the passing title in src/shared/__tests__/update-source.test.ts names readUpdateSource, but the graph has no edge from the test file or its helpers (`withConfig`, `cfg`) to it, so the grounding cannot confirm the coverage.",
+            "expectationRef": "readUpdateSource",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/shared/update-source.ts:78",
+            "message": "`checkUpdateSource` is new, and the graph shows no test reaching it. It runs the same checks on the repoUrl and branch values handed directly to the CLI update, and no test title in the record names it or that path.",
+            "expectationRef": "checkUpdateSource",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/shared/update-source.ts:70",
+            "message": "`updateSourceArgs` is new, and the graph shows no test reaching it. It turns the source into the --repo-url and --branch arguments. Its behaviour is described by the passing update-runner.test.ts title ('launchUpdate passes --repo-url and --branch only for the keys that are set'), but no graph edge from a test reaches it, so the grounding does not confirm it.",
+            "expectationRef": "updateSourceArgs",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/shared/update-source.ts:33",
+            "message": "`checkUrl` is new and validates the URL that becomes a git argument. The graph shows no test reaching it, and its only callers (readUpdateSource, checkUpdateSource) are not reached either.",
+            "expectationRef": "checkUrl",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/shared/update-source.ts:40",
+            "message": "`checkBranch` is new and validates the branch that becomes a git argument. The graph shows no test reaching it, and its only callers (readUpdateSource, checkUpdateSource) are not reached either.",
+            "expectationRef": "checkBranch",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "scripts/daemon-ctl.sh:83",
+            "message": "The changes to daemon-ctl.sh (--repo-url and --branch parsing, and the repoint, restore and branch switch in sync_repo) show no test reaching them in the graph. Caveat: src/daemon/__tests__/daemon-ctl-source.test.ts runs the script through a subprocess, which a call graph cannot see, and its title passes. Still, nothing in the grounding confirms the path that restores origin when the fetch fails.",
+            "expectationRef": "daemon-ctl.sh",
+            "confidence": "breach"
           }
         ]
       },
@@ -72,33 +112,39 @@
           {
             "dimension": "quality",
             "severity": "MED",
-            "location": "src/cli/services/maintenance.ts:114",
-            "message": "`git remote set-url origin <repoUrl>` runs before the fetch, and nothing puts it back if that fetch then fails. The same happens in daemon-ctl.sh:100. Example: a repoUrl that passes checkUrl but points at a repository that is unreachable or does not exist. Origin is rewritten to it permanently. Removing or clearing `daemonUpdate.repoUrl` afterwards does not fix it, because an absent or empty key means \"keep origin as it is\". So every later update keeps fetching from the bad URL until someone runs `git remote set-url` by hand. Fix: record the previous origin and restore it when the fetch fails, or fetch from the URL directly before rewriting origin.",
+            "location": "src/cli/services/maintenance.ts:135",
+            "message": "The branch-switch path (and its mirror in scripts/daemon-ctl.sh sync_repo) runs `git checkout -B <branch> origin/<branch>` after checking only that HEAD is contained in some remote branch. `-B` force-resets an existing local `<branch>`, so commits that exist only on that local target branch (for example from an earlier switch to it) are silently discarded. The guard says 'never discard commits that exist only here', but it protects only the current HEAD. Also check `git branch -r --contains refs/heads/<branch>` when the local branch exists, or refuse when it is not an ancestor of origin/<branch>.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/cli/services/maintenance.ts:105",
-            "message": "update() re-implements the sync logic of daemon-ctl.sh (sync_repo: lockfile reset, dirty check, origin rewrite, fetch with an explicit refspec, branch-switch guard, fast-forward). This Story added the repo-URL and branch-switch logic to both copies. The two have already drifted: the TS side treats untracked files as dirty (`git status --porcelain`), while the shell side checks only tracked changes (`git diff --quiet` / `diff --cached --quiet`). So the same checkout can be refused by the TUI update and accepted by `daemon-ctl.sh update`.",
-            "counterpartRef": "daemon-ctl.sh",
+            "location": "src/cli/services/maintenance.ts:124",
+            "message": "When the fetch fails, the origin restore runs through `capture`, and its exit code is ignored. The code then logs 'origin restored to …' even if `git remote set-url` failed, which can leave origin pointing at the unfetchable URL while the log says it was restored. In daemon-ctl.sh the same restore runs under `set -e`, so a failure there exits with git's code before `die … 4`, and the 'fetch failed' message is lost. Check the restore's result and report it.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/cli/services/maintenance.ts:95",
-            "message": "`opts.branch` and `opts.repoUrl` take priority over the config values but skip checkUrl / checkBranch, which update-source.ts says exist because these values become git arguments. No production caller passes them today, so this is a latent gap only. Validating them through the same checks would keep the guarantee in one place.",
+            "location": "scripts/daemon-ctl.sh:126",
+            "message": "Under `set -euo pipefail`, a failing `git checkout --quiet -B` on the branch-switch path exits with git's raw code. Its output goes only to LOG_FILE and there is no `die` message, so the caller (runDetachedUpdate) records a failure with an empty stderr tail. The TS mirror reports 'git checkout <branch> failed'. Wrap it in `|| die \"git checkout $branch failed\" 4` for parity.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/cli/services/maintenance.ts:91",
+            "message": "update() now has two nested try/catch blocks for source resolution plus the repoint, restore and switch branches inline, on top of the existing fast-forward logic. Moving the source resolution (readUpdateSource + checkUpdateSource + override merge) into a small helper would keep this routine readable. This is a matter of taste, not a risk.",
             "confidence": "observation"
           }
         ]
       }
     ],
-    "verdict": "warn",
+    "verdict": "block",
     "counts": {
-      "high": 0,
+      "high": 7,
       "med": 1,
-      "low": 4
+      "low": 3
     }
   }
 }

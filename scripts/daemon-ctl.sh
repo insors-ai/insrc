@@ -108,8 +108,11 @@ sync_repo() {
 	if ! git -C "$DAEMON_ROOT" fetch --quiet origin "+refs/heads/$branch:refs/remotes/origin/$branch"; then
 		# a URL that cannot be fetched from must not stay as origin: an unset --repo-url keeps origin as it is
 		if [ -n "$REPO_URL" ] && [ "$previous_origin" != "$REPO_URL" ] && [ -n "$previous_origin" ]; then
-			git -C "$DAEMON_ROOT" remote set-url origin "$previous_origin"
-			log "fetch from $REPO_URL failed; origin restored to $previous_origin"
+			if git -C "$DAEMON_ROOT" remote set-url origin "$previous_origin"; then
+				log "fetch from $REPO_URL failed; origin restored to $previous_origin"
+			else
+				log "fetch from $REPO_URL failed; origin could NOT be restored to $previous_origin: run git remote set-url origin by hand"
+			fi
 		fi
 		die "git fetch origin $branch failed" 4
 	fi
@@ -123,8 +126,13 @@ sync_repo() {
 		if [ -z "$(git -C "$DAEMON_ROOT" branch -r --contains HEAD 2>/dev/null)" ]; then
 			die "$DAEMON_ROOT/HEAD has commits no remote branch has; refusing to switch to $branch" 3
 		fi
+		# ... nor commits that exist only on an existing local branch of that name (checkout -B resets it).
+		if git -C "$DAEMON_ROOT" show-ref --verify --quiet "refs/heads/$branch" \
+			&& ! git -C "$DAEMON_ROOT" merge-base --is-ancestor "refs/heads/$branch" "$incoming"; then
+			die "local branch $branch has commits origin/$branch does not; refusing to reset it" 3
+		fi
 		log "switching branch: $current_branch -> $branch (${incoming:0:8})"
-		git -C "$DAEMON_ROOT" checkout --quiet -B "$branch" "origin/$branch" >>"$LOG_FILE" 2>&1
+		git -C "$DAEMON_ROOT" checkout --quiet -B "$branch" "origin/$branch" >>"$LOG_FILE" 2>&1 || die "git checkout $branch failed (see $LOG_FILE)" 4
 		return 0
 	fi
 

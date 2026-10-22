@@ -125,8 +125,10 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 			if (await stream('git', ['-C', root, 'fetch', '--quiet', 'origin', `+refs/heads/${branch}:refs/remotes/origin/${branch}`], onLog) !== 0) {
 				// a URL that cannot be fetched from must not stay as origin: an unset repoUrl keeps origin as it is
 				if (repointed && previousOrigin.length > 0) {
-					await capture('git', ['-C', root, 'remote', 'set-url', 'origin', previousOrigin]);
-					onLog(`fetch from ${repoUrl} failed; origin restored to ${previousOrigin}`);
+					const restored = await capture('git', ['-C', root, 'remote', 'set-url', 'origin', previousOrigin]);
+					onLog(restored.code === 0
+						? `fetch from ${repoUrl} failed; origin restored to ${previousOrigin}`
+						: `fetch from ${repoUrl} failed; origin could NOT be restored to ${previousOrigin}: run git remote set-url origin by hand`);
 				}
 				return { ok: false, steps, error: `git fetch origin/${branch} failed` };
 			}
@@ -137,6 +139,11 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 				const contained = (await capture('git', ['-C', root, 'branch', '-r', '--contains', 'HEAD'])).stdout.trim();
 				if (contained.length === 0) {
 					return { ok: false, steps, error: `HEAD has commits no remote branch has; refusing to switch to ${branch}` };
+				}
+				// ... nor commits that exist only on an existing local branch of that name (checkout -B resets it).
+				const localBranch = await capture('git', ['-C', root, 'show-ref', '--verify', '--quiet', `refs/heads/${branch}`]);
+				if (localBranch.code === 0 && (await capture('git', ['-C', root, 'merge-base', '--is-ancestor', `refs/heads/${branch}`, incoming])).code !== 0) {
+					return { ok: false, steps, error: `local branch ${branch} has commits origin/${branch} does not; refusing to reset it` };
 				}
 				onLog(`switching branch: ${currentBranch} -> ${branch} (${incoming.slice(0, 8)})`);
 				if (await stream('git', ['-C', root, 'checkout', '--quiet', '-B', branch, `origin/${branch}`], onLog) !== 0) {

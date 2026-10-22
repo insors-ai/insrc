@@ -76,6 +76,18 @@ test('daemon-ctl-source.test.ts: daemon-ctl.sh update with --repo-url and --bran
 		assert.equal(git(f.install, 'rev-parse', 'HEAD'), before);
 		assert.equal(head(), 'main');
 
+		// commits that exist only on an existing local branch of the target name are not reset either
+		git(f.install, 'reset', '--hard', '-q', 'HEAD~1');
+		git(f.install, 'checkout', '-q', 'dev');   // the local dev made by the first switch above
+		writeFileSync(join(f.install, 'devlocal.txt'), 'x');
+		git(f.install, 'add', '-A'); git(f.install, 'commit', '-q', '-m', 'only on local dev');
+		const localDev = git(f.install, 'rev-parse', 'HEAD');
+		git(f.install, 'checkout', '-q', 'main');
+		r = ctl(f.install, f.root, '--branch', 'dev');
+		assert.equal(r.code, 3, r.out);
+		assert.match(r.out, /local branch dev has commits/);
+		assert.equal(git(f.install, 'rev-parse', 'refs/heads/dev'), localDev, 'the local branch is untouched');
+
 		// a URL that cannot be fetched from does not stay as origin
 		const gone = join(f.root, 'does-not-exist.git');
 		r = ctl(f.install, f.root, '--repo-url', gone);

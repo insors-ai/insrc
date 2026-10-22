@@ -19,8 +19,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
+import { blockedMeta, recordReviewSync } from './lifecycle-fixtures.js';
 import { autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
 import { planArtifactPaths } from '../storage.js';
 import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
@@ -214,17 +215,19 @@ test('missing required meta fields skip', () => {
 	} finally { s.cleanup(); }
 });
 
-test('R4: posts the review report as an issue comment when the artifact carries meta.review', () => {
+test('R4: posts the review report as an issue comment when the artifact carries a lifecycle review', () => {
 	const s = setup();
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	try {
+		// the review is the lifecycle's; its report is the entry of the HLD's log
 		const hld = JSON.parse(readFileSync(s.hldJson, 'utf8')) as { meta: Record<string, unknown> };
-		hld.meta['review'] = {
+		const report = recordReviewSync(s.repo, basename(s.hldJson).replace(/\.json$/, ''), {
 			artifact: 'HLD', stage: 'design.epic', verdict: 'block',
 			findings: [{ claimId: 'c1', kind: 'inventory', severity: 'HIGH', premise: 'p', evidence: 'e', action: 'a', fixability: 'manual' }],
 			counts: { high: 1, med: 0, low: 0 }, reviewedAt: '2026-07-21T00:00:00.000Z', model: 'm',
-		};
+		});
+		Object.assign(hld.meta, blockedMeta({ report }));
 		writeFileSync(s.hldJson, JSON.stringify(hld, null, 2));
 		autoPushEpicOnHld(s.hldJson);
 		const reviewComment = gh.calls

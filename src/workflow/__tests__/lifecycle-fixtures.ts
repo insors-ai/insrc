@@ -113,13 +113,28 @@ export function writeHead(repo: string, artifactId: string, head: { readonly met
 	writeAtomic(path, JSON.stringify({ meta: head.meta, body: head.body ?? {}, citations: head.citations ?? [] }, null, 2) + '\n');
 }
 
-/** Append the 'review' log entry that holds `report`, and answer the Reference a lifecycle review names it by. */
-export async function recordReview(repo: string, artifactId: string, report: ReviewReport, entryId = `fixture-review-${artifactId}`): Promise<Reference> {
-	await new History(new FileSidecarStore(repo)).appendLog(artifactId, reviewEntryOf({ id: entryId, actor: SYSTEM, timestamp: report.reviewedAt, report }));
+/** {@link recordReview} for a test that cannot wait: appends the entry at once. */
+export function recordReviewSync(repo: string, artifactId: string, report: ReviewReport, entryId = `fixture-review-${artifactId}`): Reference {
+	const files = new FileSidecarStore(repo).filesOf(artifactId);
+	appendSidecarLine(join(repo, files.log), { artifactId, entry: reviewEntryOf({ id: entryId, actor: SYSTEM, timestamp: report.reviewedAt, report }) });
 	return reviewReference(artifactId, entryId);
 }
 
-const MIGRATION: Actor = { id: 'insrc:migration', kind: 'system', properties: {} };
+/** Append the 'review' log entry that holds `report`, and answer the Reference a lifecycle review names it by. */
+export async function recordReview(repo: string, artifactId: string, report: ReviewReport, entryId = `fixture-review-${artifactId}`): Promise<Reference> {
+	return recordReviewSync(repo, artifactId, report, entryId);
+}
+
+/**
+ * Write a head whose lifecycle review names the entry that holds `report`, and answer the head's path. The head is pending review at
+ * the report's verdict, or approved when `approved` is set.
+ */
+export function writeReviewedHead(repo: string, artifactId: string, head: { readonly meta?: Record<string, unknown>; readonly body?: unknown; readonly report: ReviewReport; readonly approved?: boolean | undefined }): string {
+	const report = recordReviewSync(repo, artifactId, head.report);
+	const state = reviewedMeta({ verdict: head.report.verdict, report, ...(head.approved === true ? { status: 'approved' as const } : {}) });
+	writeHead(repo, artifactId, { meta: { ...(head.meta ?? {}), ...state }, body: head.body ?? {} });
+	return artifactJsonPath(repo, artifactId);
+}
 
 export interface LifecycleFile {
 	/** The file as the lifecycle model stores it; the input unchanged when the conversion cannot read it. */

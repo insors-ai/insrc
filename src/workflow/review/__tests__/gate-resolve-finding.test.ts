@@ -16,6 +16,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, test } from 'node:test';
 
+import { writeReviewedHead } from '../../__tests__/lifecycle-fixtures.js';
+import { readReviewRecordOf } from '../report-file.js';
 import { resolveReviewFinding } from '../resolve.js';
 import { _setGateDepsForTests, TeamGateRefusedError } from '../../team/gate.js';
 import type { PortResult, TrackerPort } from '../../tracker/port.js';
@@ -43,16 +45,15 @@ const now = (): string => '2026-10-18T00:00:00.000Z';
 function setup(): { md: string; json: string; cleanup: () => void } {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-gate-resolve-'));
 	const md = join(dir, 'PLAN-x.md');
-	const json = join(dir, 'PLAN-x.json');
 	writeFileSync(md, '# Plan\n\n- t1: extend the two exported constants.\n');
 	const findings = [
 		finding({ claimId: 'apply1', severity: 'HIGH', fixability: 'assisted', proposedFix: { rationale: 'r', artifactEdits: [{ find: 'two exported constants', replace: 'three exported constants' }] } }),
 		finding({ claimId: 'acc', severity: 'MED' }), finding({ claimId: 'ovr', severity: 'MED' }), finding({ claimId: 'def', severity: 'MED' }),
 	];
-	writeFileSync(json, JSON.stringify({
-		meta: { workflow: 'plan', repoPath: dir, epicHash: HASH, storyId: 's1', review: report(findings), revision: 6 },
-		body: { tasks: [{ id: 't1', desc: 'extend the two exported constants.' }] }, citations: [],
-	}, null, 2));
+	const json = writeReviewedHead(dir, `PLAN-${HASH}-s1`, {
+		meta: { workflow: 'plan', repoPath: dir, epicHash: HASH, storyId: 's1' },
+		body: { tasks: [{ id: 't1', desc: 'extend the two exported constants.' }] }, report: report(findings),
+	});
 	return { md, json, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }
 
@@ -72,16 +73,16 @@ test('resolveReviewFinding with action apply by a non-holder throws TeamGateRefu
 		for (const [id, action] of [['acc', 'accept'], ['ovr', 'override'], ['def', 'defer']] as const) {
 			assert.doesNotThrow(() => resolveReviewFinding(s.md, s.json, id, action, 'noted', now), action);
 		}
+		assert.deepEqual(Object.keys(readReviewRecordOf(s.json)?.resolutions ?? {}).sort(), ['acc', 'def', 'ovr']);
 		const meta = JSON.parse(readFileSync(s.json, 'utf8')).meta;
-		assert.deepEqual(Object.keys(meta.reviewResolutions).sort(), ['acc', 'def', 'ovr']);
-		assert.equal(meta.revision, 6, 'meta-only: the revision is unchanged');
+		assert.equal(meta.revision, 1, 'a decision is an entry of the log: the head and its revision are unchanged');
 		assert.equal(readFileSync(s.md, 'utf8'), mdBefore);
 
 		// the holder applies; so does a repo with no policy
 		hold('alice');
 		assert.equal(resolveReviewFinding(s.md, s.json, 'apply1', 'apply', undefined, now).status, 'resolved');
 		assert.match(readFileSync(s.md, 'utf8'), /three exported constants/);
-		assert.equal(JSON.parse(readFileSync(s.json, 'utf8')).meta.revision, 7);
+		assert.equal(JSON.parse(readFileSync(s.json, 'utf8')).meta.revision, 2, 'applying the edit is a content change');
 	} finally { s.cleanup(); }
 
 	const free = setup();

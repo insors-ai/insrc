@@ -9,6 +9,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
+import { writeReviewedHead } from '../../__tests__/lifecycle-fixtures.js';
+import { reviewerPartyOf } from '../party.js';
+import { readReviewRecordOf } from '../report-file.js';
 import { effectiveReviewVerdict, listPendingReviewFindings, resolveReviewFinding } from '../resolve.js';
 import type { Finding, ReviewReport } from '../types.js';
 
@@ -25,9 +28,9 @@ const MD = '# Plan\n\n- t1: extend the two exported constants.\n- t2: a design d
 function setup(findings: Finding[]): { md: string; json: string; cleanup: () => void } {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-resolve-'));
 	const md = join(dir, 'PLAN-x.md');
-	const json = join(dir, 'PLAN-x.json');
 	writeFileSync(md, MD);
-	writeFileSync(json, JSON.stringify({ meta: { workflow: 'plan', review: report(findings) }, body: { tasks: [{ id: 't1', desc: 'extend the two exported constants.' }] }, citations: [] }, null, 2));
+	// the review is the lifecycle's, and its report is the entry of the artifact's log
+	const json = writeReviewedHead(dir, `PLAN-${'0123456789abcdef'}-s1`, { meta: { workflow: 'plan' }, body: { tasks: [{ id: 't1', desc: 'extend the two exported constants.' }] }, report: report(findings) });
 	return { md, json, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }
 
@@ -69,9 +72,10 @@ test('resolve apply mutates the artifact + records resolution; override clears t
 		assert.equal(r2.status, 'overridden');
 		assert.equal(r2.effectiveVerdict, 'pass');        // all blocking resolved
 		assert.equal(r2.remainingBlocking, 0);
-		const meta = JSON.parse(readFileSync(s.json, 'utf8')).meta;
-		assert.equal(meta.reviewResolutions.high1.status, 'resolved');
-		assert.equal(meta.reviewResolutions.med1.note, 'non-material');
+		const resolutions = readReviewRecordOf(s.json)?.resolutions ?? {};
+		assert.equal(resolutions['high1']?.status, 'resolved');
+		assert.equal(resolutions['med1']?.note, 'non-material');
+		assert.equal('reviewResolutions' in JSON.parse(readFileSync(s.json, 'utf8')).meta, false, 'the decisions are in the log, not the head');
 	} finally { s.cleanup(); }
 });
 
@@ -79,5 +83,33 @@ test('resolve apply refuses a finding with no edits', () => {
 	const s = setup([finding({ claimId: 'm', severity: 'MED', fixability: 'manual' })]);
 	try {
 		assert.throws(() => resolveReviewFinding(s.md, s.json, 'm', 'apply', undefined, FIXED), /no artifactEdits/);
+	} finally { s.cleanup(); }
+});
+
+test('resolve.test.ts: the review report is read from the review log entry', () => {
+	const s = setup([finding({ claimId: 'm1', severity: 'MED', fixability: 'manual' }), finding({ claimId: 'm2', severity: 'MED', fixability: 'manual' })]);
+	try {
+		// the report and the decision come from the log; the head names the entry and holds no report
+		const head = JSON.parse(readFileSync(s.json, 'utf8'));
+		assert.equal(head.meta.review, undefined);
+		assert.equal(head.meta.lifecycle.review.report.type, 'change-log-entry');
+		assert.equal(reviewerPartyOf(head.meta.lifecycle.review), 'daemon', 'the party is the lifecycle review\'s');
+		assert.equal(reviewerPartyOf({ party: 'controller', reviewedBy: 'daemon' }), 'controller', 'and wins over a report\'s label');
+		const r1 = resolveReviewFinding(s.md, s.json, 'm1', 'accept', 'seen', FIXED);
+		assert.equal(r1.effectiveVerdict, 'block');
+		assert.equal(r1.remainingBlocking, 1);
+		const r2 = resolveReviewFinding(s.md, s.json, 'm2', 'defer', undefined, FIXED);
+		assert.equal(r2.effectiveVerdict, 'pass');
+		const read = readReviewRecordOf(s.json);
+		assert.deepEqual(Object.keys(read?.resolutions ?? {}).sort(), ['m1', 'm2']);
+		assert.equal(effectiveReviewVerdict(read!.report, read!.resolutions), 'pass');
+		assert.throws(() => resolveReviewFinding(s.md, s.json, 'nope', 'accept', undefined, FIXED), /no finding 'nope'/);
+
+		// a head with a review stamp in its meta and no lifecycle review has nothing to resolve
+		const old = JSON.parse(readFileSync(s.json, 'utf8'));
+		delete old.meta.lifecycle;
+		old.meta.review = report([finding({ claimId: 'm1', severity: 'MED' })]);
+		writeFileSync(s.json, JSON.stringify(old));
+		assert.throws(() => resolveReviewFinding(s.md, s.json, 'm1', 'accept', undefined, FIXED), /carries no review/);
 	} finally { s.cleanup(); }
 });

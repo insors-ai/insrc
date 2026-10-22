@@ -46,6 +46,7 @@ import { ensureUnitIssueDetailed, postMarker, resolveUnitIssueLocal, runUnitExtr
 import { policyReader } from './team/policy-reader.js';
 import type { PolicyReader } from './team/types.js';
 import { renderReviewReport } from './review/index.js';
+import { readReviewRecordOf } from './review/report-file.js';
 import type { ReviewReport } from './review/types.js';
 import { renderResolvedQuestionsSection } from './questions.js';
 import { renderCitationBlock } from './synthesizer.js';
@@ -374,11 +375,8 @@ function withResolvedTail(
 	return core + renderResolvedQuestionsSection(meta.questionResolutions ?? {}) + renderCitationBlock(citations);
 }
 
-/** Read `meta.review` off an artifact JSON, or undefined if absent/unreadable. */
+/** The report of the artifact's lifecycle review, read from its review log entry, or undefined if there is none. */
 function readReview(jsonPath: string): ReviewReport | undefined {
-	try {
-		const meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { review?: ReviewReport } }).meta;
-		return meta?.review;
-	} catch { return undefined; }
+	return readReviewRecordOf(jsonPath)?.report;
 }
 

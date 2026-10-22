@@ -53,17 +53,18 @@ export function authorPartyOf(meta: unknown): PartyOrUnknown {
 }
 
 /**
- * The party that ran a review, read from the review stamp (`meta.review` of a
- * design artifact) or from a code-review record's `meta`.
+ * The party that ran a review, read from the lifecycle review of a design
+ * artifact (its `party`), from the report stored in the review log entry, or
+ * from a code-review record's `meta`.
  *
- * `reviewedBy` wins. Without it the stored `model` label decides: `client`
- * reads as the controller and any other label as the daemon. With neither the
- * party is unknown.
+ * `party` (the lifecycle review) wins, then `reviewedBy`. Without them the
+ * stored `model` label decides: `client` reads as the controller and any other
+ * label as the daemon. With none of them the party is unknown.
  */
 export function reviewerPartyOf(review: unknown): PartyOrUnknown {
 	if (typeof review !== 'object' || review === null) return 'unknown';
 	const rec = review as Record<string, unknown>;
-	const explicit = explicitParty(rec['reviewedBy']);
+	const explicit = explicitParty(rec['party']) ?? explicitParty(rec['reviewedBy']);
 	if (explicit !== undefined) return explicit;
 	const model = rec['model'];
 	if (typeof model !== 'string' || model.length === 0) return 'unknown';

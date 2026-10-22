@@ -24,11 +24,13 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
+import type { Actor } from '../artifact-core/types.js';
 import { writeArtifact, writeAtomic } from '../storage.js';
 import type { ReviewResolution } from '../types.js';
 import { authorizeFindingApply } from '../team/approval-gate.js';
 import { TeamGateRefusedError } from '../team/gate.js';
 import { applyOneFinding } from './apply.js';
+import { appendResolutionOf, readReviewRecordOf } from './report-file.js';
 import type { Finding, ReviewReport, ReviewVerdict, Severity } from './types.js';
 
 const log = getLogger('review');
@@ -67,19 +69,19 @@ export function effectiveReviewVerdict(
 }
 
 interface ArtifactShape {
-	meta: {
-		review?: ReviewReport;
-		reviewResolutions?: Record<string, ReviewResolution>;
-		[k: string]: unknown;
-	};
+	meta: Record<string, unknown>;
 	body: unknown;
 	[k: string]: unknown;
 }
 
+/** Who a resolution is recorded as when the caller names nobody: the person at the command. */
+const RESOLVER: Actor = { id: 'insrc:user', kind: 'person', properties: {} };
+
 /**
  * Resolve one review finding on a persisted artifact. `apply` mutates the
  * artifact (body + md) with the finding's edits; the others just record the
- * decision. Returns the post-resolution effective verdict + how many blocking
+ * decision. The report is read from the review entry of the artifact's log and
+ * the decision is a further entry there. Returns the post-resolution effective verdict + how many blocking
  * findings remain, so a caller can drive the loop until it clears.
  */
 export function resolveReviewFinding(
@@ -89,11 +91,13 @@ export function resolveReviewFinding(
 	action: ReviewAction,
 	note?: string,
 	now: () => string = () => new Date().toISOString(),
+	actor: Actor = RESOLVER,
 ): ResolveReviewResult {
 	if (!existsSync(jsonPath)) throw new Error(`No artifact json at ${jsonPath}`);
 	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as ArtifactShape;
-	const review = artifact.meta.review;
-	if (review === undefined) throw new Error('artifact carries no review to resolve');
+	const stored = readReviewRecordOf(jsonPath);
+	if (stored === undefined) throw new Error('artifact carries no review to resolve');
+	const review = stored.report;
 	const finding = review.findings.find(f => f.claimId === findingId);
 	if (finding === undefined) throw new Error(`no finding '${findingId}' in this artifact's review`);
 
@@ -130,10 +134,10 @@ export function resolveReviewFinding(
 		...(resolvedNote !== undefined && resolvedNote.length > 0 ? { note: resolvedNote } : {}),
 		resolvedAt: now(),
 	};
-	const reviewResolutions = { ...(artifact.meta.reviewResolutions ?? {}), [findingId]: resolution };
-	artifact.meta = { ...artifact.meta, reviewResolutions };
-	// apply changes the body (content); accept, override and defer change only meta.
-	writeArtifact(jsonPath, artifact, action === 'apply' ? 'content' : 'meta-only');
+	const reviewResolutions = { ...stored.resolutions, [findingId]: resolution };
+	// apply changes the body (content); accept, override and defer change nothing in the head: the decision is an entry of the log.
+	if (action === 'apply') writeArtifact(jsonPath, artifact, 'content');
+	appendResolutionOf(jsonPath, actor, resolution, resolution.resolvedAt);
 
 	const effectiveVerdict = effectiveReviewVerdict(review, reviewResolutions);
 	const remainingBlocking = review.findings.filter(

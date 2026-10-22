@@ -55,6 +55,9 @@ import { createInDaemonClient, installStepDaemonClient } from './steps/daemon-cl
 import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
 import { readInstalledCommit } from './installed-commit.js';
 import { ThreadServices, currentLmdbFileSizeMb, threadsEnabled } from './threads/main-services.js';
+import { methodClasses } from './threads/method-class.js';
+import { Router } from './threads/router.js';
+import type { MethodClass } from './threads/channel.js';
 import { embedQuery, getActiveEmbedderBackend } from '../indexer/embedder.js';
 import { pruneConversations } from '../db/conversations.js';
 import { compactConversations } from '../db/compaction.js';
@@ -345,7 +348,15 @@ async function main(): Promise<void> {
 		understandingService: () => understandingService,
 	});
 	installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers));
-	const server = new IpcServer(directDispatch(rpcHandlers, streamHandlers));
+	// With daemon threads, the router is the server's forward (Epic 86197ac6
+	// s2): routed classes go to their workers, everything else runs here. A
+	// class is routed once its worker exists; until then it runs here, as before.
+	const local = directDispatch(rpcHandlers, streamHandlers);
+	const router = threadServices !== undefined
+		? new Router({ classOf: methodClasses.classOf, registry: threadServices.registry, routed: new Set<MethodClass>(), local })
+		: undefined;
+	const server = new IpcServer(router?.forward ?? local);
+	if (threadServices !== undefined) server.onRegistryChange(clients => threadServices.board.publishClients(clients));
 
 	// Initialize chat session pool
 	initChatHandlers();

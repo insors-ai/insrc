@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f4674178-8a92-4f41-9a93-9fdeb75a4f69",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T15:57:13.009Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Hold completion inside the completion walk",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a4d5b62e41a8890a75045a25d075c3fb8fd9ca333485c711a1c5f399229778f4",
+        "at": "2026-10-22T15:57:13.009Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T15:57:13.010Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Hold completion inside the completion walk",
+    "summary": "Add the optional holds predicate to EvidenceContext, consult it for every unit completeIfRolledUp visits so the walk stops at a held Story and therefore its Epic, and pass signoffHoldsCompletion from completeThroughService in gates.ts.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "With no predicate the walk behaves exactly as before",
+      "A held Story is left approved and the Epic above it is not completed",
+      "An unheld Story completes and the walk stops at a held Epic",
+      "completeThroughService leaves a Story approved while its listed BUILD awaits signoff"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/completion-holds.test.ts: completeIfRolledUp with a holds predicate stops the walk at a held Story so the Epic is not completed, completes an unheld Story and then stops at a held Epic, and with no predicate behaves as before"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/signoff-hold.test.ts: completeThroughService leaves a Story approved-not-completed while its listed BUILD awaits signoff"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

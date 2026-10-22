@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-136dcd79-740d-42f9-8c32-a2f365f604e0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T15:57:13.018Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Show signoff apart from review and approval",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f366770703f4178ac23b331a72342c4bdecb48b1b3071b9949b421bfa3be6137",
+        "at": "2026-10-22T15:57:13.018Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T15:57:13.018Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Show signoff apart from review and approval",
+    "summary": "Add the signoff entry to ArtifactGate and DeliveryEvidenceEntry from signoffViewOf and to the chain report's existing lines, leaving approval and review output unchanged.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Approval and review output is unchanged for an artifact with no signoff",
+      "A signed-off artifact shows signoff separately and never counted as a review",
+      "The delivery evidence of a Story lists its BUILD record with its signoff entry"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/signoff-view.test.ts: signoffViewOf, ArtifactGate, DeliveryEvidenceEntry and the existing chain report lines show signoff separately while approval and review output is unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/delivery/__tests__/signoff-delivery.test.ts: the delivery evidence of a Story lists its BUILD record with its signoff entry, so a BUILD that is in signoff or approved and held is visible there"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

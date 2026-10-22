@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "49140be3595f2c04d240f9101262b07afac4ed83a26efcd55d11217128c6fca5",
+        "at": "2026-10-22T17:11:48.504Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792689036049-soh20e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T17:10:36.049Z",
+    "model": "claude:opus",
+    "elapsedMs": 72439,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s7",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "revision": 3
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s7",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/team/__tests__/signoff-hook.test.ts",
+        "src/workflow/team/__tests__/signoff.test.ts",
+        "src/workflow/team/signoff.ts",
+        "src/workflow/team/__tests__/signoff-hold.test.ts",
+        "src/workflow/team/__tests__/signoff-registration.test.ts",
+        "src/workflow/team/gate.ts",
+        "src/workflow/__tests__/signoff-hold.test.ts",
+        "src/workflow/artifact-core/__tests__/completion-holds.test.ts",
+        "src/workflow/artifact-core/lifecycle-service.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/tracker/__tests__/github-adapter.test.ts",
+        "src/workflow/tracker/__tests__/github-signoff.test.ts",
+        "src/workflow/tracker/__tests__/port.test.ts",
+        "src/workflow/tracker/github-adapter.ts",
+        "src/workflow/tracker/port.ts",
+        "src/cli/__tests__/team-park-resume.test.ts",
+        "src/cli/command.ts",
+        "src/cli/services/index.ts",
+        "src/cli/services/team.ts",
+        "src/daemon/__tests__/team-settle.test.ts",
+        "src/daemon/index.ts",
+        "src/daemon/steps/build-step/phases/implement.ts",
+        "src/daemon/steps/host.ts",
+        "src/daemon/steps/workflow-step/handoff-rpc.ts",
+        "src/daemon/steps/workflow-step/phases/settle.ts",
+        "src/daemon/steps/workflow-step/phases/start.ts",
+        "src/daemon/steps/workflow-step/resume.ts",
+        "src/daemon/steps/workflow-step/signoff-registration.ts",
+        "src/daemon/workflow-rpc.ts",
+        "src/workflow/team/author-gate.ts",
+        "src/cli/__tests__/command.test.ts",
+        "src/cli/__tests__/tui.test.ts",
+        "src/workflow/__tests__/signoff-view.test.ts",
+        "src/workflow/chain.ts",
+        "src/workflow/delivery/__tests__/signoff-delivery.test.ts",
+        "src/workflow/delivery/gate.ts",
+        "src/workflow/delivery/snapshot.ts",
+        "src/workflow/delivery/types.ts",
+        "src/workflow/team/__tests__/signoff-e2e.test.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/team/signoff.ts:277",
+            "message": "`refused` is a copy of the same one-line GateOutcome constructor in gate.ts. Exporting the gate's helper, or a shared refusal builder, would keep the refusal shape in one place.",
+            "counterpartRef": "refused (src/workflow/team/gate.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/github-adapter.ts:90",
+            "message": "`sameLogin` (a case-insensitive login comparison) is defined the same way in gate.ts. If the two ever disagree on login equality, the claim gate and the assignee writes could reach different answers about who holds a claim, so a single shared definition is safer.",
+            "counterpartRef": "sameLogin (src/workflow/team/gate.ts)",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  },
+  "citations": []
+}

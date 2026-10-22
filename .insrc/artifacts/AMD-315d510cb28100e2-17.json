@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-62cf9fd3-78ad-40e0-a0e4-0615985c99cf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T15:18:24.477Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b95d40763ccfc4f6ab5833b17144724f9cda6b555a93a98ab354bfff409385fb",
+        "at": "2026-10-22T15:18:24.478Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "local:subho-ghosh",
+          "kind": "person",
+          "name": "Subho Ghosh",
+          "properties": {}
+        },
+        "at": "2026-10-22T15:49:47.278Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-315d510cb28100e2-17",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc4",
+      "field": {
+        "name": "CompletionHook.{action, authoring}",
+        "type": "(repo: string, unit: UnitRef, port: TrackerPort, action: GuardedAction, authoring?: string) => GateOutcome | 'continue'",
+        "optional": false,
+        "purpose": "The completion hook must know which guarded action is attempted and, for author, which workflow is authoring (design.epic, design.story or plan), because author-gate maps design.story and plan to the same story unit and the two follow different signed-off stages (the HLD and the LLD). consultHook already holds both and passes them as trailing arguments, so a hook written without them keeps working."
+      },
+      "breaking": false
+    },
+    "rationale": "Without the action and the authoring workflow the hook cannot tell which stage an attempt follows, so it would block a stage on its own signoff or miss the signoff it should check; the arguments are already available inside teamGate and consultHook, so the change is additive.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792682034323-iysb91",
+      "storyId": "s7",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-22T15:18:24.473Z"
+  },
+  "citations": []
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0ce0a8f7-3886-429e-82cf-4efc1b43ae61",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T15:57:13.004Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Pure signoff decisions and the request Reference mapping",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "49660f0a48fc24ed94432a69790e5593e164c884da6f9790ca44ab4e86646fd7",
+        "at": "2026-10-22T15:57:13.005Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T15:57:13.006Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pure signoff decisions and the request Reference mapping",
+    "summary": "Add src/workflow/team/signoff.ts with followedStageOf, isSignedOffOrGrandfathered, signoffViewOf and signoffRecordsOf, and the conversion between a request ref and the lifecycle Reference { entityId, type signoff-request, relation tracked-by }. All pure, over injected policy and heads.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "followedStageOf maps author design.epic, design.story, plan and build to the stage they follow and anything else to null",
+      "isSignedOffOrGrandfathered counts signed-off heads and grandfathers only when anchorKnown is true",
+      "signoffRecordsOf groups completed signoffs by the ref read from entityId",
+      "The Reference round trip keeps the ref and never changes the Reference type"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff.test.ts: signoffRecordsOf derives sc5 records from lifecycle facts, groups by the ref read from entityId, and grandfathers by the shared rule"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff-hook.test.ts: isSignedOffOrGrandfathered counts a signed-off head, counts a head approved before the anchor only when anchorKnown is true, and never grandfathers when anchorKnown is false"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff-hook.test.ts: followedStageOf maps author design.epic to DEF on the epic, author design.story to HLD on the epic, author plan and build to LLD on the story, and anything else to null"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

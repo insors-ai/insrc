@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c5139043-316f-4f09-8c35-d79805dffab9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T15:57:13.019Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s7",
+    "envelope": {
+      "description": "End-to-end flow and the sandbox smoke test",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s7-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s7-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a4946de3e10c106696f2bae4c107096446199914b297d12b505821c25c5ad67f",
+        "at": "2026-10-22T15:57:13.019Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T15:57:13.020Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "End-to-end flow and the sandbox smoke test",
+    "summary": "Prove the whole flow through the real gate, lifecycle and a fake tracker, including a BUILD settled by team.settle, an unlisted stage unaffected and grandfathering; and record the sandbox GitHub smoke test as reported by the builder.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Claim, submit, refused next stage while open, settled completion, all artifacts signed off together and the claim released all pass",
+      "A BUILD request settled through team.settle completes the held Story",
+      "An unlisted stage proceeds as today",
+      "The smoke test result is recorded as reported, not run by the gate"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/signoff-e2e.test.ts: claim, submit, refused next stage while open, completion settled at the next-stage attempt, all artifacts signed off together, claim released, deferred Story completion run by team.settle for a BUILD, and an unlisted stage unaffected"
+      },
+      {
+        "level": "smoke",
+        "name": "Open a signoff pull request on a sandbox repo, approve and merge it, then start the next stage"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

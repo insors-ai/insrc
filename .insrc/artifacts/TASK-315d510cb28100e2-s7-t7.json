@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0f140a87-5f14-4b2c-8843-039efbc791f0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T15:57:13.016Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Wire settle at the entries, team.settle and registration",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s7-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3f919490a16c8f8f737a26231c8ef60aa41ca5500bad48ef11f963dc77fefb0e",
+        "at": "2026-10-22T15:57:13.016Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T15:57:13.017Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire settle at the entries, team.settle and registration",
+    "summary": "Await settleForAttempt first at the workflow-step start phase, runWorkflowServerSide and the second driver entry, the two build implement entries and resumeStage; add the team.settle daemon operation and the teamSettle terminal command beside park and resume; call registerSignoffHook in the daemon and in makeServices.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Each listed entry awaits settleForAttempt before its gate call and plan, step, synthesize and validate do not",
+      "team.settle runs settleSignoff and teamSettle prints what was recorded",
+      "Both the daemon and makeServices register the hook"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff-registration.test.ts: both the daemon start and makeServices in the terminal call registerSignoffHook, and each listed daemon entry (workflow-step start, runWorkflowServerSide, the second driver entry, both build implement entries, resumeStage) awaits settleForAttempt before its gate call while plan, step, synthesize and validate do not"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/team-settle.test.ts: the team.settle operation runs settleSignoff for the unit, so a BUILD's completed request is recorded as signed-off and the held Story completes, and teamSettle prints what was recorded or why nothing was"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

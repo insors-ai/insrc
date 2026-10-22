@@ -1,0 +1,518 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792684216714-nznvny",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T15:53:21.725Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 182986,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "storyId": "s7",
+    "lldRunId": "wf-1792683553239-39ffrv",
+    "lldEffectiveHash": "0e84c94e43407a9e4adc4b901a3ca36a78957108e2266fed1775b844df81a295",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6b8e2dad71cb5b849b4fbf47cfee7a528495a1a223b0c4abfab6101985136b65",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T15:57:12.033Z"
+      }
+    },
+    "rangeBase": "66758e6e9850b8dc2210808ddcdbe007dccf9ee4"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building s7 starts with the pure signoff decisions and the hook signature, then holds Story and Epic completion inside the completion walk, adds the GitHub pull-request request, and only then the submit and settle steps that use all of them. The entry wiring, the team settle command, the display surfaces and the end-to-end and smoke tests close the work. Each task is proved by new test files that run on injected policy, tracker and lifecycle, and the real GitHub request is confirmed once against a sandbox repository."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Pure signoff decisions and the request Reference mapping",
+        "summary": "Add src/workflow/team/signoff.ts with followedStageOf, isSignedOffOrGrandfathered, signoffViewOf and signoffRecordsOf, and the conversion between a request ref and the lifecycle Reference { entityId, type signoff-request, relation tracked-by }. All pure, over injected policy and heads.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "followedStageOf maps author design.epic, design.story, plan and build to the stage they follow and anything else to null",
+          "isSignedOffOrGrandfathered counts signed-off heads and grandfathers only when anchorKnown is true",
+          "signoffRecordsOf groups completed signoffs by the ref read from entityId",
+          "The Reference round trip keeps the ref and never changes the Reference type"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff.test.ts: signoffRecordsOf derives sc5 records from lifecycle facts, groups by the ref read from entityId, and grandfathers by the shared rule"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff-hook.test.ts: isSignedOffOrGrandfathered counts a signed-off head, counts a head approved before the anchor only when anchorKnown is true, and never grandfathers when anchorKnown is false"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff-hook.test.ts: followedStageOf maps author design.epic to DEF on the epic, author design.story to HLD on the epic, author plan and build to LLD on the story, and anything else to null"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "The read-only decision, the completion hook and its registration",
+        "summary": "Add blockedBySignoff, signoffHoldsCompletion, signoffCompletionHook and registerSignoffHook, and change consultHook in team/gate.ts to pass the action and the authoring workflow to the hook (AMD-17), keeping a three-argument hook working.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "blockedBySignoff refuses a stage on the followed stage's open request, changes-requested or an unrecorded completed request, and returns null for an unlisted or grandfathered stage with no tracker call",
+          "signoffHoldsCompletion is true for a Story with a listed unsigned LLD or BUILD and for an Epic with a listed unsigned DEF or HLD, and false outside team mode",
+          "consultHook passes the action and authoring to the hook and an older three-argument hook still works",
+          "The hook returns continue for open-signoff, revise and release"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff-hook.test.ts: blockedBySignoff and signoffCompletionHook on one story unit block design.story authoring on the HLD's open request and plan authoring on the LLD's open request, but not the LLD's own authoring, skip a grandfathered head, return awaiting-signoff, a changes-requested refusal, an unsettled-completed refusal, or continue, never write, and need no tracker call"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff-hold.test.ts: signoffHoldsCompletion is true for a Story whose listed LLD or BUILD is not signed off and for an Epic whose listed DEF or HLD is not, false for a grandfathered pre-anchor member when anchorKnown is true, true for it when anchorKnown is false, and false outside team mode, with no policy, or with no member stage listed"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff-registration.test.ts: consultHook passes the action and the authoring workflow to the hook and an older three-argument hook still works"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Hold completion inside the completion walk",
+        "summary": "Add the optional holds predicate to EvidenceContext, consult it for every unit completeIfRolledUp visits so the walk stops at a held Story and therefore its Epic, and pass signoffHoldsCompletion from completeThroughService in gates.ts.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "With no predicate the walk behaves exactly as before",
+          "A held Story is left approved and the Epic above it is not completed",
+          "An unheld Story completes and the walk stops at a held Epic",
+          "completeThroughService leaves a Story approved while its listed BUILD awaits signoff"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/completion-holds.test.ts: completeIfRolledUp with a holds predicate stops the walk at a held Story so the Epic is not completed, completes an unheld Story and then stops at a held Epic, and with no predicate behaves as before"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/signoff-hold.test.ts: completeThroughService leaves a Story approved-not-completed while its listed BUILD awaits signoff"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "GitHub signoff request and state",
+        "summary": "Extend the request spec and ref types (AMD-16), declare signoff-request in the GitHub adapter and implement openSignoffRequest as a pull request from a branch holding the committed artifacts, linked from the unit issue, and readSignoffState from the review decision and merge state, with contract tests over a fake gh.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "loadTracker accepts signoff-request once declared and still rejects a tracker that lacks it",
+          "openSignoffRequest opens a pull request, links it from the unit issue and returns its ref and url",
+          "readSignoffState maps the review decision and merge state to open, changing-requested and completed",
+          "Failure kinds map to the port's failure kinds"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/tracker/__tests__/github-signoff.test.ts: loadTracker accepts signoff-request once declared; openSignoffRequest opens a pull request from the branch, links it from the unit issue and returns its ref and url; readSignoffState maps review decision and merge state to open, changes-requested and completed; failure kinds map to PortResult kinds"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Submit artifacts for signoff",
+        "summary": "Add openSignoff: the holder rule on the issue of the unit that holds the stage (the Story's issue for a BUILD), the policy stage check, the approval and review prerequisites (the lifecycle review, or the Story's code-review record for BUILD), one request through the port linked from the unit issue, and open-signoff recorded on every artifact with the request Reference.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "openSignoff refuses a missing approval or review naming it, a non-holder and an unassigned unit, and uses the Story's issue for a BUILD",
+          "For BUILD a missing, author-written or blocking code review is refused and the lifecycle review is never consulted",
+          "One request is opened and open-signoff is recorded on every artifact with the Reference",
+          "A repeat after a partial recording finds the open request and records only the rest"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff refuses a missing approval, a missing or author-written review for DEF, HLD and LLD, a stage the policy does not list, and a submitter who is not the holder"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff refuses an unassigned unit saying it must be claimed first"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff for BUILD checks the Story's code-review record (missing, written by the author, or blocking is refused; pass or warn by the other party is accepted) and never the lifecycle review"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff for BUILD reads the holder of the Story's issue and links the request from it even when claimUnits puts BUILD on task units, and settleSignoff for a story unit selects LLD and BUILD while an epic unit selects DEF and HLD"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff opens one request, records open-signoff on every artifact with the Reference { entityId: ref, type: signoff-request, relation: tracked-by }, and finds the open request on a repeat after a partial recording"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Settle requests and refuse at the entry",
+        "summary": "Add settleSignoff (read each open request of the unit's listed stages once, record signed-off or signoff-changes on every artifact of a request together, release the claim, run the deferred completion) and settleForAttempt (settle the followed stage's unit, then refuse when blockedBySignoff still blocks, independently of the gate's first-author exception).",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "settleSignoff records signed-off on all artifacts of a completed request together, then clears the assignee and runs the held completion",
+          "A part-way failure leaves the rest, keeps the stage blocked and releases nothing",
+          "settleForAttempt refuses a first design.story turn on a story with no issue while the HLD awaits signoff",
+          "No tracker call is made outside team mode or when no listed stage has an open request"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff.test.ts: settleSignoff records signed-off on all artifacts of a completed request, clears the assignee of the unit issue, records signoff-changes on changes-requested, leaves the rest on a part-way failure, skips a Signoff whose Reference is not a signoff-request, and is idempotent across two clones"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff-hook.test.ts: settleForAttempt refuses a first design.story turn on a story whose issue could not be created while the HLD awaits signoff, before teamGate's allowFirstAuthor exception is reached"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/signoff-hold.test.ts: settleSignoff completes the Story and its Epic once signed-off is recorded, with the members cascaded"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Wire settle at the entries, team.settle and registration",
+        "summary": "Await settleForAttempt first at the workflow-step start phase, runWorkflowServerSide and the second driver entry, the two build implement entries and resumeStage; add the team.settle daemon operation and the teamSettle terminal command beside park and resume; call registerSignoffHook in the daemon and in makeServices.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Each listed entry awaits settleForAttempt before its gate call and plan, step, synthesize and validate do not",
+          "team.settle runs settleSignoff and teamSettle prints what was recorded",
+          "Both the daemon and makeServices register the hook"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/signoff-registration.test.ts: both the daemon start and makeServices in the terminal call registerSignoffHook, and each listed daemon entry (workflow-step start, runWorkflowServerSide, the second driver entry, both build implement entries, resumeStage) awaits settleForAttempt before its gate call while plan, step, synthesize and validate do not"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/team-settle.test.ts: the team.settle operation runs settleSignoff for the unit, so a BUILD's completed request is recorded as signed-off and the held Story completes, and teamSettle prints what was recorded or why nothing was"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Show signoff apart from review and approval",
+        "summary": "Add the signoff entry to ArtifactGate and DeliveryEvidenceEntry from signoffViewOf and to the chain report's existing lines, leaving approval and review output unchanged.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Approval and review output is unchanged for an artifact with no signoff",
+          "A signed-off artifact shows signoff separately and never counted as a review",
+          "The delivery evidence of a Story lists its BUILD record with its signoff entry"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/signoff-view.test.ts: signoffViewOf, ArtifactGate, DeliveryEvidenceEntry and the existing chain report lines show signoff separately while approval and review output is unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/delivery/__tests__/signoff-delivery.test.ts: the delivery evidence of a Story lists its BUILD record with its signoff entry, so a BUILD that is in signoff or approved and held is visible there"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "End-to-end flow and the sandbox smoke test",
+        "summary": "Prove the whole flow through the real gate, lifecycle and a fake tracker, including a BUILD settled by team.settle, an unlisted stage unaffected and grandfathering; and record the sandbox GitHub smoke test as reported by the builder.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "Claim, submit, refused next stage while open, settled completion, all artifacts signed off together and the claim released all pass",
+          "A BUILD request settled through team.settle completes the held Story",
+          "An unlisted stage proceeds as today",
+          "The smoke test result is recorded as reported, not run by the gate"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/signoff-e2e.test.ts: claim, submit, refused next stage while open, completion settled at the next-stage attempt, all artifacts signed off together, claim released, deferred Story completion run by team.settle for a BUILD, and an unlisted stage unaffected"
+          },
+          {
+            "level": "smoke",
+            "name": "Open a signoff pull request on a sandbox repo, approve and merge it, then start the next stage"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff.test.ts: openSignoff refuses a missing approval, a missing or author-written review for DEF, HLD and LLD, a stage the policy does not list, and a submitter who is not the holder",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff.test.ts: openSignoff refuses an unassigned unit saying it must be claimed first",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff.test.ts: openSignoff for BUILD checks the Story's code-review record (missing, written by the author, or blocking is refused; pass or warn by the other party is accepted) and never the lifecycle review",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff.test.ts: openSignoff for BUILD reads the holder of the Story's issue and links the request from it even when claimUnits puts BUILD on task units, and settleSignoff for a story unit selects LLD and BUILD while an epic unit selects DEF and HLD",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff.test.ts: openSignoff opens one request, records open-signoff on every artifact with the Reference { entityId: ref, type: signoff-request, relation: tracked-by }, and finds the open request on a repeat after a partial recording",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff.test.ts: settleSignoff records signed-off on all artifacts of a completed request, clears the assignee of the unit issue, records signoff-changes on changes-requested, leaves the rest on a part-way failure, skips a Signoff whose Reference is not a signoff-request, and is idempotent across two clones",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff.test.ts: signoffRecordsOf derives sc5 records from lifecycle facts, groups by the ref read from entityId, and grandfathers by the shared rule",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff-hook.test.ts: isSignedOffOrGrandfathered counts a signed-off head, counts a head approved before the anchor only when anchorKnown is true, and never grandfathers when anchorKnown is false",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff-hook.test.ts: followedStageOf maps author design.epic to DEF on the epic, author design.story to HLD on the epic, author plan and build to LLD on the story, and anything else to null",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff-hook.test.ts: blockedBySignoff and signoffCompletionHook on one story unit block design.story authoring on the HLD's open request and plan authoring on the LLD's open request, but not the LLD's own authoring, skip a grandfathered head, return awaiting-signoff, a changes-requested refusal, an unsettled-completed refusal, or continue, never write, and need no tracker call",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff-hook.test.ts: settleForAttempt refuses a first design.story turn on a story whose issue could not be created while the HLD awaits signoff, before teamGate's allowFirstAuthor exception is reached",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff-hold.test.ts: signoffHoldsCompletion is true for a Story whose listed LLD or BUILD is not signed off and for an Epic whose listed DEF or HLD is not, false for a grandfathered pre-anchor member when anchorKnown is true, true for it when anchorKnown is false, and false outside team mode, with no policy, or with no member stage listed",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/artifact-core/__tests__/completion-holds.test.ts: completeIfRolledUp with a holds predicate stops the walk at a held Story so the Epic is not completed, completes an unheld Story and then stops at a held Epic, and with no predicate behaves as before",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/signoff-hold.test.ts: completeThroughService leaves a Story approved-not-completed while its listed BUILD awaits signoff, and settleSignoff completes the Story and its Epic once signed-off is recorded, with the members cascaded",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff-registration.test.ts: both the daemon start and makeServices in the terminal call registerSignoffHook, consultHook passes the action and the authoring workflow to the hook, and each listed daemon entry (workflow-step start, runWorkflowServerSide, the second driver entry, both build implement entries, resumeStage) awaits settleForAttempt before its gate call while plan, step, synthesize and validate do not",
+        "coveredByTaskIds": [
+          "t2",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/team-settle.test.ts: the team.settle operation runs settleSignoff for the unit, so a BUILD's completed request is recorded as signed-off and the held Story completes, and teamSettle prints what was recorded or why nothing was",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/signoff-view.test.ts: signoffViewOf, ArtifactGate, DeliveryEvidenceEntry and the existing chain report lines show signoff separately while approval and review output is unchanged",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/delivery/__tests__/signoff-delivery.test.ts: the delivery evidence of a Story lists its BUILD record with its signoff entry, so a BUILD that is in signoff or approved and held is visible there",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/tracker/__tests__/github-signoff.test.ts: loadTracker accepts signoff-request once declared; openSignoffRequest opens a pull request from the branch, links it from the unit issue and returns its ref and url; readSignoffState maps review decision and merge state to open, changes-requested and completed; failure kinds map to PortResult kinds",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/team/__tests__/signoff-e2e.test.ts: claim, submit, refused next stage while open, completion settled at the next-stage attempt, all artifacts signed off together, claim released, deferred Story completion run by team.settle for a BUILD, and an unlisted stage unaffected",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Open a signoff pull request on a sandbox repo, approve and merge it, then start the next stage",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 contractDetails (the api: openSignoff, settleSignoff, settleForAttempt, blockedBySignoff, isSignedOffOrGrandfathered, followedStageOf, signoffCompletionHook, signoffHoldsCompletion, teamSettle, registerSignoffHook, signoffRecordsOf, signoffViewOf)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 dataModelChanges (SignoffRecord, SignoffRequestSpec, the adapter capability set, CompletionHook, EvidenceContext, completion, ArtifactGate, DeliveryEvidenceEntry, ChainReport, team daemon operations)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 interactionWithShared (sc1, sc2, sc3, sc4, sc5)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 errorPaths (error cases, edge cases and invariants to preserve)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 testStrategy (test levels, subjects and acceptance mapping ac29 to ac35)"
+    }
+  ]
+}

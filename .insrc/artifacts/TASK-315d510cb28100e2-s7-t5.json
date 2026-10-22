@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b1dcbeb4-71b1-414b-92f6-4313d7124089",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T15:57:13.013Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Submit artifacts for signoff",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s7-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dafcacc23628a2755f6b7eb6fbda1d3edf7b673567a3aa9d9817bbed6e458474",
+        "at": "2026-10-22T15:57:13.013Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T15:57:13.013Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Submit artifacts for signoff",
+    "summary": "Add openSignoff: the holder rule on the issue of the unit that holds the stage (the Story's issue for a BUILD), the policy stage check, the approval and review prerequisites (the lifecycle review, or the Story's code-review record for BUILD), one request through the port linked from the unit issue, and open-signoff recorded on every artifact with the request Reference.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "openSignoff refuses a missing approval or review naming it, a non-holder and an unassigned unit, and uses the Story's issue for a BUILD",
+      "For BUILD a missing, author-written or blocking code review is refused and the lifecycle review is never consulted",
+      "One request is opened and open-signoff is recorded on every artifact with the Reference",
+      "A repeat after a partial recording finds the open request and records only the rest"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff refuses a missing approval, a missing or author-written review for DEF, HLD and LLD, a stage the policy does not list, and a submitter who is not the holder"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff refuses an unassigned unit saying it must be claimed first"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff for BUILD checks the Story's code-review record (missing, written by the author, or blocking is refused; pass or warn by the other party is accepted) and never the lifecycle review"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff for BUILD reads the holder of the Story's issue and links the request from it even when claimUnits puts BUILD on task units, and settleSignoff for a story unit selects LLD and BUILD while an epic unit selects DEF and HLD"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff opens one request, records open-signoff on every artifact with the Reference { entityId: ref, type: signoff-request, relation: tracked-by }, and finds the open request on a repeat after a partial recording"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

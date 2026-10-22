@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-08da901b-49b3-4b6f-aae9-e79973f9e9ad",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T15:57:13.011Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s7",
+    "envelope": {
+      "description": "GitHub signoff request and state",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "567b113f2855c643b2cb224850830a8f581a9770fc954ee9054cb4aecdf65774",
+        "at": "2026-10-22T15:57:13.011Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T15:57:13.011Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "GitHub signoff request and state",
+    "summary": "Extend the request spec and ref types (AMD-16), declare signoff-request in the GitHub adapter and implement openSignoffRequest as a pull request from a branch holding the committed artifacts, linked from the unit issue, and readSignoffState from the review decision and merge state, with contract tests over a fake gh.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "loadTracker accepts signoff-request once declared and still rejects a tracker that lacks it",
+      "openSignoffRequest opens a pull request, links it from the unit issue and returns its ref and url",
+      "readSignoffState maps the review decision and merge state to open, changing-requested and completed",
+      "Failure kinds map to the port's failure kinds"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-signoff.test.ts: loadTracker accepts signoff-request once declared; openSignoffRequest opens a pull request from the branch, links it from the unit issue and returns its ref and url; readSignoffState maps review decision and merge state to open, changes-requested and completed; failure kinds map to PortResult kinds"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

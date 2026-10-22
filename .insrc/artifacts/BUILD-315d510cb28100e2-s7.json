@@ -1,0 +1,367 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 11,
+        "contentHash": "e44c68e3ce7d28836b36c3f0ce012c50a165e3b456a75adf9d5be3e8c4491f4c",
+        "at": "2026-10-22T17:14:08.023Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 11,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T17:14:25.883Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-20f2d71b-6439-4327-84b8-fdcfa1df3d07",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T15:59:53.331Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s7",
+    "revision": 11,
+    "updatedAt": "2026-10-22T17:13:56.117Z",
+    "authoredBy": "controller",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      }
+    ],
+    "summary": "End-to-end test over the real gate, lifecycle and an in-memory tracker. Smoke run by the builder against the real GitHub adapter on subhagho/FieldML: claim on issue #3 (assignee subhagho), DEF and HLD submitted as one signoff PR #4, next stage (design.story) refused with awaiting-signoff while the PR was open, PR merged by the owner (admin merge: no second account exists to approve), next stage attempt then recorded both artifacts signed-off, released the claim (assignee null) and the gate allowed the stage. A first run (PR #2, adapter only) is superseded. Temporary issues closed; the smoke branches were deleted on merge.",
+    "testRecord": {
+      "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S007/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-hook.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/signoff.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-hold.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-registration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/signoff-hold.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/completion-holds.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/lifecycle-service.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/gates.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/github-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/github-signoff.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/port.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/github-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/port.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/team-park-resume.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/command.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/team.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/team-settle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/implement.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/handoff-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/phases/settle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/phases/start.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/resume.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/signoff-registration.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/workflow-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/author-gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/command.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/tui.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/signoff-view.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/chain.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/signoff-delivery.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/snapshot.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T17:13:56.117Z"
+      }
+    ],
+    "commit": "e09a9d18"
+  },
+  "citations": []
+}

@@ -1,0 +1,757 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 10,
+        "contentHash": "59d595f1b2b811849eaaeeb3479d1bc56ffa6aaeeac0ff7e2aa06422b733c7cf",
+        "at": "2026-10-22T16:42:13.054Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s7",
+    "createdAt": "2026-10-22T15:59:53.331Z",
+    "updatedAt": "2026-10-22T16:42:12.967Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "revision": 10
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "64bd9eb0",
+        "ranAt": "2026-10-22T15:59:53.331Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/signoff.test.ts: signoffRecordsOf derives sc5 records from lifecycle facts, groups by the ref read from entityId, and grandfathers by the shared rule",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff.test.ts",
+                "title": "signoffRecordsOf derives sc5 records from lifecycle facts, groups by the ref read from entityId, and grandfathers by the shared rule",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/signoff-hook.test.ts: isSignedOffOrGrandfathered counts a signed-off head, counts a head approved before the anchor only when anchorKnown is true, and never grandfathers when anchorKnown is false",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-hook.test.ts",
+                "title": "isSignedOffOrGrandfathered counts a signed-off head, counts a head approved before the anchor only when anchorKnown is true, and never grandfathers when anchorKnown is false",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/signoff-hook.test.ts: followedStageOf maps author design.epic to DEF on the epic, author design.story to HLD on the epic, author plan and build to LLD on the story, and anything else to null",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-hook.test.ts",
+                "title": "followedStageOf maps author design.epic to DEF on the epic, author design.story to HLD on the epic, author plan and build to LLD on the story, and anything else to null",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/signoff-hook.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 991,
+            "titles": [
+              {
+                "title": "isSignedOffOrGrandfathered counts a signed-off head, counts a head approved before the anchor only when anchorKnown is true, and never grandfathers when anchorKnown is false",
+                "result": "pass"
+              },
+              {
+                "title": "followedStageOf maps author design.epic to DEF on the epic, author design.story to HLD on the epic, author plan and build to LLD on the story, and anything else to null",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/signoff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1179,
+            "titles": [
+              {
+                "title": "signoffRecordsOf derives sc5 records from lifecycle facts, groups by the ref read from entityId, and grandfathers by the shared rule",
+                "result": "pass"
+              },
+              {
+                "title": "the request Reference round trip keeps the ref and never changes the Reference type",
+                "result": "pass"
+              },
+              {
+                "title": "signoffViewOf shows the signoff of the current revision only",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "6e048d5f",
+        "ranAt": "2026-10-22T16:03:47.211Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/signoff-hook.test.ts: blockedBySignoff and signoffCompletionHook on one story unit block design.story authoring on the HLD's open request and plan authoring on the LLD's open request, but not the LLD's own authoring, skip a grandfathered head, return awaiting-signoff, a changes-requested refusal, an unsettled-completed refusal, or continue, never write, and need no tracker call",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-hook.test.ts",
+                "title": "blockedBySignoff and signoffCompletionHook on one story unit block design.story authoring on the HLD's open request and plan authoring on the LLD's open request, but not the LLD's own authoring, skip a grandfathered head, return awaiting-signoff, a changes-requested refusal, an unsettled-completed refusal, or continue, never write, and need no tracker call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/signoff-hold.test.ts: signoffHoldsCompletion is true for a Story whose listed LLD or BUILD is not signed off and for an Epic whose listed DEF or HLD is not, false for a grandfathered pre-anchor member when anchorKnown is true, true for it when anchorKnown is false, and false outside team mode, with no policy, or with no member stage listed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-hold.test.ts",
+                "title": "signoffHoldsCompletion is true for a Story whose listed LLD or BUILD is not signed off and for an Epic whose listed DEF or HLD is not, false for a grandfathered pre-anchor member when anchorKnown is true, true for it when anchorKnown is false, and false outside team mode, with no policy, or with no member stage listed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/signoff-registration.test.ts: consultHook passes the action and the authoring workflow to the hook and an older three-argument hook still works",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-registration.test.ts",
+                "title": "consultHook passes the action and the authoring workflow to the hook and an older three-argument hook still works",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/signoff-hold.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3342,
+            "titles": [
+              {
+                "title": "signoffHoldsCompletion is true for a Story whose listed LLD or BUILD is not signed off and for an Epic whose listed DEF or HLD is not, false for a grandfathered pre-anchor member when anchorKnown is true, true for it when anchorKnown is false, and false outside team mode, with no policy, or with no member stage listed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/signoff-hook.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2951,
+            "titles": [
+              {
+                "title": "isSignedOffOrGrandfathered counts a signed-off head, counts a head approved before the anchor only when anchorKnown is true, and never grandfathers when anchorKnown is false",
+                "result": "pass"
+              },
+              {
+                "title": "followedStageOf maps author design.epic to DEF on the epic, author design.story to HLD on the epic, author plan and build to LLD on the story, and anything else to null",
+                "result": "pass"
+              },
+              {
+                "title": "blockedBySignoff and signoffCompletionHook on one story unit block design.story authoring on the HLD's open request and plan authoring on the LLD's open request, but not the LLD's own authoring, skip a grandfathered head, return awaiting-signoff, a changes-requested refusal, an unsettled-completed refusal, or continue, never write, and need no tracker call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/signoff-registration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3347,
+            "titles": [
+              {
+                "title": "consultHook passes the action and the authoring workflow to the hook and an older three-argument hook still works",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "761d2f01",
+        "ranAt": "2026-10-22T16:07:37.840Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/artifact-core/__tests__/completion-holds.test.ts: completeIfRolledUp with a holds predicate stops the walk at a held Story so the Epic is not completed, completes an unheld Story and then stops at a held Epic, and with no predicate behaves as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/completion-holds.test.ts",
+                "title": "completeIfRolledUp with a holds predicate stops the walk at a held Story so the Epic is not completed, completes an unheld Story and then stops at a held Epic, and with no predicate behaves as before",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/completion-holds.test.ts",
+                "title": "with no predicate the walk behaves as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/signoff-hold.test.ts: completeThroughService leaves a Story approved-not-completed while its listed BUILD awaits signoff",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/signoff-hold.test.ts",
+                "title": "completeThroughService leaves a Story approved-not-completed while its listed BUILD awaits signoff",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/signoff-hold.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1537,
+            "titles": [
+              {
+                "title": "completeThroughService leaves a Story approved-not-completed while its listed BUILD awaits signoff",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/completion-holds.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1275,
+            "titles": [
+              {
+                "title": "completeIfRolledUp with a holds predicate stops the walk at a held Story so the Epic is not completed, completes an unheld Story and then stops at a held Epic, and with no predicate behaves as before",
+                "result": "pass"
+              },
+              {
+                "title": "with no predicate the walk behaves as before",
+                "result": "pass"
+              },
+              {
+                "title": "LifecycleService.completeIfRolledUp holds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "6892df08",
+        "ranAt": "2026-10-22T16:10:56.555Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/github-signoff.test.ts: loadTracker accepts signoff-request once declared; openSignoffRequest opens a pull request from the branch, links it from the unit issue and returns its ref and url; readSignoffState maps review decision and merge state to open, changes-requested and completed; failure kinds map to PortResult kinds",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-signoff.test.ts",
+                "title": "loadTracker accepts signoff-request once declared; openSignoffRequest opens a pull request from the branch, links it from the unit issue and returns its ref and url; readSignoffState maps review decision and merge state to open, changes-requested and completed; failure kinds map to PortResult kinds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/github-signoff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 774,
+            "titles": [
+              {
+                "title": "loadTracker accepts signoff-request once declared; openSignoffRequest opens a pull request from the branch, links it from the unit issue and returns its ref and url; readSignoffState maps review decision and merge state to open, changes-requested and completed; failure kinds map to PortResult kinds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "c9aedef3",
+        "ranAt": "2026-10-22T16:15:37.336Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff refuses a missing approval, a missing or author-written review for DEF, HLD and LLD, a stage the policy does not list, and a submitter who is not the holder",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff.test.ts",
+                "title": "openSignoff refuses a missing approval, a missing or author-written review for DEF, HLD and LLD, a stage the policy does not list, and a submitter who is not the holder",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff refuses an unassigned unit saying it must be claimed first",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff.test.ts",
+                "title": "openSignoff refuses an unassigned unit saying it must be claimed first",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff for BUILD checks the Story's code-review record (missing, written by the author, or blocking is refused; pass or warn by the other party is accepted) and never the lifecycle review",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff.test.ts",
+                "title": "openSignoff for BUILD checks the Story's code-review record (missing, written by the author, or blocking is refused; pass or warn by the other party is accepted) and never the lifecycle review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff for BUILD reads the holder of the Story's issue and links the request from it even when claimUnits puts BUILD on task units, and settleSignoff for a story unit selects LLD and BUILD while an epic unit selects DEF and HLD",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff.test.ts",
+                "title": "openSignoff for BUILD reads the holder of the Story's issue and links the request from it even when claimUnits puts BUILD on task units, and settleSignoff for a story unit selects LLD and BUILD while an epic unit selects DEF and HLD",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/signoff.test.ts: openSignoff opens one request, records open-signoff on every artifact with the Reference { entityId: ref, type: signoff-request, relation: tracked-by }, and finds the open request on a repeat after a partial recording",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff.test.ts",
+                "title": "openSignoff opens one request, records open-signoff on every artifact with the Reference { entityId: ref, type: signoff-request, relation: tracked-by }, and finds the open request on a repeat after a partial recording",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/signoff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1139,
+            "titles": [
+              {
+                "title": "signoffRecordsOf derives sc5 records from lifecycle facts, groups by the ref read from entityId, and grandfathers by the shared rule",
+                "result": "pass"
+              },
+              {
+                "title": "the request Reference round trip keeps the ref and never changes the Reference type",
+                "result": "pass"
+              },
+              {
+                "title": "signoffViewOf shows the signoff of the current revision only",
+                "result": "pass"
+              },
+              {
+                "title": "openSignoff refuses a missing approval, a missing or author-written review for DEF, HLD and LLD, a stage the policy does not list, and a submitter who is not the holder",
+                "result": "pass"
+              },
+              {
+                "title": "openSignoff refuses an unassigned unit saying it must be claimed first",
+                "result": "pass"
+              },
+              {
+                "title": "openSignoff for BUILD checks the Story's code-review record (missing, written by the author, or blocking is refused; pass or warn by the other party is accepted) and never the lifecycle review",
+                "result": "pass"
+              },
+              {
+                "title": "openSignoff for BUILD reads the holder of the Story's issue and links the request from it even when claimUnits puts BUILD on task units, and settleSignoff for a story unit selects LLD and BUILD while an epic unit selects DEF and HLD",
+                "result": "pass"
+              },
+              {
+                "title": "openSignoff opens one request, records open-signoff on every artifact with the Reference { entityId: ref, type: signoff-request, relation: tracked-by }, and finds the open request on a repeat after a partial recording",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "05498c6f",
+        "ranAt": "2026-10-22T16:19:17.064Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/signoff.test.ts: settleSignoff records signed-off on all artifacts of a completed request, clears the assignee of the unit issue, records signoff-changes on changes-requested, leaves the rest on a part-way failure, skips a Signoff whose Reference is not a signoff-request, and is idempotent across two clones",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff.test.ts",
+                "title": "settleSignoff records signed-off on all artifacts of a completed request, clears the assignee of the unit issue, records signoff-changes on changes-requested, leaves the rest on a part-way failure, skips a Signoff whose Reference is not a signoff-request, and is idempotent across two clones",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/signoff-hook.test.ts: settleForAttempt refuses a first design.story turn on a story whose issue could not be created while the HLD awaits signoff, before teamGate's allowFirstAuthor exception is reached",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-hook.test.ts",
+                "title": "settleForAttempt refuses a first design.story turn on a story whose issue could not be created while the HLD awaits signoff, before teamGate's allowFirstAuthor exception is reached",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/signoff-hold.test.ts: settleSignoff completes the Story and its Epic once signed-off is recorded, with the members cascaded",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/signoff-hold.test.ts",
+                "title": "settleSignoff completes the Story and its Epic once signed-off is recorded, with the members cascaded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/signoff-hold.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1918,
+            "titles": [
+              {
+                "title": "completeThroughService leaves a Story approved-not-completed while its listed BUILD awaits signoff",
+                "result": "pass"
+              },
+              {
+                "title": "settleSignoff completes the Story and its Epic once signed-off is recorded, with the members cascaded",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/signoff-hook.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1340,
+            "titles": [
+              {
+                "title": "isSignedOffOrGrandfathered counts a signed-off head, counts a head approved before the anchor only when anchorKnown is true, and never grandfathers when anchorKnown is false",
+                "result": "pass"
+              },
+              {
+                "title": "followedStageOf maps author design.epic to DEF on the epic, author design.story to HLD on the epic, author plan and build to LLD on the story, and anything else to null",
+                "result": "pass"
+              },
+              {
+                "title": "blockedBySignoff and signoffCompletionHook on one story unit block design.story authoring on the HLD's open request and plan authoring on the LLD's open request, but not the LLD's own authoring, skip a grandfathered head, return awaiting-signoff, a changes-requested refusal, an unsettled-completed refusal, or continue, never write, and need no tracker call",
+                "result": "pass"
+              },
+              {
+                "title": "settleForAttempt refuses a first design.story turn on a story whose issue could not be created while the HLD awaits signoff, before teamGate's allowFirstAuthor exception is reached",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/signoff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1403,
+            "titles": [
+              {
+                "title": "signoffRecordsOf derives sc5 records from lifecycle facts, groups by the ref read from entityId, and grandfathers by the shared rule",
+                "result": "pass"
+              },
+              {
+                "title": "the request Reference round trip keeps the ref and never changes the Reference type",
+                "result": "pass"
+              },
+              {
+                "title": "signoffViewOf shows the signoff of the current revision only",
+                "result": "pass"
+              },
+              {
+                "title": "openSignoff refuses a missing approval, a missing or author-written review for DEF, HLD and LLD, a stage the policy does not list, and a submitter who is not the holder",
+                "result": "pass"
+              },
+              {
+                "title": "openSignoff refuses an unassigned unit saying it must be claimed first",
+                "result": "pass"
+              },
+              {
+                "title": "openSignoff for BUILD checks the Story's code-review record (missing, written by the author, or blocking is refused; pass or warn by the other party is accepted) and never the lifecycle review",
+                "result": "pass"
+              },
+              {
+                "title": "openSignoff for BUILD reads the holder of the Story's issue and links the request from it even when claimUnits puts BUILD on task units, and settleSignoff for a story unit selects LLD and BUILD while an epic unit selects DEF and HLD",
+                "result": "pass"
+              },
+              {
+                "title": "openSignoff opens one request, records open-signoff on every artifact with the Reference { entityId: ref, type: signoff-request, relation: tracked-by }, and finds the open request on a repeat after a partial recording",
+                "result": "pass"
+              },
+              {
+                "title": "settleSignoff records signed-off on all artifacts of a completed request, clears the assignee of the unit issue, records signoff-changes on changes-requested, leaves the rest on a part-way failure, skips a Signoff whose Reference is not a signoff-request, and is idempotent across two clones",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "288f9f29",
+        "ranAt": "2026-10-22T16:26:38.264Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/signoff-registration.test.ts: both the daemon start and makeServices in the terminal call registerSignoffHook, and each listed daemon entry (workflow-step start, runWorkflowServerSide, the second driver entry, both build implement entries, resumeStage) awaits settleForAttempt before its gate call while plan, step, synthesize and validate do not",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-registration.test.ts",
+                "title": "both the daemon start and makeServices in the terminal call registerSignoffHook, and each listed daemon entry (workflow-step start, runWorkflowServerSide, the second driver entry, both build implement entries, resumeStage) awaits settleForAttempt before its gate call while plan, step, synthesize and validate do not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/team-settle.test.ts: the team.settle operation runs settleSignoff for the unit, so a BUILD's completed request is recorded as signed-off and the held Story completes, and teamSettle prints what was recorded or why nothing was",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/team-settle.test.ts",
+                "title": "the team.settle operation runs settleSignoff for the unit, so a BUILD's completed request is recorded as signed-off and the held Story completes, and teamSettle prints what was recorded or why nothing was",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/team-settle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 787,
+            "titles": [
+              {
+                "title": "the team.settle operation runs settleSignoff for the unit, so a BUILD's completed request is recorded as signed-off and the held Story completes, and teamSettle prints what was recorded or why nothing was",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/signoff-registration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 947,
+            "titles": [
+              {
+                "title": "consultHook passes the action and the authoring workflow to the hook and an older three-argument hook still works",
+                "result": "pass"
+              },
+              {
+                "title": "both the daemon start and makeServices in the terminal call registerSignoffHook, and each listed daemon entry (workflow-step start, runWorkflowServerSide, the second driver entry, both build implement entries, resumeStage) awaits settleForAttempt before its gate call while plan, step, synthesize and validate do not",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "e9b895e1",
+        "ranAt": "2026-10-22T16:30:29.476Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/signoff-view.test.ts: signoffViewOf, ArtifactGate, DeliveryEvidenceEntry and the existing chain report lines show signoff separately while approval and review output is unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/signoff-view.test.ts",
+                "title": "signoffViewOf, ArtifactGate, DeliveryEvidenceEntry and the existing chain report lines show signoff separately while approval and review output is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/delivery/__tests__/signoff-delivery.test.ts: the delivery evidence of a Story lists its BUILD record with its signoff entry, so a BUILD that is in signoff or approved and held is visible there",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/signoff-delivery.test.ts",
+                "title": "the delivery evidence of a Story lists its BUILD record with its signoff entry, so a BUILD that is in signoff or approved and held is visible there",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/signoff-view.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3833,
+            "titles": [
+              {
+                "title": "signoffViewOf, ArtifactGate, DeliveryEvidenceEntry and the existing chain report lines show signoff separately while approval and review output is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/delivery/__tests__/signoff-delivery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2946,
+            "titles": [
+              {
+                "title": "the delivery evidence of a Story lists its BUILD record with its signoff entry, so a BUILD that is in signoff or approved and held is visible there",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "7fb55988",
+        "ranAt": "2026-10-22T16:42:12.967Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/signoff-e2e.test.ts: claim, submit, refused next stage while open, completion settled at the next-stage attempt, all artifacts signed off together, claim released, deferred Story completion run by team.settle for a BUILD, and an unlisted stage unaffected",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-e2e.test.ts",
+                "title": "claim, submit, refused next stage while open, completion settled at the next-stage attempt, all artifacts signed off together, claim released, deferred Story completion run by team.settle for a BUILD, and an unlisted stage unaffected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Open a signoff pull request on a sandbox repo, approve and merge it, then start the next stage",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Run on subhagho/FieldML: signoff PR https://github.com/subhagho/FieldML/pull/4 (issue #3 linked), refused while open, merged by owner admin merge (no second reviewer available), then design.story attempt settled DEF+HLD to signed-off, released the claim and was allowed. Console output of the run was observed by the builder; the script was temporary and removed."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/signoff-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1412,
+            "titles": [
+              {
+                "title": "claim, submit, refused next stage while open, completion settled at the next-stage attempt, all artifacts signed off together, claim released, deferred Story completion run by team.settle for a BUILD, and an unlisted stage unaffected",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

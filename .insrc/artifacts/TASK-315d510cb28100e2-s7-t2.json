@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-08b4f146-9c25-4d39-9beb-344438ec9987",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T15:57:13.007Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s7",
+    "envelope": {
+      "description": "The read-only decision, the completion hook and its registration",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "651231bad39b5d2b289f89a4a1f999f477600b8c90a1a5002bd69281c433d7f3",
+        "at": "2026-10-22T15:57:13.008Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T15:57:13.008Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The read-only decision, the completion hook and its registration",
+    "summary": "Add blockedBySignoff, signoffHoldsCompletion, signoffCompletionHook and registerSignoffHook, and change consultHook in team/gate.ts to pass the action and the authoring workflow to the hook (AMD-17), keeping a three-argument hook working.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "blockedBySignoff refuses a stage on the followed stage's open request, changes-requested or an unrecorded completed request, and returns null for an unlisted or grandfathered stage with no tracker call",
+      "signoffHoldsCompletion is true for a Story with a listed unsigned LLD or BUILD and for an Epic with a listed unsigned DEF or HLD, and false outside team mode",
+      "consultHook passes the action and authoring to the hook and an older three-argument hook still works",
+      "The hook returns continue for open-signoff, revise and release"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff-hook.test.ts: blockedBySignoff and signoffCompletionHook on one story unit block design.story authoring on the HLD's open request and plan authoring on the LLD's open request, but not the LLD's own authoring, skip a grandfathered head, return awaiting-signoff, a changes-requested refusal, an unsettled-completed refusal, or continue, never write, and need no tracker call"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff-hold.test.ts: signoffHoldsCompletion is true for a Story whose listed LLD or BUILD is not signed off and for an Epic whose listed DEF or HLD is not, false for a grandfathered pre-anchor member when anchorKnown is true, true for it when anchorKnown is false, and false outside team mode, with no policy, or with no member stage listed"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff-registration.test.ts: consultHook passes the action and the authoring workflow to the hook and an older three-argument hook still works"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

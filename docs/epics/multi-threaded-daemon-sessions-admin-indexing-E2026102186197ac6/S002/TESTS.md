@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 34 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 38 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -156,3 +156,23 @@ Run at 2026-10-22T08:26:15.345Z on commit `7fb004d7`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/graph/__tests__/compact.test.ts` | 0 | 8 | 1.9 s |  |
+
+## t6
+
+Run at 2026-10-22T08:29:13.498Z on commit `8679c338`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise) | `src/indexer/__tests__/doc-summary-sweep.test.ts` |
+| pass | every queued single-document job runs before each document, including jobs queued while the sweep runs | `src/indexer/__tests__/doc-summary-sweep.test.ts` |
+| pass | a summary never starts while code work is queued, even when the sweep wakes from its wait just before a code job arrives | `src/indexer/__tests__/summary-sweep-progress.test.ts` |
+| pass | a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document | `src/indexer/__tests__/summary-sweep-progress.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/doc-summary-sweep.test.ts` | 0 | 10 | 0.6 s |  |
+| `src/indexer/__tests__/summary-sweep-progress.test.ts` | 0 | 8 | 1.8 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:26:15.345Z",
+    "updatedAt": "2026-10-22T08:29:13.498Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -716,6 +716,134 @@
               },
               {
                 "title": "compactGraphStore with a hook returning true or no hook returns today's CompactResult",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "8679c338",
+        "ranAt": "2026-10-22T08:29:13.498Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "every queued single-document job runs before each document, including jobs queued while the sweep runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+                "title": "a summary never starts while code work is queued, even when the sweep wakes from its wait just before a code job arrives",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+                "title": "a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 613,
+            "titles": [
+              {
+                "title": "every queued single-document job runs before each document, including jobs queued while the sweep runs",
+                "result": "pass"
+              },
+              {
+                "title": "a document deleted after the sweep began is counted as gone and not summarised, and a throwing document is counted as failed while the sweep continues",
+                "result": "pass"
+              },
+              {
+                "title": "every result kind is classified as summarised, skipped, gone or failed",
+                "result": "pass"
+              },
+              {
+                "title": "progress is reported after each document, with the total",
+                "result": "pass"
+              },
+              {
+                "title": "once shouldStop is true the sweep returns stopped after the summary in progress, also between single-document jobs",
+                "result": "pass"
+              },
+              {
+                "title": "the sweep waits for code work before each single-document job and each document, runs an edit queued during the wait before the next document, and ends with stopped when shutdown comes during the wait",
+                "result": "pass"
+              },
+              {
+                "title": "code work arriving while a document is read pauses the sweep again: an edit queued in that pause runs first, and shutdown in it ends the sweep without summarising",
+                "result": "pass"
+              },
+              {
+                "title": "shutdown that comes while a document is read ends the sweep without summarising it",
+                "result": "pass"
+              },
+              {
+                "title": "a kept-good result is counted as skipped, not failed",
+                "result": "pass"
+              },
+              {
+                "title": "runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1780,
+            "titles": [
+              {
+                "title": "summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes",
+                "result": "pass"
+              },
+              {
+                "title": "summarySweepProgress is cleared when the sweep stops on shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "summarySweepProgress is cleared when the sweep throws",
+                "result": "pass"
+              },
+              {
+                "title": "a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document",
+                "result": "pass"
+              },
+              {
+                "title": "the indexer's sweep pauses while the queue's index lane has work and continues when it is idle",
+                "result": "pass"
+              },
+              {
+                "title": "a summary never starts while code work is queued, even when the sweep wakes from its wait just before a code job arrives",
+                "result": "pass"
+              },
+              {
+                "title": "an edited document queued while the indexer's sweep is paused for code work runs before the sweep's next document",
+                "result": "pass"
+              },
+              {
+                "title": "a single-document summary waits while code work runs, runs once it is done, and is not started on shutdown",
                 "result": "pass"
               }
             ],

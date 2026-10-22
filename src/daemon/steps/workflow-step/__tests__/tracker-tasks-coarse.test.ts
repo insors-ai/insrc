@@ -28,6 +28,7 @@ import { defineArtifactPaths, planArtifactPaths } from '../../../../workflow/sto
 import { markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 import { seedTaskHeads } from '../../../../workflow/__tests__/helpers/task-heads.js';
 import { readBinding } from '../../../../workflow/tracker/binding.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment

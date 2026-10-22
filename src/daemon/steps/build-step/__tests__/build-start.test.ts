@@ -42,6 +42,7 @@ import { buildStartRelPath, readBuildStart, resolveStoryRangeBase } from '../../
 import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
 import { seedSidecarRules } from '../../../../workflow/artifact-core/__tests__/seed-rules.js';
 import { approveTarget } from '../../../../workflow/__tests__/helpers/approve.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 /** The judge's structured verdict, with the fields a test does not care about filled in. */
 function judgeVerdict(over: Record<string, unknown>): Record<string, unknown> {

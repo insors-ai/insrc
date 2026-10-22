@@ -35,6 +35,7 @@ import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/ot
 import { lifecycleFor } from '../../../lifecycle-registry.js';
 import { seedSidecarRules } from '../../../../workflow/artifact-core/__tests__/seed-rules.js';
 import { seedBoundTaskHead, seedBoundUnits } from '../../../../workflow/__tests__/helpers/task-heads.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 /** The judge's structured verdict, with the fields a test does not care about filled in. */
 function judgeVerdict(over: Record<string, unknown>): Record<string, unknown> {

@@ -39,6 +39,7 @@ import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
 import { markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 import { unitIssueOf } from '../../../../workflow/tracker/unit-head.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 interface Envelope { readonly content: readonly { readonly type: 'text'; readonly text: string }[]; readonly isError?: boolean }
 function payload(env: Envelope): Record<string, unknown> {

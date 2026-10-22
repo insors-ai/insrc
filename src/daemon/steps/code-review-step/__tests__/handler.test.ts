@@ -18,6 +18,7 @@ import { buildStartRelPath } from '../../../../workflow/runners/build/range-base
 import type { CodeReviewStepOutput } from '../types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../../workflow/code-review/types.js';
 import { noopRoundWriter } from '../../../../workflow/__tests__/helpers/round-writer.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 // ---- fixtures ----
 

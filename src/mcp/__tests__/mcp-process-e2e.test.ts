@@ -38,6 +38,9 @@ let daemon: RunningDaemon;
 before(async () => {
 	const dir = join(REPO, 'docs', 'stub');
 	mkdirSync(dir, { recursive: true });
+	// the daemon runs in its own process, so the repository carries a real schema marker
+	mkdirSync(join(REPO, '.insrc'), { recursive: true });
+	writeFileSync(join(REPO, '.insrc', 'schema.json'), JSON.stringify({ version: 2 }));
 	writeFileSync(join(dir, 's1.md'), '# Doc\n\nThe body.\n');
 	writeFileSync(join(dir, 's1.json'), JSON.stringify({ meta: { workflow: 'design.story', epicHash: 'abcd', storyId: 'S001', authoredBy: 'daemon' }, body: {} }));
 	daemon = await startDaemon(HOME);

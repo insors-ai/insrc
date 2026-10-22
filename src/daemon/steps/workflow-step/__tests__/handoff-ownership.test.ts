@@ -26,6 +26,7 @@ import { defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths,
 import { _setGateDepsForTests } from '../../../../workflow/team/gate.js';
 import type { PortResult, TrackerPort } from '../../../../workflow/tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../../../../workflow/team/types.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 afterEach(() => { _setGateDepsForTests(); _clearWorkflowStateStoreForTests(); });

@@ -32,6 +32,7 @@ import { jsonPathForMd } from '../workflow/gates.js';
 import { reviewArtifactFile, SamePartyReviewError } from '../workflow/review/index.js';
 import type { ReviewArtifactResult } from '../workflow/review/index.js';
 import { renderReviewReport } from '../workflow/review/report.js';
+import { repoSchemaRefusal } from './repo-schema-guard.js';
 
 const log = getLogger('daemon:workflow-review-rpc');
 
@@ -91,6 +92,8 @@ export async function workflowReviewStart(
 		fail('workflow.review: no repo (pass `repo` or set INSRC_REPO)');
 		return;
 	}
+	const refusal = repoSchemaRefusal(repoPath);
+	if (refusal !== undefined) { fail(refusal, 'repo-schema-unconverted'); return; }
 
 	try {
 		const mdPath = params.artifactPath;

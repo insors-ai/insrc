@@ -33,6 +33,7 @@ import type { Entity, IpcStreamMessage } from '../../../shared/types.js';
 import { buildRun } from '../../analyze-rpc.js';
 import { _groundingForTest, AnalyzeGroundingFailedError } from '../../workflow-rpc.js';
 import { createStepCallHandler } from '../host.js';
+import '../../../workflow/__tests__/helpers/converted-repos.js';
 
 useTemporaryLance();
 

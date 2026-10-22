@@ -16,6 +16,7 @@ import { syncUnitComments } from '../workflow/tracker/comment-sync.js';
 import type { CommentSyncResult } from '../workflow/tracker/comment-sync.js';
 import type { UnitRef } from '../workflow/tracker/refs.js';
 import { lifecycleFor } from './lifecycle-registry.js';
+import { repoSchemaRefusal } from './repo-schema-guard.js';
 
 const log = getLogger('daemon:tracker-sync-comments');
 
@@ -32,6 +33,8 @@ export async function handleTrackerSyncComments(params: unknown, repoEnv: string
 	const p = (params ?? {}) as TrackerSyncCommentsParams;
 	const repoPath = p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv;
 	if (repoPath === undefined || repoPath.length === 0) return { error: 'repo is required (or set INSRC_REPO)' };
+	const refusal = repoSchemaRefusal(repoPath);
+	if (refusal !== undefined) return { error: refusal };
 	if (typeof p.epicHash !== 'string' || p.epicHash.length === 0) return { error: 'epicHash is required' };
 	if (p.unit !== undefined && p.unit !== 'epic' && p.unit !== 'story' && p.unit !== 'task') return { error: 'unit must be epic, story or task' };
 	const unit = p.unit ?? (p.taskId !== undefined ? 'task' : p.storyId !== undefined ? 'story' : 'epic');

@@ -34,6 +34,7 @@ import type { InDaemonClientDeps, StepDaemonClient } from '../daemon-client.js';
 import { handleReviewStep } from '../review-step/handler.js';
 import { _clearReviewStateStoreForTests } from '../review-step/state-store.js';
 import type { ReviewStepDeps } from '../review-step/types.js';
+import '../../../workflow/__tests__/helpers/converted-repos.js';
 
 // --- stand-ins -------------------------------------------------------------------
 

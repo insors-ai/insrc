@@ -17,6 +17,7 @@ import { openTracker } from '../workflow/tracker-auto.js';
 import { attachUnit } from '../workflow/tracker/attach-unit.js';
 import type { AttachScope, AttachUnitResult } from '../workflow/tracker/attach-unit.js';
 import type { UnitRef } from '../workflow/tracker/refs.js';
+import { repoSchemaRefusal } from './repo-schema-guard.js';
 
 export interface TrackerAttachParams {
 	readonly repo?: string;
@@ -31,6 +32,8 @@ export function handleTrackerAttach(params: unknown, repoEnv: string | undefined
 	const p = (params ?? {}) as TrackerAttachParams;
 	const repoPath = p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv;
 	if (repoPath === undefined || repoPath.length === 0) return { error: 'repo is required (or set INSRC_REPO)' };
+	const refusal = repoSchemaRefusal(repoPath);
+	if (refusal !== undefined) return { error: refusal };
 	if (typeof p.epicHash !== 'string' || p.epicHash.length === 0) return { error: 'epicHash is required' };
 	const unit = p.unit ?? (p.storyId !== undefined ? 'story' : 'epic');
 	if (unit === 'story' && (typeof p.storyId !== 'string' || p.storyId.length === 0)) return { error: 'storyId is required for a story unit' };

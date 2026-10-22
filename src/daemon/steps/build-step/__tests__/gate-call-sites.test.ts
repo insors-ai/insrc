@@ -27,6 +27,7 @@ import { ARTIFACTS_DIR, lldArtifactId, planArtifactId } from '../../../../workfl
 import { _setGateDepsForTests, type PolicyReader } from '../../../../workflow/team/gate.js';
 import type { TeamPolicy } from '../../../../workflow/team/types.js';
 import type { PortResult, TrackerPort } from '../../../../workflow/tracker/port.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 const HASH = 'b7c8d9e0f1a2b3c4';
 const CREATED_AT = '2026-07-18T00:00:00.000Z';

@@ -20,6 +20,7 @@ import { handleBundle } from './phases/bundle.js';
 import { handleNarrow } from './phases/narrow.js';
 import { handlePlan } from './phases/plan.js';
 import { handleStart } from './phases/start.js';
+import { repoSchemaRefusalOfInput } from '../../repo-schema-guard.js';
 import type {
 	StepInput,
 	StepMcpEnvelope,
@@ -91,6 +92,8 @@ async function dispatch(input: unknown): Promise<StepOutput> {
 		);
 	}
 	const step = input as StepInput;
+	const refusal = repoSchemaRefusalOfInput(step);
+	if (refusal !== undefined) return errorResult('repo-schema-unconverted', refusal, false);
 	try {
 		switch (step.phase) {
 			case 'start':  return await handleStart(step);

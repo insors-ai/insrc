@@ -49,6 +49,7 @@ import { approveJson, repoOfHead } from '../../../../workflow/__tests__/helpers/
 import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
 import { staleAckOf } from '../../../../workflow/artifact-core/stale-ack.js';
 import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 interface Envelope { readonly content: readonly { readonly type: 'text'; readonly text: string }[]; readonly isError?: boolean }
 function payload(env: Envelope): Record<string, unknown> {

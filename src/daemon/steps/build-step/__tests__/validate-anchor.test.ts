@@ -25,6 +25,7 @@ import {
 	_setBuildValidateTestRecordWriterForTests,
 } from '../phases/validate.js';
 import type { ValidationCheckResults } from '../validation-checks.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const DAY1 = '2026-03-01T23:50:00.000Z';

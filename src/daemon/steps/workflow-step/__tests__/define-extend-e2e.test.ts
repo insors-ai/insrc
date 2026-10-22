@@ -34,6 +34,7 @@ import { defineArtifactPaths, extendArtifactPaths, hldArtifactPaths, ARTIFACTS_D
 import { approveJson } from '../../../../workflow/__tests__/helpers/approve.js';
 import { approvalStateOf } from '../../../../workflow/artifact-core/approval-view.js';
 import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 interface Envelope {
 	readonly content: readonly { readonly type: 'text'; readonly text: string }[];

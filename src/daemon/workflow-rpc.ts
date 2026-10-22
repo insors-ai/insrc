@@ -49,6 +49,7 @@ import { augmentStandaloneParams, epicKeyFor } from './steps/workflow-step/phase
 import { buildRun } from './analyze-rpc.js';
 import { completenessHeadLine, isAnswerReport, renderReportHead, type AnswerReport } from '../analyze/completeness.js';
 import type { UnsizedIntent } from '../analyze/measure.js';
+import { repoSchemaRefusal } from './repo-schema-guard.js';
 
 const log = getLogger('daemon:workflow-rpc');
 
@@ -416,6 +417,8 @@ export function prepareWorkflowRun(rawParams: unknown): PreparedWorkflowRun {
 	if (repoPath === undefined || repoPath.length === 0) {
 		throw new Error('workflow.run: no repo (pass `repo` or set INSRC_REPO)');
 	}
+	const refusal = repoSchemaRefusal(repoPath);
+	if (refusal !== undefined) throw new Error(refusal);
 	const runId   = `wf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const params  = { ...(p.params ?? {}) };
 	// Standalone runs (triage routed a non-Epic feature here) mint a self-hash

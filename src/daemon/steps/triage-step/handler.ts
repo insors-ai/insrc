@@ -17,6 +17,7 @@ import { getLogger } from '../../../shared/logger.js';
 import { handleStart } from './phases/start.js';
 import { handleClassify } from './phases/classify.js';
 import type { TriageInput, TriageMcpEnvelope, TriageOutput } from './types.js';
+import { repoSchemaRefusalOfInput } from '../../repo-schema-guard.js';
 
 const log = getLogger('mcp:triage-step:handler');
 
@@ -33,6 +34,8 @@ async function dispatch(input: unknown): Promise<TriageOutput> {
 		return { next: 'error', code: 'bad-input', message: 'insrc_triage: input must be an object with a `phase` field.' };
 	}
 	const step = input as TriageInput;
+	const refusal = repoSchemaRefusalOfInput(step);
+	if (refusal !== undefined) return { next: 'error', code: 'repo-schema-unconverted', message: refusal };
 	try {
 		switch (step.phase) {
 			case 'start':    return await handleStart(step);

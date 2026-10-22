@@ -31,6 +31,7 @@ import type { PortResult, TrackerPort } from '../../../../workflow/tracker/port.
 import type { PolicyReader, TeamPolicy } from '../../../../workflow/team/types.js';
 import type { LLMProvider } from '../../../../shared/types.js';
 import type { WorkflowIntent } from '../../../../workflow/types.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 afterEach(() => { _setGateDepsForTests(); _clearWorkflowStateStoreForTests(); });
 

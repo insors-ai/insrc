@@ -43,6 +43,7 @@ import { DESIGN_REVIEW_WAIT_MS, PIPELINE_REVIEW_WAIT_MS } from '../phases/start.
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import type { ReviewStepDeps } from '../types.js';
 import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 const SPEC = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
 const MIN = 60_000;

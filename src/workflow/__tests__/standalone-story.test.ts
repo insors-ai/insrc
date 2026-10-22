@@ -20,6 +20,7 @@ import { lldArtifactId, buildArtifactId } from '../storage.js';
 import { standaloneStoryContext } from '../runners/design-story/standalone.js';
 import { augmentStandaloneParams } from '../../daemon/steps/workflow-step/phases/start.js';
 import { handleBuildStep } from '../../daemon/steps/build-step/handler.js';
+import './helpers/converted-repos.js';
 
 test('a new standalone workflow with no storyId produces s1 and passes the strict id check', async () => {
 	// the start phase fills the story and the hash for a standalone run

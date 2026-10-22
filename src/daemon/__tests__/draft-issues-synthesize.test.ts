@@ -27,6 +27,7 @@ import { registerWorkflowRunners } from '../../workflow/index.js';
 import { _setDraftHookForTests, type IssueReadiness } from '../../workflow/draft-issues.js';
 import type { LLMProvider, LLMMessage, StructuredSchema } from '../../shared/types.js';
 import type { WorkflowIntent } from '../../workflow/types.js';
+import '../../workflow/__tests__/helpers/converted-repos.js';
 
 const READY: IssueReadiness = { status: 'ready', units: [{ unit: 'epic', issue: 'acme/demo#1', created: true }] };
 const NOT_READY: IssueReadiness = {

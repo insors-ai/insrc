@@ -31,6 +31,7 @@ import { LEDGER_EXCLUDE_GLOBS } from '../workflow/runners/build/changed-files.js
 import { resolveStoryRangeBase } from '../workflow/runners/build/range-base.js';
 import type { resolveCodeReviewSubject } from '../workflow/code-review/subject.js';
 import { buildShaperProvider, resolveShaperKind } from '../analyze/context/shaper-provider.js';
+import { repoSchemaRefusal } from './repo-schema-guard.js';
 import {
 	loadAnalyzeConfig,
 	resolveRepoShaperProvider,
@@ -97,6 +98,11 @@ export async function codeReviewRunStart(
 	const repoPath = params.repo !== undefined && params.repo.length > 0 ? params.repo : process.env['INSRC_REPO'];
 	if (repoPath === undefined || repoPath.length === 0) {
 		send({ id: 0, stream: 'error', data: { error: 'codeReview.run: no repo (pass `repo` or set INSRC_REPO)', recoverable: false } });
+		return;
+	}
+	const refusal = repoSchemaRefusal(repoPath);
+	if (refusal !== undefined) {
+		send({ id: 0, stream: 'error', data: { error: refusal, reason: 'repo-schema-unconverted', recoverable: false } });
 		return;
 	}
 

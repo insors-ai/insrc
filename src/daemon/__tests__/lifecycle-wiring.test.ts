@@ -41,6 +41,7 @@ import { lifecycleFor, resetLifecycleRegistry } from '../lifecycle-registry.js';
 import { handleWorkflowApprove } from '../workflow-approve.js';
 import { workflowReviewStart } from '../workflow-review-rpc.js';
 import { approveTarget } from '../../workflow/__tests__/helpers/approve.js';
+import '../../workflow/__tests__/helpers/converted-repos.js';
 
 const alice: Actor = { id: 'github:alice', kind: 'person', properties: {} };
 const PLAN_A = `PLAN-${H}-s1`;

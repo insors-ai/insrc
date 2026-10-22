@@ -63,6 +63,7 @@ import type {
 } from '../../../workflow/code-review/types.js';
 import { stepClient, stepEnvRepo } from '../../../shared/step-context.js';
 import { StateTokenNotFound, loadState, releaseState, saveState } from './state-store.js';
+import { repoSchemaRefusal } from '../../repo-schema-guard.js';
 import type {
 	CodeReviewStepError,
 	CodeReviewStepInput,
@@ -278,6 +279,8 @@ async function handleStart(
 		if (r === undefined || r.length === 0) {
 			return errorResult('no-repo', 'insrc_code_review_step: no repo (pass `repo` or set INSRC_REPO).', false);
 		}
+		const refusal = repoSchemaRefusal(r);
+		if (refusal !== undefined) return errorResult('repo-schema-unconverted', refusal, false);
 		repo = r; epicHash = step.epicHash; storyId = step.storyId;
 
 		// 1. Resolve the fixed sc1 subject (file+git, in-process). A DECLINE is not

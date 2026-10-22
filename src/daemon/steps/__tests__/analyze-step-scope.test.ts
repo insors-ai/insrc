@@ -33,6 +33,7 @@ import type { Entity, RegisteredRepo } from '../../../shared/types.js';
 import { handleAnalyzeStep } from '../analyze-step/handler.js';
 import { stepScope } from '../analyze-step/scope.js';
 import { decodeState, encodeState, STATE_VERSION, type StepStatePayload } from '../analyze-step/state.js';
+import '../../../workflow/__tests__/helpers/converted-repos.js';
 
 const REPO = '/work/app';
 

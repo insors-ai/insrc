@@ -40,6 +40,7 @@ import { artifactJsonPath, buildArtifactId } from '../../workflow/storage.js';
 import { buildAuthorParty, codeReviewRunStart } from '../code-review-rpc.js';
 import type { CodeReviewRunDeps } from '../code-review-rpc.js';
 import { noopRoundWriter } from '../../workflow/__tests__/helpers/round-writer.js';
+import '../../workflow/__tests__/helpers/converted-repos.js';
 
 const EPIC = 'abcd1234ef567890';
 const STORY = 's1';

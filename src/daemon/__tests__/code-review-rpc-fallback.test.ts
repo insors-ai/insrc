@@ -33,6 +33,7 @@ import { handleCodeReviewStep, type CodeReviewStepDeps } from '../steps/code-rev
 import { _clearCodeReviewStateStoreForTests } from '../steps/code-review-step/state-store.js';
 import type { CodeReviewStepOutput } from '../steps/code-review-step/types.js';
 import { noopRoundWriter } from '../../workflow/__tests__/helpers/round-writer.js';
+import '../../workflow/__tests__/helpers/converted-repos.js';
 
 const EPIC = 'abcd1234ef567890';
 const STORY = 's1';

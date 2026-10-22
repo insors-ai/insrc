@@ -24,6 +24,7 @@ import { ARTIFACTS_DIR, lldArtifactId, planArtifactId } from '../../../../workfl
 import { bindArtifact } from '../../../../workflow/tracker/binding.js';
 import { comment, fakeTracker } from '../../../../workflow/tracker/__tests__/comment-sync-kit.js';
 import { lifecycleFor } from '../../../lifecycle-registry.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const AT = '2026-07-18T00:00:00.000Z';

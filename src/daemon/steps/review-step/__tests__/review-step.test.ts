@@ -32,6 +32,7 @@ import { idOfWorkflow, writeDesign } from './review-fixture.js';
 import { handleReviewStep } from '../handler.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 // ---------------------------------------------------------------------------
 // Fixture: a temp repo + a persisted artifact (md + json with meta.workflow).

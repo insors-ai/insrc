@@ -16,6 +16,7 @@ import { TeamGateRefusedError } from '../../../workflow/team/gate.js';
 import { handleImplement } from './phases/implement.js';
 import { handleValidate } from './phases/validate.js';
 import type { BuildStepInput, BuildStepMcpEnvelope, BuildStepOutput, BuildStepError } from './types.js';
+import { repoSchemaRefusalOfInput } from '../../repo-schema-guard.js';
 
 const TRACE_PATH = process.env['INSRC_BUILD_STEP_TRACE'];
 
@@ -39,6 +40,8 @@ async function dispatch(input: unknown): Promise<BuildStepOutput> {
 		return errorResult('bad-input', 'insrc_build_step: input must be an object with a `phase` field.');
 	}
 	const step = input as BuildStepInput;
+	const refusal = repoSchemaRefusalOfInput(step);
+	if (refusal !== undefined) return errorResult('repo-schema-unconverted', refusal);
 	try {
 		switch (step.phase) {
 			case 'implement':        return await handleImplement(step);

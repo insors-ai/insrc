@@ -23,6 +23,7 @@ import { _setGateDepsForTests } from '../../../../workflow/team/gate.js';
 import {
 	HASH, PLAN_STEPS, entryOf, mkWorld, parse, resumeDeps, s1Context, type World,
 } from '../../../../workflow/team/__tests__/helpers/handoff-world.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 afterEach(() => { _setGateDepsForTests(); _setHandoffDepsForTests(); _clearWorkflowStateStoreForTests(); });
 

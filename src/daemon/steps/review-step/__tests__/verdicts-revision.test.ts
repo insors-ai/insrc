@@ -29,6 +29,7 @@ import { handleReviewStep } from '../handler.js';
 import { idOfWorkflow, writeDesign } from './review-fixture.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 const MD = '# Story s1\n\n- t1: extend the two exported constants in foo.\n- t2: beta constant defined at src/foo.ts:2.\n';
 

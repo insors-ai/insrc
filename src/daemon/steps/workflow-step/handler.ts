@@ -22,6 +22,7 @@ import { handleReviewDeferred } from './phases/review-deferred.js';
 import { handleStart } from './phases/start.js';
 import { handleStep } from './phases/step.js';
 import { handleSynthesize } from './phases/synthesize.js';
+import { repoSchemaRefusalOfInput } from '../../repo-schema-guard.js';
 import type {
 	WorkflowStepInput,
 	WorkflowStepMcpEnvelope,
@@ -63,6 +64,8 @@ async function dispatch(input: unknown): Promise<WorkflowStepOutput> {
 		);
 	}
 	const step = input as WorkflowStepInput;
+	const refusal = repoSchemaRefusalOfInput(step);
+	if (refusal !== undefined) return errorResult('repo-schema-unconverted', refusal, false);
 	try {
 		switch (step.phase) {
 			case 'start':            return await handleStart(step);

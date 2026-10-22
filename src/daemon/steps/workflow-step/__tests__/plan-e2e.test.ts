@@ -31,6 +31,7 @@ import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths } from '../../.
 import { _setGateDepsForTests } from '../../../../workflow/team/gate.js';
 import type { TeamPolicy } from '../../../../workflow/team/policy.js';
 import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment

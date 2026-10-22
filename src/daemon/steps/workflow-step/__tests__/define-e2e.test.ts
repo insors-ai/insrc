@@ -27,6 +27,7 @@ import { join } from 'node:path';
 import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 interface Envelope {
 	readonly content: readonly { readonly type: 'text'; readonly text: string }[];

@@ -36,6 +36,7 @@ import { workflowReviewStart } from '../workflow-review-rpc.js';
 import type { WorkflowReviewDeps, WorkflowReviewDone } from '../workflow-review-rpc.js';
 import { envelopeProvider } from '../../workflow/review-pipeline/__tests__/enveloped.js';
 import { lifecycleReviewOf } from '../../workflow/artifact-core/approval-view.js';
+import '../../workflow/__tests__/helpers/converted-repos.js';
 
 const SPEC = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
 

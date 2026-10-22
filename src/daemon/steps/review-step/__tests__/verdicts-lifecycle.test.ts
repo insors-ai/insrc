@@ -33,6 +33,7 @@ import { artifactJsonPath } from '../../../../workflow/storage.js';
 import { lifecycleFor, resetLifecycleRegistry } from '../../../lifecycle-registry.js';
 import { handleReviewStep } from '../handler.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 const PLAN = `PLAN-${H}-s1`;
 const MD = `<!-- insrc:artifact ${PLAN} -->\n\n# Story s1\n\n- t1: extend the two exported constants in foo.\n`;

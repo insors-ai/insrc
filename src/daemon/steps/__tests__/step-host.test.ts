@@ -35,6 +35,7 @@ import { createStepCallHandler, STEP_TOOL_NAMES, stepToolTable } from '../host.j
 import type { StepEnvelope } from '../host.js';
 import { loadState as loadReviewState, updateState as updateReviewState } from '../review-step/state-store.js';
 import { loadState as loadWorkflowState } from '../workflow-step/state-store.js';
+import '../../../workflow/__tests__/helpers/converted-repos.js';
 
 /** Run a stream handler and collect what it sends. */
 async function collect(handler: StreamHandler, params: unknown, signal: AbortSignal = new AbortController().signal): Promise<IpcStreamMessage[]> {

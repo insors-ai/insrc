@@ -33,6 +33,7 @@ import { addRepo, removeRepo } from '../../../db/repos.js';
 import type { Entity, IpcStreamMessage } from '../../../shared/types.js';
 import { scopeErrorResult } from '../analyze-step/handler.js';
 import { createStepCallHandler } from '../host.js';
+import '../../../workflow/__tests__/helpers/converted-repos.js';
 
 useTemporaryLance();
 

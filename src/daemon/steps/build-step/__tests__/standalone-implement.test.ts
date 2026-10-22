@@ -13,6 +13,7 @@ import { admitStandaloneBuild } from '../../../../workflow/runners/build/admissi
 import { standaloneEpicHashFromFocus } from '../../../../workflow/runners/build/standalone-record.js';
 import { handleBuildStep } from '../handler.js';
 import type { BuildStepImplement, BuildStepError } from '../types.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 // ---------------------------------------------------------------------------
 // admitStandaloneBuild — the no-plan admission

@@ -25,6 +25,7 @@ import { handleClaims } from './phases/claims.js';
 import { handleFindings } from './phases/findings.js';
 import { handleStart } from './phases/start.js';
 import { handleVerdicts } from './phases/verdicts.js';
+import { repoSchemaRefusalOfInput } from '../../repo-schema-guard.js';
 import type {
 	ReviewStepDeps,
 	ReviewStepInput,
@@ -59,6 +60,8 @@ async function dispatch(input: unknown, deps: ReviewStepDeps): Promise<ReviewSte
 		);
 	}
 	const step = input as ReviewStepInput;
+	const refusal = repoSchemaRefusalOfInput(step);
+	if (refusal !== undefined) return errorResult('repo-schema-unconverted', refusal, false);
 	try {
 		switch (step.phase) {
 			case 'start':    return await handleStart(step, deps);

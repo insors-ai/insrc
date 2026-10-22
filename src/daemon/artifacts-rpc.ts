@@ -21,6 +21,7 @@ import { dirname, join } from 'node:path';
 import { fetch as undiciFetch } from 'undici';
 import { getLogger } from '../shared/logger.js';
 import { PATHS } from '../shared/paths.js';
+import { repoSchemaRefusal } from './repo-schema-guard.js';
 import {
 	ARTIFACT_KINDS,
 	isArtifactKind,
@@ -75,6 +76,8 @@ export async function listTemplatesRpc(
 	const p = (params ?? {}) as Partial<ListTemplatesParams>;
 	const opts: { repoRoot?: string } = {};
 	if (typeof p.repoRoot === 'string' && p.repoRoot.length > 0) {
+		const refusal = repoSchemaRefusal(p.repoRoot);
+		if (refusal !== undefined) throw new Error(refusal);
 		opts.repoRoot = p.repoRoot;
 	}
 	return listTemplates(opts);

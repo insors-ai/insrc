@@ -16,6 +16,7 @@ import type { TriageDone, TriageEmitClassification } from '../types.js';
 import { SPEC_SCHEMA_VERSION, type SpecArtifact } from '../../../../workflow/artifacts/spec.js';
 import { specArtifactPaths, writeAtomic } from '../../../../workflow/storage.js';
 import { approvedMeta } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
+import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 const REPO = '/tmp/some-repo';
 

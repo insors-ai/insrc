@@ -2,6 +2,8 @@ import { sep } from 'node:path';
 import type { IndexJob } from '../shared/types.js';
 import { getLogger } from '../shared/logger.js';
 import { LmdbStoreLocksLostError, recordStoreFailureIfLockError } from '../db/graph/store.js';
+import { IndexingBlock } from './threads/indexing-block.js';
+import type { LaneStatus, SummarySweepProgress } from './threads/status-board.js';
 
 const log = getLogger('queue');
 
@@ -9,6 +11,16 @@ type JobProcessor = (job: IndexJob) => Promise<void>;
 
 /** The two lanes: document summaries, and everything else. */
 type LaneName = 'index' | 'summary';
+
+/** How a queue on the code-indexing worker reports its state to other threads (Epic 86197ac6 s2). */
+export interface IndexQueueOptions {
+  /** The indexing shared block: the queue writes its code-busy and stopping words at every change. */
+  readonly indexingBlock?: SharedArrayBuffer | undefined;
+  /** Publishes one lane's depth and processing state (the status board's publishLane). */
+  readonly publishLane?: ((lane: LaneName, status: LaneStatus, sweep?: SummarySweepProgress) => void) | undefined;
+  /** The running summary sweep's progress, published with the summary lane. */
+  readonly sweepProgress?: (() => SummarySweepProgress | undefined) | undefined;
+}
 
 /** One lane: its own FIFO, its own drain loop and its own in-flight job. */
 interface Lane {
@@ -46,6 +58,37 @@ export class IndexQueue {
   private stopped = false;
   /** Waiters of waitForIndexIdle, released when the index lane goes idle or on stop(). */
   private indexIdleWaiters: (() => void)[] = [];
+  private paused = false;
+  /** Drain loops held by pause(), released by resume() or stop(). */
+  private resumeWaiters: (() => void)[] = [];
+  /** pause() callers waiting for the jobs in flight to finish. */
+  private quietWaiters: (() => void)[] = [];
+  private readonly block: IndexingBlock | undefined;
+  private readonly publish: IndexQueueOptions['publishLane'];
+  private readonly sweepProgress: IndexQueueOptions['sweepProgress'];
+
+  constructor(opts: IndexQueueOptions = {}) {
+    this.block = opts.indexingBlock !== undefined ? new IndexingBlock(opts.indexingBlock) : undefined;
+    this.publish = opts.publishLane;
+    this.sweepProgress = opts.sweepProgress;
+  }
+
+  /**
+   * Report a change to a lane: the code-busy word and the lane's published
+   * state. Called at every change, and by the summary sweep's owner when its
+   * progress moves (lanesChanged).
+   */
+  private changed(name: LaneName): void {
+    this.block?.setCodeBusy(!this.isIndexIdle);
+    if (this.publish === undefined) return;
+    const lane = this.lanes[name];
+    const status: LaneStatus = { depth: lane.jobs.length, processing: lane.inFlight !== null };
+    if (name === 'summary') this.publish('summary', status, this.sweepProgress?.());
+    else this.publish('index', status);
+  }
+
+  /** Republish the summary lane, e.g. when the sweep's progress moved. */
+  lanesChanged(): void { this.changed('summary'); }
 
   private laneFor(job: IndexJob): Lane { return this.lanes[isSummaryJob(job) ? 'summary' : 'index']; }
 
@@ -192,7 +235,11 @@ export class IndexQueue {
         }
         return false;
       });
-      if (already) return;
+      if (already) {
+        // The superseded config-full jobs left the lane.
+        this.changed('index');
+        return;
+      }
     }
 
     // Deduplicate doc-summarise-repo jobs for the same repo. If a
@@ -223,6 +270,7 @@ export class IndexQueue {
     } else {
       queue.push(job);
     }
+    this.changed(lane === this.lanes.index ? 'index' : 'summary');
     lane.resolve?.(); // wake up this lane's drain loop if it's waiting
   }
 
@@ -234,7 +282,9 @@ export class IndexQueue {
     const jobs = this.lanes.summary.jobs;
     const idx = jobs.findIndex(j => j.kind === 'doc-summarise-entity');
     if (idx < 0) return undefined;
-    return jobs.splice(idx, 1)[0] as { kind: 'doc-summarise-entity'; entityId: string };
+    const job = jobs.splice(idx, 1)[0] as { kind: 'doc-summarise-entity'; entityId: string };
+    this.changed('summary');
+    return job;
   }
 
   /** Each lane's queued count and whether its worker is running a job. */
@@ -268,6 +318,11 @@ export class IndexQueue {
         while (!this.stopped && !this.isIndexIdle) await this.waitForIndexIdle();
         if (this.stopped) break;
       }
+      // Held by pause() until resume(): no new job starts.
+      if (this.paused) {
+        await new Promise<void>(res => { this.resumeWaiters.push(res); });
+        continue;
+      }
       const job = lane.jobs.shift();
 
       if (!job) {
@@ -278,6 +333,7 @@ export class IndexQueue {
       }
 
       lane.inFlight = job;
+      this.changed(lane === this.lanes.index ? 'index' : 'summary');
       try {
         await processor(job);
       } catch (err) {
@@ -293,7 +349,9 @@ export class IndexQueue {
         }
       } finally {
         lane.inFlight = null;
+        this.changed(lane === this.lanes.index ? 'index' : 'summary');
         if (lane === this.lanes.index && lane.jobs.length === 0) this.releaseIndexIdleWaiters();
+        if (this.paused && !this.isProcessing) this.releaseQuietWaiters();
       }
     }
   }
@@ -317,9 +375,39 @@ export class IndexQueue {
     return new Promise<void>(resolve => { this.indexIdleWaiters.push(resolve); });
   }
 
+  /**
+   * Stop both lanes from starting new jobs (maintenance compaction). Resolves
+   * once no job is in flight in either lane; jobs keep queueing meanwhile.
+   */
+  pause(): Promise<void> {
+    this.paused = true;
+    if (!this.isProcessing) return Promise.resolve();
+    return new Promise<void>(resolve => { this.quietWaiters.push(resolve); });
+  }
+
+  /** Let both lanes take jobs again after pause(). */
+  resume(): void {
+    this.paused = false;
+    this.releaseResumeWaiters();
+  }
+
+  private releaseQuietWaiters(): void {
+    const waiters = this.quietWaiters;
+    this.quietWaiters = [];
+    for (const w of waiters) w();
+  }
+
+  private releaseResumeWaiters(): void {
+    const waiters = this.resumeWaiters;
+    this.resumeWaiters = [];
+    for (const w of waiters) w();
+  }
+
   /** Signal both drain loops to stop after their current jobs finish. */
   stop(): void {
     this.stopped = true;
+    this.block?.setStopping();
+    this.releaseResumeWaiters();
     // unblock both if waiting
     this.lanes.index.resolve?.();
     this.lanes.summary.resolve?.();

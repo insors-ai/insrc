@@ -13,6 +13,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { ArtifactIds } from '../artifact-ids.js';
 import { enforceCodeReviewGate } from '../code-review/gate.js';
+import { approvalOverrideReasonOf } from './approval-view.js';
 import { History } from './history.js';
 import { createFileSidecarStore } from './sidecar-store.js';
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../storage.js';
@@ -37,10 +38,9 @@ function readJson(path: string): Record<string, unknown> | undefined {
 
 const asRecord = (v: unknown): Record<string, unknown> | undefined => (typeof v === 'object' && v !== null && !Array.isArray(v) ? v as Record<string, unknown> : undefined);
 
-/** meta.reviewOverride.reason of a record, when it is a non-empty string. */
+/** The reason the record was approved over a blocking review (lifecycle.approval.override), when it carries one. */
 function storedOverride(head: Record<string, unknown> | undefined): string | undefined {
-	const reason = asRecord(asRecord(head?.['meta'])?.['reviewOverride'])?.['reason'];
-	return typeof reason === 'string' && reason.trim().length > 0 ? reason : undefined;
+	return approvalOverrideReasonOf(head?.['meta']);
 }
 
 /** A build round carries the `build-round` marker of the Task set on its outcome data. */

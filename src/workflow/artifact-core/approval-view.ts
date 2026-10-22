@@ -46,3 +46,11 @@ export function lifecycleReviewOf(meta: unknown): Obj | undefined {
 	const review = lifecycleOfMeta(meta)?.['review'];
 	return isObj(review) ? review : undefined;
 }
+
+/** The reason an approval was given over a blocking review (lifecycle.approval.override), when it carries one. */
+export function approvalOverrideReasonOf(meta: unknown): string | undefined {
+	const approval = lifecycleOfMeta(meta)?.['approval'];
+	const override = isObj(approval) ? approval['override'] : undefined;
+	const reason = isObj(override) ? override['reason'] : undefined;
+	return typeof reason === 'string' && reason.trim().length > 0 ? reason : undefined;
+}

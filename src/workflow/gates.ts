@@ -22,6 +22,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { basename, join } from 'node:path';
 
+import { approvalStateOf } from './artifact-core/approval-view.js';
 import { getEffectiveHld } from './amendments/effective.js';
 import { makeStaleAck } from './amendments/staleness.js';
 import { listApprovedAmendments } from './amendments/store.js';
@@ -183,7 +184,7 @@ export function epicCatalog(repoPath: string): EpicCatalogEntry[] {
 				epicHash: m[1]!,
 				...(d.meta.epicSlug !== undefined ? { epicSlug: d.meta.epicSlug } : {}),
 				problem:  d.body.problem,
-				approved: typeof d.meta.approvedAt === 'string' && d.meta.approvedAt.length > 0,
+				approved: approvalStateOf(d.meta) === 'approved',
 				stories:  d.body.stories.map(s => ({ id: s.id, title: s.title })),
 			});
 		} catch { /* skip malformed */ }
@@ -226,16 +227,16 @@ export function appendStoryToDefine(repoPath: string, epicHash: string, story: D
 export function requireApprovedEpic(repoPath: string, epicHash: string): DefineArtifact {
 	const define = readDefineArtifact(repoPath, epicHash);
 	const label  = define.meta.epicSlug ?? epicHash;
-	if (define.meta.approvedAt === undefined || define.meta.approvedAt.length === 0) {
+	if (approvalStateOf(define.meta) !== 'approved') {
 		const path = defineArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(define.meta), workItemKindOf(define.meta), define.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`Epic '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${path}\` before starting design.epic.`,
 		);
 	}
-	if (define.meta.rejectedAt !== undefined && define.meta.rejectedAt.length > 0) {
+	if (approvalStateOf(define.meta) === 'rejected') {
 		throw new ArtifactNotApprovedError(
-			`Epic '${label}' (${epicHash}) was rejected on ${define.meta.rejectedAt}. ` +
+			`Epic '${label}' (${epicHash}) was rejected. ` +
 			`Re-run define with --reopen first.`,
 		);
 	}
@@ -264,7 +265,7 @@ export function readHldArtifact(repoPath: string, epicHash: string): HldArtifact
 export function requireApprovedHld(repoPath: string, epicHash: string): HldArtifact {
 	const hld   = readHldArtifact(repoPath, epicHash);
 	const label = hld.meta.epicSlug ?? epicHash;
-	if (hld.meta.approvedAt === undefined || hld.meta.approvedAt.length === 0) {
+	if (approvalStateOf(hld.meta) !== 'approved') {
 		const path = hldArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(hld.meta), workItemKindOf(hld.meta), hld.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`HLD for Epic '${label}' (${epicHash}) is not approved. ` +
@@ -306,16 +307,16 @@ export function readLldArtifact(repoPath: string, epicHash: string, storyId: str
 export function requireApprovedLld(repoPath: string, epicHash: string, storyId: string): LldArtifact {
 	const lld   = readLldArtifact(repoPath, epicHash, storyId);
 	const label = lld.meta.epicSlug ?? epicHash;
-	if (lld.meta.approvedAt === undefined || lld.meta.approvedAt.length === 0) {
+	if (approvalStateOf(lld.meta) !== 'approved') {
 		const path = lldArtifactPaths(repoPath, epicHash, storyId, workItemAnchorCreatedAt(lld.meta), workItemKindOf(lld.meta), lld.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`LLD for Story '${storyId}' of Epic '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${path}\` before starting plan.`,
 		);
 	}
-	if (lld.meta.rejectedAt !== undefined && lld.meta.rejectedAt.length > 0) {
+	if (approvalStateOf(lld.meta) === 'rejected') {
 		throw new ArtifactNotApprovedError(
-			`LLD for Story '${storyId}' of Epic '${label}' (${epicHash}) was rejected on ${lld.meta.rejectedAt}. ` +
+			`LLD for Story '${storyId}' of Epic '${label}' (${epicHash}) was rejected. ` +
 			`Re-run design.story before plan.`,
 		);
 	}
@@ -405,16 +406,16 @@ export function readPlanArtifact(repoPath: string, epicHash: string, storyId: st
 export function requireApprovedPlan(repoPath: string, epicHash: string, storyId: string): PlanArtifact {
 	const plan  = readPlanArtifact(repoPath, epicHash, storyId);
 	const label = plan.meta.epicSlug ?? epicHash;
-	if (plan.meta.approvedAt === undefined || plan.meta.approvedAt.length === 0) {
+	if (approvalStateOf(plan.meta) !== 'approved') {
 		const path = planArtifactPaths(repoPath, epicHash, storyId, workItemAnchorCreatedAt(plan.meta), workItemKindOf(plan.meta), plan.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`Plan for Story '${storyId}' of Epic '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${path}\` before starting build.`,
 		);
 	}
-	if (plan.meta.rejectedAt !== undefined && plan.meta.rejectedAt.length > 0) {
+	if (approvalStateOf(plan.meta) === 'rejected') {
 		throw new ArtifactNotApprovedError(
-			`Plan for Story '${storyId}' of Epic '${label}' (${epicHash}) was rejected on ${plan.meta.rejectedAt}. ` +
+			`Plan for Story '${storyId}' of Epic '${label}' (${epicHash}) was rejected. ` +
 			`Re-run plan before build.`,
 		);
 	}
@@ -454,7 +455,7 @@ export function readSpecArtifact(repoPath: string, specHash: string): SpecArtifa
  *  relay that to the user (ac4). */
 export function requireApprovedSpec(repoPath: string, specHash: string): SpecArtifact {
 	const spec = readSpecArtifact(repoPath, specHash);
-	if (spec.meta.approvedAt === undefined || spec.meta.approvedAt.length === 0) {
+	if (approvalStateOf(spec.meta) !== 'approved') {
 		const path = specArtifactPaths(repoPath, specHash, workItemAnchorCreatedAt(spec.meta), 'standalone', spec.meta.epicSlug).md;
 		throw new SpecNotApprovedError(
 			`Spec ${specArtifactId(specHash)} is not approved — its approval is still outstanding. ` +

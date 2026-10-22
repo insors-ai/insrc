@@ -39,6 +39,8 @@ export interface FixtureOptions {
 	/** The time of every stamp. Default 2026-01-01T00:00:00.000Z. */
 	readonly at?:       string | undefined;
 	readonly by?:       Actor | undefined;
+	/** For an approval over a blocking review: the reason it was given. */
+	readonly override?: string | undefined;
 }
 
 const AT = '2026-01-01T00:00:00.000Z';
@@ -58,7 +60,7 @@ export function lifecycleMeta(parts: Parts, opts: FixtureOptions = {}): Record<s
 	const lifecycle: Lifecycle = {
 		status: parts.status,
 		revision: { number: revision, contentHash: '', at, by: SYSTEM },
-		...(parts.approval === true ? { approval: { revision, by, at } } : {}),
+		...(parts.approval === true ? { approval: { revision, by, at, ...(opts.override !== undefined ? { override: { reason: opts.override } } : {}) } } : {}),
 		...(parts.review !== undefined ? { review: { revision, reviewer: parts.review.reviewer, party: parts.review.party, verdict: parts.review.verdict, counts: parts.review.counts, at, ...(parts.review.report !== undefined ? { report: parts.review.report } : {}) } } : {}),
 		signoffs: [],
 		...(parts.stale !== undefined ? { stale: { upstream: parts.stale.upstream, upstreamRevision: parts.stale.upstreamRevision, since: at } } : {}),

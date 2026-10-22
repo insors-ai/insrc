@@ -11,6 +11,7 @@ import { resolveWorkflowRef } from '../../tracker/resolve.js';
 import type { StepRunnerContext } from '../../types.js';
 import type { TaskPayload } from '../types.js';
 import { HASH, CREATED, SLUG, seed } from '../../__tests__/approve-fallback-kit.js';
+import { approvedMeta } from '../../__tests__/lifecycle-fixtures.js';
 
 const HEAD = `TASK-${HASH}-s1-t4`;
 
@@ -46,10 +47,10 @@ test("an issue number resolves to a Task through its head's binding, the tracker
 		// the tracker runner's dedup read: the head's binding and the plan's record, by plan row
 		const define = artifactJsonPath(fx.repo, defineArtifactId(HASH));
 		const d = JSON.parse(readFileSync(define, 'utf8'));
-		d.meta.approvedAt = '2026-07-18T00:00:00.000Z';
+		Object.assign(d.meta, approvedMeta({ at: '2026-07-18T00:00:00.000Z' }));
 		writeFileSync(define, JSON.stringify(d));
 		const plan = JSON.parse(readFileSync(fx.plan, 'utf8'));
-		plan.meta.approvedAt = '2026-07-18T00:00:00.000Z';
+		Object.assign(plan.meta, approvedMeta({ at: '2026-07-18T00:00:00.000Z' }));
 		writeFileSync(fx.plan, JSON.stringify(plan));
 		const ctx = { intent: { repoPath: fx.repo, workflow: 'tracker.push', params: { epicHash: HASH } } } as unknown as StepRunnerContext;
 		assert.deepEqual(assemblePushContext(ctx).existingRefs?.taskRefs, { s1: { t1: 'acme/demo#9', t2: 'acme/demo#7' } });

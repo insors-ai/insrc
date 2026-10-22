@@ -345,12 +345,6 @@ export interface ArtifactMetaBase {
 	/** Content revision (sc3): minted by `writeArtifact` on content writes only,
 	 *  never changed by a meta-only write. Absent reads as 0. */
 	readonly revision?:    number | undefined;
-	/** ISO 8601 timestamp set by `insrc workflow approve`. Absent
-	 *  until approved. */
-	readonly approvedAt?:  string;
-	/** ISO 8601 timestamp + reason set by `insrc workflow reject`. */
-	readonly rejectedAt?:  string;
-	readonly rejectReason?: string;
 	/** Canonical 16-char Epic hash. Populated on every Epic-scoped
 	 *  artifact (`define` / `design.epic` / `design.story` /
 	 *  `tracker.*`). Absent on `stub`. Every downstream artifact for
@@ -379,20 +373,6 @@ export interface ArtifactMetaBase {
 	 *  resolve_question). Additive; absent until a question is
 	 *  resolved / ignored / deferred. */
 	readonly questionResolutions?: Readonly<Record<string, QuestionResolution>>;
-	/** Post-stage review-cycle result — the grounded premise audit run at
-	 *  finalize (see `workflow/review/`). Its `verdict` gates approval:
-	 *  a `block` (HIGH/MED findings) refuses `insrc workflow approve` until
-	 *  the findings are auto-fixed, resolved at the user gate, or explicitly
-	 *  overridden. Absent until a review has run. */
-	readonly review?: ReviewReport;
-	/** Set when approval overrode a `block` review verdict — records who
-	 *  chose to proceed despite unresolved HIGH/MED findings, and why. */
-	readonly reviewOverride?: { readonly reason: string; readonly at: string };
-	/** Per-finding resolutions from the interactive review gate, keyed by the
-	 *  finding's `claimId`. A resolved/overridden/deferred finding no longer
-	 *  counts toward the block verdict. Additive; absent until a finding is
-	 *  resolved. See `workflow/review/resolve.ts`. */
-	readonly reviewResolutions?: Readonly<Record<string, ReviewResolution>>;
 	/** True when this artifact was produced by a STANDALONE run — a non-Epic
 	 *  feature routed here by triage, with no parent DEF/HLD. Its `epicHash` is
 	 *  a self-minted identity, not a shared Epic hash. Downstream gates skip

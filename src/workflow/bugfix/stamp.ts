@@ -12,6 +12,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 
+import { approvalStateOf } from '../artifact-core/approval-view.js';
 import type { IssueArtifact } from '../artifacts/issue.js';
 import type { ParentLocation } from '../locate/index.js';
 import { artifactJsonPath, issueArtifactId, writeArtifact } from '../storage.js';
@@ -35,9 +36,8 @@ export async function locateAndStampParent(
 	if (issue === null) {
 		throw new Error(`locateAndStampParent: issue-not-found for issueHash '${input.issueHash}'`);
 	}
-	const approvedAt = issue.meta.approvedAt;
-	if (typeof approvedAt !== 'string' || approvedAt.length === 0) {
-		throw new Error(`locateAndStampParent: not-approved — issue '${input.issueHash}' has no meta.approvedAt`);
+	if (approvalStateOf(issue.meta) !== 'approved') {
+		throw new Error(`locateAndStampParent: not-approved — issue '${input.issueHash}' is not approved in its lifecycle`);
 	}
 
 	// The defect text grounds the locate. touchedPaths are empty at issue-approval

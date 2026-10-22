@@ -20,6 +20,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
+import { approvalStateOf } from '../../artifact-core/approval-view.js';
 import { readAmendment } from '../../amendments/store.js';
 import { readBaseHld, readDefineArtifact, requireApprovedEpic } from '../../gates.js';
 import { readLldArtifact } from '../../artifacts/lld-io.js';
@@ -72,9 +73,9 @@ export function assemblePushContext(ctx: StepRunnerContext): PushContext {
 		for (const s of epic.body.stories) {
 			const planJson = artifactJsonPath(ctx.intent.repoPath, planArtifactId(epicHash, s.id));
 			if (!existsSync(planJson)) continue;
-			let plan: PlanArtifact & { meta: { approvedAt?: string; tracker?: { taskRefs?: Record<string, string> } } };
+			let plan: PlanArtifact & { meta: { tracker?: { taskRefs?: Record<string, string> } } };
 			try { plan = JSON.parse(readFileSync(planJson, 'utf8')) as typeof plan; } catch { continue; }
-			if (typeof plan.meta?.approvedAt !== 'string' || plan.meta.approvedAt.length === 0) continue;   // unapproved plan → skip
+			if (approvalStateOf(plan.meta) !== 'approved') continue;   // unapproved plan → skip
 			plans.push({
 				storyId:    s.id,
 				planDocRel: planMdRel(epicHash, epic.meta.createdAt, 'epic', epicSlug, s.id),

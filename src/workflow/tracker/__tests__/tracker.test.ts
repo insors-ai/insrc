@@ -22,6 +22,7 @@ import { renderEpicBody, renderStoryBody, updateEpicTaskList, mapIssueStatus } f
 import { resolveWorkflowRef } from '../resolve.js';
 import { ARTIFACTS_DIR } from '../../storage.js';
 import type { DefineArtifact, DefineStory } from '../../artifacts/define.js';
+import { approvedMeta } from '../../__tests__/lifecycle-fixtures.js';
 
 const SLUG = 'demo-feature';
 const HASH = 'a1b2c3d4e5f60718';
@@ -218,14 +219,14 @@ const EPIC_B_CREATED = '2026-08-20T09:00:00.000Z';
 
 function seedEpic(dir: string, hash: string, slug: string, createdAt: string, taskRef: string): void {
 	writeFileSync(join(dir, `DEF-${hash}.json`), JSON.stringify({
-		meta: { workflow: 'define', epicHash: hash, epicSlug: slug, createdAt, approvedAt: createdAt },
+		meta: { workflow: 'define', epicHash: hash, epicSlug: slug, createdAt, ...approvedMeta({ at: createdAt }) },
 		body: { problem: 'p', stories: [{ id: 's1', title: 'Story one' }] },
 		citations: [],
 	}));
 	writeFileSync(join(dir, `LLD-${hash}-s1.json`), JSON.stringify({
 		meta: {
 			workflow: 'design.story', schemaVersion: 1, epicHash: hash, epicSlug: slug,
-			storyId: 's1', createdAt, approvedAt: createdAt, tracker: { storyRef: `acme/demo#${taskRef}0` },
+			storyId: 's1', createdAt, ...approvedMeta({ at: createdAt }), tracker: { storyRef: `acme/demo#${taskRef}0` },
 		},
 		body: { openQuestions: [] }, citations: [],
 	}));
@@ -288,7 +289,7 @@ function mkBystanderEpicRepo(): string {
 	mkdirSync(dir, { recursive: true });
 	seedEpic(dir, EPIC_A_HASH, 'epic-alpha', EPIC_A_CREATED, '101');
 	writeFileSync(join(dir, `DEF-${EPIC_B_HASH}.json`), JSON.stringify({
-		meta: { workflow: 'define', epicHash: EPIC_B_HASH, epicSlug: 'epic-beta', createdAt: EPIC_B_CREATED, approvedAt: EPIC_B_CREATED },
+		meta: { workflow: 'define', epicHash: EPIC_B_HASH, epicSlug: 'epic-beta', createdAt: EPIC_B_CREATED, ...approvedMeta({ at: EPIC_B_CREATED }) },
 		body: { problem: 'p', stories: [] },
 		citations: [],
 	}));

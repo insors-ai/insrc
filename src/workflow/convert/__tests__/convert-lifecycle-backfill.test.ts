@@ -110,6 +110,12 @@ describe('convert-lifecycle-backfill', () => {
 		assert.deepEqual(lifecycle.approval?.by, actor, 'the person who approved stays the approver');
 		assert.deepEqual(lifecycle.revision.by, actor);
 		assert.notEqual(lifecycle.revision.contentHash, 'old', 'the hash is refreshed for the converted content');
+		// a lifecycle past approval keeps its status although the head still carries the approval stamp
+		const completed = run(legacy({ approvedAt: '2026-10-21T10:00:00.000Z', lifecycle: { ...existing, status: 'completed' } }));
+		assert.equal((parse(completed.converted.bytes).meta['lifecycle'] as Lifecycle).status, 'completed');
+		// ... but a draft lifecycle with an approval stamp is approved by the stamp
+		const draft = run(legacy({ approvedAt: '2026-10-21T10:00:00.000Z', lifecycle: { ...existing, status: 'draft', approval: undefined } }));
+		assert.equal((parse(draft.converted.bytes).meta['lifecycle'] as Lifecycle).status, 'approved');
 		assert.throws(() => run({ artifactId: ID, json: { meta: {} } }), ConversionUnreadable);
 		assert.throws(() => run({ artifactId: ID, json: 'x' }), ConversionUnreadable);
 	});

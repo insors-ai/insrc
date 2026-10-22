@@ -33,6 +33,9 @@ import type { ConvertedHead, RawHead } from './types.js';
 /** The meta fields the conversion removes. `rangeBase` is build bookkeeping, not approval state, and stays. */
 export const LEGACY_META_FIELDS = ['approvedAt', 'rejectedAt', 'rejectReason', 'reviewOverride', 'staleAckedAt', 'review', 'reviewResolutions'] as const;
 
+/** The statuses reached after an approval. */
+const APPROVED_OR_BEYOND: readonly Status[] = ['approved', 'in-signoff', 'changes-requested', 'signed-off', 'completed', 'superseded'];
+
 const LEGACY_ACTOR: Actor = { id: 'legacy:unknown', kind: 'person', properties: {} };
 
 type Obj = Record<string, unknown>;
@@ -98,7 +101,11 @@ export function backfillHead(input: BackfillInput): BackfillResult {
 	const approvedLater = approved && (!rejected || !(time(stampedAt(rejectedAt)) > time(stampedAt(approvedAt))));
 
 	const existing = isObj(oldMeta['lifecycle']) ? oldMeta['lifecycle'] as unknown as Lifecycle : undefined;
-	const status: Status = approved || rejected ? (approvedLater ? 'approved' : 'rejected') : existing?.status ?? 'draft';
+	// A lifecycle that already agrees with the stamps keeps its status (a completed Story still carries its approvedAt).
+	const stampStatus: Status | undefined = approved || rejected ? (approvedLater ? 'approved' : 'rejected') : undefined;
+	const agrees = existing !== undefined && stampStatus !== undefined
+		&& (stampStatus === 'approved' ? APPROVED_OR_BEYOND.includes(existing.status) : existing.status === 'rejected');
+	const status: Status = agrees ? existing.status : stampStatus ?? existing?.status ?? 'draft';
 	const revision = existing?.revision !== undefined
 		? { ...existing.revision, contentHash: hash }
 		: { number: revisionNumber, contentHash: hash, at: createdAt ?? now, by: LEGACY_ACTOR };

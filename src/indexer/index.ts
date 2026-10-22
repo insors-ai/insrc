@@ -954,7 +954,7 @@ export class IndexerService {
       const counts = await runDocSummarySweep(docs.map(e => e.id), {
         getEntity:  id => getEntity(this.db, id),
         summarise:  entity => this.summariseEntity(entity),
-        takeEdit:   () => this.queue.takeDocSummaryEdit(),
+        takeEdit:   async () => this.queue.takeDocSummaryEdit(),
         runEdit:    entityId => this.docSummariseEntity(entityId),
         shouldStop: () => this.queue.isStopping,
         waitForCodeIdle: () => this.queue.waitForIndexIdle(),

@@ -29,8 +29,12 @@ const log = getLogger('indexer');
 export interface DocSummarySweepDeps {
 	getEntity(id: string): Promise<Entity | null>;
 	summarise(entity: Entity): Promise<SummariseDocResult>;
-	/** The next queued single-document job, removed from the queue, or undefined. */
-	takeEdit(): { entityId: string } | undefined;
+	/**
+	 * The next queued single-document job, removed from the queue, or undefined.
+	 * Asynchronous because on the document-summary worker the queue lives on the
+	 * code-indexing worker (Epic 86197ac6 s2).
+	 */
+	takeEdit(): Promise<{ entityId: string } | undefined>;
 	runEdit(entityId: string): Promise<void>;
 	shouldStop(): boolean;
 	onProgress(done: number, total: number): void;
@@ -76,7 +80,7 @@ export async function runDocSummarySweep(entityIds: readonly string[], deps: Doc
 			// After every wait: check shutdown, then run an edit queued meanwhile.
 			await deps.waitForCodeIdle();
 			if (deps.shouldStop()) return { ...counts, stopped: true };
-			const edit = deps.takeEdit();
+			const edit = await deps.takeEdit();
 			if (edit !== undefined) { await deps.runEdit(edit.entityId); continue; }
 			let entity: Entity | null;
 			try {

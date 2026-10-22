@@ -43,7 +43,7 @@ function world(opts: {
 			if (r === 'throw') throw new Error(`boom ${e.id}`);
 			return r;
 		},
-		takeEdit: () => { const id = edits.shift(); return id === undefined ? undefined : { entityId: id }; },
+		takeEdit: async () => { const id = edits.shift(); return id === undefined ? undefined : { entityId: id }; },
 		runEdit: async id => { events.push(`edit:${id}`); },
 		shouldStop: () => opts.stopAfterSummaries !== undefined && summaries >= opts.stopAfterSummaries,
 		onProgress: (done, total) => { progress.push([done, total]); },
@@ -168,4 +168,32 @@ test('a kept-good result is counted as skipped, not failed', async () => {
 	};
 	const counts = await runDocSummarySweep(Object.keys(results), world({ results }).deps);
 	assert.deepEqual(counts, { summarised: 0, skipped: 1, failed: 1, gone: 0, stopped: false });
+});
+
+test('runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)', async () => {
+	// takeEdit answers a macrotask later, as a request to another thread does.
+	const w = world({ edits: ['x'] });
+	const later = <T>(v: T): Promise<T> => new Promise(res => setTimeout(() => res(v), 1));
+	const queue = w.edits;
+	w.deps.takeEdit = () => { const id = queue.shift(); return later(id === undefined ? undefined : { entityId: id }); };
+	// Code work arrives while the first lookup that finds no edit is in flight,
+	// so it is queued when the document is read; the next wait outlasts it.
+	let codeBusy = false;
+	let arrivals = 0;
+	const violations: string[] = [];
+	const inner = w.deps.summarise;
+	w.deps.summarise = async e => { if (codeBusy) violations.push(e.id); return inner(e); };
+	w.deps.isCodeIdle = () => !codeBusy;
+	w.deps.waitForCodeIdle = async () => { w.events.push('wait'); codeBusy = false; };
+	const take = w.deps.takeEdit;
+	w.deps.takeEdit = () => { if (queue.length === 0 && arrivals++ === 0) codeBusy = true; return take(); };
+	// An edit queued while document 'a' is summarised runs before 'b'.
+	const sum = w.deps.summarise;
+	w.deps.summarise = async e => { const r = await sum(e); if (e.id === 'a') queue.push('y'); return r; };
+
+	const counts = await runDocSummarySweep(['a', 'b'], w.deps);
+	assert.deepEqual(violations, [], 'no summary started while code work was queued');
+	assert.ok(w.events.filter(e => e === 'wait').length >= 4, 'the sweep waited again after the code work arrived');
+	assert.deepEqual(w.events.filter(e => e !== 'wait'), ['edit:x', 'summarise:a', 'edit:y', 'summarise:b']);
+	assert.deepEqual(counts, { summarised: 2, skipped: 0, failed: 0, gone: 0, stopped: false });
 });

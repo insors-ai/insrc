@@ -14,12 +14,13 @@ import type { AnswerAttempt, AssessmentView, AssessmentScope } from '../../share
 import { writeAtomic, artifactJsonPath } from '../../workflow/storage.js';
 import { handleDelivery } from '../../workflow/delivery/handlers.js';
 import { owner } from './fixtures/crash-writer.js';
+import { approvedMeta } from '../../workflow/__tests__/lifecycle-fixtures.js';
 
 test('Crash recovery preserves personal history, leaves delivery unchanged and never grants a pass', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'understanding-crash-'));
   const hash = 'aaaaaaaaaaaaaaaa';
   const at = '2026-10-07T09:00:00.000Z';
-  const meta = { epicHash: hash, epicSlug: 'test-epic', createdAt: at, epicCreatedAt: at, approvedAt: at };
+  const meta = { epicHash: hash, epicSlug: 'test-epic', createdAt: at, epicCreatedAt: at, ...approvedMeta({ at }) };
   const artifacts = [
     { id: `DEF-${hash}`, meta: { ...meta, workflow: 'define' }, body: { stories: [{ id: 's1', title: 'Completed story' }] } },
     { id: `PLAN-${hash}-s1`, meta: { ...meta, workflow: 'plan', storyId: 's1' }, body: { tasks: [{ id: 't1', title: 'First task' }, { id: 't2', title: 'Second task' }] } },

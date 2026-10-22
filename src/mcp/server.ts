@@ -649,7 +649,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'When YOU are the reviewer (a daemon-authored artifact), the server does the ' +
 				'DETERMINISTIC parts (read the artifact, gather evidence by re-running probes ' +
 				'against real source, assemble + persist the report) and YOU emit the claims + ' +
-				'the verdicts. Either way the review stamps `meta.review`, and approval ' +
+				'the verdicts. Either way the review is recorded on the lifecycle, and approval ' +
 				'REQUIRES it: a DEF, HLD or LLD with no review, or one reviewed by the party ' +
 				'that authored it, is withheld, as is one whose verdict blocks.\n\n' +
 				'Your multi-turn loop (daemon-authored artifacts only):\n\n' +
@@ -674,7 +674,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'The `guidance` field on each response explains the next call; `prompt` + ' +
 				'`schema` are authoritative. Preserve `state` verbatim between calls.',
 			annotations: {
-				readOnlyHint:   false,   // writes the amended artifact + stamps meta.review
+				readOnlyHint:   false,   // writes the amended artifact + records the review on its lifecycle
 				idempotentHint: false,
 				openWorldHint:  false,
 			},
@@ -940,18 +940,18 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'`artifactPath`, or a BATCH with `epicHash` (every review-clean, still-' +
 				'pending DEF/HLD/LLD/PLAN artifact under that epic). Exactly one of ' +
 				'artifactPath | epicHash.\n\n' +
-				'Stamps `approvedAt` and ENFORCES the review rule: a DEF, HLD or LLD needs a ' +
+				'Approves the artifact in its lifecycle and ENFORCES the review rule: a DEF, HLD or LLD needs a ' +
 				'review, and a BUILD record needs a code review of its Story, each done by the ' +
 				'party that did NOT author the work; a blocking verdict also withholds. A ' +
 				'withheld artifact comes back in `skipped[]` {path,reason}, never ' +
 				'`approved[]` — relay both arrays to the user. An ISSUE, SPEC or PLAN needs no ' +
-				'review. Stamp-only: it does NOT ' +
+				'review. Approval only: it does NOT ' +
 				'gh-push or commit (that stays with the TUI approve). Pass `overrideReview` ' +
 				'to approve past a missing, same-party or blocking review with a recorded reason. `repo` falls back ' +
 				'to the session workspace / INSRC_REPO (required only for an epicHash batch).',
 			annotations: {
-				readOnlyHint:   false,   // stamps approvedAt into the artifact JSON
-				idempotentHint: true,    // re-approving an approved artifact is a no-op stamp
+				readOnlyHint:   false,   // approves the artifact in its lifecycle
+				idempotentHint: true,    // re-approving an approved artifact changes nothing
 				openWorldHint:  false,
 			},
 			inputSchema: {

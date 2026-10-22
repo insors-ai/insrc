@@ -67,6 +67,9 @@ function entry(artifactId: string, part: MigratedPart, e: Omit<ChangeLogEntry, '
 	return { id: migratedEntryId(artifactId, part), ...e };
 }
 
+/** The parts every envelope has, empty. */
+const EMPTY_ENVELOPE = { references: [], attachments: [] };
+
 export function backfillHead(input: BackfillInput): BackfillResult {
 	const { head, now, actor } = input;
 	const id = head.artifactId;
@@ -81,7 +84,7 @@ export function backfillHead(input: BackfillInput): BackfillResult {
 	const body: Obj = { ...json['body'] };
 	if (body['feedback'] !== undefined) { legacyFields.push('body.feedback'); delete body['feedback']; }
 	const oldEnvelope = isObj(oldMeta['envelope']) ? oldMeta['envelope'] : {};
-	const envelope: Obj = { references: [], attachments: [], ...oldEnvelope, description: typeof oldEnvelope['description'] === 'string' ? oldEnvelope['description'] : '' };
+	const envelope: Obj = { ...EMPTY_ENVELOPE, ...oldEnvelope, description: typeof oldEnvelope['description'] === 'string' ? oldEnvelope['description'] : '' };
 	meta['envelope'] = envelope;
 	const citations = Array.isArray(json['citations']) ? json['citations'] : [];
 	const hash = contentHash(envelope['description'] as string, { body, citations });

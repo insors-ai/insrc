@@ -10,11 +10,10 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 import { lifecycleReviewOf } from '../artifact-core/approval-view.js';
-import { appendSidecarLine } from '../artifact-core/sidecar.js';
 import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
 import type { Actor, ChangeLogEntry, Review } from '../artifact-core/types.js';
 import type { ReviewResolution } from '../types.js';
@@ -41,7 +40,6 @@ export function readReviewRecordOf(jsonPath: string): ReviewRecord | undefined {
 /** Record the resolution of one finding as a 'review' entry of the artifact's log, after the report entry it resolves. */
 export function appendResolutionOf(jsonPath: string, actor: Actor, resolution: ReviewResolution, timestamp: string): void {
 	const { repo, artifactId } = locateHead(jsonPath);
-	const files = new FileSidecarStore(repo).filesOf(artifactId);
 	const entry = resolutionEntryOf({ id: `resolution-${resolution.findingId}-${randomUUID()}`, actor, timestamp, findingId: resolution.findingId, resolution });
-	appendSidecarLine(join(repo, files.log), { artifactId, entry });
+	new FileSidecarStore(repo).appendRecordSync('log', { artifactId, entry });
 }

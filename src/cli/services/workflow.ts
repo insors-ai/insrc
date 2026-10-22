@@ -69,6 +69,7 @@ import { createRoleRouter } from '../../analyze/context/role-router.js';
 import { runWithRoutingContext } from '../../analyze/context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/review/index.js';
+import { readReviewRecordOf } from '../../workflow/review/report-file.js';
 import { rpc } from '../client.js';
 import type { Socket } from 'node:net';
 import type { Entity } from '../../shared/types.js';
@@ -78,8 +79,7 @@ import {
 	effectiveReviewVerdict, listPendingReviewFindings, resolveReviewFinding,
 	type ReviewAction, type ResolveReviewResult,
 } from '../../workflow/review/index.js';
-import type { Finding, ReviewReport, ReviewVerdict } from '../../workflow/review/types.js';
-import type { ReviewResolution } from '../../workflow/types.js';
+import type { Finding, ReviewVerdict } from '../../workflow/review/types.js';
 
 const log = getLogger('cli:workflow');
 
@@ -229,11 +229,10 @@ export interface ReviewFindingsResult {
 
 /** The review findings still needing a human (R3), plus the effective verdict. */
 export function reviewFindings(artifactPath: string): ReviewFindingsResult {
-	const jsonPath = jsonPathForMd(artifactPath);
-	const meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { review?: ReviewReport; reviewResolutions?: Record<string, ReviewResolution> } }).meta ?? {};
-	const review = meta.review;
-	if (review === undefined) return { verdict: 'pass', pending: [] };
-	return { verdict: effectiveReviewVerdict(review, meta.reviewResolutions), pending: listPendingReviewFindings(review, meta.reviewResolutions) };
+	// the report and its resolutions are the review entry and the later entries of the artifact's log
+	const stored = readReviewRecordOf(jsonPathForMd(artifactPath));
+	if (stored === undefined) return { verdict: 'pass', pending: [] };
+	return { verdict: effectiveReviewVerdict(stored.report, stored.resolutions), pending: listPendingReviewFindings(stored.report, stored.resolutions) };
 }
 
 /** Resolve one review finding (apply | accept | override | defer). */

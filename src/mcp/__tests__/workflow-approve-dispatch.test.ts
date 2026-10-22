@@ -16,8 +16,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer, createConnection, type Server, type Socket } from 'node:net';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { rmSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { readFileSync, rmSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import { handleWorkflowApprove } from '../server.js';
 
@@ -95,4 +96,28 @@ test('handleWorkflowApprove: the daemon result (incl. codeReview[]) is relayed v
 	} finally {
 		await daemon.close();
 	}
+});
+
+test('workflow-approve-dispatch.test.ts: the MCP approve dispatch reads the lifecycle', async () => {
+	// the dispatch adds no approval logic: what the daemon answers about the approval (its lifecycle status) is relayed as it is
+	const canned = {
+		approved: [{ path: '/x/.insrc/artifacts/LLD-abc-s1.json', result: { workflow: 'design.story', path: '/x/.insrc/artifacts/LLD-abc-s1.json', lifecycle: { status: 'approved', revision: 2 } } }],
+		skipped: [{ path: '/x/.insrc/artifacts/LLD-abc-s2.json', reason: 'its lifecycle review is of an earlier revision' }],
+	};
+	const daemon = fakeDaemon(canned);
+	await listen(daemon.server, daemon.path);
+	try {
+		const out = await handleWorkflowApprove({ artifactPath: '/x/docs/LLD.md', repo: '/x' }, { connect: () => createConnection(daemon.path) });
+		assert.notEqual(out.isError, true);
+		assert.deepEqual(JSON.parse(text(out)), canned);
+	} finally {
+		await daemon.close();
+	}
+
+	// and the tool says so: approval is made in the lifecycle, with no stamp on the artifact
+	const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'server.ts'), 'utf8');
+	for (const stamp of ['approvedAt', 'rejectedAt', 'meta.review', 'reviewOverride', 'reviewResolutions']) {
+		assert.equal(source.includes(stamp), false, `server.ts does not name ${stamp}`);
+	}
+	assert.match(source, /Approves the artifact in its lifecycle/);
 });

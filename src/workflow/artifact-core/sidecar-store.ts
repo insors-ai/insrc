@@ -90,9 +90,14 @@ export class FileSidecarStore implements SidecarStore {
 
 	appendRecord<E>(file: SidecarFile, record: SidecarRecord<E>): Promise<void> {
 		try {
-			appendSidecarLine(join(this.repoPath, this.filesOf(record.artifactId)[file]), record);
+			this.appendRecordSync(file, record);
 			return Promise.resolve();
 		} catch (err) { return Promise.reject(err instanceof Error ? err : new Error(String(err))); }
+	}
+
+	/** {@link appendRecord} for a writer that cannot wait (the CLI's resolve command): the line is on disk when it returns, or it throws. */
+	appendRecordSync<E>(file: SidecarFile, record: SidecarRecord<E>): void {
+		appendSidecarLine(join(this.repoPath, this.filesOf(record.artifactId)[file]), record);
 	}
 
 	readRecords<E>(file: SidecarFile, artifactId: string): Promise<E[]> {

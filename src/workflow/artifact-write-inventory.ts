@@ -80,7 +80,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 		],
 		note: 'the extend path changes body.stories; approve, reject and ack-stale change only meta',
 	},
-	{ file: 'src/workflow/review/resolve.ts', class: 'mixed', via: 'both', sites: [{ fn: 'resolveReviewFinding', kind: 'content|meta-only' }], note: 'apply changes the body; accept, override and defer change only meta' },
+	{ file: 'src/workflow/review/resolve.ts', class: 'mixed', via: 'both', sites: [{ fn: 'resolveReviewFinding', kind: 'content' }], note: 'apply changes the body; accept, override and defer append a resolution entry to the log (report-file.ts, through the sidecar store) and write no head' },
 	{ file: 'src/workflow/review/run-artifact.ts', class: 'mixed', via: 'both', sites: [{ fn: 'reviewArtifactFile', kind: 'content|meta-only' }], note: 'auto-fixes change the body; a report-only review changes only meta' },
 	{ file: 'src/daemon/steps/review-step/phases/verdicts.ts', class: 'mixed', via: 'both', sites: [{ fn: 'handleVerdicts', kind: 'content|meta-only' }], note: 'auto-fixes change the body; a report-only review changes only meta' },
 
@@ -91,7 +91,16 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	// --- record: a change request, not a claim unit or a signoff-covered stage artifact ---
 	{ file: 'src/workflow/amendments/store.ts', class: 'record', via: 'raw', note: 'an amendment is a change request against the HLD; no signoff binds to its revision. If amendments are ever put under signoff this entry becomes content' },
 
+	// --- the conversion (s9): one-time writers that bring a repository onto the common model ----
+	{ file: 'src/workflow/convert/migrated-head.ts', class: 'migration', via: 'raw', note: 'the migration write: replaces a head with its converted bytes under the artifact\'s lock, after the migrated log entries, and keeps meta.revision, the status and the approval as stored (the store would move the revision and return an approved head to draft)' },
+	{ file: 'src/workflow/convert/rename.ts', class: 'migration', via: 'raw', note: 'renames the uppercase story ids of heads and rewrites the references to them, in heads and markdown' },
+	{ file: 'src/workflow/convert/stamps.ts', class: 'migration', via: 'raw', note: 'stamps meta.epicCreatedAt on a head that lacks it' },
+	{ file: 'src/workflow/convert/amendments.ts', class: 'migration', via: 'raw', note: 'writes each flat amendment record as a head' },
+	{ file: 'src/workflow/convert/units.ts', class: 'migration', via: 'both', note: 'creates the EPIC and STORY heads through the store and moves the Epic and Story bindings and attachments with meta-only patches of meta.envelope; no revision moves' },
+	{ file: 'src/workflow/convert/apply.ts', class: 'migration', via: 'raw', note: 'keeps the progress file (the before-snapshot) of an apply under .insrc' },
+
 	// --- render: markdown only ----------------------------------------------------
+	{ file: 'src/workflow/review/persist-review.ts', class: 'render', via: 'raw', note: 'writes the markdown of a reviewed artifact; the fix and the review record go through LifecycleService and the history' },
 	{ file: 'src/workflow/tracker/link.ts', class: 'render', via: 'raw', note: 'writes the markdown of a document with its tracker link' },
 	{ file: 'src/workflow/tracker-auto.ts', class: 'render', via: 'raw', note: 'the re-render of a document after its issue exists' },
 	{ file: 'src/workflow/artifacts/companion/render.ts', class: 'render', via: 'raw', note: 'writes the companion diagram files' },
@@ -102,6 +111,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	// --- non-artifact: caches, configuration, logs, locks, the primitives themselves ---
 	{ file: 'src/workflow/storage.ts', class: 'non-artifact', via: 'both', note: 'defines writeAtomic and writeArtifact; appendRunLog and appendProgressLog append to the jsonl run traces' },
 	{ file: 'src/workflow/artifact-core/sidecar.ts', class: 'non-artifact', via: 'raw', note: 'appendSidecarLine, the one function that appends a history record as a JSON line to the path it is given; the lines are history, not an artifact head' },
+	{ file: 'src/workflow/artifact-core/repo-schema.ts', class: 'non-artifact', via: 'raw', note: 'writeRepoSchema replaces .insrc/schema.json (the version marker) atomically; only the conversion calls it' },
 	{ file: 'src/workflow/artifact-core/journal.ts', class: 'non-artifact', via: 'raw', note: 'the durable WriteJournal replaces .insrc/journal/<id>.json atomically: a staged operation is a pending write kept for crash recovery (not committed, listed in the ignore file), not an artifact head' },
 	{ file: 'src/workflow/artifact-core/sidecar-store.ts', class: 'non-artifact', via: 'raw', note: 'the file SidecarStore appends history records through appendSidecarLine; its ensure step appends the missing merge rules to .gitattributes and the journal folder to .gitignore (repository configuration, never an artifact head)' },
 	{ file: 'src/workflow/identity/identity-service.ts', class: 'non-artifact', via: 'raw', note: 'IdentityService.declare replaces ~/.insrc/identity.json atomically with writeAtomic: a person\'s self-declared ids, kept per user for attribution and display only, never an artifact head and never read by a gate' },

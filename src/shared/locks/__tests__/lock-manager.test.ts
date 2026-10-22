@@ -5,7 +5,8 @@
 
 /**
  * Cross-thread named locks (Story afcfa027/S001) on one thread: the block
- * layout, argument checks and name resolution.
+ * layout, argument checks, name resolution and grants. Two managers over one
+ * block with different threadIds stand in for two threads.
  *
  * Run: npx tsx --test src/shared/locks/__tests__/lock-manager.test.ts
  */
@@ -15,9 +16,9 @@ import assert from 'node:assert/strict';
 
 import {
 	createLockBlock, DEFAULT_LOCK_CAPACITY, getLockManager, installLockManager, LockArgumentError, LockCapacityError, LockManager,
-	validateLockRequest,
+	LockNestedError, setLockGrantHookForTests, validateLockRequest,
 } from '../lock-manager.js';
-import type { LockOptions } from '../lock-manager.js';
+import type { Lock, LockGrantPoint, LockInfo, LockOptions } from '../lock-manager.js';
 
 const enc = (s: string): Uint8Array => new TextEncoder().encode(s);
 
@@ -121,4 +122,157 @@ test('getLockManager without an install uses a private block', () => {
 	const installed = installLockManager(block);
 	assert.equal(getLockManager(), installed);
 	assert.equal(getLockManager().block, block);
+});
+
+/** Two managers over one block, standing in for threads 1 and 2. */
+function pair(capacity: Parameters<typeof createLockBlock>[0] = {}): [LockManager, LockManager, SharedArrayBuffer] {
+	const block = createLockBlock(capacity);
+	return [new LockManager(block, { threadId: 1 }), new LockManager(block, { threadId: 2 }), block];
+}
+
+/** Hold `name` on `m` until the returned release() is called. */
+async function hold(m: LockManager, name: string, options: LockOptions = {}): Promise<{ lock: Lock | null; release: () => Promise<void> }> {
+	let release!: () => void;
+	const gate = new Promise<void>(r => { release = r; });
+	let granted!: (l: Lock | null) => void;
+	const lockP = new Promise<Lock | null>(r => { granted = r; });
+	const done = m.request(name, options, async lock => { granted(lock); await gate; });
+	const lock = await lockP;
+	return { lock, release: async () => { release(); await done; } };
+}
+
+/** What an ifAvailable request on `m` gets: the lock's mode, or null with what blocks it. */
+function probe(m: LockManager, name: string, mode: 'shared' | 'exclusive'): Promise<{ lock: Lock | null; blockedBy: readonly LockInfo[] }> {
+	return m.request(name, { mode, ifAvailable: true }, (lock, blockedBy) => ({ lock, blockedBy }));
+}
+
+test('exclusive excludes exclusive and shared, shared admits shared, mode defaults to exclusive', async () => {
+	const [a, b] = pair();
+	const ex = await hold(a, 'x');
+	assert.equal(ex.lock?.mode, 'exclusive', 'mode defaults to exclusive');
+	assert.equal((await probe(b, 'x', 'exclusive')).lock, null, 'exclusive excludes exclusive');
+	assert.equal((await probe(b, 'x', 'shared')).lock, null, 'exclusive excludes shared');
+	await ex.release();
+
+	const sh = await hold(a, 'x', { mode: 'shared' });
+	assert.equal(sh.lock?.mode, 'shared');
+	assert.equal((await probe(b, 'x', 'shared')).lock?.mode, 'shared', 'shared admits shared');
+	const sh2 = await hold(b, 'x', { mode: 'shared' });
+	assert.equal((await probe(b, 'x', 'exclusive')).lock, null, 'shared excludes exclusive');
+	await sh.release();
+	assert.equal((await probe(a, 'x', 'exclusive')).lock, null, 'one shared holder still excludes exclusive');
+	await sh2.release();
+	assert.equal((await probe(a, 'x', 'exclusive')).lock?.mode, 'exclusive', 'free once both shared holders release');
+	// The callback's value is request's value.
+	assert.equal(await a.request('x', {}, () => 42), 42);
+});
+
+test('ifAvailable grants when free and otherwise calls back with null and the holders with metadata, never pending', async () => {
+	const [a, b, block] = pair();
+	assert.deepEqual((await probe(b, 'm', 'shared')).blockedBy, [], 'granted when free');
+	const metadata = { activity: 'maintenance', reason: 'compacting graph.lmdb' };
+	const before = Date.now();
+	const held = await hold(a, 'm', { metadata });
+	assert.deepEqual(held.lock, { name: 'm', mode: 'exclusive', metadata });
+
+	const snapshot = Buffer.from(new Uint8Array(block)).toString('hex');
+	const refused = await probe(b, 'm', 'shared');
+	assert.equal(refused.lock, null);
+	assert.equal(refused.blockedBy.length, 1);
+	const [h] = refused.blockedBy;
+	assert.deepEqual({ ...h, since: 0 }, { name: 'm', mode: 'exclusive', threadId: 1, since: 0, metadata });
+	assert.ok(h!.since >= before && h!.since <= Date.now(), 'since is the grant time');
+	assert.equal(Buffer.from(new Uint8Array(block)).toString('hex'), snapshot, 'a refused ifAvailable request leaves the block exactly as it was: nothing pending');
+
+	// Without metadata the holder carries none.
+	await held.release();
+	const plain = await hold(a, 'm');
+	const [p] = (await probe(b, 'm', 'exclusive')).blockedBy;
+	assert.equal(p!.metadata, undefined);
+	assert.equal('metadata' in p!, false);
+	await plain.release();
+});
+
+test('the lock is released and its holder slot cleared on resolve, reject and synchronous throw', async () => {
+	const [a, b] = pair();
+	const holderCount = async (): Promise<number> => {
+		const other = await hold(b, 'r');
+		assert.ok(other.lock !== null, 'the lock is free');
+		// Only b's own record exists while b holds it.
+		const seen = (await probe(a, 'r', 'shared')).blockedBy;
+		await other.release();
+		return seen.length;
+	};
+	assert.equal(await a.request('r', {}, async () => 'ok'), 'ok');
+	assert.equal(await holderCount(), 1, 'released after resolve');
+
+	const rejection = new Error('rejected');
+	await assert.rejects(a.request('r', {}, async () => { throw rejection; }), (e: unknown) => e === rejection);
+	assert.equal(await holderCount(), 1, 'released after reject');
+
+	const thrown = new TypeError('sync throw');
+	await assert.rejects(a.request('r', {}, () => { throw thrown; }), (e: unknown) => e === thrown);
+	assert.equal(await holderCount(), 1, 'released after a synchronous throw');
+});
+
+test('same-name nesting and unbounded nested waits fail with LockNestedError; bounded nested requests are allowed', async () => {
+	const [a, b] = pair();
+	await a.request('outer', {}, async () => {
+		await assert.rejects(a.request('outer', { ifAvailable: true }, () => 0), (e: unknown) => e instanceof LockNestedError && e.kind === 'same-name');
+		await assert.rejects(a.request('outer', { mode: 'shared', timeoutMs: 10 }, () => 0), (e: unknown) => e instanceof LockNestedError && e.kind === 'same-name');
+		await assert.rejects(a.request('inner', {}, () => 0), (e: unknown) => e instanceof LockNestedError && e.kind === 'unbounded-wait' && e.heldName === 'outer');
+		assert.equal(await a.request('inner', { ifAvailable: true }, l => l?.name), 'inner');
+		assert.equal(await a.request('inner', { timeoutMs: 100 }, l => l?.name), 'inner');
+		// Two levels deep, the outermost name is still refused.
+		await a.request('inner', { timeoutMs: 100 }, async () => {
+			await assert.rejects(a.request('outer', { ifAvailable: true }, () => 0), (e: unknown) => e instanceof LockNestedError && e.kind === 'same-name');
+		});
+		// The outer hold is unaffected by the refusals.
+		assert.equal((await probe(b, 'outer', 'shared')).lock, null);
+	});
+	// Outside the callback the same chain may ask again.
+	assert.equal(await a.request('outer', {}, () => 'again'), 'again');
+});
+
+test('a full holder table gives LockCapacityError(holders) and leaves no grant behind', async () => {
+	const [a, b] = pair({ holders: 1 });
+	const held = await hold(a, 'one');
+	await assert.rejects(b.request('two', { mode: 'shared' }, () => 0), (e: unknown) => {
+		assert.ok(e instanceof LockCapacityError, String(e));
+		assert.equal(e.table, 'holders');
+		assert.equal(e.capacity, 1);
+		return true;
+	});
+	await held.release();
+	// The refused shared grant gave its lock word back: an exclusive request is granted.
+	assert.equal((await probe(b, 'two', 'exclusive')).lock?.mode, 'exclusive');
+});
+
+test('the grant hook fires at its three points in order and is inert when unset', async () => {
+	const [a] = pair();
+	const seen: [LockGrantPoint, string][] = [];
+	setLockGrantHookForTests((point, name) => { seen.push([point, name]); });
+	try {
+		await a.request('hooked', {}, () => undefined);
+	} finally {
+		setLockGrantHookForTests(null);
+	}
+	assert.deepEqual(seen, [['in-critical-section', 'hooked'], ['after-lock-word', 'hooked'], ['before-publish', 'hooked']]);
+	// A refused grant stops after the critical-section point.
+	const [c, d] = pair();
+	const held = await hold(c, 'busy');
+	const refusedSeen: LockGrantPoint[] = [];
+	setLockGrantHookForTests(point => { refusedSeen.push(point); });
+	try {
+		await probe(d, 'busy', 'exclusive');
+	} finally {
+		setLockGrantHookForTests(null);
+	}
+	assert.deepEqual(refusedSeen, ['in-critical-section']);
+	await held.release();
+
+	// Unset, grants still work and nothing is recorded.
+	seen.length = 0;
+	assert.equal(await a.request('hooked', {}, l => l?.mode), 'exclusive');
+	assert.deepEqual(seen, []);
 });

@@ -19,6 +19,7 @@
  *   reader never sees one half-written.
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { threadId as currentThreadId } from 'node:worker_threads';
 
 /** Atomics.waitAsync (Node 16+); the project's TypeScript lib target predates its declaration. */
@@ -49,6 +50,16 @@ export interface LockInfo {
 	readonly since: number;
 	readonly metadata?: LockMetadata | undefined;
 }
+
+/** The lock a callback runs under. */
+export interface Lock {
+	readonly name: string;
+	readonly mode: LockMode;
+	readonly metadata?: LockMetadata | undefined;
+}
+
+/** Runs while the lock is held; with ifAvailable and the lock unavailable, runs with null and what blocks it. */
+export type LockCallback<T> = (lock: Lock | null, blockedBy: readonly LockInfo[]) => T | Promise<T>;
 
 export interface LockCapacity {
 	readonly names: number;
@@ -88,7 +99,8 @@ const N_BYTES   = 7;   // name bytes
 const NAME_WORDS = N_BYTES + LOCK_NAME_MAX_BYTES / 4;
 const NAME_READY = 1;
 
-// Holder slot. State: 0 free, -(threadId + 1) being written by that thread, name index + 1 published.
+// Holder slot. State: 0 free, -(threadId + 1) being written by that thread (the
+// main thread's claim is -1), name index + 1 published once every field is written.
 const S_STATE      = 0;
 const S_MODE       = 1;   // 1 shared, 2 exclusive
 const S_THREAD     = 2;
@@ -230,6 +242,21 @@ function hashBytes(bytes: Uint8Array): number {
 }
 
 // ---------------------------------------------------------------------------
+// Test hook
+// ---------------------------------------------------------------------------
+
+/** The points of a grant at which the test hook runs, in order. */
+export type LockGrantPoint = 'in-critical-section' | 'after-lock-word' | 'before-publish';
+type GrantHook = (point: LockGrantPoint, name: string) => void;
+
+let grantHook: GrantHook | null = null;
+
+/** ONLY for tests: run `hook` synchronously at each grant point on this thread (null removes it). */
+export function setLockGrantHookForTests(hook: GrantHook | null): void {
+	grantHook = hook;
+}
+
+// ---------------------------------------------------------------------------
 // Manager
 // ---------------------------------------------------------------------------
 
@@ -245,6 +272,8 @@ export class LockManager {
 	private readonly layout: Layout;
 	private readonly threadId: number;
 	private readonly now: () => number;
+	/** Names held by the current async call chain. */
+	private readonly held = new AsyncLocalStorage<ReadonlySet<string>>();
 
 	constructor(readonly block: SharedArrayBuffer, deps: LockManagerDeps = {}) {
 		const header = new Int32Array(block, 0, HEADER_WORDS);
@@ -295,7 +324,161 @@ export class LockManager {
 		throw new LockCapacityError('names', this.layout.capacity.names);
 	}
 
+	/**
+	 * Run `callback` under the named lock, as navigator.locks.request does; the
+	 * lock is released when the callback settles, whatever it does.
+	 */
+	async request<T>(name: string, options: LockOptions, callback: LockCallback<T>): Promise<T> {
+		const req = validateLockRequest(name, options);
+		const outer = this.held.getStore();
+		if (outer !== undefined && outer.size > 0) {
+			if (outer.has(name)) throw new LockNestedError(name, name, 'same-name');
+			if (options.ifAvailable !== true && options.timeoutMs === undefined) throw new LockNestedError(name, [...outer][0]!, 'unbounded-wait');
+		}
+		const index = await this.resolveName(req.nameBytes);
+		const granted = await this.tryGrant(index, name, req);
+		if (granted.slot < 0) {
+			if (options.ifAvailable === true) return callback(null, granted.blockedBy);
+			throw new Error(`lock '${name}': waiting requests are not supported yet`);
+		}
+		const lock: Lock = { name, mode: req.mode, ...(options.metadata !== undefined ? { metadata: options.metadata } : {}) };
+		try {
+			return await this.held.run(new Set([...(outer ?? []), name]), () => callback(lock, []));
+		} finally {
+			await this.release(index, granted.slot, req.mode);
+		}
+	}
+
 	// -- internals ----------------------------------------------------------
+
+	/**
+	 * Grant the lock now if its mode allows, recording the holder before
+	 * returning; otherwise report what blocks it. Runs inside the name's mutex.
+	 */
+	private async tryGrant(index: number, name: string, req: ValidatedRequest): Promise<{ readonly slot: number; readonly blockedBy: readonly LockInfo[] }> {
+		const base = this.nameBase(index);
+		await this.lockMutex(base + N_MUTEX);
+		try {
+			grantHook?.('in-critical-section', name);
+			const word = Atomics.load(this.words, base + N_LOCK);
+			const exclusive = req.mode === 'exclusive';
+			// Writer preference: a waiting exclusive request stops new shared grants.
+			const free = exclusive ? word === 0 : word >= 0 && Atomics.load(this.words, base + N_PENDX) === 0;
+			if (!free) {
+				return { slot: -1, blockedBy: [...this.holdersOf(index), ...(exclusive ? [] : this.pendingOf(index).filter(p => p.mode === 'exclusive'))] };
+			}
+			Atomics.store(this.words, base + N_LOCK, exclusive ? -1 : word + 1);
+			grantHook?.('after-lock-word', name);
+			const slot = this.claimHolder();
+			if (slot < 0) {
+				// No record, no grant: give the lock word back.
+				Atomics.store(this.words, base + N_LOCK, word);
+				throw new LockCapacityError('holders', this.layout.capacity.holders);
+			}
+			const h = this.holderBase(slot);
+			Atomics.store(this.words, h + S_MODE, exclusive ? MODE_EXCLUSIVE : MODE_SHARED);
+			Atomics.store(this.words, h + S_THREAD, this.threadId);
+			Atomics.store(this.words, h + S_ACQ, Atomics.add(this.words, H_ACQ, 1) + 1);
+			this.times[slot] = this.now();
+			if (req.activity !== undefined && req.reason !== undefined) {
+				this.bytes.set(req.activity, (h + S_ACT) * 4);
+				this.bytes.set(req.reason, (h + S_REASON) * 4);
+				Atomics.store(this.words, h + S_ACT_LEN, req.activity.length);
+				Atomics.store(this.words, h + S_REASON_LEN, req.reason.length);
+			} else {
+				Atomics.store(this.words, h + S_ACT_LEN, -1);
+				Atomics.store(this.words, h + S_REASON_LEN, 0);
+			}
+			grantHook?.('before-publish', name);
+			Atomics.store(this.words, h + S_STATE, index + 1);
+			this.bumpVersion(index);
+			return { slot, blockedBy: [] };
+		} finally {
+			this.unlockMutex(base + N_MUTEX);
+		}
+	}
+
+	private async release(index: number, slot: number, mode: LockMode): Promise<void> {
+		const base = this.nameBase(index);
+		await this.lockMutex(base + N_MUTEX);
+		try {
+			if (mode === 'exclusive') Atomics.store(this.words, base + N_LOCK, 0);
+			else Atomics.sub(this.words, base + N_LOCK, 1);
+			this.clearHolder(slot);
+			this.bumpVersion(index);
+		} finally {
+			this.unlockMutex(base + N_MUTEX);
+		}
+	}
+
+	/** Claim a free holder slot (state 0 -> -(threadId + 1)); -1 when the table is full. */
+	private claimHolder(): number {
+		const claim = -(this.threadId + 1);
+		for (let slot = 0; slot < this.layout.capacity.holders; slot++) {
+			if (Atomics.compareExchange(this.words, this.holderBase(slot) + S_STATE, 0, claim) === 0) return slot;
+		}
+		return -1;
+	}
+
+	private clearHolder(slot: number): void {
+		const h = this.holderBase(slot);
+		for (const w of [S_MODE, S_THREAD, S_ACQ, S_ACT_LEN, S_REASON_LEN]) Atomics.store(this.words, h + w, 0);
+		this.times[slot] = 0;
+		Atomics.store(this.words, h + S_STATE, 0);
+	}
+
+	private bumpVersion(index: number): void {
+		const v = this.nameBase(index) + N_VERSION;
+		Atomics.add(this.words, v, 1);
+		Atomics.notify(this.words, v);
+	}
+
+	/** The published holders of one name. */
+	private holdersOf(index: number): LockInfo[] {
+		const out: LockInfo[] = [];
+		for (let slot = 0; slot < this.layout.capacity.holders; slot++) {
+			if (Atomics.load(this.words, this.holderBase(slot) + S_STATE) === index + 1) out.push(this.readHolder(slot, index));
+		}
+		return out;
+	}
+
+	/** The published pending requests of one name. */
+	private pendingOf(index: number): LockInfo[] {
+		const out: LockInfo[] = [];
+		for (let slot = 0; slot < this.layout.capacity.pending; slot++) {
+			const p = this.pendingBase(slot);
+			if (Atomics.load(this.words, p + P_STATE) !== index + 1) continue;
+			out.push({
+				name: this.nameAt(index),
+				mode: Atomics.load(this.words, p + P_MODE) === MODE_EXCLUSIVE ? 'exclusive' : 'shared',
+				threadId: Atomics.load(this.words, p + P_THREAD),
+				since: this.times[this.layout.capacity.holders + slot]!,
+			});
+		}
+		return out;
+	}
+
+	private readHolder(slot: number, index: number): LockInfo {
+		const h = this.holderBase(slot);
+		const actLen = Atomics.load(this.words, h + S_ACT_LEN);
+		const info: LockInfo = {
+			name: this.nameAt(index),
+			mode: Atomics.load(this.words, h + S_MODE) === MODE_EXCLUSIVE ? 'exclusive' : 'shared',
+			threadId: Atomics.load(this.words, h + S_THREAD),
+			since: this.times[slot]!,
+		};
+		if (actLen < 0) return info;
+		const at = (w: number, len: number): string => decoder.decode(this.bytes.slice(w * 4, w * 4 + len));
+		return { ...info, metadata: { activity: at(h + S_ACT, actLen), reason: at(h + S_REASON, Atomics.load(this.words, h + S_REASON_LEN)) } };
+	}
+
+	private holderBase(slot: number): number {
+		return this.layout.holders + slot * HOLDER_WORDS;
+	}
+
+	private pendingBase(slot: number): number {
+		return this.layout.pending + slot * PENDING_WORDS;
+	}
 
 	private nameBase(i: number): number {
 		return this.layout.names + i * NAME_WORDS;

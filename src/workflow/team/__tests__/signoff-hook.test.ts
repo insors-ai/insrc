@@ -10,13 +10,15 @@
  * Run: npx tsx --test src/workflow/team/__tests__/signoff-hook.test.ts
  */
 
-import { test } from 'node:test';
+import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { followedStageOf, isSignedOffOrGrandfathered } from '../signoff.js';
+import { _setSignoffDepsForTests, blockedBySignoff, followedStageOf, isSignedOffOrGrandfathered, signoffCompletionHook } from '../signoff.js';
 import type { GuardedAction } from '../gate.js';
 import type { UnitRef } from '../../tracker/refs.js';
 import type { TeamPolicy } from '../types.js';
+
+afterEach(() => { _setSignoffDepsForTests(); });
 
 const EPIC = 'a3f4b8c9d1e2f3a4';
 const epicUnit: UnitRef = { unit: 'epic', repoPath: '/repo', epicHash: EPIC };
@@ -61,4 +63,82 @@ test('followedStageOf maps author design.epic to DEF on the epic, author design.
 	assert.equal(followedStageOf('author', 'define', epicUnit), null);
 	assert.equal(followedStageOf('author', 'design.epic', storyUnit), null, 'design.epic is an epic-unit attempt');
 	assert.equal(followedStageOf('build', undefined, epicUnit), null);
+});
+
+// --- blockedBySignoff and the hook ------------------------------------------------------------------------------------------
+
+const so = (revision: number, ref: string, state: 'open' | 'changes-requested' | 'completed') =>
+	({ revision, request: { entityId: ref, type: 'signoff-request', relation: 'tracked-by' }, state, actors: [], at: '2026-07-01T00:00:00Z' });
+const headOf = (status: string, signoffs: unknown[] = [], approvedAt = '2026-07-01T00:00:00Z'): unknown =>
+	({ lifecycle: { status, revision: { number: 1 }, approval: { revision: 1, at: approvedAt }, signoffs } });
+
+interface World { policy?: TeamPolicy | 'none'; heads: Record<string, unknown>; reads: string[] }
+
+function world(w: World): World {
+	_setSignoffDepsForTests({
+		readPolicy: () => ({ ok: true, value: w.policy ?? policy({ anchorKnown: true }) }),
+		readHead: (_repo, id) => { w.reads.push(id); return w.heads[id]; },
+	});
+	return w;
+}
+
+const HLD = `HLD-${EPIC}`;
+const LLD = `LLD-${EPIC}-s1`;
+const DEF = `DEF-${EPIC}`;
+
+test('blockedBySignoff and signoffCompletionHook on one story unit block design.story authoring on the HLD\'s open request and plan authoring on the LLD\'s open request, but not the LLD\'s own authoring, skip a grandfathered head, return awaiting-signoff, a changes-requested refusal, an unsettled-completed refusal, or continue, never write, and need no tracker call', () => {
+	// the HLD awaits signoff and the LLD awaits signoff: design.story is judged by the HLD, plan by the LLD
+	const w = world({ heads: { [HLD]: headOf('in-signoff', [so(1, 'acme/demo#1', 'open')]), [LLD]: headOf('in-signoff', [so(1, 'acme/demo#2', 'open')]) }, reads: [] });
+
+	assert.deepEqual(blockedBySignoff('/repo', storyUnit, 'author', 'design.story'), { kind: 'awaiting-signoff', request: { ref: 'acme/demo#1' } });
+	assert.deepEqual(blockedBySignoff('/repo', storyUnit, 'author', 'plan'), { kind: 'awaiting-signoff', request: { ref: 'acme/demo#2' } });
+	assert.deepEqual(blockedBySignoff('/repo', taskUnit, 'build'), { kind: 'awaiting-signoff', request: { ref: 'acme/demo#2' } });
+	assert.deepEqual(w.reads.filter(id => id === LLD).length > 0, true);
+
+	// the LLD's own request does not block authoring the LLD once the HLD is signed off
+	w.heads[HLD] = headOf('signed-off', [so(1, 'acme/demo#1', 'completed')]);
+	assert.equal(blockedBySignoff('/repo', storyUnit, 'author', 'design.story'), null);
+
+	// the hook: author and build answer with the decision, everything else continues; the port is never used
+	const port = new Proxy({}, { get: () => { throw new Error('the hook must not touch the tracker'); } });
+	assert.deepEqual(signoffCompletionHook('/repo', storyUnit, port, 'author', 'plan'), { kind: 'awaiting-signoff', request: { ref: 'acme/demo#2' } });
+	assert.deepEqual(signoffCompletionHook('/repo', taskUnit, port, 'build'), { kind: 'awaiting-signoff', request: { ref: 'acme/demo#2' } });
+	for (const action of ['open-signoff', 'revise', 'release', 'approve-local', 'claim', 'review-fix'] as GuardedAction[]) {
+		assert.equal(signoffCompletionHook('/repo', storyUnit, port, action, 'plan'), 'continue', action);
+	}
+
+	// changes requested, never submitted, and a completed request that is not yet recorded all refuse
+	w.heads[LLD] = headOf('changes-requested', [so(1, 'acme/demo#2', 'changes-requested')]);
+	const changes = blockedBySignoff('/repo', storyUnit, 'author', 'plan');
+	assert.equal(changes?.kind, 'refused');
+	assert.match(changes?.kind === 'refused' ? changes.reason : '', /changes were requested.*acme\/demo#2/);
+	w.heads[LLD] = headOf('approved');
+	assert.match((blockedBySignoff('/repo', storyUnit, 'author', 'plan') as { reason: string }).reason, /submit it for signoff/);
+	w.heads[LLD] = headOf('in-signoff', [so(1, 'acme/demo#2', 'completed')]);
+	assert.match((blockedBySignoff('/repo', storyUnit, 'author', 'plan') as { reason: string }).reason, /completed but not yet recorded/);
+
+	// a head that is signed off, or grandfathered, does not block
+	w.heads[LLD] = headOf('signed-off', [so(1, 'acme/demo#2', 'completed')]);
+	assert.equal(blockedBySignoff('/repo', storyUnit, 'author', 'plan'), null);
+	w.heads[LLD] = headOf('approved', [], '2026-05-01T00:00:00Z');
+	assert.equal(blockedBySignoff('/repo', storyUnit, 'author', 'plan'), null, 'approved before the anchor');
+	w.policy = policy({ anchorKnown: false });
+	assert.equal(blockedBySignoff('/repo', storyUnit, 'author', 'plan')?.kind, 'refused', 'nothing is grandfathered when the anchor is unknown');
+
+	// a stage the policy does not list, no policy, no artifact yet: nothing blocks
+	w.policy = { ...policy({ anchorKnown: true }), signoffStages: ['DEF', 'HLD'] } as TeamPolicy;
+	assert.equal(blockedBySignoff('/repo', storyUnit, 'author', 'plan'), null, 'LLD is not listed');
+	w.policy = 'none';
+	assert.equal(blockedBySignoff('/repo', storyUnit, 'author', 'plan'), null);
+	w.policy = { ...policy({ anchorKnown: true }), teamMode: false } as TeamPolicy;
+	assert.equal(blockedBySignoff('/repo', storyUnit, 'author', 'plan'), null, 'not team mode');
+	w.policy = policy({ anchorKnown: true });
+	delete w.heads[LLD];
+	assert.equal(blockedBySignoff('/repo', storyUnit, 'author', 'plan'), null, 'no artifact to wait on');
+
+	// design.epic follows the DEF
+	w.heads[DEF] = headOf('in-signoff', [so(1, 'acme/demo#3', 'open')]);
+	assert.deepEqual(blockedBySignoff('/repo', epicUnit, 'author', 'design.epic'), { kind: 'awaiting-signoff', request: { ref: 'acme/demo#3' } });
+	// an attempt that follows nothing is never blocked
+	assert.equal(blockedBySignoff('/repo', storyUnit, 'approve-local'), null);
 });

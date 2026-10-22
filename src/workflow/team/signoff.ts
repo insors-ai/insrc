@@ -20,6 +20,8 @@ import { artifactJsonPath, buildArtifactId, defineArtifactId, hldArtifactId, lld
 import type { SignoffRequestRef } from '../tracker/port.js';
 import type { UnitRef } from '../tracker/refs.js';
 import type { GuardedAction } from './gate.js';
+import { ArtifactIds } from '../artifact-ids.js';
+import { registerCompletionHook, type GateOutcome } from './gate.js';
 import { policyReader } from './policy-reader.js';
 import type { PolicyResult, SignoffStage, TeamPolicy } from './types.js';
 
@@ -202,6 +204,11 @@ export interface SignoffDeps {
 	readonly readHead?:   ((repo: string, artifactId: string) => unknown | undefined) | undefined;
 }
 
+let testDeps: SignoffDeps = {};
+
+/** Test seam: inject the policy reader and the head reader; no argument resets. */
+export function _setSignoffDepsForTests(deps: SignoffDeps = {}): void { testDeps = deps; }
+
 /** A head's `meta` read from the artifact store file; undefined when the file is absent or unreadable. */
 export function readHeadMeta(repo: string, artifactId: string): unknown | undefined {
 	const path = artifactJsonPath(repo, artifactId);
@@ -217,7 +224,7 @@ export function readHeadMeta(repo: string, artifactId: string): unknown | undefi
 
 /** The heads of the stages a unit holds that exist on disk. */
 export function headsOfUnit(repo: string, unit: UnitRef, deps: SignoffDeps = {}): HeadMeta[] {
-	const read = deps.readHead ?? readHeadMeta;
+	const read = deps.readHead ?? testDeps.readHead ?? readHeadMeta;
 	const heads: HeadMeta[] = [];
 	for (const stage of stagesOfUnit(unit)) {
 		const artifactId = stageArtifactId(unit, stage);
@@ -230,7 +237,82 @@ export function headsOfUnit(repo: string, unit: UnitRef, deps: SignoffDeps = {})
 
 /** The SignoffRecords of a unit's heads (none outside team mode or with no policy). */
 export function signoffRecordsOf(repo: string, unit: UnitRef, deps: SignoffDeps = {}): SignoffRecord[] {
-	const policy = (deps.readPolicy ?? policyReader)(repo);
+	const policy = (deps.readPolicy ?? testDeps.readPolicy ?? policyReader)(repo);
 	if (!policy.ok || policy.value === 'none') return [];
 	return signoffRecordsFromHeads(policy.value, headsOfUnit(repo, unit, deps));
+}
+
+// ---------------------------------------------------------------------------
+// The read-only decision and the completion hook
+// ---------------------------------------------------------------------------
+
+/** The team policy when signoff applies at all: team mode with claims enforced; undefined otherwise or when the policy cannot be read. */
+function teamPolicyOf(repo: string, deps: SignoffDeps): TeamPolicy | undefined {
+	const policy = (deps.readPolicy ?? testDeps.readPolicy ?? policyReader)(repo);
+	if (!policy.ok || policy.value === 'none' || !policy.value.teamMode || !policy.value.claimsEnforced) return undefined;
+	return policy.value;
+}
+
+const refused = (reason: string): GateOutcome => ({ kind: 'refused', reason });
+
+/**
+ * Does signoff block this attempt? It judges the attempt by the stage it follows: awaiting-signoff with the open request, a
+ * refusal when changes were requested, when the stage was never submitted or when a completed request is not yet recorded;
+ * null when nothing blocks (no policy, a stage the policy does not list, no artifact yet, or a head that is signed off or
+ * grandfathered). It reads the policy and the followed stage's head and never writes or touches a tracker.
+ */
+export function blockedBySignoff(repo: string, unit: UnitRef, action: GuardedAction, authoring?: string, deps: SignoffDeps = {}): GateOutcome | null {
+	const followed = followedStageOf(action, authoring, unit);
+	if (followed === null) return null;
+	const policy = teamPolicyOf(repo, deps);
+	if (policy === undefined || !policy.signoffStages.includes(followed.stage)) return null;
+	const artifactId = stageArtifactId(followed.unit, followed.stage);
+	if (artifactId === undefined) return null;
+	const meta = (deps.readHead ?? testDeps.readHead ?? readHeadMeta)(repo, artifactId);
+	if (meta === undefined || isSignedOffOrGrandfathered(policy, meta)) return null;
+	const view = signoffViewOf(meta);
+	switch (view.state) {
+		case 'open':
+			return view.request === null ? null : { kind: 'awaiting-signoff', request: view.request };
+		case 'changes-requested':
+			return refused(`changes were requested on the signoff request ${view.request?.ref ?? ''} for the ${followed.stage}: revise it and submit it again`);
+		case 'completed':
+			return refused(`the signoff request ${view.request?.ref ?? ''} for the ${followed.stage} is completed but not yet recorded: settle it first`);
+		case 'none':
+			return refused(`the ${followed.stage} needs signoff before this can start: submit it for signoff first`);
+	}
+}
+
+/**
+ * The sc4 completion hook: the blockedBySignoff answer for author and build; open-signoff, revise and release always continue,
+ * so a submission and its retry never meet the hook's own refusal. The tracker port is not used: the decision is read-only.
+ */
+export function signoffCompletionHook(repo: string, unit: UnitRef, _port: unknown, action: GuardedAction, authoring?: string): GateOutcome | 'continue' {
+	if (action !== 'author' && action !== 'build') return 'continue';
+	return blockedBySignoff(repo, unit, action, authoring) ?? 'continue';
+}
+
+/** Register the signoff hook in this process; the daemon and the terminal each run the gate, so each registers it. */
+export function registerSignoffHook(): void { registerCompletionHook(signoffCompletionHook); }
+
+/**
+ * Does signoff hold this unit's completion? True for a Story whose listed LLD or BUILD, or an Epic whose listed DEF or HLD, is
+ * neither signed off nor grandfathered. Always false outside team mode, with no policy or for another unit. Reads only.
+ */
+export function signoffHoldsCompletion(repo: string, unitId: string, deps: SignoffDeps = {}): boolean {
+	const key = ArtifactIds.parse(unitId);
+	if (key === undefined || (key.kind !== 'STORY' && key.kind !== 'EPIC')) return false;
+	const policy = teamPolicyOf(repo, deps);
+	if (policy === undefined) return false;
+	const unit: UnitRef = key.kind === 'STORY' && key.story !== undefined
+		? { unit: 'story', repoPath: repo, epicHash: key.epicHash, storyId: key.story }
+		: { unit: 'epic', repoPath: repo, epicHash: key.epicHash };
+	const read = deps.readHead ?? testDeps.readHead ?? readHeadMeta;
+	for (const stage of stagesOfUnit(unit)) {
+		if (!policy.signoffStages.includes(stage)) continue;
+		const artifactId = stageArtifactId(unit, stage);
+		const meta = artifactId === undefined ? undefined : read(repo, artifactId);
+		if (meta !== undefined && !isSignedOffOrGrandfathered(policy, meta)) return true;
+	}
+	return false;
 }

@@ -90,8 +90,12 @@ export function _setGateDepsForTests(deps: GateDeps = {}): void { testDeps = dep
 // Completion hook (declared here, registered by s7)
 // ---------------------------------------------------------------------------
 
-/** Called by the gate for author and build on a next stage and for open-signoff, revise and release. */
-export type CompletionHook = (repo: string, unit: UnitRef, port: TrackerPort) => GateOutcome | 'continue';
+/**
+ * Called by the gate for author and build on a next stage and for open-signoff, revise and release. It also receives the action
+ * and, for author, the authoring workflow (AMD-315d510cb28100e2-17), so it can tell which stage the attempt follows; a hook
+ * written with the first three parameters only keeps working.
+ */
+export type CompletionHook = (repo: string, unit: UnitRef, port: TrackerPort, action: GuardedAction, authoring?: string) => GateOutcome | 'continue';
 
 let registeredHook: CompletionHook | undefined;
 /** True while a hook runs: gate calls made by the hook itself (for example its release) skip the hook. */
@@ -117,10 +121,10 @@ function heldByOther(repo: string, unit: UnitRef, holder: string, actor: string)
 const HOOKED: ReadonlySet<string> = new Set<GuardedAction>(['author', 'build', 'open-signoff', 'revise', 'release']);
 
 /** The hook's answer for this action, or 'continue' when none is registered, the call came from the hook, or the action is not hooked. */
-function consultHook(repo: string, unit: UnitRef, action: GuardedAction, port: TrackerPort): GateOutcome | 'continue' {
+function consultHook(repo: string, unit: UnitRef, action: GuardedAction, port: TrackerPort, authoring?: string): GateOutcome | 'continue' {
 	if (registeredHook === undefined || insideHook || !HOOKED.has(action)) return 'continue';
 	insideHook = true;
-	try { return registeredHook(repo, unit, port); }
+	try { return registeredHook(repo, unit, port, action, authoring); }
 	catch (err) { return refused(`the completion hook failed: ${errorText(err)}`); }
 	finally { insideHook = false; }
 }
@@ -264,7 +268,7 @@ export function teamGate(repo: string, unit: UnitRef, action: GuardedAction, aut
 		}
 		if (!ctx.team) return allowed();
 
-		const hooked = consultHook(repo, unit, action, ctx.port);
+		const hooked = consultHook(repo, unit, action, ctx.port, authoring);
 		if (hooked !== 'continue') return logOutcome(unit, action, hooked);
 
 		const now = testDeps.now ?? ((): string => new Date().toISOString());

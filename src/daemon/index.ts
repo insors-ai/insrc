@@ -57,6 +57,7 @@ import { readInstalledCommit } from './installed-commit.js';
 import { ThreadServices, currentLmdbFileSizeMb, threadsEnabled } from './threads/main-services.js';
 import { methodClasses } from './threads/method-class.js';
 import { Router } from './threads/router.js';
+import { startClassWorker } from './threads/workers.js';
 import type { MethodClass } from './threads/channel.js';
 import { embedQuery, getActiveEmbedderBackend } from '../indexer/embedder.js';
 import { pruneConversations } from '../db/conversations.js';
@@ -352,11 +353,26 @@ async function main(): Promise<void> {
 	// s2): routed classes go to their workers, everything else runs here. A
 	// class is routed once its worker exists; until then it runs here, as before.
 	const local = directDispatch(rpcHandlers, streamHandlers);
+	const routed = new Set<MethodClass>();
 	const router = threadServices !== undefined
-		? new Router({ classOf: methodClasses.classOf, registry: threadServices.registry, routed: new Set<MethodClass>(), local })
+		? new Router({ classOf: methodClasses.classOf, registry: threadServices.registry, routed, local })
 		: undefined;
 	const server = new IpcServer(router?.forward ?? local);
-	if (threadServices !== undefined) server.onRegistryChange(clients => threadServices.board.publishClients(clients));
+	if (threadServices !== undefined && router !== undefined) {
+		server.onRegistryChange(clients => threadServices.board.publishClients(clients));
+		threadServices.onShutdown(reason => shutdown(reason));
+		// Admin methods go to the admin worker; a request arriving before it is
+		// ready is held for it. If it cannot start, they are served here again.
+		routed.add('admin');
+		startClassWorker(threadServices, router, 'admin', 'admin-worker').then(
+			({ threadId }) => log.info({ threadId }, 'admin worker ready'),
+			(err: unknown) => {
+				routed.delete('admin');
+				router.targetsChanged();
+				log.error({ err: err instanceof Error ? err.message : String(err) }, 'admin worker did not start; admin methods stay on the main thread');
+			},
+		);
+	}
 
 	// Initialize chat session pool
 	initChatHandlers();

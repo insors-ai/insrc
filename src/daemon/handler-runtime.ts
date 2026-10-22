@@ -16,8 +16,7 @@ import { localIdentityDeps, resolveLearner } from '../understanding/identity.js'
 import { AssessmentError } from '../shared/understanding.js';
 
 import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
-import { injectSteeringBlock, readSteeringBlock, type SteeringSelection } from './steering-inject.js';
-import { guideGetResult, guideListResult } from './guide-sections.js';
+import { injectSteeringBlock, type SteeringSelection } from './steering-inject.js';
 import { registerMcpClients, daemonInstallRoot } from './mcp-register.js';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
@@ -40,7 +39,7 @@ import { reloadChatConfig, chatStart, chatCancel, chatInject, chatClose, chatLis
 
 import type { RpcHandler, RpcHandlers, StreamHandler, StreamHandlers } from './server.js';
 import { listModels } from './list-models.js';
-import { makeUpdateHandlers, launchUpdate, readUpdateOutcome } from './update-runner.js';
+import { sharedAdminHandlers } from './admin-handlers.js';
 import { getGraphStore } from '../db/graph/store.js';
 import { readInstalledCommit } from './installed-commit.js';
 
@@ -74,7 +73,6 @@ import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpt
 import { basename } from 'node:path';
 import type { ConfigStore } from '../config/store.js';
 import { setConfigAtPath } from '../config/write-path.js';
-import { buildSettingsCatalog } from '../config/settings-catalog.js';
 import { searchConfig, resolveTemplate } from '../config/search.js';
 import * as todosRpc from './todos-rpc.js';
 
@@ -251,11 +249,6 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	};
 
 	// 7. Start IPC server
-	// Delay before the daemon shuts itself down after a daemon.update launch —
-	// long enough for the { launched:true } result to flush to the caller's
-	// socket, short enough that the detached helper's stop+start proceeds
-	// promptly (Story S001 / sc1).
-	const UPDATE_SHUTDOWN_DELAY_MS = 250;
 	// The request handler maps, built once: the IpcServer serves them over the
 	// socket, and the step handlers call the same functions in-process through
 	// the in-daemon client (Epic c2ba6fa6, Story s11), never over a loopback.
@@ -1235,26 +1228,10 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// overrides under the cleanup.
 		'config.agents': offlineRpc('config.agents'),
 
-		'config.show': async () => {
-			try {
-				const raw = readFileSync(PATHS.config, 'utf-8');
-				return JSON.parse(raw) as Record<string, unknown>;
-			} catch {
-				return {};
-			}
-		},
-
-		// The self-describing settings catalog (Story S001 / sc1): the enriched
-		// CONFIG_CATALOG + role taxonomy + tier names + current values, assembled
-		// by the pure buildSettingsCatalog. READ-ONLY — mirrors config.show's
-		// parse-or-{} read; never writes config.json and never reloads sessions.
-		'config.catalog': async () => {
-			let rawConfig: Record<string, unknown> = {};
-			try {
-				rawConfig = JSON.parse(readFileSync(PATHS.config, 'utf-8')) as Record<string, unknown>;
-			} catch { /* missing/invalid config → full schema with empty values */ }
-			return buildSettingsCatalog(rawConfig) as unknown as Record<string, unknown>;
-		},
+		// config.show, config.catalog, guide.get, guide.list, daemon.shutdown,
+		// daemon.update and daemon.updateOutcome: shared with the admin worker
+		// (./admin-handlers.ts), so both serve them from one source.
+		...sharedAdminHandlers(deps.shutdown),
 
 		// docgen: generate a self-contained HTML document from the code graph
 		// (Epic 870ed3dd, s1 · t7). The IPC method + the docgen_generate tool +
@@ -1272,19 +1249,6 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'docgen.list': async () => {
 			const mod = await import('../docgen/index.js');
 			return { docTypes: mod.listDocTypes() } as unknown as Record<string, unknown>;
-		},
-
-		// insrc_guide (sc2) — read-only per-workflow guidance retrieval. Reads the
-		// SAME canonical steering asset steering-inject ships (readSteeringBlock),
-		// partitioned by the guide markers; a read failure is shaped as a structured
-		// result inside guideGetResult/guideListResult, never escaping the IPC.
-		'guide.get': async (params) => {
-			const { workflow } = (params ?? {}) as { workflow?: string };
-			return guideGetResult(readSteeringBlock, workflow) as unknown as Record<string, unknown>;
-		},
-
-		'guide.list': async () => {
-			return guideListResult(readSteeringBlock) as unknown as Record<string, unknown>;
 		},
 
 		'config.write': async (params) => {
@@ -1384,12 +1348,6 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return entries;
 		},
 
-		'daemon.shutdown': async () => {
-			log.info('shutdown requested');
-			deps.shutdown('daemon.shutdown RPC');
-			return { ok: true };
-		},
-
 		'daemon.backup': async (params) => {
 			const { path } = params as { path: string };
 			if (typeof path !== 'string' || path.length === 0) {
@@ -1416,20 +1374,6 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			log.info({ ...result }, 'lmdb env compacted');
 			return result;
 		},
-
-		// Story S001 (sc1): the daemon-owned update+restart IPC. `daemon.update`
-		// spawns a DETACHED helper (daemon-ctl.sh restart) that outlives this
-		// process, then schedules our own shutdown so the helper's stop+start is
-		// clean — the caller's socket drops and it reconnects to the fresh daemon.
-		// `daemon.updateOutcome` reads back the terminal result the helper persists.
-		...makeUpdateHandlers({
-			launch:      launchUpdate,
-			readOutcome: readUpdateOutcome,
-			scheduleShutdown: () => {
-				const t = setTimeout(() => deps.shutdown('daemon.update RPC'), UPDATE_SHUTDOWN_DELAY_MS);
-				t.unref();
-			},
-		}),
 
 		// Per-workspace data-analyzer DB introspection + reset. Backing
 		// pool lives at <workspaceRoot>/.insrc/data-analyzer.db. Status

@@ -63,6 +63,8 @@ export interface DaemonInfo {
 
 export const DAEMON_INFO_OP = 'daemon.info';
 export const EMBEDDER_BACKEND_OP = 'embedder.backend';
+/** A worker asks the main thread to shut the daemon down (daemon.shutdown and daemon.update served on the admin worker). */
+export const SHUTDOWN_OP = 'daemon.shutdown';
 
 /** A worker's connection: what its workerData carries, the port to transfer, and the main thread's end. */
 export interface WorkerConnection {
@@ -88,6 +90,7 @@ export class ThreadServices {
 	private readonly ports = new Set<MessagePort>();
 	private readonly handlers: HubHandlers;
 	private embedderBackend: EmbedderBackend | undefined;
+	private shutdown: ((reason: string) => void) | undefined;
 
 	constructor(private readonly info: () => DaemonInfo, steps: SharedStepStateStore = new LocalStepStateStore()) {
 		// The main thread joins the same blocks it hands to every worker.
@@ -99,7 +102,13 @@ export class ThreadServices {
 			...stepStateHubHandlers(steps),
 			...wireMainStoreHealth(() => this.ports),
 			[DAEMON_INFO_OP]: () => this.info(),
+			[SHUTDOWN_OP]: reason => { this.shutdown?.(String(reason)); },
 		};
+	}
+
+	/** The daemon's shutdown, which a worker's SHUTDOWN_OP starts with its reason. */
+	onShutdown(shutdown: (reason: string) => void): void {
+		this.shutdown = shutdown;
 	}
 
 	/** Open a channel for a new worker and serve the hub on the main thread's end. */

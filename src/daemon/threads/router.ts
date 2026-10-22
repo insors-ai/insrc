@@ -51,6 +51,8 @@ interface Held {
 	cancelled: boolean;
 	/** Set once the request has been sent to a worker. */
 	sentTo?: number;
+	/** Set once the request was handed to this thread because its class stopped being routed. */
+	localCancel?: () => void;
 }
 
 const isReplyOrFrame = (m: unknown): m is ReplyEnvelope | FrameEnvelope => {
@@ -113,10 +115,19 @@ export class Router {
 		return orphaned;
 	}
 
-	/** A target registered: send the requests held for its class. */
+	/**
+	 * A target registered, or a class stopped being routed: send the requests
+	 * held for a registered target, and serve here those whose class is no
+	 * longer routed.
+	 */
 	targetsChanged(): void {
 		for (const h of [...this.held]) {
 			if (h.cancelled) { this.release(h); continue; }
+			if (!this.opts.routed.has(h.cls)) {
+				this.release(h);
+				h.localCancel = this.opts.local(h.request, h.deliver);
+				continue;
+			}
 			const target = this.opts.registry.targetFor(h.cls);
 			if (target === undefined || !this.ports.has(target.threadId)) continue;
 			this.release(h);
@@ -145,6 +156,7 @@ export class Router {
 		this.held.add(held);
 		return () => {
 			if (held.sentTo !== undefined) { this.cancel(held.sentTo, request); return; }
+			if (held.localCancel !== undefined) { held.localCancel(); return; }
 			held.cancelled = true;
 			this.release(held);
 		};

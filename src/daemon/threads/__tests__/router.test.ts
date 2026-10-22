@@ -162,3 +162,17 @@ test("debug-status called right after other requests reports each client's lastM
 		router.detach(worker.threadId);
 	}
 });
+
+test('requests held for a class that stops being routed are served in this thread', async () => {
+	const registry = new (await import('../registry.js')).TargetRegistry();
+	const routed = new Set<MethodClass>(['admin']);
+	const router = new Router({ classOf, registry, routed, local: directDispatch({ 'x.echo': async p => ({ local: p }) }), holdMs: 10_000 });
+	const replies: unknown[] = [];
+	router.forward({ kind: 'request', requestId: 'h1', method: 'x.echo', params: 1, stream: false }, e => { replies.push(e); });
+	await new Promise(r => setTimeout(r, 20));
+	assert.deepEqual(replies, [], 'held for the admin worker');
+	routed.delete('admin');
+	router.targetsChanged();
+	await new Promise(r => setTimeout(r, 20));
+	assert.deepEqual(replies, [{ kind: 'reply', requestId: 'h1', result: { local: 1 } }], 'served here at once, not after the hold');
+});

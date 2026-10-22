@@ -134,7 +134,7 @@ test('the daemon.debug-status contract returns { clients } from the registry wit
 	internals(server).handleConnection(new FakeSocket());
 	internals(server).handleConnection(new FakeSocket());
 
-	// This is exactly the daemon.debug-status handler body (index.ts).
+	// The daemon.debug-status handler (handler-runtime.ts) returns the server's attachedClients() through deps.attachedClients.
 	const handler = async (): Promise<{ clients: ReturnType<IpcServer['attachedClients']> }> => ({ clients: server.attachedClients() });
 	const before = server.attachedClients().length;
 	const res = await handler();

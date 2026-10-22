@@ -100,5 +100,5 @@ test('import graph (ac4): the MCP server reaches nothing under src/db, src/analy
 	// The reader tells a value import from a type-only one, and follows dynamic imports.
 	const imports = valueImports(fixture).map(rel);
 	assert.deepEqual(imports, ['src/db/graph/store.ts'], 'the type-only import of shared/types is not followed');
-	assert.ok(valueImports(join(SRC, 'daemon', 'index.ts')).map(rel).includes('src/daemon/steps/host.ts'), 'a dynamic import is followed');
+	assert.ok(valueImports(join(SRC, 'daemon', 'handler-runtime.ts')).map(rel).includes('src/daemon/steps/host.ts'), 'a dynamic import is followed');
 });

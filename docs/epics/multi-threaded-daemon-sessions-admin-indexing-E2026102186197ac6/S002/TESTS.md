@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 38 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 42 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -176,3 +176,33 @@ Run at 2026-10-22T08:29:13.498Z on commit `8679c338`. Tests check: **passed**. 4
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/doc-summary-sweep.test.ts` | 0 | 10 | 0.6 s |  |
 | `src/indexer/__tests__/summary-sweep-progress.test.ts` | 0 | 8 | 1.8 s |  |
+
+## t7
+
+Run at 2026-10-22T08:32:18.528Z on commit `71c15a71`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: the code-busy and stopping words track the index lane and stop()**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the code-busy and stopping words track the index lane and stop() | `src/daemon/__tests__/queue-threads.test.ts` |
+
+**unit: pause() resolves once no job is in flight and no job starts until resume()**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pause() resolves once no job is in flight and no job starts until resume() | `src/daemon/__tests__/queue-threads.test.ts` |
+
+**unit: every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged | `src/daemon/__tests__/queue-threads.test.ts` |
+| pass | an index job enqueued while a summary job is running completes before that summary job finishes | `src/daemon/__tests__/queue-lanes.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/queue-lanes.test.ts` | 0 | 7 | 0.6 s |  |
+| `src/daemon/__tests__/queue-threads.test.ts` | 0 | 3 | 0.5 s |  |

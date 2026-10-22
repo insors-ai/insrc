@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:29:13.498Z",
+    "updatedAt": "2026-10-22T08:32:18.528Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -844,6 +844,118 @@
               },
               {
                 "title": "a single-document summary waits while code work runs, runs once it is done, and is not started on shutdown",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "71c15a71",
+        "ranAt": "2026-10-22T08:32:18.528Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the code-busy and stopping words track the index lane and stop()",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-threads.test.ts",
+                "title": "the code-busy and stopping words track the index lane and stop()",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pause() resolves once no job is in flight and no job starts until resume()",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-threads.test.ts",
+                "title": "pause() resolves once no job is in flight and no job starts until resume()",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-threads.test.ts",
+                "title": "every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "an index job enqueued while a summary job is running completes before that summary job finishes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/queue-lanes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 571,
+            "titles": [
+              {
+                "title": "an index job enqueued while a summary job is running completes before that summary job finishes",
+                "result": "pass"
+              },
+              {
+                "title": "each lane runs its jobs one at a time in order, every kind goes to its lane, and summaries queued with code work start only after it",
+                "result": "pass"
+              },
+              {
+                "title": "a single-document job goes ahead of a queued sweep, after earlier single-document jobs, and takeDocSummaryEdit removes and returns it",
+                "result": "pass"
+              },
+              {
+                "title": "depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor reads the index lane only, and laneStatus reports each lane",
+                "result": "pass"
+              },
+              {
+                "title": "stop ends both lanes after their current jobs, and start resolves only then",
+                "result": "pass"
+              },
+              {
+                "title": "waitForIndexIdle resolves at once when the index lane is idle, after its code work otherwise, and on stop(); a summary lane waiting for code work ends on stop()",
+                "result": "pass"
+              },
+              {
+                "title": "a summary never starts after a code job was queued: with the index lane idle at start it starts at once, and a code job queued just after runs beside that one summary only",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/queue-threads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 521,
+            "titles": [
+              {
+                "title": "the code-busy and stopping words track the index lane and stop()",
+                "result": "pass"
+              },
+              {
+                "title": "pause() resolves once no job is in flight and no job starts until resume()",
+                "result": "pass"
+              },
+              {
+                "title": "every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged",
                 "result": "pass"
               }
             ],

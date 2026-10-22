@@ -181,6 +181,15 @@
     "reviewOverride": {
       "reason": "Stakeholder approved with override 2026-10-22: 3 daemon review rounds, 0 HIGH; round-3's one MED (lock leak when a worker dies mid-grant) folded after the round with per-name owner-tagged mutex + exact recount on reclaim + mid-grant termination test; rounds 1-2 MEDs all folded (nesting rule, claim/publish slot state, watchWorker reclaim wiring, required lockBlock, store-reclaim stays with s2's router).",
       "at": "2026-10-22T05:54:53.870Z"
+    },
+    "questionResolutions": {
+      "qb472bde2": {
+        "question": "Epic 86197ac6 s2 must be amended to use this framework: its maintenance lock (exclusive, held by maintenance with activity and reason; every request takes an ifAvailable shared hold and is refused with the holder's metadata), and its router calls watchWorker for every worker it starts beside its own StoreGuard.reclaim on exit.",
+        "status": "resolved",
+        "choice": "Amend s2 now, before planning",
+        "rationale": "Stakeholder 2026-10-22: amend Epic 86197ac6's DEF, HLD and s2 LLD to use the lock framework (maintenance takes the exclusive lock with activity and reason; every request takes an ifAvailable shared hold and is refused with the holder's metadata; the router calls watchWorker) before planning the framework.",
+        "resolvedAt": "2026-10-22T05:56:03.030Z"
+      }
     }
   },
   "body": {

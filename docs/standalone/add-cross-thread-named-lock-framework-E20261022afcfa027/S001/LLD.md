@@ -295,3 +295,15 @@ As a1 for the state words and ifAvailable; a request that must wait registers wi
 ## 9. Open questions
 
 - Epic 86197ac6 s2 must be amended to use this framework: its maintenance lock (exclusive, held by maintenance with activity and reason; every request takes an ifAvailable shared hold and is refused with the holder's metadata), and its router calls watchWorker for every worker it starts beside its own StoreGuard.reclaim on exit.
+
+## Resolved questions
+
+- `qb472bde2` — Epic 86197ac6 s2 must be amended to use this framework: its maintenance lock (exclusive, held by maintenance with activity and reason; every request takes an ifAvailable shared hold and is refused with the holder's metadata), and its router calls watchWorker for every worker it starts beside its own StoreGuard.reclaim on exit.
+  - **resolved**: Amend s2 now, before planning — Stakeholder 2026-10-22: amend Epic 86197ac6's DEF, HLD and s2 LLD to use the lock framework (maintenance takes the exclusive lock with activity and reason; every request takes an ifAvailable shared hold and is refused with the holder's metadata; the router calls watchWorker) before planning the framework. _(2026-10-22T05:56:03.030Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/db/store-guard.ts:160-389`
+- **[[c2]]** `code` `src/daemon/threads/worker-entry.ts:25-48`
+- **[[c3]]** `doc` `https://developer.mozilla.org/docs/Web/API/Web_Locks_API`
+- **[[c4]]** `step-output` `s1`

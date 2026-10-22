@@ -1,0 +1,1244 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792614936633-6l9mmk",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-21T20:43:27.268Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 470605,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicHash": "86197ac660732ceb",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1792588079400-heeqp4",
+    "hldEffectiveHash": "b93e76739a2568e89e10c3b7c0838bb594c961729bbda83caa38633c196f8c4f",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The admin class (10 methods) and indexing class (10 methods) name methods the daemon actually serves, so the router covers the admin/indexing intent.",
+          "evidence": "src/daemon/index.ts has 'repo.list' :585, 'repo.stats' :594, 'repo.reindex' :839, 'docSummary.restoreFromBackup' :849, 'daemon.status' :1060, 'daemon.debug-status' :1091, 'index.file' :1401, 'config.show' :1483, 'config.catalog' :1496, 'guide.get' :1526, 'guide.list' :1531, 'config.enqueue' :1567, 'config.reindex' :1575, 'daemon.shutdown' :1632, 'daemon.backup' :1638, 'daemon.compact' :1647; 'daemon.update'/'daemon.updateOutcome' come from makeUpdateHandlers (src/daemon/update-runner.ts:270-275). [files: src/daemon/index.ts, src/daemon/update-runner.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "IpcServer today takes (handlers, streamHandlers, now, socketPath), updates lastMethod/label/pid before dispatch, answers 'invalid JSON' with id -1, and falls back from stream to unary.",
+          "evidence": "src/daemon/server.ts:133 constructor(handlers, streamHandlers = {}, now = Date.now, socketPath = PATHS.sockFile); :206 {id:-1,error:'invalid JSON'}; :214-219 registry update before dispatch; :243-255 stream-to-unary fallback. [files: src/daemon/server.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "runDocSummarySweep calls takeEdit synchronously at :79 and has no await between the final shouldStop/isCodeIdle checks and summarise (:89-91).",
+          "evidence": "src/indexer/doc-summary-sweep.ts:33 `takeEdit(): { entityId: string } | undefined;` :79 `const edit = deps.takeEdit();` :91-94 shouldStop, isCodeIdle, then `await deps.summarise(entity)` with no await in between. (The checks sit at :91-92, a line off from the cited range.) [files: src/indexer/doc-summary-sweep.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The main thread's queue/indexer uses listed in §3.3 are the complete set the indexing port must replace.",
+          "evidence": "grep of queue./indexer./watcher. in src/daemon/index.ts returns :272, :294 (boot), :533, :575, :826, :844, :1076-1077, :1403, :1571, :1577, :1652, :2074-2076 (shutdown). Every handler-body use is listed. Apart from :826 (codeReview.freshness, a session method) and :1076-1077 (daemon.status, admin), all sit in indexing-class handlers. [files: src/daemon/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Reused s1 pieces exist with the stated shapes: StoreGuard.reclaim(threadId) → {released, unhealthy}, TargetRegistry.targetFor(cls, session?), startDaemonWorker/NotADaemonWorkerError, StatusBoard.publishClients/publishIndexing, and publishLane does not exist yet.",
+          "evidence": "src/db/store-guard.ts:255 `async reclaim(threadId: number): Promise<{ readonly released: readonly StoreId[]; readonly unhealthy: readonly StoreId[] }>`; src/daemon/threads/registry.ts:54 targetFor(cls, session?); src/daemon/threads/worker-entry.ts:32,40-41; status-board.ts:76-77 has publishIndexing/publishClients and no publishLane; MethodClass is defined in channel.ts:31; method-class.ts does not exist yet. [files: src/db/store-guard.ts, src/daemon/threads/registry.ts, src/daemon/threads/worker-entry.ts, src/daemon/threads/status-board.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "compactGraphStore is reused unchanged, and maintenance can check that the native environment really closed before the rename, abandoning compaction without renaming if it did not.",
+          "evidence": "src/db/graph/store.ts:855-886: compactGraphStore does backup, then `await inst.root.close()` (:861), then immediately `renameSync(originalPath, bakPath)` and removes the lock file (:871-875), then reopens with getGraphStore (:886), all in one function with no hook between close and rename. A caller cannot insert the 'environment really closed' check before the rename unless compactGraphStore changes, yet §2.11 calls it today's function and lists no change site in store.ts. Built as written, the safety check either cannot run or runs after the rename, which is the step it is meant to protect. [files: src/db/graph/store.ts]",
+          "action": "Add a change site for compactGraphStore: split it, or give it a pre-rename verification callback that aborts and reopens without renaming. Name the check concretely, and test that the rename never runs when the check fails.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The IpcServer construction sites that move to directDispatch are src/daemon/index.ts:1997 plus the tests and helpers that build their own tables (store-child.ts:178 and :212).",
+          "evidence": "grep `new IpcServer(` finds index.ts:1997, store-child.ts:178/:212, plus tests mcp-process-e2e:227, forward-step:36, update-handlers:54/73/90/98, understanding-rpc:43, store-failure-dispatch:85/121, server-registry (6 sites), step-host:215. The design names these suites generically in §6 ('servers built with directDispatch where they build their own tables'), so the inventory is covered, though not enumerated. [files: src/daemon/index.ts, src/db/graph/__tests__/helpers/store-child.ts]",
+          "action": "Optionally enumerate every test construction site in §2.3 so none is missed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "createInDaemonClient(unary, stream, deps?) exists with an InDaemonClientDeps the route function can extend, and it is installed at index.ts:1996.",
+          "evidence": "src/daemon/steps/daemon-client.ts:73-83 InDaemonClientDeps {setTimer?, clearTimer?} and createInDaemonClient(unary, stream, deps = {}); its call() looks up unary[method] locally (:85). index.ts:1996 installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers)). [files: src/daemon/steps/daemon-client.ts, src/daemon/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today's withCompleteness leaves completeness out when the read fails, while the board's RepoStatusSnapshot requires it, so the type must be loosened for rows to match today's.",
+          "evidence": "src/daemon/repo-completeness.ts:30-36 returns `(T & { completeness?: RepoCompleteness })[]` and omits the field when the read fails; src/daemon/threads/status-board.ts:40 `RepoStatusSnapshot = RegisteredRepo & { readonly completeness: RepoCompleteness }` (required). [files: src/daemon/repo-completeness.ts, src/daemon/threads/status-board.ts]",
+          "action": "none (the design correctly records the loosening as an sc4 amendment)",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Workers closing their graph handle for maintenance stays within s1's contract (s1 verified a worker's open/close/exit keeps the process lock).",
+          "evidence": "src/db/graph/__tests__/worker-thread-lock.test.ts:62-91 asserts 'held after the worker closed its handle' and that writes continue afterwards; closeGraphStore (store.ts:938-958) calls root.close(), with no main-thread-only guard. The adjacent-scope text 'LMDB is opened once per process and never closed by a worker' is in tension with this, but the s1 test covers a worker closing its own handle. [files: src/db/graph/__tests__/worker-thread-lock.test.ts, src/db/graph/store.ts]",
+          "action": "Reconcile the wording with s1/the HLD so 'never closed by a worker' clearly means the process-wide environment, not a worker's handle.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A socket close while a request runs on a worker is handled 'as today' by cancelling and aborting the AbortSignal.",
+          "evidence": "src/daemon/server.ts:234-239: a unary handler is awaited with no abort on socket close; only stream requests get an AbortController wired to socket 'close' (:261-267). The design's forward() cancel function and CancelEnvelope apply to every request, and its edge-case table says the response is 'as today'. For unary requests that is a behaviour change (today they run to completion; the reply write just fails). The design does not say whether a worker cancels a unary handler or only drops its reply. [files: src/daemon/server.ts]",
+          "action": "State that a cancel for a unary request only drops the late reply and does not abort the handler (today's behaviour), and cancel only streams.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every acceptance criterion ac1–ac8 maps to at least one named test, and the maintenance safety paths have tests.",
+          "evidence": "§6 acceptance mapping covers ac1–ac8, each with integration/unit/contract subjects. It includes 'maintenance with a worker that has not closed its graph handle: compaction is abandoned before any rename', 'a worker that never acknowledges the pause', and the worker-kill tests. Whether the abandon-before-rename test can pass depends on the compactGraphStore change flagged under new-versus-reuse.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 10,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-21T20:51:10.450Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-22T04:36:54.849Z",
+    "reviewOverride": {
+      "reason": "Stakeholder approved with override 2026-10-22: 3 review rounds; round-3 had 0 HIGH and 2 MED (compactGraphStore pre-rename hook, unary cancel semantics), both folded after the round; every earlier finding folded (lastMethod republish, async sweep takeEdit, supervision boundary note, handle-close compaction within s1's verified contract, store-child construction site, optional completeness and store fallback before first publish).",
+      "at": "2026-10-22T04:36:54.847Z"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "s2 puts a router in front of every request and moves admin work and indexing work off the main thread. Admin methods (daemon.status, debug-status, repo.list, the TUI's config and guide reads, shutdown and update) run on an admin worker that answers from the status board; code indexing, the file watcher and every indexing method run on a code-indexing worker, and document summaries execute on a document-summary worker that still starts a summary only while code indexing is idle. Session methods keep running on the main thread as today until s3, reaching the indexing workers through a small cross-thread port. Graph compaction becomes idle maintenance: after 30 quiet minutes, when enough space is reclaimable, the daemon holds every request except daemon.status, compacts, and resumes.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a1: a routing main thread plus worker threads by class of work. The main thread owns the Unix socket, framing and the attached-client registry, and does no handler work. Each request is classified (admin, session or indexing) and forwarded over a thread channel to its target: the admin worker, the code-indexing worker, or the session's pooled worker (session id = the request's client label and process id). Workers each load the handler runtime and open their own store handles under a verified per-store threading policy: direct use where a store is proven safe, a shared semaphore with guaranteed release where it is not. MCP step state (the four step state stores) moves into a store shared by all threads, so it outlives any worker; a detached workflow run stays owned by the worker that started it, which is not released while the run is active, and the run's record is published where every thread can read it. A request that carries no valid client identity is served on one shared unattributed worker, as today's daemon serves it, kept apart from every session. A shared status board lets every thread publish what it is doing, which the admin worker reads for daemon status and liveness.",
+      "ownedContracts": [
+        {
+          "id": "sc5",
+          "name": "Method-class registry",
+          "purpose": "Declares the class of every RPC and stream method the daemon serves, so the router sends each request to the right kind of thread and no method is left unclassified.",
+          "interfaceSketch": "interface MethodClassEntry {\n  readonly method: string;\n  readonly cls: MethodClass;\n  readonly stream: boolean;\n}\ninterface MethodClassRegistry {\n  readonly classOf: (method: string) => MethodClass | undefined;\n  readonly entries: () => readonly MethodClassEntry[];\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4"
+          ],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Store guard and per-store threading policy",
+          "purpose": "Lets any thread use a store safely: records, per store, whether it is used directly or through a semaphore, and gives one helper that acquires and always releases the store's semaphore. Waiting for a lock is always asynchronous, so a waiting thread keeps serving its other work.",
+          "interfaceSketch": "type StoreId = 'graph' | 'lance' | 'duckdb';\ninterface StoreThreadingPolicy {\n  readonly store: StoreId;\n  readonly mode: 'direct' | 'guarded';\n  /** Counting-semaphore size for a guarded store (duckdb: 1); absent for a direct store. */\n  readonly permits?: number | undefined;\n  /** Why: the verification evidence (test or library contract) behind the mode. */\n  readonly basis: string;\n}\ninterface StoreQuiescence {\n  readonly store: StoreId;\n  /** How long reclaim waits for a dead worker's native calls before marking the store unhealthy. */\n  readonly limitMs: number;\n}\ninterface StoreGuardOptions {\n  /** Fail with StoreLockTimeoutError instead of waiting past this limit. */\n  readonly acquireTimeoutMs: number;\n  readonly signal?: AbortSignal | undefined;\n}\ninterface StoreLockHolder {\n  readonly store: StoreId;\n  readonly threadId: number;\n  readonly acquiredAt: number;\n}\ntype WithStore = <T>(store: StoreId, op: () => Promise<T>, opts: StoreGuardOptions) => Promise<T>;\ninterface StoreGuard {\n  readonly withStore: WithStore;\n  readonly policy: (store: StoreId) => StoreThreadingPolicy;\n  readonly holders: () => readonly StoreLockHolder[];\n  /** Router only: release every lock a dead worker held. */\n  /** Waits for quiescence per store; a store that does not quiesce in time is reported unhealthy. */\n  readonly reclaim: (threadId: number) => Promise<{ readonly released: readonly StoreId[]; readonly unhealthy: readonly StoreId[] }>;\n  readonly quiescence: (store: StoreId) => StoreQuiescence;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c7"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Thread channel and target registry",
+          "purpose": "The one message contract between the router and every worker: request, reply, stream frame, cancel and error envelopes, plus the registry where a worker registers as the target for a class of work. A session-class request with no valid session id resolves to the unattributed target.",
+          "interfaceSketch": "type MethodClass = 'admin' | 'session' | 'indexing';\ninterface SessionId { readonly label: string; readonly pid: number; }\ninterface RequestEnvelope {\n  readonly kind: 'request';\n  readonly requestId: string;\n  readonly method: string;\n  readonly params: unknown;\n  readonly stream: boolean;\n  readonly session?: SessionId | undefined;\n}\ninterface ReplyEnvelope { readonly kind: 'reply'; readonly requestId: string; readonly result?: unknown; readonly error?: string | undefined; }\ninterface FrameEnvelope { readonly kind: 'frame'; readonly requestId: string; readonly frame: unknown; }\ninterface CancelEnvelope { readonly kind: 'cancel'; readonly requestId: string; }\ntype ChannelEnvelope = RequestEnvelope | ReplyEnvelope | FrameEnvelope | CancelEnvelope;\ninterface ThreadTarget {\n  readonly threadId: number;\n  readonly cls: MethodClass;\n  readonly session?: SessionId | undefined;\n  /** The one shared worker for session-class requests that carry no valid identity. */\n  readonly unattributed?: true | undefined;\n}\ninterface TargetRegistry {\n  readonly register: (target: ThreadTarget) => void;\n  readonly unregister: (threadId: number) => void;\n  readonly targetFor: (cls: MethodClass, session?: SessionId) => ThreadTarget | undefined;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "Thread status board",
+          "purpose": "Shared record each thread updates as it starts and finishes work: the router publishes its attached-client snapshot, the indexing workers publish lane state, summary-sweep progress, each repository's completeness and the unattributed-entity count, and detached workflow runs publish their full poll state, so the admin thread can answer status, debug-status, liveness and run polls without calling into a busy thread or touching a store.",
+          "interfaceSketch": "interface ThreadStatus {\n  readonly threadId: number;\n  readonly cls: MethodClass | 'router';\n  readonly session?: SessionId | undefined;\n  readonly busy: boolean;\n  readonly method?: string | undefined;\n  readonly since?: number | undefined;\n  readonly queued: number;\n}\ninterface LaneStatus {\n  readonly depth: number;\n  readonly processing: boolean;\n}\ninterface SummarySweepProgress {\n  readonly repoPath: string;\n  readonly done: number;\n  readonly total: number;\n}\ninterface IndexingStatus {\n  readonly index: LaneStatus;\n  readonly summary: LaneStatus;\n  readonly sweep?: SummarySweepProgress | undefined;\n  readonly idle: boolean;\n}\n/** The existing AttachedClient shape from the server, lastMethod included. */\ninterface AttachedClientSnapshot {\n  readonly id: number;\n  readonly label: string;\n  readonly connectedAt: number;\n  readonly pid?: number | undefined;\n  readonly lastMethod?: string | undefined;\n}\n/** Today's shapes from src/shared/types.ts, published unchanged. */\ntype RepoStatusSnapshot = RegisteredRepo & { readonly completeness: RepoCompleteness };\ninterface StoreStatusSnapshot {\n  /** undefined until first published; responses then mark the value unavailable. */\n  readonly repos?: readonly RepoStatusSnapshot[] | undefined;\n  readonly unattributedUnwritable?: UnattributedUnwritableCount | undefined;\n  readonly publishedAt: number;\n}\ninterface RunRecord {\n  readonly runId: string;\n  readonly status: 'running' | 'done' | 'error' | 'aborted';\n  readonly ownerThreadId: number;\n  readonly startedAt: number;\n  readonly model: string;\n  /** The append-only progress sequence a poll slices from its cursor. */\n  readonly frames: readonly unknown[];\n  readonly result?: unknown;\n  readonly error?: string | undefined;\n}\ninterface StatusSnapshot {\n  readonly threads: readonly ThreadStatus[];\n  readonly indexing: IndexingStatus;\n  readonly clients: readonly AttachedClientSnapshot[];\n  readonly runs: readonly RunRecord[];\n  readonly store: StoreStatusSnapshot;\n}\ninterface StatusBoard {\n  readonly publish: (status: ThreadStatus) => void;\n  readonly publishIndexing: (status: IndexingStatus) => void;\n  /** Amendment (additive, delivered by s2): one indexing worker publishes only its own lane; the board keeps both and derives IndexingStatus.idle as both lanes empty and not processing. */\n  readonly publishLane: (lane: 'index' | 'summary', status: LaneStatus, sweep?: SummarySweepProgress) => void;\n  readonly publishClients: (clients: readonly AttachedClientSnapshot[]) => void;\n  readonly publishRun: (run: RunRecord) => void;\n  /** Amendment (additive, delivered by s3 with the detached-run move): removes a run the owner's retention evicted; a later poll for it answers 'unknown', as today. */\n  readonly forgetRun: (runId: string) => void;\n  readonly publishStore: (store: StoreStatusSnapshot) => void;\n  readonly snapshot: () => StatusSnapshot;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "The main-thread router (connection handling, classification through the method-class registry, envelope forwarding to registered targets, writing replies and frames back, observing worker exits and reclaiming a dead worker's store locks), the admin worker, and indexing on two workers: the code-indexing worker hosting the index queue's code lane and the file-watcher feed and serving every indexing-class method, and the document-summary worker running the summary lane, starting a summary only while code indexing is idle. Both indexing workers publish lane state, idleness, summary-sweep progress, the full registered-repository records with each repository's completeness, and the unattributed-entity count with its reasons on the status board after every change. Session-class methods keep running on the main thread exactly as today until s3 moves them; there is no fallback worker. Shutdown and the locks-lost path keep today's behaviour with the workers included (each stops its work, the queue drains, the main thread closes the stores after the workers exit). Validation: ac1 — daemon.status and the TUI's admin reads answer within 100 ms while an indexing pass runs and another worker keeps an LMDB write transaction open; ac2 — each admin method's response matches today's recorded response; ac3 — a test enumerates every served RPC and stream method and fails on any without a class, and dispatch tests assert admin methods ran on the admin thread and indexing methods on the code-indexing thread; ac4/ac5 — a session request is answered during an indexing pass, and a file change is indexed while a session request runs; ac6 — summaries start only while code indexing is idle, and lane order and indexed results equal the single-thread baseline; ac7 — queue status and idle waiting read from another thread reflect the indexing workers' real state. Also: debug-status keeps every field including lastMethod; daemon.status and repo.list read only the status board and keep today's full response shapes. Also maintenance compaction: idle detection (30 min, configurable), the reclaimable-space threshold (25% and 256 MB), maintenance mode holding every request except daemon.status, workers closing and reopening their graph handles around the main thread's compaction, and the manual daemon.compact keeping today's responses. s2 adds the additive sc4 method publishLane and its hub binding."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "Verifying each store from several threads of one process (the LMDB graph environment, every Lance table, the in-memory DuckDB pool), including that a worker opening and later releasing its handles does not close a descriptor the process's locks depend on; the semaphore implementation over process-wide shared memory and its holder record; moving the four in-memory step state stores onto the shared step-state store with today's TTL; the status board's attached-client, sweep-progress and run-record slots; the thread channel's serialisation and the target registry's bookkeeping; the status board's hub-served layout on the main thread. As the root Story it owns every cross-cutting contract the other Stories consume. Validation: ac1 — one thread writes a repo's entities while another reads the same graph, the reader sees only whole transactions, and an entity's vectors are written only after its graph commit; ac2 — two threads write different artifacts or config entries and a third thread reads both back; ac3 — no code path outside the daemon opens a store; ac4 — a throwing LMDB transaction on one thread leaves nothing visible to another. Also: a worker opening and releasing its handles keeps the process's LMDB locks; the guard releases on success, throw, cancel and worker kill; an acquisition past its limit fails; nested acquisition is refused. Step-state compatibility: for each of the four kinds, token rotation (analyze, workflow), stable-token update (review) or consume-and-mint per stage (code-review, where a superseded token fails), read refresh of expiry, the 100-entry eviction and a missing-token error behave as today. LMDB is opened once per process and never closed by a worker; lock reclaim waits for a dead worker's in-flight native calls. Per store, a quiescence observation with a time limit and an unhealthy-store outcome when it is exceeded; a guard wait never blocks its thread."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The session pool, moving every session-class method off the main thread: session-id mapping, per-session FIFO, worker creation and idle release, containment of a failing worker (its in-flight requests fail with an error, the next request gets a new worker), routing each step handler's state through the shared step-state store, the unattributed worker, inline nested calls, and ownership of detached workflow runs (records on the status board, abort routed to the owner, failure on owner exit, never idle-released while a run is active). Validation: ac1 — session B is answered while session A's worker spins; ac2 — A's second request starts only after its first completes; ac3 — requests from one client process over separate connections run on one worker, released after the idle timeout; ac4 — a worker failure fails only its session's requests; ac5 — provider calls stay serial (no Promise.all reaching a provider); ac6 — a step token minted before an idle release resumes on the new worker; ac7 — ping and daemon.status answer within 100 ms while a session worker spins the CPU for minutes. Also: unattributed requests are served apart from sessions; a nested in-daemon call completes without deadlock; a detached run survives idle time, accepts an abort from another thread, and is marked failed when its owner exits; a poll from another thread, and after the owner has gone, returns the same frames-since-cursor, model, result and error as today. The board's forgetRun operation (an additive sc4 method) is added with the detached-run move, called by the run owner's retention. Session workers take part in maintenance compaction's pause."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The main thread becomes the controller: it loads no handler runtime and runs no request handler, only the socket, classification, forwarding, worker supervision (admin, both indexing workers, the session pool's workers and the unattributed worker: in-flight requests failed, store locks reclaimed, the worker replaced) and shutdown coordination, including the locks-lost path. It also adds a `threads` section to daemon.status and daemon.debug-status from the status board and session pool (additive fields only) and makes the liveness answer report a busy session as busy rather than as a failure. Validation: ac1 — no request handler runs on the main thread; ac2 — a failing worker of any class fails only its own in-flight requests and is replaced; ac3 — shutdown and the locks-lost path behave as today; ac4 — daemon.status lists each thread with class, session, busy state, method and elapsed time; ac5 — with a session worker busy for minutes the liveness answer reports the daemon alive and the session busy; ac6 — every field of today's daemon.status and daemon.debug-status, including clients and sweep progress, is present with the same meaning."
+        }
+      ],
+      "rolloutPhase": "Phase B — router, admin worker and indexing workers",
+      "nonFunctional": {
+        "performance": "Ping and daemon.status answer within 100 ms at the 99th percentile while a session worker is CPU-bound and while an indexing pass runs; routing adds no more than 5 ms per request and per stream frame. A session worker's idle timeout defaults to 15 minutes and is configurable; step state keeps its own 1-hour TTL independent of worker release.",
+        "security": "No new listener or socket: the main thread keeps the existing Unix socket and its permissions; shared memory and thread channels are internal to the daemon process; clients still reach the stores only through IPC.",
+        "observability": "Every log line carries its thread id and class, and the session id for session work; daemon.status lists every thread with class, session, busy state, current method and elapsed time; a store-lock wait beyond its acquisition limit and a reclaimed lock after a worker exit are logged as warnings.",
+        "durability": "Step state survives a worker's release or failure because it lives in the shared step-state store; a detached workflow run lives in its owning worker, which is not released while the run is active, and is marked failed if that worker exits; its poll state lives in shared run storage, so polls still answer after the owner has gone. A worker that exits while holding a store lock has the lock reclaimed by the router. Atomicity is unchanged from today: each LMDB write transaction commits all or nothing, and an operation that writes LMDB then Lance keeps today's order and re-embed recovery. The process's one native LMDB environment is opened by the main thread at start and closed by it at shutdown; each worker opens and may close its own handle on it, which s1 verified keeps the process's locks; a lock held by a dead worker is reclaimed only after its in-flight native calls have finished."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "MethodClassRegistry.classOf",
+          "signature": "(method: string) => MethodClass | undefined",
+          "parameters": [
+            {
+              "name": "method",
+              "type": "string",
+              "purpose": "A JSON-RPC method name, unary or stream.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "MethodClass | undefined",
+            "meaning": "The method's declared class; undefined for a method the daemon does not serve."
+          },
+          "errors": [],
+          "preconditions": [
+            "A frozen table in src/daemon/threads/method-class.ts that imports no handler module, so the main thread and workers can load it."
+          ],
+          "postconditions": [
+            "Admin class: daemon.status, daemon.debug-status, daemon.shutdown, daemon.update, daemon.updateOutcome, repo.list, config.show, config.catalog, guide.list, guide.get.",
+            "Indexing class: repo.add, repo.remove, repo.reindex, repo.stats, index.file, config.enqueue, config.reindex, daemon.compact, daemon.backup, docSummary.restoreFromBackup.",
+            "Every other served method is session class."
+          ]
+        },
+        {
+          "name": "MethodClassRegistry.entries",
+          "signature": "() => readonly MethodClassEntry[]",
+          "parameters": [],
+          "returns": {
+            "type": "readonly MethodClassEntry[]",
+            "meaning": "One entry per served method with its class and whether it is a stream method."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Its method set equals the keys of the runtime rpcHandlers and streamHandlers after every merge (the makeUpdateHandlers spread and the understanding routes) plus nothing else; a test built from the constructed tables fails on any difference."
+          ]
+        },
+        {
+          "name": "IpcServer",
+          "signature": "class IpcServer { constructor(forward: (request: RequestEnvelope, deliver: (envelope: ReplyEnvelope | FrameEnvelope) => void) => (() => void), now?: () => number, socketPath?: string); listen(): Promise<void>; close(): Promise<void>; attachedClients(): AttachedClient[]; flushPendingWrites(timeoutMs?: number): Promise<boolean>; disconnectClients(): void }",
+          "parameters": [
+            {
+              "name": "forward",
+              "type": "(request: RequestEnvelope, deliver: (envelope: ReplyEnvelope | FrameEnvelope) => void) => (() => void)",
+              "purpose": "Hands one parsed request (with its requestId and the SessionId from the validated client envelope) to the router; deliver writes each reply or frame to the request's socket in today's wire shape; the returned function is called when the socket closes: for a stream it sends a CancelEnvelope (today's abort), for a unary request it only marks the reply to be dropped.",
+              "optional": false
+            },
+            {
+              "name": "now",
+              "type": "() => number",
+              "purpose": "Clock for connectedAt.",
+              "optional": true
+            },
+            {
+              "name": "socketPath",
+              "type": "string",
+              "purpose": "Socket path, PATHS.sockFile by default.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "IpcServer",
+            "meaning": "The socket server without handler tables: framing, the attached-client registry, today's reply writing."
+          },
+          "errors": [
+            {
+              "type": "invalid JSON",
+              "condition": "A line that does not parse is answered {id: -1, error: 'invalid JSON'}, as today."
+            }
+          ],
+          "preconditions": [
+            "Construction sites move to a forward function: src/daemon/index.ts:1997 (the router) and the tests and helpers that build a server with their own handler tables (including src/db/graph/__tests__/helpers/store-child.ts:178 and :212), which pass directDispatch(rpcHandlers, streamHandlers), an in-thread forward with today's dispatch rules (unknown method by table lookup, stream-to-unary fallback, failureMessage, abort on cancel)."
+          ],
+          "postconditions": [
+            "new IpcServer(directDispatch(rpc, stream)) behaves on the wire exactly as today's new IpcServer(rpc, stream).",
+            "The registry is republished through StatusBoard.publishClients on connect, on close, and after every message updates it (lastMethod, label, pid), before the request is forwarded, so debug-status reports the caller's own 'daemon.debug-status' as its lastMethod exactly as today."
+          ]
+        },
+        {
+          "name": "TargetRegistry.targetFor",
+          "signature": "(cls: MethodClass, session?: SessionId) => ThreadTarget | undefined",
+          "parameters": [
+            {
+              "name": "cls",
+              "type": "MethodClass",
+              "purpose": "The class from classOf.",
+              "optional": false
+            },
+            {
+              "name": "session",
+              "type": "SessionId",
+              "purpose": "Unused in s2: session-class requests are served on the main thread.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ThreadTarget | undefined",
+            "meaning": "The admin worker for admin, the code-indexing worker for indexing."
+          },
+          "errors": [],
+          "preconditions": [
+            "Consumed from s1 unchanged."
+          ],
+          "postconditions": [
+            "Router rule in s2: admin and indexing requests go to their registered target; session-class requests are dispatched in-thread on the main thread through the runtime tables, as today. When targetFor returns undefined (the worker is restarting) the router holds the request until the replacement registers, at most 30 s, then answers {error: \"the daemon's <class> thread is not available\"}."
+          ]
+        },
+        {
+          "name": "StatusBoard.publishLane",
+          "signature": "(lane: 'index' | 'summary', status: LaneStatus, sweep?: SummarySweepProgress) => void",
+          "parameters": [
+            {
+              "name": "lane",
+              "type": "'index' | 'summary'",
+              "purpose": "Which lane the publishing worker owns.",
+              "optional": false
+            },
+            {
+              "name": "status",
+              "type": "LaneStatus",
+              "purpose": "That lane's depth and whether a job is processing.",
+              "optional": false
+            },
+            {
+              "name": "sweep",
+              "type": "SummarySweepProgress",
+              "purpose": "The running summary sweep's progress, summary lane only.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The board's lane slot is replaced; IndexingStatus.idle is recomputed as both lanes at depth 0 and not processing."
+          },
+          "errors": [],
+          "preconditions": [
+            "Additive sc4 method delivered by s2 with a board.publishLane hub op and a StatusBoardClient method; publishIndexing is unchanged."
+          ],
+          "postconditions": [
+            "daemon.status's queueDepth is index depth + summary depth and its QueueLanes running flags are each lane's processing, as composeQueueLanes reports today."
+          ]
+        },
+        {
+          "name": "StatusBoard.publishClients",
+          "signature": "(clients: readonly AttachedClientSnapshot[]) => void",
+          "parameters": [
+            {
+              "name": "clients",
+              "type": "readonly AttachedClientSnapshot[]",
+              "purpose": "IpcServer.attachedClients() after every registry update: connect, close, and each message that sets lastMethod, label or pid.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The board's clients slot is replaced."
+          },
+          "errors": [],
+          "preconditions": [
+            "Consumed from s1; a local call on the main thread."
+          ],
+          "postconditions": [
+            "daemon.debug-status on the admin worker returns {clients: snapshot().clients}, equal to today's attachedClients()."
+          ]
+        },
+        {
+          "name": "StoreGuard.reclaim",
+          "signature": "(threadId: number) => Promise<{ readonly released: readonly StoreId[]; readonly unhealthy: readonly StoreId[] }>",
+          "parameters": [
+            {
+              "name": "threadId",
+              "type": "number",
+              "purpose": "The exited worker's thread id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ released, unhealthy }",
+            "meaning": "Locks released for the dead worker and stores that did not quiesce within their per-store limit."
+          },
+          "errors": [],
+          "preconditions": [
+            "Consumed from s1; called by the router on every worker exit before the replacement starts."
+          ],
+          "postconditions": [
+            "reclaim logs and marks unhealthy stores itself; the router adds no marking."
+          ]
+        },
+        {
+          "name": "buildDaemonStatus",
+          "signature": "(src: DaemonStatusSources) => Promise<DaemonStatus>",
+          "parameters": [
+            {
+              "name": "src",
+              "type": "DaemonStatusSources",
+              "purpose": "On the admin worker: repos with completeness and unattributedUnwritable from the board's store slot; queueDepth and queueLanes from the board's two lanes and sweep; uptime, modelState, installedCommit, lmdbFileSizeMb and the maintenance state from the router's daemon.info hub op; store health from the shared health word.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<DaemonStatus>",
+            "meaning": "Today's DaemonStatus, every field and meaning unchanged, plus an additive maintenance field {state: 'compacting', since} while compaction runs."
+          },
+          "errors": [],
+          "preconditions": [
+            "Reused unchanged from src/daemon/status.ts:61; only its sources change."
+          ],
+          "postconditions": [
+            "Before the code-indexing worker's first store publish (it publishes the registry before starting its queue), the admin worker waits for it at most 5 s; past that bound it reads the registry from the store itself as today (listRepos with withCompleteness, a direct LMDB read), so repos is never answered empty for want of a publish.",
+            "With store health locks-lost it answers with storeFailure exactly as today."
+          ]
+        },
+        {
+          "name": "IndexQueue.start",
+          "signature": "(processor: (job: IndexJob) => Promise<void>) => Promise<void>",
+          "parameters": [
+            {
+              "name": "processor",
+              "type": "(job: IndexJob) => Promise<void>",
+              "purpose": "On the code-indexing worker: IndexerService.processJob for index-lane jobs; for summary-lane jobs, a remote processor that sends the job to the document-summary worker and resolves when that worker reports it finished (or failed).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "As today: resolves when stop() has been called and both drain loops ended."
+          },
+          "errors": [],
+          "preconditions": [
+            "IndexQueue, both lanes, the summary yield (waitForIndexIdle) and stop/drain stay in src/daemon/queue.ts unchanged and live only on the code-indexing worker."
+          ],
+          "postconditions": [
+            "Lane ordering and the summary yield are today's: a summary job is handed to the document-summary worker only when the summary lane would have started it today.",
+            "IndexQueue additionally writes two words in a shared block on every change: code-busy (index lane in flight or queued) and stopping; and publishes its lanes with publishLane.",
+            "A pause(): Promise<void> / resume() pair stops both lanes from taking new jobs and resolves once no job is in flight, for maintenance compaction."
+          ]
+        },
+        {
+          "name": "IndexerService.processJob",
+          "signature": "(job: IndexJob) => Promise<void>",
+          "parameters": [
+            {
+              "name": "job",
+              "type": "IndexJob",
+              "purpose": "A job; on the document-summary worker only doc-summarise-repo and doc-summarise-entity jobs arrive.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "The job's work done, as today."
+          },
+          "errors": [],
+          "preconditions": [
+            "On the document-summary worker IndexerService is built over a queue view whose isIndexIdle and isStopping read the shared words, whose waitForIndexIdle waits on the code-busy word, and whose takeDocSummaryEdit is a request to the code-indexing worker; the sweep's progress is published with publishLane('summary', ..., sweep).",
+            "DocSummarySweepDeps.takeEdit (src/indexer/doc-summary-sweep.ts:33) becomes async and runDocSummarySweep awaits it (:79); the guard that matters is unchanged, because the shouldStop and isCodeIdle checks that gate a summary still run after the last await and immediately before summarise (:89-91). src/indexer/__tests__/doc-summary-sweep.test.ts and summary-sweep-progress.test.ts are updated for the async hook."
+          ],
+          "postconditions": [
+            "docSummariseRepo and docSummariseEntity behave as today, including stopping between documents on shutdown and yielding to code work."
+          ]
+        },
+        {
+          "name": "compactGraphStore",
+          "signature": "(opts?: { readonly beforeRename?: () => Promise<boolean> }) => Promise<CompactResult>",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "{ readonly beforeRename?: () => Promise<boolean> }",
+              "purpose": "A pre-rename check run after the close and before the rename: maintenance passes one that confirms the native environment really closed (no other handle open). When it resolves false, compactGraphStore removes the compacted copy, reopens the original store and rejects with LmdbStoreError('compact: the environment was still open; nothing renamed'), never touching graph.lmdb or its lock file.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<CompactResult>",
+            "meaning": "Today's {beforeBytes, afterBytes, savedBytes, elapsedMs}."
+          },
+          "errors": [
+            {
+              "type": "LmdbStoreError",
+              "condition": "As today (store not open, rename or close failure)."
+            }
+          ],
+          "preconditions": [
+            "Called only by the main thread's maintenance while every request except daemon.status is held, after every thread that may hold a graph handle (the admin worker, the code-indexing worker, the document-summary worker and the main thread's own session work) has acknowledged that it has no store work in flight and has closed its handle with closeGraphStore.",
+            "Closing a worker's handle is within s1's contract: s1 verified that a worker's open, use, close and exit keep the process's LMDB locks (src/db/graph/__tests__/worker-thread-lock.test.ts), and the approved HLD's Stores section states a worker closing its handle is safe. lmdb-js shares one native environment per process and closes it only when its last handle closes, so the main thread's close inside compactGraphStore ends the environment only because every other handle is already closed; the rename and lock-file removal therefore never run under a handle that is still open.",
+            "Change site: src/db/graph/store.ts:861-875 gains the optional beforeRename hook between root.close() and renameSync; without the hook (today's callers) behaviour is unchanged."
+          ],
+          "postconditions": [
+            "Every thread reopens its handle lazily on next use after resume, onto the compacted file; no write is lost because nothing writes between the copy and the close."
+          ]
+        },
+        {
+          "name": "createShutdown",
+          "signature": "(parts: ShutdownParts) => (signal: string) => void",
+          "parameters": [
+            {
+              "name": "parts",
+              "type": "ShutdownParts",
+              "purpose": "stopBackgroundWork tells each worker to stop (the code-indexing worker stops its queue and watcher; the summary worker stops after its current document); queueDone settles when the code-indexing worker reports its drain finished or exits; closeStores flushes and disconnects clients, waits for the workers to exit, then closes the stores on the main thread.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "(signal: string) => void",
+            "meaning": "Today's re-entrant shutdown."
+          },
+          "errors": [],
+          "preconditions": [
+            "The locks-lost branch is unchanged."
+          ],
+          "postconditions": [
+            "daemon.shutdown and daemon.update served on the admin worker reach shutdown through a router hub op; a shutdown during maintenance waits for the compaction to finish or the hard-exit backstop."
+          ]
+        },
+        {
+          "name": "startDaemonWorker",
+          "signature": "(init: DaemonWorkerInit) => HubClient",
+          "parameters": [
+            {
+              "name": "init",
+              "type": "DaemonWorkerInit",
+              "purpose": "Guard block and hub port; the router also passes the decided embedding backend and the indexing shared block in workerData.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HubClient",
+            "meaning": "The worker's hub client."
+          },
+          "errors": [
+            {
+              "type": "NotADaemonWorkerError",
+              "condition": "Called on a main thread."
+            }
+          ],
+          "preconditions": [
+            "Consumed from s1; every s2 worker calls it first."
+          ],
+          "postconditions": [
+            "Each worker also applies the embedding backend the main thread pushes ('embedder.backend') with setActiveEmbedderBackend."
+          ]
+        },
+        {
+          "name": "createInDaemonClient",
+          "signature": "(unary: RpcHandlers, stream: StreamHandlers, deps?: InDaemonClientDeps) => StepDaemonClient",
+          "parameters": [
+            {
+              "name": "unary",
+              "type": "RpcHandlers",
+              "purpose": "The main thread's runtime tables.",
+              "optional": false
+            },
+            {
+              "name": "stream",
+              "type": "StreamHandlers",
+              "purpose": "As above.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "InDaemonClientDeps",
+              "purpose": "Gains a route function: a nested call to a non-session method goes through the router to its class target instead of the local table.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "StepDaemonClient",
+            "meaning": "The in-daemon client step handlers use."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A step handler's nested call to an indexing or admin method runs on that method's worker; a session method runs in-process as today."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "MethodClassEntry table",
+        "change": "new",
+        "details": "sc5's frozen {method, cls, stream} rows for every served handler (the rpc table at src/daemon/index.ts:507 with the makeUpdateHandlers spread at :1670, the stream table at :1906, the understanding routes merged at :1994-1995): ten admin, ten indexing, the rest session. repo.stats, daemon.backup and daemon.compact are indexing because they scan or rewrite the whole store and read the queue (src/daemon/repo-stats.ts:122-175).",
+        "callSites": [
+          "src/daemon/index.ts:507-1999",
+          "src/daemon/repo-stats.ts:122-175",
+          "src/daemon/server.ts:201-300"
+        ]
+      },
+      {
+        "entity": "Indexing shared block",
+        "change": "new",
+        "details": "A small SharedArrayBuffer created by the router and passed to both indexing workers: a code-busy word (index lane in flight or queued, written by IndexQueue on the code-indexing worker at every lane change) and a stopping word. The document-summary worker reads them for isIndexIdle/isStopping and waits on the code-busy word for waitForIndexIdle, so the summary yield works across threads without a request.",
+        "callSites": [
+          "src/daemon/queue.ts:262-318",
+          "src/indexer/index.ts:939-992"
+        ]
+      },
+      {
+        "entity": "Main-thread indexing port",
+        "change": "new",
+        "details": "The queue/indexer/watcher objects the main thread's handler runtime used (src/daemon/index.ts:533, 575, 826, 844, 1076-1077, 1403, 1571-1577, 1652) are replaced on the main thread by a port: depth, laneStatus and summarySweepProgress read the board (local on main, synchronous); enqueue, codeIndexWorkFor, depthForRepo and addRepo/removeRepo are internal requests to the code-indexing worker over the channel (codeIndexWorkFor becomes async for codeReview.freshness's computeCodeReviewFreshness dependency). Indexing-class handlers never run on the main thread.",
+        "callSites": [
+          "src/daemon/index.ts:533",
+          "src/daemon/index.ts:575",
+          "src/daemon/index.ts:814-850",
+          "src/daemon/index.ts:1060-1088",
+          "src/daemon/index.ts:1403",
+          "src/daemon/index.ts:1571-1577",
+          "src/daemon/index.ts:1647-1664"
+        ]
+      },
+      {
+        "entity": "Router daemon.info hub op and maintenance state",
+        "change": "new",
+        "details": "A main-thread hub service returning {startedAt, modelState, installedCommit, lmdbFileSizeMb, maintenance?}. bootstrapEmbeddingModel runs once on the main thread (src/daemon/lifecycle.ts:87-109); its decided backend is pushed to every worker ('embedder.backend') because the embedder's activeBackend is per isolate (src/indexer/embedder.ts:85-103). maintenance is {state: 'compacting', since} while compaction runs; DaemonStatus gains it as an additive optional field.",
+        "callSites": [
+          "src/daemon/index.ts:262",
+          "src/daemon/lifecycle.ts:87-109",
+          "src/indexer/embedder.ts:85-103",
+          "src/daemon/status.ts:61-90"
+        ]
+      },
+      {
+        "entity": "Maintenance controller",
+        "change": "new",
+        "details": "On the main thread. Idle: no non-admin request has arrived and none is in flight for idleMs (config, default 30 minutes), and the board shows both lanes idle; admin requests (status polls) do not count as activity. Worth it: reclaimable = file size - pages in use * pageSize, pages in use summed from getStats() (branch + leaf + overflow pages) over every named database of the GraphStore (src/db/graph/store.ts:250-312); compaction runs only when reclaimable >= 25% of the file and >= 256 MB (config). Sequence: set maintenance state; hold every incoming request except daemon.status in arrival order; wait for in-flight main-thread requests to finish; pause() the queue on the code-indexing worker and the summary worker's current job; each indexing worker and the admin worker close their graph handle and acknowledge; compactGraphStore on the main thread; resume the queue; forward the held requests in arrival order; clear maintenance state. Manual daemon.compact on the code-indexing worker keeps today's busy refusal (queue.depth > 0 or processing) and otherwise asks the main thread to run maintenance now and returns its CompactResult.",
+        "callSites": [
+          "src/db/graph/store.ts:250-312",
+          "src/db/graph/store.ts:831-890",
+          "src/daemon/index.ts:1647-1664"
+        ]
+      },
+      {
+        "entity": "Handler runtime construction",
+        "change": "invariant-change",
+        "details": "The construction of rpcHandlers/streamHandlers, the understanding routes, the registries and validations moves from main() into a runtime function taking its indexing dependencies: the main thread passes the indexing port; the code-indexing worker passes the real IndexQueue/IndexerService/Watcher. Handler bodies are unchanged. The admin worker runs only the admin module.",
+        "callSites": [
+          "src/daemon/index.ts:127-330",
+          "src/daemon/index.ts:507-1999"
+        ]
+      },
+      {
+        "entity": "DocSummarySweepDeps.takeEdit",
+        "change": "field-modify",
+        "details": "takeEdit(): { entityId } | undefined becomes takeEdit(): Promise<{ entityId } | undefined>, because on the document-summary worker the single-document edit jobs live in the code-indexing worker's queue. Today's invariant kept: no await between the final shouldStop/isCodeIdle checks and the summary starting (src/indexer/doc-summary-sweep.ts:89-91).",
+        "callSites": [
+          "src/indexer/doc-summary-sweep.ts:33",
+          "src/indexer/doc-summary-sweep.ts:79",
+          "src/indexer/index.ts:957"
+        ]
+      },
+      {
+        "entity": "RepoStatusSnapshot.completeness",
+        "change": "field-modify",
+        "details": "The board's RepoStatusSnapshot (src/daemon/threads/status-board.ts:40) makes completeness optional, as today's withCompleteness leaves it out when the completeness read fails (src/daemon/repo-completeness.ts:30-36), so a published row equals today's row exactly. A loosening of s1's sc4 type, recorded with the HLD's sc4 amendments.",
+        "callSites": [
+          "src/daemon/threads/status-board.ts:40",
+          "src/daemon/repo-completeness.ts:30-36"
+        ]
+      },
+      {
+        "entity": "compactGraphStore pre-rename hook",
+        "change": "field-add",
+        "details": "An optional beforeRename callback in compactGraphStore, run between the close (src/db/graph/store.ts:861) and the rename (:871-875); false aborts without renaming and reopens the original. Callers that pass nothing behave as today.",
+        "callSites": [
+          "src/db/graph/store.ts:855-886"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "One frozen class table with classOf and entries, loadable on any thread, and a coverage test over the runtime tables after all merges; s3 and s4 consume it."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "The router forwards admin and indexing requests as RequestEnvelopes to the registered admin and code-indexing workers, relays reply and frame envelopes, sends a CancelEnvelope on socket close, and uses the same envelopes for internal requests to the code-indexing worker (indexing port) and between the indexing workers (summary job execution)."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Router publishes clients; the code-indexing worker publishes the index lane and the store slot (repos with completeness, unattributed count) after every change; the summary worker publishes the summary lane and sweep; the admin worker reads snapshot(). s2 delivers the additive publishLane method and its hub binding."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Every worker starts through startDaemonWorker with the router's guard block; the router reclaims a dead worker's locks before replacing it."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The admin worker exits (uncaught exception, import failure, out of memory).",
+          "detection": "The router's 'exit' listener on the admin Worker fires; its in-flight admin requests are in the router's pending map.",
+          "response": "reclaim(threadId); unregister; answer each in-flight admin request {id, error: \"the daemon's admin thread stopped while serving <method>; retry\"}; start a replacement; admin requests arriving meanwhile wait for it (at most 30 s). Restarts are rate-limited (5 in 60 s); past the limit the router logs fatal and runs shutdown. s2 supervises the workers it introduces (admin, code-indexing, document-summary); s4 extends the same supervision to session workers and owns the unified view (HLD boundary note 2026-10-22).",
+          "userImpact": "One status call may fail; the next is answered by the new admin worker.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The code-indexing worker exits mid-job.",
+          "detection": "Its 'exit' listener fires; its pending indexing requests and internal port requests are in the router's pending map.",
+          "response": "reclaim; fail its pending requests with \"the daemon's indexing thread stopped while serving <method>; retry\"; tell the summary worker to abandon its current job; start a new code-indexing worker, which restarts the indexer from the persisted registry as a boot does (the interrupted job's file or repo is picked up by the start-up reconcile). The board keeps the last lane state until the new worker publishes.",
+          "userImpact": "An indexing request in flight errors; indexing resumes on its own.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The document-summary worker exits mid-summary.",
+          "detection": "Its 'exit' listener fires while the code-indexing worker's remote summary processor awaits a job.",
+          "response": "The router tells the code-indexing worker, whose remote processor rejects that job (logged as 'job failed', as a throwing summary is today) so the summary lane continues; a new summary worker is started before the next summary job is handed over.",
+          "userImpact": "One document's summary is retried on the next sweep, as a failed summary is today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A worker exits holding the DuckDB permit.",
+          "detection": "reclaim(threadId) reports duckdb in released, or in unhealthy past its quiescence limit.",
+          "response": "reclaim logs and marks; the replacement starts; daemon.status keeps answering.",
+          "userImpact": "db_file tools may fail after an unhealthy reclaim until restart.",
+          "recoverable": false
+        },
+        {
+          "scenario": "The graph store loses its locks.",
+          "detection": "Any thread's recordLocksLost wins the shared health word and broadcasts (s1).",
+          "response": "Unchanged: every thread's next store call fails with LmdbStoreLocksLostError; status answers with storeFailure; shutdown skips the drain and the close and ends by SIGKILL. Maintenance never starts while health is not ok, and an in-progress maintenance stops waiting and takes the same path.",
+          "userImpact": "Same as today.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A worker does not acknowledge the maintenance pause (a long job keeps running).",
+          "detection": "The maintenance controller's wait for every worker's pause acknowledgement passes its limit (10 minutes, config).",
+          "response": "Maintenance is abandoned before anything is closed: the queue resumes, held requests are forwarded, maintenance state clears, and a warning is logged; the idle check starts over. A manual daemon.compact in this case answers {error: 'daemon.compact: the daemon did not become idle within <limit>; try again later'}.",
+          "userImpact": "Compaction is skipped; nothing is lost and requests are served.",
+          "recoverable": true
+        },
+        {
+          "scenario": "compactGraphStore fails (copy, close or rename).",
+          "detection": "compactGraphStore rejects with LmdbStoreError.",
+          "response": "As today the store is left at its original path (the rename failure path restores .bak); the main thread reopens it, the workers reopen on next use, the queue resumes and held requests are forwarded; the failure is logged and returned to a manual daemon.compact caller as today's error message.",
+          "userImpact": "Compaction failed with an error; the daemon keeps serving.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A worker's reply or frame cannot be structured-cloned.",
+          "detection": "postMessage throws DataCloneError in the worker's reply path.",
+          "response": "The worker sends a ReplyEnvelope with error \"the result of <method> could not be returned: <message>\" (or a stream error frame), so the socket is always answered.",
+          "userImpact": "One request fails with a named error instead of hanging.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The socket closes while its request runs on a worker.",
+          "detection": "IpcServer's socket 'close' listener calls the cancel function from forward().",
+          "response": "For a stream request the router sends a CancelEnvelope and the worker aborts the stream handler's AbortSignal, as today. For a unary request nothing is aborted: the handler runs to completion as today and the router drops its late reply, as today's write to a closed socket does.",
+          "userImpact": "Same as today.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "daemon.status polls arrive every few seconds from the TUI and plugins while the daemon is otherwise idle.",
+          "expected": "They do not count as activity, so the idle timer still reaches 30 minutes and maintenance can run."
+        },
+        {
+          "input": "A session request arrives during maintenance.",
+          "expected": "It is held and served after compaction, in arrival order with other held requests; daemon.status meanwhile reports maintenance compacting."
+        },
+        {
+          "input": "daemon.compact while the queue has work.",
+          "expected": "Today's refusal: 'daemon.compact: indexer is busy (queue=N, processing=...)'."
+        },
+        {
+          "input": "The idle timer fires but reclaimable space is below 25% or 256 MB.",
+          "expected": "No maintenance; the check runs again after the next idle period."
+        },
+        {
+          "input": "daemon.status before the first store publish.",
+          "expected": "The admin worker waits for the first publish (at most 5 s); past that it reads the registry from the store as today, so repo.list and daemon.status answer exactly today's list."
+        },
+        {
+          "input": "A stream request for a unary-only method.",
+          "expected": "The serving thread falls back to the unary handler and the client gets one {id, result} line, as today."
+        },
+        {
+          "input": "A step handler on the main thread makes a nested call to repo.reindex.",
+          "expected": "The in-daemon client routes it to the code-indexing worker and returns its reply; it never runs on the main thread."
+        },
+        {
+          "input": "A file change while a long session request runs on the main thread.",
+          "expected": "The watcher on the code-indexing worker enqueues and indexes it; the main thread's busy loop does not delay it."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Every response keeps today's wire shape: {id, result} | {id, error}, IpcStreamMessage lines with the request's id, 'unknown method: X', 'invalid JSON' with id -1.",
+          "source": "c8"
+        },
+        {
+          "text": "The summary lane starts a summary only while the index lane is idle; lane order is the queue's arrival order per lane.",
+          "source": "c13"
+        },
+        {
+          "text": "Shutdown is re-entrant, keeps the 20 s backstop, closes the stores after the queue drained, and on locks-lost skips the drain and close and ends by SIGKILL.",
+          "source": "c15"
+        },
+        {
+          "text": "The attached-client registry validates the client envelope before recording it, and debug-status returns id, label, connectedAt, pid and lastMethod sorted by connectedAt.",
+          "source": "c2"
+        },
+        {
+          "text": "An LMDB write transaction commits all or nothing; vectors are written after the graph commit.",
+          "source": "c16"
+        },
+        {
+          "text": "Only daemon threads open the stores.",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through tsx (npx tsx --test); real worker_threads tests use helper worker scripts under __tests__/helpers and a temporary HOME, as s1's thread tests do",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin the class table, the board's lane merge, the router's bookkeeping and the maintenance decisions without real workers.",
+          "subjects": [
+            "classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique",
+            "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+            "publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today",
+            "maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does",
+            "reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required",
+            "router hold queue: requests held during maintenance are released in arrival order; daemon.status is never held; a target missing for 30 s answers the not-available error",
+            "runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)",
+            "compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove routing, isolation, the indexing split and maintenance with the real router and real workers on a temporary HOME and socket.",
+          "subjects": [
+            "each admin-class method runs on the admin worker's thread id and each indexing-class method on the code-indexing worker's thread id",
+            "daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs over a fixture repo and another worker keeps an LMDB write transaction open",
+            "a session request on the main thread is answered while an indexing pass runs; a file change is indexed while a session request spins the main thread",
+            "with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input",
+            "queue status from daemon.status and waitForIndexIdle on the summary worker reflect the code-indexing worker's real state",
+            "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
+            "a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker",
+            "maintenance: with idle forced and the threshold met, a session request and an admin read sent during compaction wait and are answered afterwards, daemon.status answers during it with maintenance compacting, every row written before compaction is present after it, and the file shrank",
+            "manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work",
+            "a worker that never acknowledges the pause makes maintenance abandon without closing anything",
+            "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+            "a worker started before the embedding bootstrap settles embeds with the decided backend after the push",
+            "maintenance with a worker that has not closed its graph handle: compaction is abandoned before any rename, and the store is untouched",
+            "after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held (lock probe as in worker-thread-lock.test.ts)",
+            "a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires"
+          ],
+          "fixturesNeeded": [
+            "temporary HOME with the daemon started in-process on a temporary socket",
+            "a fixture repository with code and markdown files large enough for an indexing pass of several seconds",
+            "a test hook reporting the serving thread id",
+            "a stub summariser so summaries run without a model"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Keep responses identical for existing clients.",
+          "subjects": [
+            "recorded responses: daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list, guide.get, repo.stats and daemon.compact from the threaded daemon equal the single-thread daemon's for the same fixture state (volatile fields compared by type; maintenance absent when not compacting)",
+            "existing suites pass unchanged in meaning: server-registry, daemon-status-field, daemon-status-lanes, status-store-failure, shutdown-store-failure, store-failure-dispatch, repo-stats, repo-stats-handler-contract, update-handlers, understanding-rpc, queue lanes, step-host, forward-step and mcp-process-e2e (servers built with directDispatch where they build their own tables)",
+            "debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself",
+            "repo.list and daemon.status before the first publish (publication withheld) return today's list read from the store; a repo whose completeness read fails has no completeness field, as today",
+            "the store suites that spawn src/db/graph/__tests__/helpers/store-child.ts pass unchanged with its server built through directDispatch"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "The installed daemon starts, answers daemon-ctl and stops cleanly.",
+          "subjects": [
+            "scripts/daemon-ctl.sh start, then status prints the daemon status; stop leaves no pid file, socket or worker behind",
+            "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: admin reads answer within 100 ms (p99) during an indexing pass with another worker holding an LMDB write transaction"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "contract: recorded responses of every admin method equal the single-thread daemon's",
+            "contract: existing server, status, shutdown, update and MCP suites pass unchanged in meaning"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: the class table equals the constructed handler tables' keys",
+            "integration: admin methods run on the admin thread and indexing methods on the code-indexing thread"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: a session request on the main thread is answered during an indexing pass"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "integration: a file change is indexed while a session request spins the main thread"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "integration: summaries start only while the index lane is idle, and job order and results equal the single-thread queue"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "integration: daemon.status queue fields and the summary worker's waitForIndexIdle reflect the code-indexing worker's real state",
+            "integration: codeReview.freshness gets codeIndexWorkFor from the code-indexing worker"
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "integration: during maintenance requests wait and are answered after, daemon.status reports compacting, no write is lost, the file shrinks",
+            "integration: manual daemon.compact keeps today's result and busy refusal",
+            "unit: idle detection ignores admin polls; the reclaimable thresholds are both required"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "One JavaScript thread serves everything: IpcServer (src/daemon/server.ts:79-300) calls handlers[method] directly; main() (src/daemon/index.ts:127-2099) builds the handler tables, starts IndexerService over IndexQueue and Watcher (index.ts:265-302) and wires shutdown (src/daemon/shutdown.ts:115-168). The queue's two lanes run as two drain loops on that thread with the summary lane yielding to the index lane (src/daemon/queue.ts:251-318). daemon.status reads the store and the live queue on the same thread (index.ts:1060-1088), so a long indexing step or handler delays it. daemon.compact compacts on demand when the queue is idle (index.ts:1647-1664, src/db/graph/store.ts:831-890). s1's thread pieces exist but are not wired in.",
+      "stateAfter": "The main thread routes: it keeps the socket, the attached-client registry (published to the board), the board, step state, the target registry, the guard block, LMDB's process-wide open and reader check, the embedding-backend decision, session handlers (until s3), the indexing port, maintenance and shutdown. Admin methods run on the admin worker from the board and daemon.info; indexing methods, IndexQueue, Watcher and IndexerService run on the code-indexing worker; summary jobs execute on the document-summary worker, still started only while code indexing is idle. Compaction runs as idle maintenance holding every request but daemon.status. Wire responses are unchanged; daemon.status gains an optional maintenance field.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the frozen method-class table and its coverage test over the constructed handler tables; nothing routes through it yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Move handler-table construction from main() into a runtime function taking its indexing dependencies, still called on the main thread with the real queue and indexer, so behaviour is byte-identical and every suite passes.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Give IpcServer the forward seam with today's wire writing and switch every construction site to directDispatch; existing suites pass unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add publishLane and its hub binding to the board, the daemon.info hub op, and the admin module reading them, with recorded-response tests against the single-thread answers.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Start the admin worker and route admin methods to it behind daemon.threads.enabled.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "daemon.threads.enabled"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "Start the code-indexing worker with the queue, watcher and indexer and the document-summary worker executing summary jobs; give the main thread's runtime the indexing port and the in-daemon client its routing; push the embedding backend; publish lanes and the store slot.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "daemon.threads.enabled"
+          ]
+        },
+        {
+          "order": 7,
+          "action": "Add worker supervision (exit handling, lock reclaim, restart limits) and rewire shutdown to stop the workers, wait for the drain and close the stores on the main thread after they exit.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "daemon.threads.enabled"
+          ]
+        },
+        {
+          "order": 8,
+          "action": "Add the maintenance controller (idle detection, reclaimable estimate, hold-all-but-status, pause and handle close, compaction, resume) and route daemon.compact through it, keeping today's responses.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "daemon.threads.enabled"
+          ]
+        },
+        {
+          "order": 9,
+          "action": "Run the contention, routing, indexing-order, maintenance, restart and smoke tests; then default daemon.threads.enabled on and release with the installer (clients need no update).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The IPC contract is unchanged: socket path and permissions, method names, request shapes and every response field and meaning, including 'unknown method', 'invalid JSON', stream framing, the stream-to-unary fallback, the named LmdbStoreLocksLostError message, and daemon.compact's result and busy refusal. daemon.status gains one optional field (maintenance) present only while compaction runs. The only behavioural change clients see is that during idle maintenance their requests other than daemon.status wait until compaction ends. With daemon.threads.enabled off the daemon runs single-threaded as today.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Whole queue on the code-indexing worker; the document-summary worker executes summary jobs",
+        "oneLineSummary": "IndexQueue keeps both lanes, their ordering and the summary yield unchanged on the code-indexing worker; its summary lane's processor sends each summary job to the document-summary worker and awaits it, so lane semantics are today's by construction.",
+        "approach": "Common to every alternative: a frozen sc5 class table (src/daemon/threads/method-class.ts) with a coverage test over the runtime handler tables; a router on the main thread wrapping IpcServer with a forward seam (unknown-method check in the router), the attached-client registry published to the board, and request holding during maintenance; an admin worker running a small admin module (daemon.status, debug-status, repo.list, config.show/catalog, guide.list/get, shutdown/update via a router hub op) reading the board and a daemon.info router hub op; session handlers still on the main thread with an indexing port in place of the local queue/indexer objects (board-backed sync reads for depth and lanes, internal requests to the code-indexing worker for codeIndexWorkFor, depthForRepo, enqueue, addRepo/removeRepo); the in-daemon client sending non-session methods through the router; maintenance compaction run by the main thread. Specific to a1: the code-indexing worker hosts IndexQueue, Watcher and IndexerService exactly as main() does today and serves every indexing-class method. The summary lane's drain loop stays in that IndexQueue, with its yield to the index lane unchanged; its processor, for a summary job, sends the job to the document-summary worker over a dedicated channel and awaits completion. The document-summary worker runs IndexerService's summary paths (docSummariseRepo, docSummariseEntity) against its own store handles; their queue reads (isIndexIdle, isStopping) come from two words in a shared block the code-indexing worker writes, waitForIndexIdle waits on that word, and takeDocSummaryEdit is a request back to the code-indexing worker. Each worker publishes its own lane (publishLane) and sweep progress to the board.",
+        "pros": [
+          "The lane ordering, the summary yield and stop/drain stay in the one existing IndexQueue, so ac6's 'same order and results as today' holds by construction",
+          "The model-heavy summary work runs off the code-indexing thread, so code indexing never waits on a summary's CPU or I/O",
+          "Smallest change to queue.ts and indexer code: a remote processor for one lane plus shared-word reads for the sweep"
+        ],
+        "cons": [
+          "A summary job runs on another thread while its lane state lives on the code worker, so the code worker's event loop must stay responsive to forward and complete jobs (it is, apart from synchronous indexing steps)",
+          "takeDocSummaryEdit becomes a cross-thread request inside the sweep"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Split lanes: each indexing worker owns its lane, coordinated through a shared code-busy word",
+        "oneLineSummary": "IndexQueue is split: the code-indexing worker owns the index lane, the document-summary worker owns the summary lane and the sweep; summary jobs enqueued on the code side are forwarded to the summary worker, and the yield reads a shared code-busy word.",
+        "approach": "Common parts as in a1. IndexQueue gains a per-thread lane set: on the code-indexing worker only the index lane runs and a summary job passed to enqueue is forwarded (through the router) to the document-summary worker; on the document-summary worker only the summary lane runs, and isIndexIdle / waitForIndexIdle read and wait on a shared code-busy word (index lane in flight or queued) that the code worker updates. depth, laneStatus and depthForRepo are composed from both workers' board lanes; takeDocSummaryEdit is local to the summary worker.",
+        "pros": [
+          "Each worker is self-contained: the summary sweep, its edits and its lane live together",
+          "No job forwarding per summary execution, only per enqueue"
+        ],
+        "cons": [
+          "The queue's ordering logic is duplicated across two partial queues; depth, depthForRepo and codeIndexWorkFor must be recomposed from two places, so equality with today's ordering is a property to re-prove rather than inherit",
+          "A summary enqueued during the forward hop is invisible to either side's depth for that moment, so status can briefly under-count",
+          "Larger change to queue.ts semantics and its tests"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Self-contained workers, but ac6, ac7 and k7 are only partial because the queue's ordering is split and recomposed."
+      },
+      {
+        "id": "a3",
+        "name": "Both lanes on one indexing worker (no second thread)",
+        "oneLineSummary": "One indexing worker hosts today's queue with both lanes; no document-summary thread.",
+        "approach": "Common parts as in a1, but a single indexing worker runs IndexQueue with both lanes and IndexerService unchanged, as the original HLD's single indexing thread did.",
+        "pros": [
+          "Smallest change: the queue and indexer move unchanged onto one worker",
+          "No cross-thread summary handling"
+        ],
+        "cons": [
+          "Violates k3 as amended (code indexing and document summaries on two threads): a summary's synchronous work still delays code indexing on the same thread",
+          "Rejected by the stakeholder's 2026-10-22 decision"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Violates ac6 and the stakeholder's two-thread decision."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Pause-acknowledgement limit for maintenance (default 10 minutes) and the maintenance thresholds (30 min idle, 25% and 256 MB reclaimable) are config values; confirm the defaults after the first live runs.",
+      "Session workers (s3) must join the maintenance pause: s3 adds them to the set of threads that close their graph handle and acknowledge before compaction.",
+      "Supervision boundary: s2 supervises the workers it introduces (exit handling, lock reclaim, replacement, restart limit) so no s2 worker crash leaves the daemon broken until s4; s4 extends it to every worker class. Recorded as an HLD boundary note on 2026-10-22."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/shutdown.ts:115-168"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/server.ts:16-32"
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "s1"
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "s4"
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "s5"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/threads/worker-entry.ts:40-48"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/db/graph/store.ts:831-890"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/daemon/server.ts:201-293"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/daemon/queue.ts:251-318"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "src/daemon/shutdown.ts:64-71"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/db/entities.ts:223-330"
+    }
+  ]
+}

@@ -75,15 +75,25 @@ test('loadTracker accepts signoff-request once declared; openSignoffRequest open
 	});
 	const opened = tracker.openSignoffRequest(SPEC);
 	assert.deepEqual(opened, { ok: true, value: { ref: 'acme/demo#12', url: 'https://github.com/acme/demo/pull/12' } });
-	assert.deepEqual(calls[0], ['pr', 'create', '--repo', 'acme/demo', '--head', 'insrc/signoff/s7', '--title', 'Signoff: LLD s7', '--body', 'Please review the LLD.']);
-	assert.equal(calls[1]?.[0], 'api');
-	assert.match(calls[1]?.join(' ') ?? '', /repos\/acme\/demo\/issues\/40\/comments/);
-	assert.match(calls[1]?.join(' ') ?? '', /Signoff requested: https:\/\/github.com\/acme\/demo\/pull\/12/);
-	assert.match(calls[1]?.join(' ') ?? '', /insrc:signoff-request:acme\/demo#12/);
+	assert.deepEqual(calls[0], ['pr', 'list', '--repo', 'acme/demo', '--head', 'insrc/signoff/s7', '--state', 'open', '--json', 'url'], 'an open pull request from the branch is looked for first');
+	assert.deepEqual(calls[1], ['pr', 'create', '--repo', 'acme/demo', '--head', 'insrc/signoff/s7', '--title', 'Signoff: LLD s7', '--body', 'Please review the LLD.']);
+	assert.equal(calls[2]?.[0], 'api');
+	assert.match(calls[2]?.join(' ') ?? '', /repos\/acme\/demo\/issues\/40\/comments/);
+	assert.match(calls[2]?.join(' ') ?? '', /Signoff requested: https:\/\/github.com\/acme\/demo\/pull\/12/);
+	assert.match(calls[2]?.join(' ') ?? '', /insrc:signoff-request:acme\/demo#12/);
+
+	// a repeat after a failed recording: the branch already has an open pull request, so it is reused and no second one is created
+	const repeat = fakeGh(args => {
+		if (args[1] === 'list') return JSON.stringify([{ url: 'https://github.com/acme/demo/pull/12' }]);
+		if (args[1] === 'create') throw execError({ stderr: 'a pull request for branch already exists' });
+		return '987654';
+	});
+	assert.deepEqual(tracker.openSignoffRequest(SPEC), { ok: true, value: { ref: 'acme/demo#12', url: 'https://github.com/acme/demo/pull/12' } });
+	assert.equal(repeat.some(c => c[1] === 'create'), false, 'no second pull request is created');
 
 	// a link comment that fails leaves the request standing: it is returned, never opened twice
 	fakeGh(args => {
-		if (args[0] === 'pr') return 'https://github.com/acme/demo/pull/13';
+		if (args[0] === 'pr') return args[1] === 'list' ? '[]' : 'https://github.com/acme/demo/pull/13';
 		throw execError({ stderr: 'HTTP 403: Resource not accessible' });
 	});
 	assert.deepEqual(tracker.openSignoffRequest(SPEC), { ok: true, value: { ref: 'acme/demo#13', url: 'https://github.com/acme/demo/pull/13' } });

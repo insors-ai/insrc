@@ -137,6 +137,15 @@ function addAssignee(issue: IssueRef, who: string): PortResult<string[]> {
 
 const PULL_URL_RE = /https?:\/\/\S+\/pull\/([0-9]+)/;
 
+/** The url of the open pull request from this branch, or undefined when there is none (or gh's answer is not the expected list). */
+function openPullRequestOf(owner: string, repo: string, branch: string): string | undefined {
+	const raw = runGh(['pr', 'list', '--repo', `${owner}/${repo}`, '--head', branch, '--state', 'open', '--json', 'url']);
+	try {
+		const list = JSON.parse(raw) as Array<{ url?: string | undefined }>;
+		return Array.isArray(list) ? list.find(p => typeof p?.url === 'string' && PULL_URL_RE.test(p.url))?.url : undefined;
+	} catch { return undefined; }
+}
+
 /**
  * Open the signoff request as a pull request from the branch that holds the committed artifacts, then link it from the stage's
  * issue with one comment. The pull request is the request: if the link comment fails the request still stands (its ref is kept on
@@ -146,7 +155,9 @@ function openSignoffRequest(owner: string, repo: string, spec: SignoffRequestSpe
 	return attempt(() => {
 		if (spec.branch.trim().length === 0) throw new GhCommandError('rejected', 'a signoff request needs the branch that holds the committed artifacts');
 		if (!ISSUE_REF_RE.test(spec.issue)) throw new GhCommandError('rejected', `malformed issue reference '${spec.issue}' (expected owner/repo#N)`);
-		const created = runGh(['pr', 'create', '--repo', `${owner}/${repo}`, '--head', spec.branch, '--title', spec.title, '--body', spec.body]);
+		// a branch that already has an open pull request (a repeat after a failed recording) reuses it: gh refuses a second one
+		const existing = openPullRequestOf(owner, repo, spec.branch);
+		const created = existing ?? runGh(['pr', 'create', '--repo', `${owner}/${repo}`, '--head', spec.branch, '--title', spec.title, '--body', spec.body]);
 		const match = PULL_URL_RE.exec(created);
 		if (match === null) throw new GhCommandError('rejected', `gh did not print the pull request url: '${created.slice(0, 120)}'`);
 		const url = match[0];
@@ -169,7 +180,7 @@ function readSignoffState(request: SignoffRequestRef): PortResult<'open' | 'chan
 		if (!ISSUE_REF_RE.test(request.ref)) throw new GhCommandError('rejected', `malformed signoff request reference '${request.ref}' (expected owner/repo#N)`);
 		const { owner, repo, number } = parseIssueRef(request.ref);
 		const raw = runGh(['pr', 'view', number, '--repo', `${owner}/${repo}`, '--json', 'state,mergedAt,reviewDecision']);
-		let parsed: { state?: string; mergedAt?: string | null; reviewDecision?: string | null };
+		let parsed: { state?: string | undefined; mergedAt?: string | null | undefined; reviewDecision?: string | null | undefined };
 		try {
 			parsed = JSON.parse(raw) as typeof parsed;
 		} catch {

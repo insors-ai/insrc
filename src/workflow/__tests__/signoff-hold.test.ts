@@ -48,19 +48,19 @@ const policy = (signoffStages: TeamPolicy['signoffStages']): TeamPolicy => ({
 	source: { ref: 'origin/main', fetchedAt: '2026-01-01T00:00:00Z', firstCommit: 'abc', firstCommitTime: '2026-06-01T00:00:00Z', anchorKnown: true },
 }) as TeamPolicy;
 
-function serviceFor(k: ReturnType<typeof kit>): LifecycleService {
-	return new LifecycleService({ store: k.store, evidence: ctx => createCompletionEvidence(k.repo, { ...ctx, enforce: false, history: new History(k.sidecar) }), now: clock() });
+function serviceFor(k: ReturnType<typeof kit>, enforce = false): LifecycleService {
+	return new LifecycleService({ store: k.store, evidence: ctx => createCompletionEvidence(k.repo, { ...ctx, enforce, history: new History(k.sidecar) }), now: clock() });
 }
 
 /** A Story whose Tasks passed their builds; its code review blocks (advisory), so the Story waits for the BUILD approval with an override. */
-async function readyStory(k: ReturnType<typeof kit>): Promise<LifecycleService> {
+async function readyStory(k: ReturnType<typeof kit>, enforce = false): Promise<LifecycleService> {
 	await seedEpic(k);
 	await k.store.write({ ...(await k.store.read(BUILD)), payload: { body: { tasks: [{ id: 't1', passed: true }, { id: 't2', passed: true }] }, citations: [] } }, alice);
 	await k.store.write({ ...(await k.store.read(CR)), payload: { body: { verdict: 'block', counts: { high: 1, med: 0, low: 0 } }, citations: [] } }, alice);
 	for (const t of [T1, T2]) {
 		await new History(k.sidecar).appendLog(t, { id: `round-${t}`, actor: bob, timestamp: '2026-10-21T12:00:00.000Z', operation: 'update', outcome: { result: 'pass', summary: 'ok', data: { kind: 'build-round' } } });
 	}
-	const svc = serviceFor(k);
+	const svc = serviceFor(k, enforce);
 	await svc.completeIfRolledUp(T1, bob);
 	await svc.completeIfRolledUp(T2, bob);
 	assert.equal((await k.store.read(STORY)).lifecycle.status, 'draft', 'the blocked review holds the Story until the approval');
@@ -129,5 +129,24 @@ test('settleSignoff completes the Story and its Epic once signed-off is recorded
 		assert.equal((await k.store.read(STORY)).lifecycle.status, 'completed');
 		assert.equal((await k.store.read(EPIC)).lifecycle.status, 'completed');
 		for (const record of RECORDS) assert.equal((await k.store.read(record)).lifecycle.status, 'completed', record);
+	} finally { k.done(); }
+});
+
+test('settleSignoff completes a Story whose BUILD was approved over a blocking code review under enforcement: the override the approval stored is read back', async () => {
+	const k = kit();
+	try {
+		const svc = await readyStory(k, true);
+		const port = {
+			whoAmI: (): PortResult<string> => ({ ok: true, value: 'bob' }),
+			readSignoffState: (_r: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'> => ({ ok: true, value: 'completed' }),
+			setAssignee: (): PortResult<void> => ({ ok: true, value: undefined }),
+		} as unknown as TrackerPort;
+		_setSignoffDepsForTests({ readPolicy: () => ({ ok: true, value: policy(['BUILD']) }), loadTracker: () => ({ ok: true, value: port }), resolveIssue: () => 'acme/demo#2', lifecycleFor: () => svc });
+
+		await approveBuild(k, svc);
+		await svc.apply(BUILD, 'open-signoff', bob, { request: signoffReferenceOf({ ref: 'acme/demo#9' }) });
+		assert.deepEqual(await settleSignoff(k.repo, { unit: 'story', repoPath: k.repo, epicHash: H, storyId: 's1' }), [], 'nothing went wrong');
+		assert.equal((await k.store.read(STORY)).lifecycle.status, 'completed');
+		assert.equal((await k.store.read(EPIC)).lifecycle.status, 'completed');
 	} finally { k.done(); }
 });

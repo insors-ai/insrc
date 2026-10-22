@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:21:14.153Z",
+    "updatedAt": "2026-10-22T08:24:16.622Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -515,6 +515,120 @@
               },
               {
                 "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "021748c3",
+        "ranAt": "2026-10-22T08:24:16.622Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/board-amendments.test.ts",
+                "title": "publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+                "title": "buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a repo row without completeness is published unchanged; underHold and maintenance are absent by default",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/board-amendments.test.ts",
+                "title": "a repo row without completeness is published unchanged; underHold and maintenance are absent by default",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+                "title": "publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+                "title": "with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 577,
+            "titles": [
+              {
+                "title": "buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress",
+                "result": "pass"
+              },
+              {
+                "title": "with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/board-amendments.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 531,
+            "titles": [
+              {
+                "title": "publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today",
+                "result": "pass"
+              },
+              {
+                "title": "a repo row without completeness is published unchanged; underHold and maintenance are absent by default",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 475,
+            "titles": [
+              {
+                "title": "TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target",
+                "result": "pass"
+              },
+              {
+                "title": "a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "StatusBoard keeps the latest status per thread and snapshots empty as specified",
+                "result": "pass"
+              },
+              {
+                "title": "publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing",
+                "result": "pass"
+              },
+              {
+                "title": "a status published from a worker appears in a main-thread snapshot",
                 "result": "pass"
               }
             ],

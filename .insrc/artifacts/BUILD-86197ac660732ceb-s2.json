@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:21:14.153Z",
+    "updatedAt": "2026-10-22T08:24:16.622Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
@@ -22,9 +22,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "IpcServer now takes forward(request, deliver) => cancel (plus now? and socketPath?) instead of handler tables; framing, the attached-client registry and reply writing are unchanged. Each connection tracks its in-flight requests, and a socket close cancels them: a stream is aborted, a unary reply is dropped. onRegistryChange(listener) fires on connect, on close, and after each message updates the registry, before the request is forwarded. directDispatch(rpc, stream) reproduces today's dispatch rules. handleMessage still returns a promise, settled when the request ends. All nine construction sites use directDispatch. The new wire test was also run once against a scratch copy of the original server, which gave identical replies. The test mapping now covers every suite the acceptance check names: server-registry, store-failure-dispatch, update-handlers, understanding-rpc, step-host, forward-step, mcp-process-e2e, and the store-child suites shutdown-store-failure, steering-refresh-through-daemon and review-source-roots-daemon.",
+    "summary": "Added StatusBoard.publishLane(lane, status, sweep?) with its 'board.publishLane' hub op and a StatusBoardClient.publishLane method. The board keeps both lanes; the summary lane's publisher sets or clears the sweep; idle means both lanes are at depth 0 and not processing. Added queueStatusFromBoard (status.ts), which maps the board's lanes to daemon.status's queueDepth and queueLanes through composeQueueLanes, as today. RepoStatusSnapshot.completeness is now optional; RequestEnvelope has an optional underHold; DaemonStatus has an optional maintenance {state:'compacting', since (ISO), activity, reason}. Nothing sets these new fields yet. The existing board and status suites pass.",
     "testRecord": {
       "md": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S002/TESTS.md"
     },
@@ -34,142 +38,177 @@
           "file": "src/daemon/__tests__/delivery-handler-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/list-models.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/server-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/import-graph.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/helpers/method-class-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/method-class.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/server-forward.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/store-failure-dispatch.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/understanding-rpc.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/update-handlers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/server.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/step-host.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/helpers/store-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/forward-step.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/mcp-process-e2e.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:21:14.153Z"
+        "timestamp": "2026-10-22T08:24:16.622Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/status.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:24:16.622Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/board-amendments.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:24:16.622Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/channel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:24:16.622Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/status-board.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:24:16.622Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:24:16.622Z"
       }
     ],
-    "commit": "eb38fa92"
+    "commit": "021748c3"
   }
 }

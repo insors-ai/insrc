@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 30 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -105,3 +105,30 @@ Run at 2026-10-22T08:21:14.153Z on commit `eb38fa92`. Tests check: **passed**. 2
 | `src/daemon/steps/__tests__/step-host.test.ts` | 0 | 6 | 1.2 s |  |
 | `src/mcp/__tests__/forward-step.test.ts` | 0 | 5 | 0.9 s |  |
 | `src/mcp/__tests__/mcp-process-e2e.test.ts` | 0 | 4 | 4.8 s |  |
+
+## t4
+
+Run at 2026-10-22T08:24:16.622Z on commit `021748c3`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today | `src/daemon/threads/__tests__/board-amendments.test.ts` |
+| pass | buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress | `src/daemon/__tests__/daemon-status-lanes.test.ts` |
+
+**unit: a repo row without completeness is published unchanged; underHold and maintenance are absent by default**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a repo row without completeness is published unchanged; underHold and maintenance are absent by default | `src/daemon/threads/__tests__/board-amendments.test.ts` |
+| pass | publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing | `src/daemon/threads/__tests__/registry-board.test.ts` |
+| pass | with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes | `src/daemon/__tests__/daemon-status-lanes.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/daemon-status-lanes.test.ts` | 0 | 2 | 0.6 s |  |
+| `src/daemon/threads/__tests__/board-amendments.test.ts` | 0 | 2 | 0.5 s |  |
+| `src/daemon/threads/__tests__/registry-board.test.ts` | 0 | 5 | 0.5 s |  |

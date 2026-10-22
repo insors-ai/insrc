@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -49,3 +49,59 @@ Run at 2026-10-22T08:08:05.117Z on commit `6ce2d867`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/method-class.test.ts` | 0 | 3 | 0.9 s |  |
+
+## t3
+
+Run at 2026-10-22T08:21:14.153Z on commit `eb38fa92`. Tests check: **passed**. 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback | `src/daemon/__tests__/server-forward.test.ts` |
+| pass | closing the socket aborts a stream request and drops a unary request's late reply while its handler completes | `src/daemon/__tests__/server-forward.test.ts` |
+
+**integration: the registry hook fires on connect, close and each message before the request is forwarded**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the registry hook fires on connect, close and each message before the request is forwarded | `src/daemon/__tests__/server-forward.test.ts` |
+
+**integration: existing server, dispatch, update, understanding, step and MCP suites and the store-child suites pass with servers built through directDispatch**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | handleMessage with a valid client envelope updates label/pid/lastMethod | `src/daemon/__tests__/server-registry.test.ts` |
+| pass | the daemon.debug-status contract returns { clients } from the registry with no side effects (k1/k5) | `src/daemon/__tests__/server-registry.test.ts` |
+| pass | dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner | `src/daemon/__tests__/store-failure-dispatch.test.ts` |
+| pass | t3: daemon.update returns { launched:true } and schedules shutdown, without exiting the process | `src/daemon/__tests__/update-handlers.test.ts` |
+| pass | RPC rejects forged authority and returns typed revision conflicts | `src/daemon/__tests__/understanding-rpc.test.ts` |
+| pass | Real watch snapshots handle races, reconnect, deletion and abort with exact terminal frames | `src/daemon/__tests__/understanding-rpc.test.ts` |
+| pass | Healthy shutdown flushes final frames before storage close and stops only once | `src/daemon/__tests__/understanding-rpc.test.ts` |
+| pass | Socket write flushing is bounded and settles disconnected writes | `src/daemon/__tests__/understanding-rpc.test.ts` |
+| pass | step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message | `src/daemon/steps/__tests__/step-host.test.ts` |
+| pass | cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon | `src/daemon/steps/__tests__/step-host.test.ts` |
+| pass | forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs | `src/mcp/__tests__/forward-step.test.ts` |
+| pass | forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged | `src/mcp/__tests__/forward-step.test.ts` |
+| pass | forwarder: a multi-byte character split across two socket chunks arrives whole | `src/mcp/__tests__/forward-step.test.ts` |
+| pass | ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError | `src/mcp/__tests__/mcp-process-e2e.test.ts` |
+| pass | healthy shutdown is unchanged: queue drained, connections closed in order, normal exit | `src/daemon/__tests__/shutdown-store-failure.test.ts` |
+| pass | status after failure: storeFailure names another process and does not contain 'semume' | `src/daemon/__tests__/shutdown-store-failure.test.ts` |
+| pass | the steering refresh of an update gets the repositories from the daemon and opens no store | `src/cli/services/__tests__/steering-refresh-through-daemon.test.ts` |
+| pass | CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store | `src/cli/services/__tests__/review-source-roots-daemon.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/cli/services/__tests__/review-source-roots-daemon.test.ts` | 0 | 1 | 1 s |  |
+| `src/cli/services/__tests__/steering-refresh-through-daemon.test.ts` | 0 | 1 | 0.7 s |  |
+| `src/daemon/__tests__/server-forward.test.ts` | 0 | 3 | 0.6 s |  |
+| `src/daemon/__tests__/server-registry.test.ts` | 0 | 6 | 0.5 s |  |
+| `src/daemon/__tests__/shutdown-store-failure.test.ts` | 0 | 5 | 3.8 s |  |
+| `src/daemon/__tests__/store-failure-dispatch.test.ts` | 0 | 3 | 3.3 s |  |
+| `src/daemon/__tests__/understanding-rpc.test.ts` | 0 | 5 | 1.5 s |  |
+| `src/daemon/__tests__/update-handlers.test.ts` | 0 | 3 | 0.5 s |  |
+| `src/daemon/steps/__tests__/step-host.test.ts` | 0 | 6 | 1.2 s |  |
+| `src/mcp/__tests__/forward-step.test.ts` | 0 | 5 | 0.9 s |  |
+| `src/mcp/__tests__/mcp-process-e2e.test.ts` | 0 | 4 | 4.8 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:08:05.117Z",
+    "updatedAt": "2026-10-22T08:21:14.153Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -109,6 +109,412 @@
               },
               {
                 "title": "the method-class module loads on a worker without importing a handler module",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "eb38fa92",
+        "ranAt": "2026-10-22T08:21:14.153Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/server-forward.test.ts",
+                "title": "new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/server-forward.test.ts",
+                "title": "closing the socket aborts a stream request and drops a unary request's late reply while its handler completes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the registry hook fires on connect, close and each message before the request is forwarded",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/server-forward.test.ts",
+                "title": "the registry hook fires on connect, close and each message before the request is forwarded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "existing server, dispatch, update, understanding, step and MCP suites and the store-child suites pass with servers built through directDispatch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/server-registry.test.ts",
+                "title": "handleMessage with a valid client envelope updates label/pid/lastMethod",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/server-registry.test.ts",
+                "title": "the daemon.debug-status contract returns { clients } from the registry with no side effects (k1/k5)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
+                "title": "dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/update-handlers.test.ts",
+                "title": "t3: daemon.update returns { launched:true } and schedules shutdown, without exiting the process",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "RPC rejects forged authority and returns typed revision conflicts",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "Real watch snapshots handle races, reconnect, deletion and abort with exact terminal frames",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "Healthy shutdown flushes final frames before storage close and stops only once",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "Socket write flushing is bounded and settles disconnected writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/step-host.test.ts",
+                "title": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/step-host.test.ts",
+                "title": "cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "forwarder: a multi-byte character split across two socket chunks arrives whole",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/steering-refresh-through-daemon.test.ts",
+                "title": "the steering refresh of an update gets the repositories from the daemon and opens no store",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
+                "title": "CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 993,
+            "titles": [
+              {
+                "title": "CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/steering-refresh-through-daemon.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 729,
+            "titles": [
+              {
+                "title": "the steering refresh of an update gets the repositories from the daemon and opens no store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/server-forward.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 569,
+            "titles": [
+              {
+                "title": "new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback",
+                "result": "pass"
+              },
+              {
+                "title": "closing the socket aborts a stream request and drops a unary request's late reply while its handler completes",
+                "result": "pass"
+              },
+              {
+                "title": "the registry hook fires on connect, close and each message before the request is forwarded",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/server-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 537,
+            "titles": [
+              {
+                "title": "a new connection registers an entry labelled unknown until a message identifies it",
+                "result": "pass"
+              },
+              {
+                "title": "handleMessage with a valid client envelope updates label/pid/lastMethod",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed client envelope is ignored — the connection stays unknown/pid undefined",
+                "result": "pass"
+              },
+              {
+                "title": "socket close deletes the entry; a double-close / close-before-message is idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "attachedClients() returns entries sorted by connectedAt",
+                "result": "pass"
+              },
+              {
+                "title": "the daemon.debug-status contract returns { clients } from the registry with no side effects (k1/k5)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3784,
+            "titles": [
+              {
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              },
+              {
+                "title": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+                "result": "pass"
+              },
+              {
+                "title": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+                "result": "pass"
+              },
+              {
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3253,
+            "titles": [
+              {
+                "title": "dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner",
+                "result": "pass"
+              },
+              {
+                "title": "detection through the real wrappers: a read through the dispatcher records at once",
+                "result": "pass"
+              },
+              {
+                "title": "periodic check records locks-lost when no request or write has met the failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1480,
+            "titles": [
+              {
+                "title": "RPC rejects forged authority and returns typed revision conflicts",
+                "result": "pass"
+              },
+              {
+                "title": "Real watch snapshots handle races, reconnect, deletion and abort with exact terminal frames",
+                "result": "pass"
+              },
+              {
+                "title": "All five understanding roles require critical core descriptors",
+                "result": "pass"
+              },
+              {
+                "title": "Healthy shutdown flushes final frames before storage close and stops only once",
+                "result": "pass"
+              },
+              {
+                "title": "Socket write flushing is bounded and settles disconnected writes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/update-handlers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 548,
+            "titles": [
+              {
+                "title": "t3: daemon.update returns { launched:true } and schedules shutdown, without exiting the process",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a launch guard failure surfaces as a result.error envelope and does NOT schedule shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "t3: daemon.updateOutcome returns the last outcome, and null when none exists",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/step-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1192,
+            "titles": [
+              {
+                "title": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message",
+                "result": "pass"
+              },
+              {
+                "title": "equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store",
+                "result": "pass"
+              },
+              {
+                "title": "the step host registers the workflow runners: a workflow run continues past its plan phase through step.call",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "state store miss: each of the four stores says the daemon was restarted and the run must be started again",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_analyze through step.call refuses bad arguments with a clear error, not a step-failed frame",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/forward-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 899,
+            "titles": [
+              {
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "MCP tool surface: the thirteen tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              },
+              {
+                "title": "the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder: a multi-byte character split across two socket chunks arrives whole",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4754,
+            "titles": [
+              {
+                "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
+                "result": "pass"
+              },
+              {
+                "title": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token",
+                "result": "pass"
+              },
+              {
+                "title": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
                 "result": "pass"
               }
             ],

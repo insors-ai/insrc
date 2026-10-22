@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:08:05.117Z",
+    "updatedAt": "2026-10-22T08:21:14.153Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
@@ -18,9 +18,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "Added src/daemon/threads/method-class.ts (sc5): a frozen [method, class, stream] row for every served method — 10 admin, 10 indexing, 156 other unary methods and 16 stream methods as session — with methodClasses.classOf and entries. Its only import is the type-only MethodClass. The coverage test builds the tables through buildHandlerRuntime and reports missing and stale entries (including a wrong stream flag); it is also run against drifted tables to show both kinds are caught. A worker loads the module alone.",
+    "summary": "IpcServer now takes forward(request, deliver) => cancel (plus now? and socketPath?) instead of handler tables; framing, the attached-client registry and reply writing are unchanged. Each connection tracks its in-flight requests, and a socket close cancels them: a stream is aborted, a unary reply is dropped. onRegistryChange(listener) fires on connect, on close, and after each message updates the registry, before the request is forwarded. directDispatch(rpc, stream) reproduces today's dispatch rules. handleMessage still returns a promise, settled when the request ends. All nine construction sites use directDispatch. The new wire test was also run once against a scratch copy of the original server, which gave identical replies. The test mapping now covers every suite the acceptance check names: server-registry, store-failure-dispatch, update-handlers, understanding-rpc, step-host, forward-step, mcp-process-e2e, and the store-child suites shutdown-store-failure, steering-refresh-through-daemon and review-source-roots-daemon.",
     "testRecord": {
       "md": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S002/TESTS.md"
     },
@@ -30,79 +34,142 @@
           "file": "src/daemon/__tests__/delivery-handler-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:08:05.117Z"
+        "timestamp": "2026-10-22T08:21:14.153Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:08:05.117Z"
+        "timestamp": "2026-10-22T08:21:14.153Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/list-models.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:08:05.117Z"
+        "timestamp": "2026-10-22T08:21:14.153Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:08:05.117Z"
+        "timestamp": "2026-10-22T08:21:14.153Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/server-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:08:05.117Z"
+        "timestamp": "2026-10-22T08:21:14.153Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:08:05.117Z"
+        "timestamp": "2026-10-22T08:21:14.153Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:08:05.117Z"
+        "timestamp": "2026-10-22T08:21:14.153Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/import-graph.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:08:05.117Z"
+        "timestamp": "2026-10-22T08:21:14.153Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/helpers/method-class-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:08:05.117Z"
+        "timestamp": "2026-10-22T08:21:14.153Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/method-class.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:08:05.117Z"
+        "timestamp": "2026-10-22T08:21:14.153Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T08:08:05.117Z"
+        "timestamp": "2026-10-22T08:21:14.153Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/server-forward.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:21:14.153Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/store-failure-dispatch.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:21:14.153Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/understanding-rpc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:21:14.153Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/update-handlers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:21:14.153Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:21:14.153Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/step-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:21:14.153Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/helpers/store-child.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:21:14.153Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/forward-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:21:14.153Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/mcp-process-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:21:14.153Z"
       }
     ],
-    "commit": "6ce2d867"
+    "commit": "eb38fa92"
   }
 }

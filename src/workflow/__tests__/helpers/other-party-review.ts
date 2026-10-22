@@ -79,7 +79,11 @@ export function stampOtherPartyReview(jsonPath: string): StampedReview {
 	const repo = dirname(dirname(dirname(jsonPath)));
 	const report = recordReviewSync(repo, artifactId, review);
 	const revision = typeof artifact.meta['revision'] === 'number' ? artifact.meta['revision'] : 0;
-	const lifecycle = lifecycleMeta({ status: 'draft', review: { verdict: 'pass', counts: review.counts, party: reviewedBy, reviewer: { id: `insrc:${reviewedBy}`, kind: 'agent', properties: {} }, report } }, { revision, at });
-	writeFileSync(jsonPath, JSON.stringify({ ...artifact, meta: { ...artifact.meta, ...lifecycle } }, null, 2) + '\n');
+	const fresh = lifecycleMeta({ status: 'draft', review: { verdict: 'pass', counts: review.counts, party: reviewedBy, reviewer: { id: `insrc:${reviewedBy}`, kind: 'agent', properties: {} }, report } }, { revision, at });
+	// a head that has a lifecycle already (approved, rejected) keeps it and gains the review
+	const existing = artifact.meta['lifecycle'] as Record<string, unknown> | undefined;
+	const meta = existing === undefined ? { ...artifact.meta, ...fresh }
+		: { ...artifact.meta, lifecycle: { ...existing, review: (fresh['lifecycle'] as { review: unknown }).review } };
+	writeFileSync(jsonPath, JSON.stringify({ ...artifact, meta }, null, 2) + '\n');
 	return { reviewedBy, path: jsonPath };
 }

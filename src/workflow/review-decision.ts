@@ -40,6 +40,7 @@ import type { Actor, Feedback } from './artifact-core/types.js';
 import type { FeedbackService } from './feedback/feedback-service.js';
 import { feedbackAnchorOf } from './feedback/legacy-anchor.js';
 import { approvalActorOf } from './artifact-core/approval-actor.js';
+import { approvalStateOf } from './artifact-core/approval-view.js';
 import { createRepoLifecycle } from './artifact-core/repo-lifecycle.js';
 import { approveWorkflowTarget, jsonPathForMd, rejectArtifactByJsonPath, type WorkflowApproveResult } from './gates.js';
 
@@ -162,7 +163,7 @@ export async function handleReviewDecision(
 		return { error: `${P}: send feedback needs at least one comment` };
 	}
 	if (decision !== 'feedback') {
-		const state = nonEmpty(meta['approvedAt']) ? 'approved' : nonEmpty(meta['rejectedAt']) ? 'rejected' : 'pending';
+		const state = approvalStateOf(meta);
 		if (state !== 'pending') {
 			return { error: `${P}: cannot ${decision} '${artifactId}': it is already ${state}, not awaiting review` };
 		}
@@ -184,8 +185,8 @@ export async function handleReviewDecision(
 		if (decision === 'approve') {
 			const lifecycle = deps.lifecycleFor?.(repoPath);
 			const res = await (deps.approve ?? approveWorkflowTarget)({
-				repoPath, artifactPath: jsonPath,
-				...(lifecycle !== undefined ? { lifecycle, actor: named ?? approvalActorOf(undefined) } : {}),
+				repoPath, artifactPath: jsonPath, actor: named ?? approvalActorOf(undefined),
+				...(lifecycle !== undefined ? { lifecycle } : {}),
 			});
 			approved = res.approved;
 			if (res.approved.length > 0) {
@@ -338,6 +339,3 @@ function companionPaths(body: Record<string, unknown>): string[] {
 		.map(r => r.split('\\').join('/').replace(/^\.\//, ''));
 }
 
-function nonEmpty(v: unknown): boolean {
-	return typeof v === 'string' && v.length > 0;
-}

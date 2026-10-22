@@ -18,7 +18,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
 import {
 	handleReviewDecision, REVIEW_COMMENT_MAX, REVIEW_COMMENTS_MAX,
@@ -29,7 +29,11 @@ import { ARTIFACTS_DIR } from '../storage.js';
 import type { Feedback } from '../artifact-core/types.js';
 import { IdentityService } from '../identity/identity-service.js';
 import { lifecycleFor, resetLifecycleRegistry } from '../../daemon/lifecycle-registry.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
+import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
+import type { ChangeLogEntry } from '../artifact-core/types.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
+import { approvedMeta, rejectedMeta } from './lifecycle-fixtures.js';
 
 const HASH = '8d4b90c9ab301e66';
 const ID = `LLD-${HASH}-s1`;
@@ -86,7 +90,22 @@ interface Stored {
 	readonly meta: { approvedAt?: string; rejectedAt?: string; rejectReason?: string };
 	readonly body: Record<string, unknown>;
 }
-function stored(jsonPath: string): Stored { return JSON.parse(readFileSync(jsonPath, 'utf8')) as Stored; }
+/** The head as the decision left it, with the approval and the rejection read back from the lifecycle and the log (nothing is stamped in the head). */
+function stored(jsonPath: string): Stored {
+	const head = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
+	const state = approvalStateOf(head.meta);
+	const log = new FileSidecarStore(dirname(dirname(dirname(jsonPath)))).readRecordsSync<ChangeLogEntry>('log', basename(jsonPath).replace(/\.json$/, ''));
+	const reject = state === 'rejected' ? [...log].reverse().find(e => e.operation === 'reject') : undefined;
+	const approval = (head.meta['lifecycle'] as { approval?: { at: string } } | undefined)?.approval;
+	for (const stamp of ['approvedAt', 'rejectedAt', 'rejectReason']) assert.equal(head.meta[stamp], undefined, `the head carries no ${stamp}`);
+	return {
+		meta: {
+			...(state === 'approved' && approval !== undefined ? { approvedAt: approval.at } : {}),
+			...(reject !== undefined ? { rejectedAt: reject.timestamp, ...(reject.outcome?.summary !== undefined ? { rejectReason: reject.outcome.summary } : {}) } : {}),
+		},
+		body: head.body,
+	};
+}
 
 async function decide(fx: Fixture, req: Omit<ReviewDecisionRequest, 'repo' | 'mdPath'> & Record<string, unknown>, deps: ReviewDecisionDeps = DEPS): Promise<ReviewDecisionResult> {
 	const r = await handleReviewDecision({ repo: fx.repo, mdPath: MD_REL, ...req } as ReviewDecisionRequest, undefined, deps);
@@ -192,8 +211,8 @@ function handleArtifactContentState(fx: Fixture): string {
 test('review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused', async () => {
 	const states: readonly [Record<string, unknown>, string][] = [
 		[{}, 'pending'],
-		[{ approvedAt: '2026-10-13T09:00:00.000Z' }, 'approved'],
-		[{ rejectedAt: '2026-10-13T09:00:00.000Z', rejectReason: 'no' }, 'rejected'],
+		[approvedMeta(), 'approved'],
+		[rejectedMeta(), 'rejected'],
 	];
 	for (const [meta, state] of states) {
 		const fx = makeFixture({ meta });
@@ -294,7 +313,7 @@ test('review decision: an invalid request (unknown decision, blank or over-long 
 	} finally { cleanup(edge.repo); }
 
 	// approve and reject need a pending artifact.
-	for (const meta of [{ approvedAt: '2026-10-13T09:00:00.000Z' }, { rejectedAt: '2026-10-13T09:00:00.000Z', rejectReason: 'no' }]) {
+	for (const meta of [approvedMeta(), rejectedMeta()]) {
 		for (const decision of ['approve', 'reject'] as const) {
 			const fx = makeFixture({ meta, reviewed: true });
 			try {
@@ -528,7 +547,7 @@ test("handleReviewDecision on a BUILD record: approve goes through the same appr
 			...DEPS,
 			approve: async (req) => { calls.push(req); return { approved: [], skipped: [{ path: jsonPath, reason: 'code review: reviewed by the party that built it' }] }; },
 		}) as ReviewDecisionResult;
-		assert.deepEqual(calls, [{ repoPath: repo, artifactPath: jsonPath }], 'the same call as for any record: the repository and the record');
+		assert.deepEqual(calls, [{ repoPath: repo, artifactPath: jsonPath, actor: { id: 'insrc:approval', kind: 'system', properties: {} } }], 'the same call as for any record: the repository, the record and who decides');
 		assert.equal(held.artifactId, id);
 		assert.equal(held.outcome, 'withheld');
 		assert.equal(held.reason, 'code review: reviewed by the party that built it', 'the reason is relayed');
@@ -556,4 +575,34 @@ test("handleReviewDecision on a BUILD record: approve goes through the same appr
 			assert.match((again as { error: string }).error, /it is already rejected, not awaiting review/);
 		}
 	} finally { cleanup(repo); }
+});
+
+test('review-decision.test.ts: a review decision records its resolution as a log entry', async () => {
+	// the rejection: an entry of the artifact's log with the reason, by the actor the decision names; the head carries no stamp
+	const rejected = makeFixture();
+	try {
+		const r = await decide(rejected, { decision: 'reject', comments: [WHOLE, INLINE], actor: { id: 'github:alice', kind: 'person', properties: {} } });
+		assert.equal(r.outcome, 'rejected');
+		const log = await lifecycleFor(rejected.repo).store.readWithHistory(ID);
+		const entry = log.changeLog.find(e => e.operation === 'reject');
+		assert.deepEqual([entry?.outcome?.result, entry?.outcome?.summary, entry?.actor.id], ['rejected', WHOLE.comment, 'github:alice']);
+		assert.equal(log.lifecycle.status, 'rejected');
+		const head = JSON.parse(readFileSync(rejected.jsonPath, 'utf8')) as { meta: Record<string, unknown> };
+		for (const stamp of ['approvedAt', 'rejectedAt', 'rejectReason']) assert.equal(head.meta[stamp], undefined, stamp);
+		// and the comments went through the FeedbackService, as sidecar lines with the decision that took effect
+		const lines = await entriesOf(rejected);
+		assert.equal(lines.length, 2);
+		assert.ok(lines.every(l => l.kind === 'comment'));
+	} finally { cleanup(rejected.repo); }
+
+	// the approval: an entry that names the approving actor; the feedback is saved after it
+	const approved = makeFixture({ reviewed: true });
+	try {
+		const r = await decide(approved, { decision: 'approve', comments: [WHOLE], actor: { id: 'github:alice', kind: 'person', properties: {} } });
+		assert.equal(r.outcome, 'approved');
+		const log = await lifecycleFor(approved.repo).store.readWithHistory(ID);
+		const entry = log.changeLog.find(e => e.operation === 'approve');
+		assert.deepEqual([entry?.actor.id, entry?.status], ['github:alice', { from: 'draft', to: 'approved' }]);
+		assert.equal(log.lifecycle.status, 'approved');
+	} finally { cleanup(approved.repo); }
 });

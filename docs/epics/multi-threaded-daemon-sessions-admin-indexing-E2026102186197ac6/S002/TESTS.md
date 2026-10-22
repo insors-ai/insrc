@@ -538,7 +538,7 @@ Run at 2026-10-22T12:14:53.345Z on commit `769f9bf5`. Tests check: **passed**. 1
 
 ## t17
 
-Run at 2026-10-22T13:50:51.563Z on commit `7aacd619`. Tests check: **passed**. 12 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-22T15:26:51.591Z on commit `3d98673a`. Tests check: **passed**. 12 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open**
 
@@ -569,16 +569,16 @@ Run at 2026-10-22T13:50:51.563Z on commit `7aacd619`. Tests check: **passed**. 1
 
 **smoke: scripts/daemon-ctl.sh start, then status prints the daemon status; stop leaves no pid file, socket or worker behind**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts (commit 4b5e4fe1), run as `npm run build && INSRC_SMOKE_TESTS=1 npx tsx --test src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts` against the compiled threaded daemon on a temporary HOME. It passed 2 of 2 runs on 2026-10-22 (output in /tmp/insrc-s2-t17-daemon-ctl-smoke.log).
+Reported by the builder, not run by the gate: **pass**. Evidence: src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts (commit 4b5e4fe1), run with `npm run build && INSRC_SMOKE_TESTS=1 npx tsx --test src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts` against the compiled threaded daemon on a temporary HOME; it passed on 2026-10-22, and the output of the last run is in /tmp/insrc-s2-t17-daemon-ctl-smoke.log.
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/__tests__/queue-threads.test.ts` | 0 | 3 | 0.5 s |  |
-| `src/daemon/__tests__/repo-completeness.test.ts` | 0 | 1 | 17.3 s |  |
-| `src/daemon/threads/__tests__/indexing-port.test.ts` | 0 | 4 | 1.3 s |  |
-| `src/daemon/threads/__tests__/indexing-worker.test.ts` | 0 | 4 | 9.5 s |  |
-| `src/daemon/threads/__tests__/latency-isolation.test.ts` | 0 | 2 | 36.9 s |  |
-| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 3 | 15.3 s |  |
-| `src/mcp/__tests__/mcp-process-e2e.test.ts` | 0 | 4 | 3.8 s |  |
+| `src/daemon/__tests__/queue-threads.test.ts` | 0 | 3 | 0.7 s |  |
+| `src/daemon/__tests__/repo-completeness.test.ts` | 0 | 1 | 18.6 s |  |
+| `src/daemon/threads/__tests__/indexing-port.test.ts` | 0 | 4 | 1.7 s |  |
+| `src/daemon/threads/__tests__/indexing-worker.test.ts` | 0 | 4 | 9.4 s |  |
+| `src/daemon/threads/__tests__/latency-isolation.test.ts` | 0 | 2 | 37.3 s |  |
+| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 3 | 17.7 s |  |
+| `src/mcp/__tests__/mcp-process-e2e.test.ts` | 0 | 4 | 4.2 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T13:50:51.563Z",
+    "updatedAt": "2026-10-22T15:26:51.591Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -1945,8 +1945,8 @@
       },
       {
         "taskId": "t17",
-        "commit": "7aacd619",
-        "ranAt": "2026-10-22T13:50:51.563Z",
+        "commit": "3d98673a",
+        "ranAt": "2026-10-22T15:26:51.591Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2041,7 +2041,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts (commit 4b5e4fe1), run as `npm run build && INSRC_SMOKE_TESTS=1 npx tsx --test src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts` against the compiled threaded daemon on a temporary HOME. It passed 2 of 2 runs on 2026-10-22 (output in /tmp/insrc-s2-t17-daemon-ctl-smoke.log)."
+              "evidence": "src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts (commit 4b5e4fe1), run with `npm run build && INSRC_SMOKE_TESTS=1 npx tsx --test src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts` against the compiled threaded daemon on a temporary HOME; it passed on 2026-10-22, and the output of the last run is in /tmp/insrc-s2-t17-daemon-ctl-smoke.log."
             }
           }
         ],
@@ -2050,7 +2050,7 @@
             "file": "src/daemon/__tests__/queue-threads.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 513,
+            "durationMs": 703,
             "titles": [
               {
                 "title": "the code-busy and stopping words track the index lane and stop()",
@@ -2071,7 +2071,7 @@
             "file": "src/daemon/__tests__/repo-completeness.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 17329,
+            "durationMs": 18580,
             "titles": [
               {
                 "title": "repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable",
@@ -2084,7 +2084,7 @@
             "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1320,
+            "durationMs": 1665,
             "titles": [
               {
                 "title": "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
@@ -2109,7 +2109,7 @@
             "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 9531,
+            "durationMs": 9447,
             "titles": [
               {
                 "title": "each indexing-class method runs on the code-indexing worker's thread id",
@@ -2134,7 +2134,7 @@
             "file": "src/daemon/threads/__tests__/latency-isolation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 36867,
+            "durationMs": 37312,
             "titles": [
               {
                 "title": "daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open",
@@ -2151,7 +2151,7 @@
             "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 15260,
+            "durationMs": 17688,
             "titles": [
               {
                 "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
@@ -2172,7 +2172,7 @@
             "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3814,
+            "durationMs": 4172,
             "titles": [
               {
                 "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",

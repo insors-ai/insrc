@@ -510,3 +510,115 @@ export async function openSignoff(repo: string, unit: UnitRef, artifactIds: read
 	}
 	return { ok: true, value: request };
 }
+
+// ---------------------------------------------------------------------------
+// Settling requests
+// ---------------------------------------------------------------------------
+
+const SETTLE_ACTOR: Actor = { id: 'insrc:settle', kind: 'system', properties: {} };
+
+/** A head waiting on a request: its id and the request ref it is waiting on. */
+interface Waiting { readonly artifactId: string; readonly ref: string }
+
+/** The heads of the unit's listed stages that are in signoff, with the open request each waits on. */
+function waitingHeads(repo: string, unit: UnitRef, policy: TeamPolicy, d: SignoffDeps): Waiting[] {
+	const read = d.readHead ?? readHeadMeta;
+	const waiting: Waiting[] = [];
+	for (const stage of stagesOfUnit(unit)) {
+		if (!policy.signoffStages.includes(stage)) continue;
+		const artifactId = stageArtifactId(unit, stage);
+		const meta = artifactId === undefined ? undefined : read(repo, artifactId);
+		if (artifactId === undefined || meta === undefined || lifecycleOfMeta(meta)?.['status'] !== 'in-signoff') continue;
+		const view = signoffViewOf(meta);
+		if (view.state === 'open' && view.request !== null) waiting.push({ artifactId, ref: view.request.ref });
+		else log.warn({ artifactId }, 'a head is in signoff but names no open request; it stays blocked');
+	}
+	return waiting;
+}
+
+/** The unit's Story or Epic artifact id, whose completion a signoff may have been holding; undefined for a task. */
+function completionIdOf(unit: UnitRef): string | undefined {
+	if (unit.unit === 'story' && unit.storyId !== undefined) return ArtifactIds.make({ kind: 'STORY', epicHash: unit.epicHash, story: unit.storyId });
+	if (unit.unit === 'epic') return ArtifactIds.make({ kind: 'EPIC', epicHash: unit.epicHash });
+	return undefined;
+}
+
+/**
+ * Read each open request of the unit's listed stages once through the tracker and record what it says on every artifact of that
+ * request together: a completed request is signed-off, one with changes requested is signoff-changes. When every artifact of a
+ * completed request is recorded, the claim on the unit's issue is cleared (completion is itself the authorization) and the
+ * completion the hold deferred is run. A failure part-way stops that request and leaves the rest for the next attempt: the stage
+ * stays blocked until every artifact is recorded. Never throws for a tracker or lifecycle failure; outside team mode it does nothing.
+ */
+export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDeps = {}): Promise<void> {
+	const d: SignoffDeps = { ...testDeps, ...deps };
+	const policy = teamPolicyOf(repo, d);
+	if (policy === undefined) return;
+	const service = (d.lifecycleFor ?? lifecycleProvider ?? ((r: string) => createRepoLifecycle(r).service))(repo);
+	let by: Actor = SETTLE_ACTOR;
+	/** True when a completed request could not be recorded on every artifact: nothing is released or completed until the rest is. */
+	let unfinished = false;
+
+	const waiting = waitingHeads(repo, unit, policy, d);
+	if (waiting.length > 0) {
+		const loaded = (d.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim', 'signoff-request']));
+		if (!loaded.ok) {
+			log.warn({ kind: loaded.kind, reason: loaded.reason }, 'signoff requests cannot be read: the tracker is not available');
+		} else {
+			const port = loaded.value;
+			const who = port.whoAmI();
+			if (who.ok) by = personOf(who.value);
+			const refs = [...new Set(waiting.map(w => w.ref))];
+			for (const ref of refs) {
+				const group = waiting.filter(w => w.ref === ref);
+				const state = port.readSignoffState({ ref });
+				if (!state.ok) { log.warn({ ref, kind: state.kind, reason: state.reason }, 'a signoff request could not be read; the stage stays blocked'); continue; }
+				if (state.value === 'open') continue;
+				const op = state.value === 'completed' ? 'signed-off' : 'signoff-changes';
+				let recorded = 0;
+				for (const w of group) {
+					try {
+						await service.apply(w.artifactId, op, by);
+						recorded += 1;
+					} catch (err) {
+						log.warn({ ref, artifactId: w.artifactId, op, err: err instanceof Error ? err.message : String(err) }, 'a signoff could not be recorded; the rest is left for the next attempt');
+						break;
+					}
+				}
+				if (recorded < group.length) unfinished = true;
+				else if (op === 'signed-off') releaseClaim(unit, port, d);
+			}
+		}
+	}
+
+	// the completion the hold deferred, once nothing is held
+	const completionId = completionIdOf(unit);
+	if (completionId !== undefined && !unfinished) {
+		try {
+			await service.completeIfRolledUp(completionId, by, { holds: (unitId: string) => signoffHoldsCompletion(repo, unitId, d) });
+		} catch (err) {
+			log.warn({ completionId, err: err instanceof Error ? err.message : String(err) }, 'the deferred completion failed; it is retried by the next settle');
+		}
+	}
+}
+
+/** Clear the assignee of the unit's issue; a failure is logged, since the artifacts stay signed off and the stage proceeds. */
+function releaseClaim(unit: UnitRef, port: TrackerPort, d: SignoffDeps): void {
+	const issue = (d.resolveIssue ?? ((u: UnitRef) => resolveUnitIssueLocal(u)))(unit);
+	if (issue === null) return;
+	const released = port.setAssignee(issue, null);
+	if (!released.ok) log.warn({ issue, kind: released.kind, reason: released.reason }, 'the claim could not be released after signoff; the holder or an administrator can release it');
+}
+
+/**
+ * The entry step before a stage starts: settle the unit that holds the stage this attempt follows, then refuse when signoff still
+ * blocks it. The refusal is the entry's own, so it holds even where the gate lets an attempt through (the first author turn of a
+ * stage whose issue could not be created). Throws TeamGateRefusedError; an attempt that follows nothing is not touched.
+ */
+export async function settleForAttempt(repo: string, unit: UnitRef, action: GuardedAction, authoring?: string, deps: SignoffDeps = {}): Promise<void> {
+	const followed = followedStageOf(action, authoring, unit);
+	if (followed === null) return;
+	await settleSignoff(repo, followed.unit, deps);
+	const blocked = blockedBySignoff(repo, unit, action, authoring, deps);
+	if (blocked !== null && blocked.kind !== 'allowed') throw new TeamGateRefusedError(blocked);
+}

@@ -13,7 +13,10 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { _setSignoffDepsForTests, blockedBySignoff, followedStageOf, isSignedOffOrGrandfathered, signoffCompletionHook } from '../signoff.js';
+import { _setSignoffDepsForTests, blockedBySignoff, followedStageOf, isSignedOffOrGrandfathered, settleForAttempt, signoffCompletionHook } from '../signoff.js';
+import { TeamGateRefusedError } from '../gate.js';
+import type { LifecycleService } from '../../artifact-core/lifecycle-service.js';
+import type { PortResult, SignoffRequestRef, TrackerPort } from '../../tracker/port.js';
 import type { GuardedAction } from '../gate.js';
 import type { UnitRef } from '../../tracker/refs.js';
 import type { TeamPolicy } from '../types.js';
@@ -141,4 +144,41 @@ test('blockedBySignoff and signoffCompletionHook on one story unit block design.
 	assert.deepEqual(blockedBySignoff('/repo', epicUnit, 'author', 'design.epic'), { kind: 'awaiting-signoff', request: { ref: 'acme/demo#3' } });
 	// an attempt that follows nothing is never blocked
 	assert.equal(blockedBySignoff('/repo', storyUnit, 'approve-local'), null);
+});
+
+test('settleForAttempt refuses a first design.story turn on a story whose issue could not be created while the HLD awaits signoff, before teamGate\'s allowFirstAuthor exception is reached', async () => {
+	// the HLD of the epic awaits signoff; the story has no issue at all, which is the case teamGate lets a first author turn through
+	const heads: Record<string, unknown> = { [`HLD-${EPIC}`]: headOf('in-signoff', [so(1, 'acme/demo#5', 'open')]) };
+	let state: 'open' | 'completed' = 'open';
+	const applied: string[] = [];
+	const port = {
+		whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }),
+		readSignoffState: (_r: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'> => ({ ok: true, value: state }),
+		setAssignee: (): PortResult<void> => ({ ok: true, value: undefined }),
+	} as unknown as TrackerPort;
+	const service = {
+		apply: async (id: string, op: string) => { applied.push(`${id}:${op}`); heads[id] = headOf('signed-off', [so(1, 'acme/demo#5', 'completed')]); },
+		completeIfRolledUp: async () => ({ completed: [] }),
+	} as unknown as LifecycleService;
+	const deps = {
+		readPolicy: () => ({ ok: true as const, value: policy({ anchorKnown: true }) }),
+		readHead: (_repo: string, id: string) => heads[id],
+		loadTracker: () => ({ ok: true as const, value: port }),
+		resolveIssue: () => null,
+		lifecycleFor: () => service,
+	};
+
+	// refused at the entry, as awaiting signoff and linking the request, whatever the gate would have said
+	await assert.rejects(settleForAttempt('/repo', storyUnit, 'author', 'design.story', deps), (e: unknown) => e instanceof TeamGateRefusedError && e.outcome.kind === 'awaiting-signoff' && e.outcome.request.ref === 'acme/demo#5');
+	assert.deepEqual(applied, []);
+
+	// the tracker reports it completed: it is recorded and the attempt proceeds
+	state = 'completed';
+	await settleForAttempt('/repo', storyUnit, 'author', 'design.story', deps);
+	assert.deepEqual(applied, [`HLD-${EPIC}:signed-off`]);
+
+	// an attempt that follows nothing is not touched, and a never-submitted stage refuses
+	await settleForAttempt('/repo', storyUnit, 'approve-local', undefined, deps);
+	heads[`LLD-${EPIC}-s1`] = headOf('approved');
+	await assert.rejects(settleForAttempt('/repo', storyUnit, 'author', 'plan', deps), (e: unknown) => e instanceof TeamGateRefusedError && e.outcome.kind === 'refused' && /submit it for signoff/.test(e.outcome.reason));
 });

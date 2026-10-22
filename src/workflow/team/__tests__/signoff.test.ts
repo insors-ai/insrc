@@ -12,7 +12,7 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { _setSignoffDepsForTests, openSignoff, signoffRecordsFromHeads, signoffRecordsOf, signoffRefOf, signoffReferenceOf, signoffViewOf, stagesOfUnit, type CodeReviewRecord, type SignoffDeps } from '../signoff.js';
+import { _setSignoffDepsForTests, openSignoff, settleSignoff, signoffRecordsFromHeads, signoffRecordsOf, signoffRefOf, signoffReferenceOf, signoffViewOf, stagesOfUnit, type CodeReviewRecord, type SignoffDeps } from '../signoff.js';
 import { TeamGateRefusedError } from '../gate.js';
 import type { LifecycleService } from '../../artifact-core/lifecycle-service.js';
 import type { PortResult, SignoffRequestRef, SignoffRequestSpec, TrackerPort } from '../../tracker/port.js';
@@ -261,4 +261,114 @@ test('openSignoff opens one request, records open-signoff on every artifact with
 	// artifacts in two different open requests are refused
 	const split = submit({ [DEF]: approvedHead({ status: 'in-signoff', signoffs: [{ revision: 1, request: { entityId: 'r#1', type: 'signoff-request', relation: 'tracked-by' }, state: 'open', actors: [], at: 'x' }] }), [HLD]: approvedHead({ status: 'in-signoff', signoffs: [{ revision: 1, request: { entityId: 'r#2', type: 'signoff-request', relation: 'tracked-by' }, state: 'open', actors: [], at: 'x' }] }) });
 	assert.match(reasonOf(await openSignoff('/repo', EPIC_UNIT, [DEF, HLD], split.deps)), /different open requests/);
+});
+
+// --- settleSignoff -------------------------------------------------------------------------------------------------------------
+
+interface Settle {
+	heads: Record<string, unknown>;
+	applied: Array<{ id: string; op: string }>;
+	released: Array<string | null>;
+	completed: string[];
+	reads: string[];
+	loads: number;
+	deps: SignoffDeps;
+	fail: { on: string | undefined; state: 'open' | 'changes-requested' | 'completed'; read: boolean; load: boolean };
+}
+
+const inSignoff = (ref: string, type = 'signoff-request'): unknown => approvedHead({ status: 'in-signoff', signoffs: [{ revision: 1, request: { entityId: ref, type, relation: 'tracked-by' }, state: 'open', actors: [], at: 'x' }] });
+
+function settleWorld(heads: Record<string, unknown>, over: Partial<Settle['fail']> = {}, stages: TeamPolicy['signoffStages'] = ['DEF', 'HLD', 'LLD', 'BUILD']): Settle {
+	const s: Settle = { heads: { ...heads }, applied: [], released: [], completed: [], reads: [], loads: 0, deps: {}, fail: { on: undefined, state: 'completed', read: false, load: false, ...over } };
+	const port = {
+		whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }),
+		readSignoffState: (r: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'> => {
+			s.reads.push(r.ref);
+			return s.fail.read ? { ok: false, kind: 'unreachable', reason: 'offline' } : { ok: true, value: s.fail.state };
+		},
+		setAssignee: (_issue: string, who: string | null): PortResult<void> => { s.released.push(who); return { ok: true, value: undefined }; },
+	} as unknown as TrackerPort;
+	const service = {
+		apply: async (id: string, op: string) => {
+			if (s.fail.on === id) throw new Error('injected failure');
+			s.applied.push({ id, op });
+			s.heads[id] = approvedHead({ status: op === 'signed-off' ? 'signed-off' : 'changes-requested' });
+		},
+		completeIfRolledUp: async (id: string) => { s.completed.push(id); return { completed: [] }; },
+	} as unknown as LifecycleService;
+	s.deps = {
+		readPolicy: () => ({ ok: true, value: { ...policy({}), signoffStages: stages } as TeamPolicy }),
+		readHead: (_repo, id) => s.heads[id],
+		loadTracker: () => { s.loads += 1; return s.fail.load ? { ok: false, kind: 'missing-tool', reason: 'no gh' } : { ok: true, value: port }; },
+		resolveIssue: unit => (unit.unit === 'epic' ? 'acme/demo#1' : 'acme/demo#2'),
+		lifecycleFor: () => service,
+	};
+	return s;
+}
+
+test('settleSignoff records signed-off on all artifacts of a completed request, clears the assignee of the unit issue, records signoff-changes on changes-requested, leaves the rest on a part-way failure, skips a Signoff whose Reference is not a signoff-request, and is idempotent across two clones', async () => {
+	// a completed request covering two artifacts: both are signed off together, the claim is cleared, the completion is run
+	let s = settleWorld({ [DEF]: inSignoff('acme/demo#9'), [HLD]: inSignoff('acme/demo#9') });
+	await settleSignoff('/repo', EPIC_UNIT, s.deps);
+	assert.deepEqual(s.applied, [{ id: DEF, op: 'signed-off' }, { id: HLD, op: 'signed-off' }]);
+	assert.deepEqual(s.reads, ['acme/demo#9'], 'the request is read once, not once per artifact');
+	assert.deepEqual(s.released, [null], 'the unit issue is released');
+	assert.deepEqual(s.completed, [`EPIC-${EPIC}`], 'the completion the hold deferred is run');
+
+	// a second clone settling the same request finds nothing waiting: nothing is read or recorded
+	const loadsBefore = s.loads;
+	await settleSignoff('/repo', EPIC_UNIT, s.deps);
+	assert.equal(s.applied.length, 2);
+	assert.equal(s.loads, loadsBefore, 'no tracker is loaded when nothing waits');
+	assert.deepEqual(s.released, [null]);
+
+	// changes requested: signoff-changes on every artifact of the request, no release
+	s = settleWorld({ [DEF]: inSignoff('acme/demo#9'), [HLD]: inSignoff('acme/demo#9') }, { state: 'changes-requested' });
+	await settleSignoff('/repo', EPIC_UNIT, s.deps);
+	assert.deepEqual(s.applied, [{ id: DEF, op: 'signoff-changes' }, { id: HLD, op: 'signoff-changes' }]);
+	assert.deepEqual(s.released, []);
+
+	// still open: nothing is recorded
+	s = settleWorld({ [DEF]: inSignoff('acme/demo#9') }, { state: 'open' });
+	await settleSignoff('/repo', EPIC_UNIT, s.deps);
+	assert.deepEqual([s.applied.length, s.released.length], [0, 0]);
+
+	// a part-way failure: the first artifact is recorded, the rest is left, nothing is released or completed
+	s = settleWorld({ [DEF]: inSignoff('acme/demo#9'), [HLD]: inSignoff('acme/demo#9') }, { on: HLD });
+	await settleSignoff('/repo', EPIC_UNIT, s.deps);
+	assert.deepEqual(s.applied, [{ id: DEF, op: 'signed-off' }]);
+	assert.deepEqual([s.released.length, s.completed.length], [0, 0]);
+	// the next settle records the rest, then releases and completes
+	s.fail.on = undefined;
+	await settleSignoff('/repo', EPIC_UNIT, s.deps);
+	assert.deepEqual(s.applied.map(a => a.id), [DEF, HLD]);
+	assert.deepEqual(s.released, [null]);
+	assert.deepEqual(s.completed, [`EPIC-${EPIC}`]);
+
+	// a Signoff whose Reference is not a signoff-request is skipped: no tracker read for it
+	s = settleWorld({ [DEF]: inSignoff('acme/demo#9', 'something-else') });
+	await settleSignoff('/repo', EPIC_UNIT, s.deps);
+	assert.deepEqual([s.reads.length, s.applied.length], [0, 0]);
+
+	// the tracker cannot be loaded or read: nothing is recorded and nothing throws
+	s = settleWorld({ [DEF]: inSignoff('acme/demo#9') }, { load: true });
+	await settleSignoff('/repo', EPIC_UNIT, s.deps);
+	assert.equal(s.applied.length, 0);
+	s = settleWorld({ [DEF]: inSignoff('acme/demo#9') }, { read: true });
+	await settleSignoff('/repo', EPIC_UNIT, s.deps);
+	assert.deepEqual([s.applied.length, s.released.length], [0, 0]);
+
+	// a stage the policy does not list is not read, and outside team mode nothing happens at all
+	s = settleWorld({ [DEF]: inSignoff('acme/demo#9') }, {}, ['LLD']);
+	await settleSignoff('/repo', EPIC_UNIT, s.deps);
+	assert.deepEqual([s.loads, s.applied.length], [0, 0]);
+	s = settleWorld({ [DEF]: inSignoff('acme/demo#9') });
+	await settleSignoff('/repo', EPIC_UNIT, { ...s.deps, readPolicy: () => ({ ok: true, value: 'none' }) });
+	assert.deepEqual([s.loads, s.applied.length, s.completed.length], [0, 0, 0]);
+
+	// a story unit settles the LLD and the BUILD and releases the Story's issue
+	s = settleWorld({ [LLD]: inSignoff('acme/demo#7'), [BUILD]: inSignoff('acme/demo#7') });
+	await settleSignoff('/repo', STORY, s.deps);
+	assert.deepEqual(s.applied.map(a => a.id), [LLD, BUILD]);
+	assert.deepEqual(s.completed, [`STORY-${EPIC}-s1`]);
 });

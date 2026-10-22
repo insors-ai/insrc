@@ -31,10 +31,11 @@ import { History } from '../artifact-core/history.js';
 import { LifecycleService } from '../artifact-core/lifecycle-service.js';
 import { approveWorkflowTarget } from '../gates.js';
 import { artifactJsonPath } from '../storage.js';
-import { _setSignoffDepsForTests } from '../team/signoff.js';
+import { _setSignoffDepsForTests, settleSignoff, signoffHoldsCompletion, signoffReferenceOf } from '../team/signoff.js';
+import type { PortResult, SignoffRequestRef, TrackerPort } from '../tracker/port.js';
 import type { TeamPolicy } from '../team/types.js';
 import { H, alice, bob, clock, kit } from '../artifact-core/__tests__/store-kit.js';
-import { EPIC, STORY, T1, T2, seedEpic } from '../artifact-core/__tests__/lifecycle-kit.js';
+import { EPIC, RECORDS, STORY, T1, T2, seedEpic } from '../artifact-core/__tests__/lifecycle-kit.js';
 
 afterEach(() => { _setSignoffDepsForTests(); });
 
@@ -92,5 +93,41 @@ test('completeThroughService leaves a Story approved-not-completed while its lis
 		assert.equal((await k.store.read(BUILD)).lifecycle.status, 'approved', 'the approval stands and the BUILD stays open to signoff');
 		assert.notEqual((await k.store.read(STORY)).lifecycle.status, 'completed', 'the Story is held');
 		assert.notEqual((await k.store.read(EPIC)).lifecycle.status, 'completed', 'and so is the Epic above it');
+	} finally { k.done(); }
+});
+
+test('settleSignoff completes the Story and its Epic once signed-off is recorded, with the members cascaded', async () => {
+	const k = kit();
+	try {
+		const svc = await readyStory(k);
+		const released: Array<string | null> = [];
+		const port = {
+			whoAmI: (): PortResult<string> => ({ ok: true, value: 'bob' }),
+			readSignoffState: (_r: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'> => ({ ok: true, value: 'completed' }),
+			setAssignee: (_issue: string, who: string | null): PortResult<void> => { released.push(who); return { ok: true, value: undefined }; },
+		} as unknown as TrackerPort;
+		const deps = {
+			readPolicy: () => ({ ok: true as const, value: policy(['BUILD']) }),
+			loadTracker: () => ({ ok: true as const, value: port }),
+			resolveIssue: () => 'acme/demo#2',
+			lifecycleFor: () => svc,
+		};
+		_setSignoffDepsForTests(deps);
+
+		// the BUILD is approved and held; it is submitted for signoff, which keeps the Story open
+		await approveBuild(k, svc);
+		assert.equal(signoffHoldsCompletion(k.repo, STORY), true);
+		await svc.apply(BUILD, 'open-signoff', bob, { request: signoffReferenceOf({ ref: 'acme/demo#9' }) });
+		assert.equal((await k.store.read(BUILD)).lifecycle.status, 'in-signoff');
+		assert.equal((await k.store.read(STORY)).lifecycle.status, 'draft');
+
+		// the tracker says completed: the BUILD is signed off, the claim released, then the Story and the Epic complete with their members
+		await settleSignoff(k.repo, { unit: 'story', repoPath: k.repo, epicHash: H, storyId: 's1' });
+		assert.deepEqual(released, [null]);
+		const build = await k.store.readWithHistory(BUILD);
+		assert.deepEqual(build.changeLog.map(e => e.operation).filter(op => op === 'signed-off' || op === 'complete'), ['signed-off', 'complete'], 'signed off first, then completed with its Story');
+		assert.equal((await k.store.read(STORY)).lifecycle.status, 'completed');
+		assert.equal((await k.store.read(EPIC)).lifecycle.status, 'completed');
+		for (const record of RECORDS) assert.equal((await k.store.read(record)).lifecycle.status, 'completed', record);
 	} finally { k.done(); }
 });

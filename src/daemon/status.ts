@@ -13,6 +13,7 @@
 import { getStoreHealth, recordStoreFailureIfLockError } from '../db/graph/store.js';
 import type { StoreHealth } from '../db/graph/store.js';
 import type { DaemonStatus, QueueLanes, RegisteredRepo, UnattributedUnwritableCount } from '../shared/types.js';
+import type { IndexingStatus } from './threads/status-board.js';
 
 /** What the user is told. It states the cause and the remedy, and does not
  *  repeat the store library's own text, which blames a system limit. */
@@ -49,6 +50,21 @@ export function composeQueueLanes(
 	sweep: { repoPath: string; done: number; total: number } | undefined,
 ): QueueLanes {
 	return { index: { ...lanes.index }, summary: { ...lanes.summary, ...(sweep !== undefined && { sweep: { ...sweep } }) } };
+}
+
+/**
+ * daemon.status's queue fields from the status board's two published lanes,
+ * mapped as composeQueueLanes maps the live queue today: queueDepth is both
+ * lanes' depth, and each lane's running flag is whether it is processing.
+ */
+export function queueStatusFromBoard(indexing: IndexingStatus): { queueDepth: number; queueLanes: QueueLanes } {
+	return {
+		queueDepth: indexing.index.depth + indexing.summary.depth,
+		queueLanes: composeQueueLanes(
+			{ index: { depth: indexing.index.depth, running: indexing.index.processing }, summary: { depth: indexing.summary.depth, running: indexing.summary.processing } },
+			indexing.sweep,
+		),
+	};
 }
 
 /**

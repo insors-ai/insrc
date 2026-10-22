@@ -39,6 +39,12 @@ export interface RequestEnvelope {
 	readonly params: unknown;
 	readonly stream: boolean;
 	readonly session?: SessionId | undefined;
+	/**
+	 * Set on a cross-class request made by a handler that already holds the
+	 * daemon maintenance lock (a nested in-daemon call): the serving worker does
+	 * not request the lock again. An additive sc3 amendment delivered by s2.
+	 */
+	readonly underHold?: boolean | undefined;
 }
 export interface ReplyEnvelope { readonly kind: 'reply'; readonly requestId: string; readonly result?: unknown; readonly error?: string | undefined; }
 export interface FrameEnvelope { readonly kind: 'frame'; readonly requestId: string; readonly frame: unknown; }

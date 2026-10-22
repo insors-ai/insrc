@@ -1003,6 +1003,12 @@ export interface DaemonStatus {
    * that does not know this field sees no change.
    */
   queueLanes?:       QueueLanes;
+  /**
+   * Present ONLY while idle maintenance holds the daemon (Epic 86197ac6 s2):
+   * what it is doing, since when (ISO time), and why. Every request other than
+   * daemon.status is refused meanwhile with the same activity and reason.
+   */
+  maintenance?:      { state: 'compacting'; since: string; activity: string; reason: string };
 }
 
 /** Per-lane state of the daemon's index queue (`DaemonStatus.queueLanes`). */

@@ -36,8 +36,12 @@ export interface IndexingStatus {
 }
 /** The existing AttachedClient shape from the server, lastMethod included. */
 export type AttachedClientSnapshot = AttachedClient;
-/** Today's shapes from src/shared/types.ts, published unchanged. */
-export type RepoStatusSnapshot = RegisteredRepo & { readonly completeness: RepoCompleteness };
+/**
+ * Today's shapes from src/shared/types.ts, published unchanged. completeness is
+ * optional because today's withCompleteness leaves it out when its read fails
+ * (an sc4 amendment delivered by s2), so a published row equals today's row.
+ */
+export type RepoStatusSnapshot = RegisteredRepo & { readonly completeness?: RepoCompleteness | undefined };
 export interface StoreStatusSnapshot {
 	/** undefined until first published; responses then mark the value unavailable. */
 	readonly repos?: readonly RepoStatusSnapshot[] | undefined;
@@ -74,6 +78,18 @@ export class StatusBoard {
 
 	publish(status: ThreadStatus): void { this.threads.set(status.threadId, status); }
 	publishIndexing(status: IndexingStatus): void { this.indexing = status; }
+	/**
+	 * One indexing worker publishes only its own lane (an additive sc4 method
+	 * delivered by s2): the board keeps both, the summary lane's publisher also
+	 * sets the sweep (absent clears it), and idle is both lanes empty and idle.
+	 */
+	publishLane(lane: 'index' | 'summary', status: LaneStatus, sweep?: SummarySweepProgress): void {
+		const index = lane === 'index' ? status : this.indexing.index;
+		const summary = lane === 'summary' ? status : this.indexing.summary;
+		const kept = lane === 'summary' ? sweep : this.indexing.sweep;
+		const idle = index.depth === 0 && !index.processing && summary.depth === 0 && !summary.processing;
+		this.indexing = { index, summary, idle, ...(kept !== undefined ? { sweep: kept } : {}) };
+	}
 	publishClients(clients: readonly AttachedClientSnapshot[]): void { this.clients = clients; }
 	publishStore(store: StoreStatusSnapshot): void { this.store = store; }
 
@@ -106,7 +122,7 @@ export class StatusBoard {
 // ---------------------------------------------------------------------------
 
 const OPS = {
-	publish: 'board.publish', publishIndexing: 'board.publishIndexing', publishClients: 'board.publishClients',
+	publish: 'board.publish', publishIndexing: 'board.publishIndexing', publishLane: 'board.publishLane', publishClients: 'board.publishClients',
 	publishRun: 'board.publishRun', publishStore: 'board.publishStore', snapshot: 'board.snapshot',
 } as const;
 
@@ -115,6 +131,7 @@ export function statusBoardHubHandlers(board: StatusBoard): HubHandlers {
 	return {
 		[OPS.publish]:         a => board.publish(a as ThreadStatus),
 		[OPS.publishIndexing]: a => board.publishIndexing(a as IndexingStatus),
+		[OPS.publishLane]:     a => { const { lane, status, sweep } = a as { lane: 'index' | 'summary'; status: LaneStatus; sweep?: SummarySweepProgress }; board.publishLane(lane, status, sweep); },
 		[OPS.publishClients]:  a => board.publishClients(a as readonly AttachedClientSnapshot[]),
 		[OPS.publishRun]:      a => board.publishRun(a as RunRecord),
 		[OPS.publishStore]:    a => board.publishStore(a as StoreStatusSnapshot),
@@ -127,6 +144,9 @@ export class StatusBoardClient {
 	constructor(private readonly hub: HubClient) {}
 	publish(status: ThreadStatus): void { this.hub.send(OPS.publish, status); }
 	publishIndexing(status: IndexingStatus): void { this.hub.send(OPS.publishIndexing, status); }
+	publishLane(lane: 'index' | 'summary', status: LaneStatus, sweep?: SummarySweepProgress): void {
+		this.hub.send(OPS.publishLane, { lane, status, ...(sweep !== undefined ? { sweep } : {}) });
+	}
 	publishClients(clients: readonly AttachedClientSnapshot[]): void { this.hub.send(OPS.publishClients, clients); }
 	publishRun(run: RunRecord): void { this.hub.send(OPS.publishRun, run); }
 	publishStore(store: StoreStatusSnapshot): void { this.hub.send(OPS.publishStore, store); }

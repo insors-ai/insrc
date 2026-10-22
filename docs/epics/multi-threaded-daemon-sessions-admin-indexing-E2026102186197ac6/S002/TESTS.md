@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 76 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 86 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -464,3 +464,74 @@ Run at 2026-10-22T11:17:33.745Z on commit `aef1dc6d`. Tests check: **passed**. 5
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/maintenance-lock.test.ts` | 0 | 5 | 2.6 s |  |
+
+## t16
+
+Run at 2026-10-22T12:14:53.345Z on commit `769f9bf5`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does | `src/daemon/threads/__tests__/maintenance.test.ts` |
+
+**unit: reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required | `src/daemon/threads/__tests__/maintenance.test.ts` |
+
+**integration: maintenance: with idle forced and the threshold met, requests sent during compaction are refused with the maintenance activity and reason, a running request finishes first, daemon.status reports compacting, every row is kept and the file shrank**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | maintenance: with idle forced and the threshold met, requests sent during compaction are refused with the maintenance activity and reason, a running request finishes first, daemon.status reports compacting, every row is kept and the file shrank | `src/daemon/threads/__tests__/maintenance.test.ts` |
+
+**integration: manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work, and does not wait on a hold of its own**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work, and does not wait on a hold of its own | `src/daemon/threads/__tests__/maintenance.test.ts` |
+
+**integration: a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards | `src/daemon/threads/__tests__/maintenance.test.ts` |
+
+**integration: the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves | `src/daemon/threads/__tests__/maintenance.test.ts` |
+
+**integration: after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held | `src/daemon/threads/__tests__/maintenance.test.ts` |
+
+**integration: after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment | `src/daemon/threads/__tests__/maintenance.test.ts` |
+
+**integration: daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down | `src/daemon/threads/__tests__/threads-boot.test.ts` |
+
+**unit: the idle time, both thresholds and the pause limit are config schema keys with the design's defaults**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the idle time, both thresholds and the pause limit are config schema keys with the design's defaults | `src/daemon/threads/__tests__/maintenance.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/maintenance.test.ts` | 0 | 11 | 3.5 s |  |
+| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 3 | 15.3 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T11:17:33.745Z",
+    "updatedAt": "2026-10-22T12:14:53.345Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -1722,6 +1722,220 @@
               },
               {
                 "title": "an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "769f9bf5",
+        "ranAt": "2026-10-22T12:14:53.345Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "maintenance: with idle forced and the threshold met, requests sent during compaction are refused with the maintenance activity and reason, a running request finishes first, daemon.status reports compacting, every row is kept and the file shrank",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "maintenance: with idle forced and the threshold met, requests sent during compaction are refused with the maintenance activity and reason, a running request finishes first, daemon.status reports compacting, every row is kept and the file shrank",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work, and does not wait on a hold of its own",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work, and does not wait on a hold of its own",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the idle time, both thresholds and the pause limit are config schema keys with the design's defaults",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "the idle time, both thresholds and the pause limit are config schema keys with the design's defaults",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3532,
+            "titles": [
+              {
+                "title": "maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does",
+                "result": "pass"
+              },
+              {
+                "title": "reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required",
+                "result": "pass"
+              },
+              {
+                "title": "the idle time, both thresholds and the pause limit are config schema keys with the design's defaults",
+                "result": "pass"
+              },
+              {
+                "title": "unit",
+                "result": "pass"
+              },
+              {
+                "title": "maintenance: with idle forced and the threshold met, requests sent during compaction are refused with the maintenance activity and reason, a running request finishes first, daemon.status reports compacting, every row is kept and the file shrank",
+                "result": "pass"
+              },
+              {
+                "title": "manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work, and does not wait on a hold of its own",
+                "result": "pass"
+              },
+              {
+                "title": "a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards",
+                "result": "pass"
+              },
+              {
+                "title": "the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves",
+                "result": "pass"
+              },
+              {
+                "title": "after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held",
+                "result": "pass"
+              },
+              {
+                "title": "after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment",
+                "result": "pass"
+              },
+              {
+                "title": "integration",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15275,
+            "titles": [
+              {
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              },
+              {
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
                 "result": "pass"
               }
             ],

@@ -57,6 +57,8 @@ export interface PlanOptions {
 	readonly tracker?: TrackerPort | undefined;
 	/** The rules beyond the built-in head migration. */
 	readonly rules?:   readonly PlanRule[] | undefined;
+	/** A rerun of an apply that stopped part-way: the tree is expected to hold the earlier run's changes, so it is not required to be clean. */
+	readonly resume?:  boolean | undefined;
 }
 
 const PROTECTED_PATHS = ['.insrc/artifacts', 'docs/epics'] as const;
@@ -117,7 +119,7 @@ export async function planConversion(repo: string, options: PlanOptions = {}): P
 	try { version = RepoSchemaGate.read(repo).version; }
 	catch (err) { throw new ConversionRefused(`the repository marker cannot be read: ${(err as Error).message}`); }
 	if (version >= 2) return EMPTY_PLAN;
-	assertCleanTree(repo);
+	if (options.resume !== true) assertCleanTree(repo);
 
 	const read = readRawHeads(repo);
 	const ctx: PlanContext = { repo, heads: read.heads, tracker: options.tracker };

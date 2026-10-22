@@ -78,8 +78,10 @@ export function legacyDeliveryView(heads: readonly RawHead[]): readonly UnitView
 		const top = asObject(h.json);
 		if (!KINDS.has(kind) || top === null) return [];
 		const isAmendment = kind === 'AMD';
-		const meta = isAmendment ? top : asObject(top['meta']);
-		return meta === null ? [] : [{ h, kind, top, meta, body: isAmendment ? top['amendment'] : top['body'] }];
+		// a flat amendment keeps its stamps at the top; once converted to a head they sit in meta like any other head's
+		const flat = isAmendment && asObject(top['meta']) === null;
+		const meta = flat ? top : asObject(top['meta']);
+		return meta === null ? [] : [{ h, kind, top, meta, body: flat ? top['amendment'] : top['body'] }];
 	});
 
 	const buildsOfStory = (epic: unknown, story: unknown): typeof rows =>

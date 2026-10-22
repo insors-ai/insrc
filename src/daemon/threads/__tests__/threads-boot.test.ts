@@ -50,9 +50,9 @@ test('the daemon boots with daemon.threads.enabled, answers admin, indexing and 
  * (INSRC_MODE=mcp): the daemon's own log files are shared by every daemon on
  * the machine and rotate, so a test reads its daemon's lines from stderr.
  */
-async function startLoggingDaemon(home: string): Promise<{ readonly pid: number; readonly sock: string; readonly stderr: () => string; readonly exited: Promise<number | null> }> {
+async function startLoggingDaemon(home: string, env: Record<string, string> = {}): Promise<{ readonly pid: number; readonly sock: string; readonly stderr: () => string; readonly exited: Promise<number | null> }> {
 	const child = spawn(process.execPath, ['--import', fileURLToPath(import.meta.resolve('tsx/esm')), join(REPO_ROOT, 'src', 'daemon', 'index.ts')], {
-		cwd: REPO_ROOT, env: { ...childEnv(home), INSRC_MODE: 'mcp' }, stdio: ['ignore', 'ignore', 'pipe'],
+		cwd: REPO_ROOT, env: { ...childEnv(home), INSRC_MODE: 'mcp', ...env }, stdio: ['ignore', 'ignore', 'pipe'],
 	});
 	let stderr = '';
 	child.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
@@ -113,5 +113,43 @@ test("SIGTERM during an indexing pass: workers stop, the queue drains, the main 
 	} finally {
 		rmSync(home, { recursive: true, force: true });
 		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down', { timeout: 120_000 }, async () => {
+	const home = mkdtempSync(join(tmpdir(), 'insrc-threads-maintenance-'));
+	try {
+		mkdirSync(join(home, '.insrc'), { recursive: true });
+		// Idle maintenance at once, whatever the reclaimable space; it holds its lock 4 s before compacting (test hook).
+		writeFileSync(join(home, '.insrc', 'config.json'), JSON.stringify({ daemon: {
+			threads: { enabled: true },
+			maintenance: { idleMs: 500, minReclaimablePct: 0, minReclaimableMb: 0, pauseLimitMs: 60_000 },
+		} }));
+		const daemon = await startLoggingDaemon(home, { INSRC_TEST_HOOKS: '1', INSRC_TEST_MAINTENANCE_HOLD_MS: '4000' });
+		try {
+			const deadline = Date.now() + 30_000;
+			let maintenance: { state?: string; activity?: string; reason?: string } | undefined;
+			while ((maintenance = (await rpc(daemon.sock, 'daemon.status') as { maintenance?: typeof maintenance }).maintenance)?.state !== 'compacting') {
+				if (Date.now() > deadline) assert.fail('maintenance did not start');
+				await new Promise(r => setTimeout(r, 50));
+			}
+			assert.equal(maintenance.activity, 'compaction');
+			await assert.rejects(rpc(daemon.sock, 'daemon.shutdown'), /^Error: daemon busy: compaction since \S+ \(0 min idle, [0-9.]+% \/ [0-9]+ MB reclaimable\); retry later$/);
+			assert.equal(alive(daemon.pid), true, 'still running: the shutdown request was refused');
+			process.kill(daemon.pid, 'SIGTERM');
+			const killer = setTimeout(() => process.kill(daemon.pid, 'SIGKILL'), 30_000);
+			assert.equal(await daemon.exited, 0, 'a clean exit after the compaction');
+			clearTimeout(killer);
+		} finally {
+			if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL');
+		}
+		const messages = daemon.stderr().split('\n');
+		const at = (msg: string): number => messages.findIndex(m => m.includes(msg));
+		const order = ['shutdown signal received; draining...', 'maintenance: compaction done', 'shutdown: stores closed', 'bye'].map(m => [m, at(m)] as const);
+		for (const [m, i] of order) assert.ok(i >= 0, `logged: ${m} (the daemon's last lines: ${JSON.stringify(messages.slice(-30))})`);
+		assert.deepEqual(order.map(([, i]) => i), [...order.map(([, i]) => i)].sort((a, b) => a - b), 'the compaction finished before the stores closed');
+		assert.equal(at('hard-exit backstop fired'), -1);
+	} finally {
+		rmSync(home, { recursive: true, force: true });
 	}
 });

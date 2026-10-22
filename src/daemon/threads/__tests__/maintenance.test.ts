@@ -64,10 +64,11 @@ describe('unit', () => {
 	test('maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does', async () => {
 		let clock = 1_000;
 		let lanesIdle = true;
+		let healthy = true;
 		const reclaimableAsked: number[] = [];
 		const c = new MaintenanceController({
 			config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 60_000 },
-			now: () => clock, lanesIdle: () => lanesIdle, healthy: () => true,
+			now: () => clock, lanesIdle: () => lanesIdle, healthy: () => healthy,
 			reclaimable: () => { reclaimableAsked.push(clock); return undefined; },
 			workers: { live: () => [], created: () => 0 },
 			compact: () => assert.fail('no compaction below the thresholds'),
@@ -96,6 +97,12 @@ describe('unit', () => {
 		assert.equal(await c.tick(), 'not-idle');
 		lanesIdle = true;
 		assert.equal(await c.tick(), 'below-threshold');
+		assert.equal(reclaimableAsked.length, 2);
+		// Never while the store is not healthy.
+		clock += 60_000;
+		healthy = false;
+		assert.equal(await c.tick(), 'unhealthy');
+		await assert.rejects(c.runNow(), /not healthy/);
 		assert.equal(reclaimableAsked.length, 2);
 	});
 

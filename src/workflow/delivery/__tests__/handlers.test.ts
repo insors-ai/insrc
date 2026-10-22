@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { handleArtifactContent, resolveDocsMarkdown } from '../../artifact-content.js';
+import { writeLifecycleStoreFile } from '../../__tests__/lifecycle-fixtures.js';
 import { ARTIFACTS_DIR } from '../../storage.js';
 import { buildWorkItemGraph } from '../graph.js';
 import { loadArtifactRecordSet } from '../load.js';
@@ -30,6 +31,8 @@ function repoWith(files: Readonly<Record<string, unknown>>): string {
 	for (const [rel, value] of Object.entries(files)) {
 		const abs = join(repo, rel);
 		mkdirSync(dirname(abs), { recursive: true });
+		// a record of the artifact store is written as the lifecycle model stores it, with its log and feedback beside it
+		if (rel.startsWith(`${ARTIFACTS_DIR}/`) && rel.endsWith('.json') && typeof value === 'object') { writeLifecycleStoreFile(repo, rel.slice(ARTIFACTS_DIR.length + 1), value); continue; }
 		writeFileSync(abs, typeof value === 'string' ? value : JSON.stringify(value, null, 2));
 	}
 	return repo;
@@ -182,16 +185,17 @@ test('workflow.deliveryEvidence reads a marker-less build record through the dae
 		assert.ok(!('error' in build), JSON.stringify(build));
 		const rec: DeliveryEvidenceRecord = build;
 		assert.equal(rec.kind, 'BUILD');
-		assert.deepEqual(rec.meta, { epicHash: EPIC, storyId: 's1', createdAt: '2026-10-08T10:00:00.000Z' });
+		assert.deepEqual([rec.meta['epicHash'], rec.meta['storyId'], rec.meta['createdAt']], [EPIC, 's1', '2026-10-08T10:00:00.000Z']);
+		assert.equal((rec.meta['lifecycle'] as { status: string }).status, 'draft', 'the meta is the lifecycle head\'s');
 		assert.deepEqual(rec.body, { tasks: [{ id: 't1', passed: true }] });
 		assert.equal(rec.renderedMarkdown, '# Build record\n\nNo marker on this older shape.\n', 'a marker-less file is still returned');
 
 		const amd = handleDeliveryEvidence({ artifactId: `AMD-${EPIC}-1` }, repo);
 		assert.ok(!('error' in amd), JSON.stringify(amd));
 		assert.equal(amd.kind, 'AMD');
-		assert.equal(amd.meta['status'], 'pending');
+		assert.equal((amd.meta['lifecycle'] as { status: string }).status, 'draft', 'a pending amendment is a draft');
 		assert.equal('amendment' in amd.meta, false);
-		assert.deepEqual(amd.body, { type: 'storyBoundary.addStory', storyId: 's2' });
+		assert.deepEqual((amd.body as { amendment: unknown }).amendment, { type: 'storyBoundary.addStory', storyId: 's2' });
 		assert.equal(amd.renderedMarkdown, null);
 
 		const hld = handleDeliveryEvidence({ repo, artifactId: `HLD-${EPIC}` }, undefined);

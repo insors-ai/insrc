@@ -16,17 +16,19 @@
  */
 
 import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 
+import { convertLegacyFeedback } from '../artifact-core/feedback-convert.js';
 import { History } from '../artifact-core/history.js';
+import { appendSidecarLine } from '../artifact-core/sidecar.js';
 import { flatToHead } from '../convert/amendments.js';
 import { backfillHead } from '../convert/backfill.js';
 import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
 import { compareEntries } from '../artifact-core/sidecar-store.js';
-import type { Actor, ChangeLogEntry, Lifecycle, Reference, Review, Status } from '../artifact-core/types.js';
+import type { Actor, ChangeLogEntry, Feedback, Lifecycle, Reference, Review, Status } from '../artifact-core/types.js';
 import { reviewEntryOf, reviewReference } from '../review/report-log.js';
 import type { ReviewReport } from '../review/types.js';
-import { artifactJsonPath, writeAtomic } from '../storage.js';
+import { ARTIFACTS_DIR, artifactJsonPath, writeAtomic } from '../storage.js';
 
 export const FIXTURE_ACTOR: Actor = { id: 'github:fixture', kind: 'person', properties: {} };
 const SYSTEM: Actor = { id: 'insrc:system', kind: 'system', properties: {} };
@@ -150,3 +152,34 @@ export function lifecycleFileOf(fileName: string, raw: unknown, now = '2026-10-0
 
 /** {@link lifecycleFileOf} without the entries. */
 export const asLifecycleFile = (fileName: string, raw: unknown, now?: string): unknown => lifecycleFileOf(fileName, raw, now).file;
+
+/** The feedback lines of a store file written before the sidecar, as the conversion maps its `body.feedback`; an entry the conversion cannot use is counted as dropped. */
+export function legacyFeedbackLines(raw: unknown): { readonly lines: readonly Feedback[]; readonly dropped: number } {
+	const list = (raw as { body?: { feedback?: unknown } } | null)?.body?.feedback;
+	if (!Array.isArray(list)) return { lines: [], dropped: 0 };
+	const lines: Feedback[] = [];
+	for (const e of list as unknown[]) {
+		const o = e as { id?: unknown; author?: unknown; timestamp?: unknown; comment?: unknown; target?: { file?: unknown } } | null;
+		if (typeof o !== 'object' || o === null || typeof o.id !== 'string' || typeof o.author !== 'string' || typeof o.timestamp !== 'string'
+			|| typeof o.comment !== 'string' || typeof o.target?.file !== 'string') continue;
+		lines.push(convertLegacyFeedback(o as unknown as Parameters<typeof convertLegacyFeedback>[0]).feedback);
+	}
+	return { lines, dropped: list.length - lines.length };
+}
+
+/**
+ * Write a store file written in the vocabulary of the legacy stamps as the lifecycle model stores it: the head, the log entries the
+ * conversion records for it and the feedback lines of its `body.feedback`. For a test that loads a temporary store from disk.
+ * A file that is not a head is written as it is.
+ */
+export function writeLifecycleStoreFile(repo: string, fileName: string, raw: unknown): void {
+	const { file, entries } = lifecycleFileOf(fileName, raw);
+	const path = join(repo, ARTIFACTS_DIR, fileName);
+	writeAtomic(path, typeof file === 'string' ? file : JSON.stringify(file, null, 2));
+	const artifactId = fileName.replace(/\.json$/, '');
+	try {
+		const files = new FileSidecarStore(repo).filesOf(artifactId);
+		for (const entry of entries) appendSidecarLine(join(repo, files.log), { artifactId, entry });
+		for (const entry of legacyFeedbackLines(raw).lines) appendSidecarLine(join(repo, files.feedback), { artifactId, entry });
+	} catch { /* an id the model refuses has no sidecar */ }
+}

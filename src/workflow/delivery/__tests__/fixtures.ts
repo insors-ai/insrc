@@ -18,9 +18,8 @@
  *     of pending.test.ts's pendingLld.
  */
 
-import { lifecycleFileOf } from '../../__tests__/lifecycle-fixtures.js';
-import { reviewRecordOf } from '../../review/report-log.js';
-import { liftStoreFile } from '../load.js';
+import { legacyFeedbackLines, lifecycleFileOf } from '../../__tests__/lifecycle-fixtures.js';
+import { liftStoreFile, logFactsOf } from '../load.js';
 import type { ArtifactRecord, ArtifactRecordSet, DeliveryArtifactKind, RecordLoadFailure } from '../types.js';
 
 /** One artifact store file's parsed JSON. */
@@ -332,15 +331,20 @@ export const REAL_STORE: Readonly<Record<string, RawStoreFile>> = {
 // Builders
 // ---------------------------------------------------------------------------
 
+/** The `feedback` of a record from the `body.feedback` of a store file written before the sidecar. */
+function legacyFeedbackOf(raw: RawStoreFile): Pick<ArtifactRecord, 'feedback'> {
+	const { lines, dropped } = legacyFeedbackLines(raw);
+	return lines.length === 0 && dropped === 0 ? {} : { feedback: { lines, dropped } };
+}
+
 /** Lift one store file into an ArtifactRecord exactly as the loader does; throws on a load failure. */
 export function recordFromFile(fileName: string, raw: RawStoreFile): ArtifactRecord {
 	const { file, entries } = lifecycleFileOf(fileName, raw);
 	const lifted = liftStoreFile(fileName, file);
 	if ('reason' in lifted) throw new Error(`fixtures: '${fileName}' does not lift: ${lifted.reason} (${lifted.detail})`);
-	// the loader reads the report of a review from the log; the fixture has the entries the conversion would have recorded
-	const report = (lifted.meta['lifecycle'] as { review?: { report?: never } } | undefined)?.review?.report;
-	const loaded = report === undefined ? undefined : reviewRecordOf(entries, lifted.artifactId, { report });
-	return loaded === undefined ? lifted : { ...lifted, reviewReport: loaded };
+	// the loader reads the report of a review and the stale acknowledgement from the log, and the feedback from its file; the fixture has
+	// what the conversion would have recorded there
+	return { ...lifted, ...logFactsOf(entries, lifted), ...legacyFeedbackOf(raw) };
 }
 
 /** ArtifactRecords for the named REAL_STORE files (all of them when omitted), sorted by artifactId. */

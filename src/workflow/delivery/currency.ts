@@ -8,7 +8,7 @@
  * match its record, and each epic's amendments.
  *
  * A review is current or stale only where a recorded field settles it, never from
- * a file time. A review stamped before its record was created is stale. An LLD
+ * a file time. A lifecycle review of an earlier revision than the record's is stale. An LLD
  * that is the only one on its story, is not standalone and whose epic's HLD is in
  * the record set is compared with computeHldEffectiveHash over the HLD's runId and
  * the epic's counted amendments, in the order the existing scanner counts them. A
@@ -18,8 +18,8 @@
  *
  * An amendment counts toward the effective HLD exactly as listApprovedAmendments
  * counts it, through the store's own approvedInApplyOrder: a well-formed record
- * (isAmendmentRecord) with status 'approved' and a string approvedAt, hashed by
- * its recorded id.
+ * (isAmendmentRecord) whose lifecycle is approved, with the time of the approval,
+ * hashed by its recorded id.
  *
  * Notices: review-currency-unknown for each item holding reviews no recorded
  * field settles; base-predates-extension for an accepted extension whose story
@@ -73,22 +73,29 @@ function storiesOf(record: ArtifactRecord, ctx: PassContext): WorkItemNode[] {
 		.filter((n): n is WorkItemNode => n !== undefined && n.kind === 'story');
 }
 
-/** Whether the record carries a review: a recognised meta.review, or a CR's own verdict. */
+/** The lifecycle review of a record, when it has one. */
+function lifecycleReview(record: ArtifactRecord): Readonly<Record<string, unknown>> | null {
+	return asObject(asObject(record.meta['lifecycle'])?.['review']);
+}
+
+/** Whether the record carries a review: a recognised lifecycle review, or a CR's own verdict. */
 function hasReview(record: ArtifactRecord): boolean {
 	if (record.kind === 'BUILD' || record.kind === 'AMD') return false;
 	if (record.kind === 'CR') return VERDICTS.has(asString(asObject(record.body)?.['verdict']) ?? '');
-	return VERDICTS.has(asString(asObject(record.meta['review'])?.['verdict']) ?? '');
+	return VERDICTS.has(asString(lifecycleReview(record)?.['verdict']) ?? '');
 }
 
-function time(value: string | null): number | null {
-	if (value === null) return null;
-	const t = Date.parse(value);
-	return Number.isNaN(t) ? null : t;
-}
-
-/** The AMD as the store wrote it (meta with its amendment put back), when well formed. */
+/**
+ * The AMD as the amendments module reads it (its body fields, the status and approval time from its lifecycle, the display slug from
+ * its meta), when well formed. A head keeps no citations in the record, so the list is taken as present.
+ */
 function amendmentRecordOf(amd: ArtifactRecord): AmendmentRecord | null {
-	const rec: unknown = { ...amd.meta, amendment: amd.body };
+	const body = asObject(amd.body);
+	if (body === null) return null;
+	const rec: unknown = {
+		...body, epicHash: amd.workItemHash, epicSlug: amd.meta['epicSlug'], citations: [],
+		status: amd.approval.state, ...(amd.approval.at !== null ? { approvedAt: amd.approval.at } : {}),
+	};
 	return isAmendmentRecord(rec) ? rec : null;
 }
 
@@ -106,7 +113,7 @@ function countedAmendmentIds(epic: WorkItemNode, ctx: PassContext): string[] {
 }
 
 function amendmentOf(amd: ArtifactRecord): EffectiveAmendment {
-	const body = asObject(amd.body);
+	const body = asObject(asObject(amd.body)?.['amendment']);
 	return {
 		amendmentId:  amd.artifactId,
 		status:       amd.approval.state,
@@ -149,8 +156,7 @@ function lldCurrency(lld: ArtifactRecord, ctx: PassContext): Settled | null {
 		: missing !== undefined
 			? `amendment ${missing} is not in hldAmendmentsApplied`
 			: 'hldEffectiveHash differs from the recomputed effective HLD hash; no amendment identified';
-	const ackedAt = asString(lld.meta['staleAckedAt']);
-	if (ackedAt !== null) basis += `; staleness acknowledged at ${ackedAt}`;
+	if (lld.staleAckedAt !== undefined) basis += `; staleness acknowledged at ${lld.staleAckedAt}`;
 	return { reviewCurrency: 'stale', basis };
 }
 
@@ -178,11 +184,12 @@ function currencyOf(record: ArtifactRecord, ctx: PassContext): ArtifactCurrency 
 	if (!hasReview(record)) return { artifactId, reviewCurrency: null, basis: null };
 
 	if (record.kind !== 'CR') {
-		const reviewedAt = asString(asObject(record.meta['review'])?.['reviewedAt']);
-		const reviewed = time(reviewedAt);
-		const created = time(record.createdAt);
-		if (reviewed !== null && created !== null && reviewed < created) {
-			return { artifactId, reviewCurrency: 'stale', basis: `review reviewedAt ${reviewedAt} precedes createdAt ${record.createdAt}` };
+		// the lifecycle binds a review to the revision it looked at: a review of an earlier revision is stale
+		const lifecycle = asObject(record.meta['lifecycle']);
+		const reviewRevision = lifecycleReview(record)?.['revision'];
+		const headRevision = asObject(lifecycle?.['revision'])?.['number'];
+		if (typeof reviewRevision === 'number' && typeof headRevision === 'number' && reviewRevision < headRevision) {
+			return { artifactId, reviewCurrency: 'stale', basis: `the review is of revision ${reviewRevision} and the record is at revision ${headRevision}` };
 		}
 	}
 	const settled = record.kind === 'LLD' ? lldCurrency(record, ctx)

@@ -14,6 +14,7 @@
  * never a parent's or child's; an entry that is not well formed is left out and named in a notice. Pure.
  */
 
+import type { Feedback } from '../artifact-core/types.js';
 import { makeNotice } from './notice.js';
 import { asObject, byText, storyOrdinalOf } from './read.js';
 import type {
@@ -99,26 +100,18 @@ const FEEDBACK_KINDS: Readonly<Record<DeliveryItemKind, ReadonlySet<DeliveryArti
 	issue: new Set(),
 	task:  new Set(),
 };
-const FEEDBACK_ENTRY_KINDS: ReadonlySet<string> = new Set(['feedback', 'suggestion', 'comment']);
-
-/** One feedback entry, or null when it lacks a string id, author, timestamp, comment or target file. */
-function feedbackEntry(value: unknown, artifactId: string): DeliveryFeedback | null {
-	const e = asObject(value);
-	const target = asObject(e?.['target']);
-	const [id, author, timestamp, comment, file] = [e?.['id'], e?.['author'], e?.['timestamp'], e?.['comment'], target?.['file']];
-	if (typeof id !== 'string' || typeof author !== 'string' || typeof timestamp !== 'string' || typeof comment !== 'string' || typeof file !== 'string') return null;
-	const kind = e?.['kind'];
-	const version = target?.['version'];
-	const segment = asObject(target?.['segment']);
-	const [start, end] = [segment?.['startLine'], segment?.['endLine']];
+/** One feedback line as the delivery snapshot shows it. The author is the name the line records, else the actor's id; a revision request shows as feedback. */
+function deliveryFeedback(artifactId: string, f: Feedback): DeliveryFeedback {
+	const name = f.actor.properties['name'];
+	const lines = f.anchor?.lines;
 	return {
-		artifactId, id, author, timestamp,
-		kind: typeof kind === 'string' && FEEDBACK_ENTRY_KINDS.has(kind) ? kind as DeliveryFeedback['kind'] : null,
-		comment,
+		artifactId, id: f.id, author: typeof name === 'string' && name.length > 0 ? name : f.actor.id, timestamp: f.timestamp,
+		kind: f.kind === 'revision-request' ? 'feedback' : f.kind,
+		comment: f.text,
 		target: {
-			file,
-			version: typeof version === 'string' ? version : null,
-			segment: typeof start === 'number' && typeof end === 'number' ? { startLine: start, endLine: end } : null,
+			file: f.anchor?.section ?? '',
+			version: f.revision !== undefined ? String(f.revision) : null,
+			segment: lines !== undefined ? { startLine: lines[0], endLine: lines[1] } : null,
 		},
 	};
 }
@@ -134,23 +127,12 @@ export function feedbackOf(node: WorkItemNode, byId: ReadonlyMap<string, Artifac
 	for (const artifactId of node.evidenceArtifactIds) {
 		const record = byId.get(artifactId);
 		if (record === undefined || !kinds.has(record.kind)) continue;
-		const raw = asObject(record.body)?.['feedback'];
-		if (raw === undefined) continue;
-		// A feedback record is a list; anything else is left out whole, even if it looks like one entry.
-		if (!Array.isArray(raw)) {
-			notices.push(makeNotice('incomplete-evidence', `${artifactId} has feedback that is not a list, so none of it could be read`,
-				{ itemIds: [node.id], artifactIds: [artifactId] }));
-			continue;
-		}
-		let dropped = 0;
-		for (const value of raw) {
-			const entry = feedbackEntry(value, artifactId);
-			if (entry === null) dropped++;
-			else feedback.push(entry);
-		}
-		if (dropped > 0) {
+		const facts = record.feedback;
+		if (facts === undefined) continue;
+		for (const line of facts.lines) feedback.push(deliveryFeedback(artifactId, line));
+		if (facts.dropped > 0) {
 			notices.push(makeNotice('incomplete-evidence',
-				`${artifactId} has ${dropped} feedback ${dropped === 1 ? 'entry' : 'entries'} that could not be read; the readable feedback is shown`,
+				`${artifactId} has ${facts.dropped} feedback ${facts.dropped === 1 ? 'entry' : 'entries'} that could not be read; the readable feedback is shown`,
 				{ itemIds: [node.id], artifactIds: [artifactId] }));
 		}
 	}

@@ -17,7 +17,7 @@ import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
 import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
-import type { ChangeLogEntry } from '../artifact-core/types.js';
+import type { ChangeLogEntry, Feedback } from '../artifact-core/types.js';
 import { reviewRecordOf } from '../review/report-log.js';
 import { ARTIFACTS_DIR, TESTS_ID_PREFIX } from '../storage.js';
 import { asObject, asString, errorText, storyOrdinalOf } from './read.js';
@@ -91,19 +91,56 @@ export function liftStoreFile(fileName: string, parsed: unknown): ArtifactRecord
 	};
 }
 
-/** The record with the full report of the review its lifecycle names, read from the review entry of its log. A log that cannot be read leaves the record as it is. */
-function withReviewReport(repoPath: string, record: ArtifactRecord): ArtifactRecord {
-	const review = asObject(asObject(record.meta['lifecycle'])?.['review']);
-	const report = asObject(review?.['report']);
-	if (report === null) return record;
-	try {
-		const entries = new FileSidecarStore(repoPath).readRecordsSync<ChangeLogEntry>('log', record.artifactId);
-		const loaded = reviewRecordOf(entries, record.artifactId, { report: report as unknown as NonNullable<Parameters<typeof reviewRecordOf>[2]['report']> });
-		return loaded === undefined ? record : { ...record, reviewReport: loaded };
-	} catch (err) {
-		log.debug({ artifactId: record.artifactId, err: errorText(err) }, 'delivery: the review report could not be read');
-		return record;
+/** The time of the latest 'ack-stale' entry of a log, or undefined. */
+export function staleAckedAtOf(entries: readonly ChangeLogEntry[]): string | undefined {
+	return [...entries].reverse().find(e => e.operation === 'ack-stale')?.timestamp;
+}
+
+/** The report of the review a lifecycle names and the log's latest stale acknowledgement, as a record carries them. */
+export function logFactsOf(entries: readonly ChangeLogEntry[], record: ArtifactRecord): Pick<ArtifactRecord, 'reviewReport' | 'staleAckedAt'> {
+	const report = asObject(asObject(asObject(record.meta['lifecycle'])?.['review'])?.['report']);
+	const loaded = report === null ? undefined : reviewRecordOf(entries, record.artifactId, { report: report as unknown as NonNullable<Parameters<typeof reviewRecordOf>[2]['report']> });
+	const ackedAt = staleAckedAtOf(entries);
+	return { ...(loaded !== undefined ? { reviewReport: loaded } : {}), ...(ackedAt !== undefined ? { staleAckedAt: ackedAt } : {}) };
+}
+
+const FEEDBACK_RECORD_KINDS: ReadonlySet<DeliveryArtifactKind> = new Set(['DEF', 'HLD', 'LLD', 'PLAN']);
+
+/** A line of a feedback file the reader can show: text, an actor, a time, a kind. */
+function isReadableFeedback(f: unknown): f is Feedback {
+	const o = asObject(f);
+	return o !== null && typeof o['id'] === 'string' && typeof o['text'] === 'string' && typeof o['timestamp'] === 'string'
+		&& typeof o['kind'] === 'string' && asObject(o['actor']) !== null && typeof asObject(o['actor'])?.['id'] === 'string';
+}
+
+/** The readable feedback lines of a feedback file and the number that were not. */
+export function feedbackFactsOf(lines: readonly unknown[]): NonNullable<ArtifactRecord['feedback']> {
+	const readable = lines.filter(isReadableFeedback);
+	return { lines: readable, dropped: lines.length - readable.length };
+}
+
+/** The record with what its sidecar adds: the full report of its review, its stale acknowledgement and its feedback. A file that cannot be read leaves the record as it is. */
+function withLogFacts(repoPath: string, record: ArtifactRecord): ArtifactRecord {
+	const store = new FileSidecarStore(repoPath);
+	let out = record;
+	// only a record with a review to read, or an LLD (whose staleness can be acknowledged), has a log the snapshot looks at
+	if (record.kind === 'LLD' || asObject(asObject(asObject(record.meta['lifecycle'])?.['review'])?.['report']) !== null) {
+		try {
+			out = { ...out, ...logFactsOf(store.readRecordsSync<ChangeLogEntry>('log', record.artifactId), record) };
+		} catch (err) {
+			log.debug({ artifactId: record.artifactId, err: errorText(err) }, 'delivery: the log of a record could not be read');
+		}
 	}
+	// feedback is shown for the design records of an item only
+	if (FEEDBACK_RECORD_KINDS.has(record.kind)) {
+		try {
+			const lines = store.readRecordsSync<unknown>('feedback', record.artifactId);
+			if (lines.length > 0) out = { ...out, feedback: feedbackFactsOf(lines) };
+		} catch (err) {
+			log.debug({ artifactId: record.artifactId, err: errorText(err) }, 'delivery: the feedback of a record could not be read');
+		}
+	}
+	return out;
 }
 
 function isFailure(r: ArtifactRecord | RecordLoadFailure): r is RecordLoadFailure {
@@ -154,7 +191,7 @@ export function loadArtifactRecordSet(
 		}
 		const lifted = liftStoreFile(fileName, parsed);
 		if (isFailure(lifted)) failures.push(lifted);
-		else records.push(withReviewReport(repoPath, lifted));
+		else records.push(withLogFacts(repoPath, lifted));
 	}
 
 	records.sort((a, b) => a.artifactId.localeCompare(b.artifactId));

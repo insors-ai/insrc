@@ -12,6 +12,7 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, wr
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { reviewedMeta } from '../../__tests__/lifecycle-fixtures.js';
 import { computeHldEffectiveHash } from '../../artifacts/lld.js';
 import { ARTIFACTS_DIR } from '../../storage.js';
 import { deriveCurrency } from '../currency.js';
@@ -142,9 +143,11 @@ test('amendments are hashed in approvedAt order and listed in amendmentId order 
 	assert.equal(list.length, 6);
 });
 
-test('a review stamped before its record, a standalone design and malformed fields never throw and invent no currency', () => {
+test('a review of an earlier revision than its record, a standalone design and malformed fields never throw and invent no currency', () => {
 	const current = computeHldEffectiveHash(RUN, []);
-	const early = { review: { ...REVIEW.review, reviewedAt: '2026-10-01T00:00:00.000Z' } };
+	// the lifecycle review looked at revision 2 and the record is at revision 3
+	const reviewed = reviewedMeta({ revision: 2 }) as { lifecycle: { revision: object } };
+	const early = { review: undefined, revision: 3, ...reviewed, lifecycle: { ...reviewed.lifecycle, revision: { ...reviewed.lifecycle.revision, number: 3 } } };
 	const records = [
 		defRecord(EPIC, ['s1', 's2', 's3', 's4']),
 		hldRecord(EPIC, { runId: RUN }),
@@ -160,7 +163,7 @@ test('a review stamped before its record, a standalone design and malformed fiel
 
 	const stamped = currencyOf(result, `LLD-${EPIC}-s1`);
 	assert.equal(stamped.reviewCurrency, 'stale');
-	assert.match(stamped.basis ?? '', /precedes createdAt/);
+	assert.match(stamped.basis ?? '', /the review is of revision 2 and the record is at revision 3/);
 	assert.equal(currencyOf(result, 'LLD-cccccccccccccccc-s1').reviewCurrency, 'unknown', 'a standalone design has no HLD to compare');
 	assert.equal(currencyOf(result, `LLD-${EPIC}-s2`).reviewCurrency, 'unknown');
 	assert.equal(currencyOf(result, `LLD-${EPIC}-s3`).reviewCurrency, null);

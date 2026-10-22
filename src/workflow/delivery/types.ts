@@ -11,6 +11,7 @@
  * so IDE clients can import the shapes without pulling in node:fs.
  */
 
+import type { Feedback } from '../artifact-core/types.js';
 import type { ReviewRecord } from '../review/report-log.js';
 import type { ReviewVerdict } from '../review/types.js';
 
@@ -50,6 +51,10 @@ export interface ArtifactRecord {
 	readonly body: unknown;
 	/** The full report of the review the lifecycle names, with its resolutions, read from the review entry of the record's log by the loader. Absent when there is no review, no entry, or the log cannot be read. */
 	readonly reviewReport?: ReviewRecord | undefined;
+	/** The time of the latest stale acknowledgement in the record's log (the 'ack-stale' entry), read by the loader. */
+	readonly staleAckedAt?: string | undefined;
+	/** The readable lines of the record's feedback file, and how many could not be read. Read by the loader. */
+	readonly feedback?: { readonly lines: readonly Feedback[]; readonly dropped: number } | undefined;
 }
 
 export interface RecordLoadFailure {

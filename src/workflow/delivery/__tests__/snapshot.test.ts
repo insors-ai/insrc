@@ -8,6 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { legacyDeliveryView } from '../../convert/legacy-view.js';
 import { deriveCurrency } from '../currency.js';
 import { deriveGates } from '../gate.js';
 import { buildWorkItemGraph } from '../graph.js';
@@ -25,7 +26,9 @@ import {
 	issueRecord,
 	lldRecord,
 	planRecord,
+	recordFromFile,
 	recordSet,
+	REAL_STORE,
 	specRecord,
 } from './fixtures.js';
 
@@ -252,7 +255,7 @@ test('a story added by an extension takes its purpose from the EXT, and a standa
 
 test('feedback from an item\'s own design records is listed read-only, in order, and malformed entries are noticed', () => {
 	const entry = (id: string, timestamp: string, extra: Record<string, unknown> = {}) =>
-		({ id, author: 'ana', timestamp, target: { file: 'docs/epic/LLD.md', version: 'v2', segment: { startLine: 3, endLine: 9 } }, comment: `comment ${id}`, kind: 'suggestion', ...extra });
+		({ id, author: 'ana', timestamp, target: { file: 'docs/epic/LLD.md', version: '2', segment: { startLine: 3, endLine: 9 } }, comment: `comment ${id}`, kind: 'suggestion', ...extra });
 	const def = defRecord(DESC, ['s1'], APPROVED, { feedback: [entry('d1', '2026-10-08T10:00:00.000Z')] });
 	const hld = hldRecord(DESC, APPROVED, { feedback: [entry('h1', '2026-10-08T09:00:00.000Z')] });
 	const lld = lldRecord(DESC, 's1', {}, { feedback: [
@@ -265,23 +268,21 @@ test('feedback from an item\'s own design records is listed read-only, in order,
 	const build = buildRecord(DESC, 's1', [{ id: 't1', passed: true }], {});
 	const buildWithFeedback = { ...build, body: { ...(build.body as object), feedback: [entry('b1', '2026-10-08T12:00:00.000Z')] } };
 	const issue = issueRecord(FIX, { slug: 'nothing' }, {}, { feedback: [entry('i1', '2026-10-08T12:00:00.000Z')] });
-	// Not a list, though it looks like one well-formed entry: left out whole.
-	const odd = hldRecord(SOLO, {}, { feedback: entry('lone', '2026-10-08T12:00:00.000Z') });
-	const s = snapshotOf([def, hld, lld, plan, buildWithFeedback, issue, defRecord(SOLO, ['s1']), odd]);
+	const s = snapshotOf([def, hld, lld, plan, buildWithFeedback, issue, defRecord(SOLO, ['s1'])]);
 
 	const epic = byKindAndSource(s, 'epic', 'dddddddd');
 	assert.deepEqual(epic.feedback.map(f => [f.artifactId, f.id]), [[hld.artifactId, 'h1'], [def.artifactId, 'd1']], 'the epic\'s DEF and HLD, by timestamp');
 	assert.deepEqual(epic.feedback[1], {
 		artifactId: def.artifactId, id: 'd1', author: 'ana', timestamp: '2026-10-08T10:00:00.000Z', kind: 'suggestion', comment: 'comment d1',
-		target: { file: 'docs/epic/LLD.md', version: 'v2', segment: { startLine: 3, endLine: 9 } },
+		target: { file: 'docs/epic/LLD.md', version: '2', segment: { startLine: 3, endLine: 9 } },
 	});
 	const story = byKindAndSource(s, 'story', 'dddddddd', 's1');
 	assert.deepEqual(story.feedback.map(f => [f.artifactId, f.id]), [[lld.artifactId, 'l1'], [lld.artifactId, 'l2'], [plan.artifactId, 'p1']],
 		'the story\'s LLD and PLAN by timestamp, then artifactId, then id; never the epic\'s, and never the BUILD\'s');
 	assert.deepEqual(story.feedback[0], {
-		artifactId: lld.artifactId, id: 'l1', author: 'bo', timestamp: '2026-10-08T11:00:00.000Z', kind: null, comment: 'bare',
+		artifactId: lld.artifactId, id: 'l1', author: 'bo', timestamp: '2026-10-08T11:00:00.000Z', kind: 'comment', comment: 'bare',
 		target: { file: 'docs/epic/LLD.md', version: null, segment: null },
-	}, 'absent kind, version and segment are null');
+	}, 'an entry with no kind is a comment, and an absent version and segment are null');
 	assert.ok(!epic.feedback.some(f => f.artifactId === lld.artifactId), 'a child\'s feedback is not the epic\'s');
 	assert.deepEqual(item(s, i => i.kind === 'task', 'a task').feedback, [], 'a task inherits none of its story\'s PLAN feedback');
 	assert.deepEqual(byKindAndSource(s, 'issue', 'eeeeeeee').feedback, [], 'an ISSUE body is not read for feedback');
@@ -292,6 +293,55 @@ test('feedback from an item\'s own design records is listed read-only, in order,
 	assert.equal(notice.attention, false);
 	const solo = byKindAndSource(s, 'epic', 'cccccccc');
 	assert.deepEqual(solo.feedback, []);
-	assert.ok(solo.notices.some(n => n.code === 'incomplete-evidence' && n.artifactIds.includes(odd.artifactId) && /not a list/.test(n.message)), 'feedback that is not a list is named');
 	assertPlainJson(s);
+});
+
+test('snapshot.test.ts: the delivery snapshot of a lifecycle fixture equals the old snapshot of the same unit', () => {
+	const H = 'ffffffffffffffff';
+	const reviewed = '2026-10-08T10:00:00.000Z';
+	const at = '2026-10-07T09:00:00.000Z';
+	const review = (verdict: string, findings: readonly unknown[]) => ({ artifact: 'LLD', stage: 'design.story', verdict, findings, counts: { high: 0, med: findings.length, low: 0 }, reviewedAt: reviewed, model: 'cli-claude:opus', reviewedBy: 'daemon' });
+	const med = { claimId: 'q1', severity: 'MED', claim: 'c', evidence: 'e' };
+	const entry = (id: string) => ({ id, author: 'ana', timestamp: reviewed, comment: `c ${id}`, target: { file: 'docs/LLD.md' } });
+	const head = (storyId: string, meta: Record<string, unknown>, body: Record<string, unknown> = {}) =>
+		({ meta: { epicHash: H, storyId, createdAt: at, epicCreatedAt: at, revision: 2, ...meta }, body });
+	// the units the old reader answered a question about: approved, rejected, pending, blocked, resolved, overridden, with feedback
+	const files = {
+		...REAL_STORE,
+		[`DEF-${H}.json`]:    { meta: { epicHash: H, createdAt: at, epicCreatedAt: at, revision: 1, approvedAt: at }, body: { stories: ['s1', 's2', 's3', 's4', 's5', 's6'].map(id => ({ id, title: id })) } },
+		[`LLD-${H}-s1.json`]: head('s1', { review: review('block', [med]) }, { feedback: [entry('a'), entry('b')] }),
+		[`LLD-${H}-s2.json`]: head('s2', { review: review('block', [med]), reviewResolutions: { q1: { findingId: 'q1', status: 'resolved', resolvedAt: reviewed } } }),
+		[`LLD-${H}-s3.json`]: head('s3', { approvedAt: reviewed, review: review('block', [med]) }),
+		[`LLD-${H}-s4.json`]: head('s4', { rejectedAt: reviewed }),
+		[`LLD-${H}-s5.json`]: head('s5', { approvedAt: reviewed, review: review('block', [med]), reviewOverride: { reason: 'accepted', at: reviewed } }),
+		[`LLD-${H}-s6.json`]: head('s6', { review: review('warn', [med]) }, { feedback: [entry('c')] }),
+	};
+	const old = legacyDeliveryView(Object.entries(files).map(([f, json]) => ({ artifactId: f.replace(/\.json$/, ''), json })));
+	const records = Object.entries(files).map(([f, raw]) => recordFromFile(f, raw));
+	const set = recordSet(records);
+	const graph = buildWorkItemGraph(set);
+	const gates = deriveGates(graph, set);
+	const snapshot = assembleSnapshot(set, graph, deriveStages(graph, set), gates, deriveCurrency(graph, set), PORT);
+
+	assert.equal(snapshot.recordCount, records.length);
+	assert.ok(old.length >= Object.keys(REAL_STORE).length + 7, 'the old view covers every unit');
+	for (const unit of old) {
+		const gate = gates.artifacts.get(unit.artifactId);
+		assert.ok(gate, `a gate for ${unit.artifactId}`);
+		const record = set.records.find(r => r.artifactId === unit.artifactId);
+		assert.equal(gate.approval.state, unit.approval, `${unit.artifactId}: approval`);
+		if (unit.review === null) assert.equal(gate.review, null, `${unit.artifactId}: no review`);
+		else assert.deepEqual(
+			[gate.review?.verdict, gate.review?.effectiveVerdict, gate.review?.blocking, gate.review?.counts],
+			[unit.review.verdict, unit.review.effectiveVerdict, unit.review.blocking, unit.review.counts], `${unit.artifactId}: review`);
+		const revision = (record?.meta['lifecycle'] as { revision: { number: number } }).revision.number;
+		if (unit.revision !== null) assert.equal(revision, unit.revision, `${unit.artifactId}: revision`);
+		assert.equal(record?.feedback?.lines.length ?? 0, unit.openFeedback, `${unit.artifactId}: feedback`);
+	}
+	// and the snapshot itself shows the story-level facts the old one did
+	const story = (id: string) => snapshot.items.find(i => i.kind === 'story' && i.evidence.some(e => e.artifactId === `LLD-${H}-${id}`));
+	assert.equal(story('s1')?.feedback.length, 2);
+	assert.deepEqual(story('s1')?.attentionReasons.includes('review-blocked'), true);
+	assert.deepEqual(story('s2')?.attentionReasons.includes('review-blocked'), false, 'a resolved block no longer needs attention for its review');
+	assert.deepEqual(story('s5')?.attentionReasons.includes('review-blocked'), false, 'an overridden block does not block');
 });

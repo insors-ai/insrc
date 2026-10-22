@@ -26,7 +26,9 @@ import { join } from 'node:path';
 
 import { approveWorkflowTarget } from '../gates.js';
 import { artifactJsonPath, codeReviewArtifactId } from '../storage.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
+import { approvedMeta, reviewedMeta } from './lifecycle-fixtures.js';
 
 const HASH = 'abc123def4567890';
 
@@ -37,7 +39,7 @@ async function withRepo(fn: (repo: string, artifactsDir: string) => void | Promi
 	try { await fn(repo, artifactsDir); } finally { rmSync(repo, { recursive: true, force: true }); }
 }
 
-/** A pending story-scoped artifact JSON (no approvedAt). `review` optionally
+/** A pending story-scoped artifact JSON (a draft). `review` optionally
  *  seeds a meta.review (design-artifact review) to prove the two gates stay
  *  distinct. Omit `storyId` to model a DEF/HLD (the gate then never runs). */
 function writeArtifact(
@@ -47,7 +49,7 @@ function writeArtifact(
 ): string {
 	const meta: Record<string, unknown> = { workflow: opts.workflow, epicHash: HASH };
 	if (opts.storyId !== undefined) meta['storyId'] = opts.storyId;
-	if (opts.review !== undefined)  meta['review']  = opts.review;
+	if (opts.review !== undefined)  Object.assign(meta, reviewedMeta());   // a passing design review of its own
 	const p = join(dir, name);
 	writeFileSync(p, JSON.stringify({ meta, body: {}, citations: [] }, null, 2));
 	// A design artifact given no review of its own gets a passing other-party one:
@@ -61,17 +63,17 @@ function writeArtifact(
 function writeCR(repo: string, storyId: string, verdict: 'pass' | 'warn' | 'block' | 'corrupt'): void {
 	const json = artifactJsonPath(repo, codeReviewArtifactId(HASH, storyId));
 	if (verdict === 'corrupt') { writeFileSync(json, '{ not valid json'); return; }
-	writeFileSync(json, JSON.stringify({ body: { verdict, counts: { high: verdict === 'block' ? 2 : 0, med: 1, low: 3 } } }, null, 2));
+	writeFileSync(json, JSON.stringify({ meta: {}, body: { verdict, counts: { high: verdict === 'block' ? 2 : 0, med: 1, low: 3 } } }, null, 2));
 }
 
 const isApproved = (jsonPath: string): boolean =>
-	(JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { approvedAt?: string } }).meta?.approvedAt !== undefined;
+	approvalStateOf((JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: unknown }).meta) === 'approved';
 
 // ---------------------------------------------------------------------------
 // ac1 — a code-review block withholds completion
 // ---------------------------------------------------------------------------
 
-test('ac1: enforce on + CR block + no override → skipped, no approvedAt, codeReview[] blocked', async () => {
+test('ac1: enforce on + CR block + no override → skipped, not approved, codeReview[] blocked', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		writeCR(repo, 's1', 'block');

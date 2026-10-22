@@ -18,8 +18,11 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { approve as tuiApprove } from '../../cli/services/workflow.js';
-import { approveArtifactByJsonPath, approveWorkflowTarget, ReviewBlockedError } from '../gates.js';
+import { approvalStateOf, lifecycleOfMeta } from '../artifact-core/approval-view.js';
+import { approveWorkflowTarget, ReviewBlockedError } from '../gates.js';
+import { approveJson } from './helpers/approve.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
+import { blockedMeta, recordReviewSync, reviewedMeta } from './lifecycle-fixtures.js';
 
 const HASH = 'abcd1234ef567890';
 type Party = 'controller' | 'daemon';
@@ -31,35 +34,36 @@ function repo() {
 	return { root, dir, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 
+/** A review as a fixture describes it: who did it and whether it blocks. */
+interface ReviewDesc { readonly by: Party; readonly block: boolean }
+
+/** A head. A `review` in its meta is the lifecycle review it describes, with its report as the review entry of the head's log. */
 function write(dir: string, name: string, meta: Record<string, unknown>): string {
+	const { review: rv, ...rest } = meta as { review?: ReviewDesc } & Record<string, unknown>;
+	const id = name.replace(/\.json$/, '');
+	let state: Record<string, unknown> = {};
+	if (rv !== undefined) {
+		const findings = rv.block ? [{ severity: 'HIGH', claimId: 'c1', kind: 'inventory', premise: 'wrong', evidence: 'e', action: 'a', fixability: 'manual' }] : [];
+		const report = recordReviewSync(join(dir, '..', '..'), id, {
+			artifact: 'x', stage: 'x', verdict: rv.block ? 'block' : 'pass', findings: findings as never,
+			counts: { high: findings.length, med: 0, low: 0 }, reviewedAt: '2026-10-05T00:00:00.000Z', model: 'm', reviewedBy: rv.by,
+		});
+		state = (rv.block ? blockedMeta : reviewedMeta)({ report, party: rv.by });
+	}
 	const p = join(dir, name);
-	writeFileSync(p, JSON.stringify({ meta: { epicHash: HASH, ...meta }, body: {}, citations: [] }, null, 2));
+	writeFileSync(p, JSON.stringify({ meta: { epicHash: HASH, ...rest, ...state }, body: {}, citations: [] }, null, 2));
 	return p;
 }
 
-const review = (by: Party | undefined, opts: { block?: boolean; model?: string } = {}) => ({
-	artifact: 'x', stage: 'x', verdict: opts.block === true ? 'block' : 'pass',
-	findings: opts.block === true ? [{ severity: 'HIGH', claimId: 'c1', summary: 'wrong' }] : [],
-	counts: { high: opts.block === true ? 1 : 0, med: 0, low: 0 }, reviewedAt: '2026-10-05T00:00:00.000Z',
-	...(opts.model !== undefined ? { model: opts.model } : {}),
-	...(by !== undefined ? { reviewedBy: by } : {}),
-});
+const review = (by: Party, opts: { block?: boolean } = {}): ReviewDesc => ({ by, block: opts.block === true });
 
 const metaOf = (p: string) => (JSON.parse(readFileSync(p, 'utf8')) as { meta: Record<string, unknown> }).meta;
-const isApproved = (p: string): boolean => metaOf(p)['approvedAt'] !== undefined;
+const isApproved = (p: string): boolean => approvalStateOf(metaOf(p)) === 'approved';
+/** The reason the approval was given over a block or a missing review, or undefined. */
+const overrideOf = (p: string): string | undefined => ((lifecycleOfMeta(metaOf(p))?.['approval'] as { override?: { reason: string } } | undefined)?.override)?.reason;
 
-function blocked(fn: () => unknown, summary: RegExp, message?: RegExp): void {
-	assert.throws(fn, (e: unknown) => {
-		assert.ok(e instanceof ReviewBlockedError, `got ${String(e)}`);
-		assert.match(e.summary, summary);
-		assert.match(e.message, /approve with an override reason/);
-		if (message !== undefined) assert.match(e.message, message);
-		return true;
-	});
-}
-
-/** {@link blocked} for a call that returns a promise (the terminal's approve service is async). */
-async function blockedAsync(fn: () => Promise<unknown>, summary: RegExp, message?: RegExp): Promise<void> {
+/** A call that must be withheld by the review rule, with the summary and message it gives. */
+async function blocked(fn: () => Promise<unknown>, summary: RegExp, message?: RegExp): Promise<void> {
 	await assert.rejects(fn(), (e: unknown) => {
 		assert.ok(e instanceof ReviewBlockedError, `got ${String(e)}`);
 		assert.match(e.summary, summary);
@@ -75,41 +79,39 @@ const NO_REVIEW_KINDS = [['ISSUE', `ISSUE-${HASH}.json`, 'issue'], ['SPEC', `SPE
 // --- T5 ---------------------------------------------------------------------------
 
 for (const [kind, name, workflow] of DESIGN) {
-	test(`T5 a ${kind} with no review is withheld; an override reason approves it and is written on the artifact`, () => {
+	test(`T5 a ${kind} with no review is withheld; an override reason approves it and is written on the artifact`, async () => {
 		const r = repo();
 		try {
 			const p = write(r.dir, name, { workflow, storyId: 's1', authoredBy: 'controller' });
-			blocked(() => approveArtifactByJsonPath(p), /approval requires a review; none was run/, /needs a daemon review \(run insrc_review_step/);
+			await blocked(() => approveJson(p), /approval requires a review; none was run/, /needs a daemon review \(run insrc_review_step/);
 			assert.ok(!isApproved(p));
-			blocked(() => approveArtifactByJsonPath(p, { overrideReview: '' }), /none was run/);
+			await blocked(() => approveJson(p, ''), /none was run/);
 
-			approveArtifactByJsonPath(p, { overrideReview: 'read it myself' });
+			await approveJson(p, 'read it myself');
 			assert.ok(isApproved(p));
-			const o = metaOf(p)['reviewOverride'] as { reason: string; at: string };
-			assert.equal(o.reason, 'read it myself');
-			assert.match(o.at, /^\d{4}-\d{2}-\d{2}T/);
+			assert.equal(overrideOf(p), 'read it myself');
 		} finally { r.cleanup(); }
 	});
 }
 
-test('T5 the message names the reviewer that is needed: a controller review for daemon-authored work', () => {
+test('T5 the message names the reviewer that is needed: a controller review for daemon-authored work', async () => {
 	const r = repo();
 	try {
 		const byDaemon = write(r.dir, `DEF-${HASH}.json`, { workflow: 'define', authoredBy: 'daemon' });
-		blocked(() => approveArtifactByJsonPath(byDaemon), /none was run/, /needs a controller review \(run insrc_review_step\)/);
+		await blocked(() => approveJson(byDaemon), /none was run/, /needs a controller review \(run insrc_review_step\)/);
 		const unknown = write(r.dir, `HLD-${HASH}.json`, { workflow: 'design.epic' });
-		blocked(() => approveArtifactByJsonPath(unknown), /none was run/, /needs a review \(run insrc_review_step\)/);
+		await blocked(() => approveJson(unknown), /none was run/, /needs a review \(run insrc_review_step\)/);
 	} finally { r.cleanup(); }
 });
 
 for (const [kind, name, workflow] of NO_REVIEW_KINDS) {
-	test(`T5 an ${kind} with no review is approved on the approval alone`, () => {
+	test(`T5 an ${kind} with no review is approved on the approval alone`, async () => {
 		const r = repo();
 		try {
 			const p = write(r.dir, name, { workflow, storyId: 's1', authoredBy: 'controller' });
-			approveArtifactByJsonPath(p);
+			await approveJson(p);
 			assert.ok(isApproved(p));
-			assert.equal(metaOf(p)['reviewOverride'], undefined, 'nothing was overridden');
+			assert.equal(overrideOf(p), undefined, 'nothing was overridden');
 		} finally { r.cleanup(); }
 	});
 }
@@ -120,72 +122,55 @@ for (const [kind, name, workflow] of DESIGN) {
 	for (const party of ['controller', 'daemon'] as const) {
 		const other: Party = party === 'controller' ? 'daemon' : 'controller';
 
-		test(`T6 a ${kind} authored AND reviewed by the ${party} is withheld; an override approves it and is recorded`, () => {
+		test(`T6 a ${kind} authored AND reviewed by the ${party} is withheld; an override approves it and is recorded`, async () => {
 			const r = repo();
 			try {
 				const p = write(r.dir, name, { workflow, storyId: 's1', authoredBy: party, review: review(party) });
-				blocked(() => approveArtifactByJsonPath(p), new RegExp(`review was done by the party that authored the work \\(${party}\\)`), new RegExp(`needs a ${other} review`));
+				await blocked(() => approveJson(p), new RegExp(`review was done by the party that authored the work \\(${party}\\)`), new RegExp(`needs a ${other} review`));
 				assert.ok(!isApproved(p));
-				approveArtifactByJsonPath(p, { overrideReview: 'accepted as is' });
+				await approveJson(p, 'accepted as is');
 				assert.ok(isApproved(p));
-				assert.equal((metaOf(p)['reviewOverride'] as { reason: string }).reason, 'accepted as is');
+				assert.equal(overrideOf(p), 'accepted as is');
 			} finally { r.cleanup(); }
 		});
 
-		test(`T6 a ${kind} authored by the ${party} and reviewed by the ${other} with nothing blocking is approved`, () => {
+		test(`T6 a ${kind} authored by the ${party} and reviewed by the ${other} with nothing blocking is approved`, async () => {
 			const r = repo();
 			try {
 				const p = write(r.dir, name, { workflow, storyId: 's1', authoredBy: party, review: review(other) });
-				approveArtifactByJsonPath(p);
+				await approveJson(p);
 				assert.ok(isApproved(p));
-				assert.equal(metaOf(p)['reviewOverride'], undefined);
+				assert.equal(overrideOf(p), undefined);
 			} finally { r.cleanup(); }
 		});
 	}
 }
 
-test('T6 an other-party review whose verdict BLOCKS still withholds without an override', () => {
+test('T6 an other-party review whose verdict BLOCKS still withholds without an override', async () => {
 	const r = repo();
 	try {
 		const p = write(r.dir, `LLD-${HASH}-s1.json`, { workflow: 'design.story', storyId: 's1', authoredBy: 'controller', review: review('daemon', { block: true }) });
-		blocked(() => approveArtifactByJsonPath(p), /1 HIGH · 0 MED unresolved/);
+		await blocked(() => approveJson(p), /1 HIGH · 0 MED unresolved/);
 		assert.ok(!isApproved(p));
-		approveArtifactByJsonPath(p, { overrideReview: 'finding is wrong' });
+		await approveJson(p, 'finding is wrong');
 		assert.ok(isApproved(p));
 	} finally { r.cleanup(); }
 });
 
-test('T6 an unknown author or an unknown reviewer never withholds by itself', () => {
+test('T6 an unknown author never withholds by itself', async () => {
 	const r = repo();
 	try {
 		const unknownAuthor = write(r.dir, `DEF-${HASH}.json`, { workflow: 'define', review: review('controller') });
-		approveArtifactByJsonPath(unknownAuthor);
+		await approveJson(unknownAuthor);
 		assert.ok(isApproved(unknownAuthor));
-		const unknownReviewer = write(r.dir, `HLD-${HASH}.json`, { workflow: 'design.epic', authoredBy: 'controller', review: review(undefined) });
-		approveArtifactByJsonPath(unknownReviewer);
-		assert.ok(isApproved(unknownReviewer));
 	} finally { r.cleanup(); }
 });
 
-test('T6 older records with no party field are judged by their model labels', () => {
-	const r = repo();
-	try {
-		const outputs = (model: string) => ({ outputs: [{ role: 'synthesize', tier: 'core', runner: 'cli-claude', model }] });
-		// Written by the controller (`client`) and reviewed by the controller (`client`): the same party.
-		const same = write(r.dir, `DEF-${HASH}.json`, { workflow: 'define', attribution: outputs('client'), review: review(undefined, { model: 'client' }) });
-		blocked(() => approveArtifactByJsonPath(same), /authored the work \(controller\)/);
-		// Written by the daemon and reviewed by the controller: the other party.
-		const other = write(r.dir, `HLD-${HASH}.json`, { workflow: 'design.epic', attribution: outputs('opus'), review: review(undefined, { model: 'client' }) });
-		approveArtifactByJsonPath(other);
-		assert.ok(isApproved(other));
-	} finally { r.cleanup(); }
-});
-
-test('T6 the same-party rule applies to any artifact that carries a review, also one that needs none', () => {
+test('T6 the same-party rule applies to any artifact that carries a review, also one that needs none', async () => {
 	const r = repo();
 	try {
 		const p = write(r.dir, `PLAN-${HASH}-s1.json`, { workflow: 'plan', storyId: 's1', authoredBy: 'daemon', review: review('daemon') });
-		blocked(() => approveArtifactByJsonPath(p), /authored the work \(daemon\)/);
+		await blocked(() => approveJson(p), /authored the work \(daemon\)/);
 	} finally { r.cleanup(); }
 });
 
@@ -208,7 +193,7 @@ for (const enforce of [false, true]) {
 
 			const over = await approveWorkflowTarget({ repoPath: r.root, artifactPath: p, overrideReview: 'tested by hand' }, { enforce });
 			assert.deepEqual(over.approved.map(a => a.path), [p]);
-			assert.equal((metaOf(p)['reviewOverride'] as { reason: string }).reason, 'tested by hand');
+			assert.equal(overrideOf(p), 'tested by hand');
 		} finally { r.cleanup(); }
 	});
 
@@ -229,7 +214,7 @@ for (const enforce of [false, true]) {
 				const ok = await approveWorkflowTarget({ repoPath: r.root, artifactPath: p }, { enforce });
 				assert.deepEqual(ok.approved.map(a => a.path), [p]);
 				assert.deepEqual(ok.skipped, []);
-				assert.equal(metaOf(p)['reviewOverride'], undefined);
+				assert.equal(overrideOf(p), undefined);
 			} finally { r.cleanup(); }
 		});
 	}
@@ -252,6 +237,19 @@ test('T7 for a BUILD record too, an unknown author or reviewer does not withhold
 	} finally { r.cleanup(); }
 });
 
+test('T7 the party of a code review is its lifecycle review\'s when it has one', async () => {
+	const r = repo();
+	try {
+		const p = build(r.dir, 'controller');
+		// a code review whose lifecycle review says the controller did it, over a label that says the daemon
+		writeCR(r.dir, 's1', { reviewedBy: 'daemon', ...reviewedMeta({ party: 'controller' }) });
+		const out = await approveWorkflowTarget({ repoPath: r.root, artifactPath: p }, { enforce: false });
+		assert.equal(out.skipped[0]?.reason, 'the code review was done by the party that authored the work (controller)');
+		writeCR(r.dir, 's1', { reviewedBy: 'controller', ...reviewedMeta({ party: 'daemon' }) });
+		assert.equal((await approveWorkflowTarget({ repoPath: r.root, artifactPath: p }, { enforce: false })).approved.length, 1);
+	} finally { r.cleanup(); }
+});
+
 test('T7 a code review that cannot be read is no code review', async () => {
 	const r = repo();
 	try {
@@ -266,16 +264,16 @@ test('T7 the TUI approve service applies the same rules: it calls the same funct
 	const r = repo();
 	try {
 		const p = build(r.dir, 'controller');
-		await blockedAsync(() => tuiApprove(p, false), /completion requires a code review; none was run/, /Run insrc_code_review_step first/);
+		await blocked(() => tuiApprove(p, false), /completion requires a code review; none was run/, /Run insrc_code_review_step first/);
 		writeCR(r.dir, 's1', { reviewedBy: 'controller' });
-		await blockedAsync(() => tuiApprove(p, false), /code review was done by the party that authored the work \(controller\)/, /insrc_code_review_step/);
+		await blocked(() => tuiApprove(p, false), /code review was done by the party that authored the work \(controller\)/, /insrc_code_review_step/);
 		assert.ok(!isApproved(p));
 		const out = await tuiApprove(p, false, 'approved from the TUI');
 		assert.equal(out.approval.path, p);
-		assert.equal((metaOf(p)['reviewOverride'] as { reason: string }).reason, 'approved from the TUI');
+		assert.equal(overrideOf(p), 'approved from the TUI');
 
 		const def = write(r.dir, `DEF-${HASH}.json`, { workflow: 'define', authoredBy: 'controller' });
-		await blockedAsync(() => tuiApprove(def, false), /approval requires a review; none was run/);
+		await blocked(() => tuiApprove(def, false), /approval requires a review; none was run/);
 		stampOtherPartyReview(def);
 		await tuiApprove(def, false);
 		assert.ok(isApproved(def));
@@ -307,7 +305,7 @@ test('T8 a batch approval lists every withheld artifact in skipped[] with its re
 		// With an override reason the same batch approves the three it withheld.
 		const over = await approveWorkflowTarget({ repoPath: r.root, epicHash: HASH, overrideReview: 'batch override' }, { enforce: false });
 		assert.deepEqual(over.approved.map(a => a.path).sort(), [unreviewed, sameParty, blocking].sort());
-		for (const p of [unreviewed, sameParty, blocking]) assert.equal((metaOf(p)['reviewOverride'] as { reason: string }).reason, 'batch override');
+		for (const p of [unreviewed, sameParty, blocking]) assert.equal(overrideOf(p), 'batch override');
 	} finally { r.cleanup(); }
 });
 
@@ -315,15 +313,15 @@ test('T8 a batch approval lists every withheld artifact in skipped[] with its re
 
 for (const [kind, name, workflow] of [...DESIGN, ['BUILD', `BUILD-${HASH}-s1.json`, 'build']] as const) {
 	for (const author of ['controller', 'daemon', undefined] as const) {
-		test(`T18 a ${kind} fixture (author: ${author ?? 'none'}) stamped with the shared helper is approved with no override`, () => {
+		test(`T18 a ${kind} fixture (author: ${author ?? 'none'}) stamped with the shared helper is approved with no override`, async () => {
 			const r = repo();
 			try {
 				const p = write(r.dir, name, { workflow, storyId: 's1', ...(author !== undefined ? { authoredBy: author } : {}) });
-				assert.throws(() => approveArtifactByJsonPath(p), ReviewBlockedError, 'without the helper it is withheld');
+				await assert.rejects(approveJson(p), ReviewBlockedError, 'without the helper it is withheld');
 				stampOtherPartyReview(p);
-				approveArtifactByJsonPath(p);
+				await approveJson(p);
 				assert.ok(isApproved(p));
-				assert.equal(metaOf(p)['reviewOverride'], undefined);
+				assert.equal(overrideOf(p), undefined);
 			} finally { r.cleanup(); }
 		});
 	}

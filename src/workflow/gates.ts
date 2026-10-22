@@ -22,7 +22,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { basename, join } from 'node:path';
 
-import { approvalStateOf } from './artifact-core/approval-view.js';
+import { approvalStateOf, lifecycleReviewOf } from './artifact-core/approval-view.js';
 import { createRepoLifecycle } from './artifact-core/repo-lifecycle.js';
 import { staleAckOf } from './artifact-core/stale-ack.js';
 import { getEffectiveHld } from './amendments/effective.js';
@@ -787,7 +787,8 @@ function otherPartyReviewGap(jsonPath: string, meta: ApprovableArtifactMeta, lif
 				summary: 'completion requires a code review; none was run',
 			};
 		}
-		reviewer = reviewerPartyOf(cr.meta);
+		// the party of a code review is its lifecycle review's, when it has one, else its own label
+		reviewer = reviewerPartyOf(lifecycleReviewOf(cr.meta) ?? cr.meta);
 	} else if (lifecycleReview !== undefined) {
 		reviewer = reviewerPartyOf(lifecycleReview);
 	} else if (required === 'design') {

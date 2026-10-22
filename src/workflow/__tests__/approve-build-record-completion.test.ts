@@ -23,7 +23,9 @@ import { dirname, join } from 'node:path';
 
 import { approveWorkflowTarget, jsonPathForMd } from '../gates.js';
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../storage.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
+import { approvedMeta, reviewedMeta } from './lifecycle-fixtures.js';
 
 const HASH = 'abc123def4567890';
 
@@ -36,7 +38,7 @@ async function withRepo(fn: (repo: string, dir: string) => void | Promise<void>)
 }
 
 const isApproved = (p: string): boolean =>
-	(JSON.parse(readFileSync(p, 'utf8')) as { meta?: { approvedAt?: string } }).meta?.approvedAt !== undefined;
+	approvalStateOf((JSON.parse(readFileSync(p, 'utf8')) as { meta?: unknown }).meta) === 'approved';
 
 // ---------------------------------------------------------------------------
 // a BUILD target whose json does NOT exist yet is created, then approved
@@ -54,7 +56,7 @@ test('single BUILD target with no prior json => the hook CREATES the record, the
 		assert.ok(existsSync(json), 'the completion hook created the BUILD json');
 		assert.equal(out.approved.length, 1, 'the created BUILD is approved (not skipped)');
 		assert.equal(out.skipped.length, 0);
-		assert.ok(isApproved(jsonPathForMd(json)), 'meta.approvedAt is stamped on the created record');
+		assert.ok(isApproved(jsonPathForMd(json)), 'approved in the lifecycle on the created record');
 	});
 });
 

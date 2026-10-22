@@ -27,7 +27,9 @@ import { join } from 'node:path';
 
 import { approveWorkflowTarget } from '../gates.js';
 import { artifactJsonPath, codeReviewArtifactId } from '../storage.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
+import { approvedMeta, reviewedMeta } from './lifecycle-fixtures.js';
 
 const HASH = 'abc123def4567890';
 
@@ -38,7 +40,7 @@ async function withRepo(fn: (repo: string, artifactsDir: string) => void | Promi
 	try { await fn(repo, artifactsDir); } finally { rmSync(repo, { recursive: true, force: true }); }
 }
 
-/** A pending story-scoped artifact JSON (no approvedAt). `name` sets the kind
+/** A pending story-scoped artifact JSON (a draft). `name` sets the kind
  *  via its prefix (BUILD-/LLD-/…). `review` optionally seeds a meta.review. */
 function writeArtifact(
 	dir: string,
@@ -47,7 +49,7 @@ function writeArtifact(
 ): string {
 	const meta: Record<string, unknown> = { workflow: opts.workflow, epicHash: HASH };
 	if (opts.storyId !== undefined) meta['storyId'] = opts.storyId;
-	if (opts.review !== undefined)  meta['review']  = opts.review;
+	if (opts.review !== undefined)  Object.assign(meta, reviewedMeta());   // a passing design review of its own
 	const p = join(dir, name);
 	writeFileSync(p, JSON.stringify({ meta, body: {}, citations: [] }, null, 2));
 	// A design artifact given no review of its own gets a passing other-party one:
@@ -59,11 +61,11 @@ function writeArtifact(
 /** Write a CR-<epic>-<story>.json record with the given verdict; skip to model absent. */
 function writeCR(repo: string, storyId: string, verdict: 'pass' | 'warn' | 'block'): void {
 	const json = artifactJsonPath(repo, codeReviewArtifactId(HASH, storyId));
-	writeFileSync(json, JSON.stringify({ body: { verdict, counts: { high: verdict === 'block' ? 2 : 0, med: 1, low: 3 } } }, null, 2));
+	writeFileSync(json, JSON.stringify({ meta: {}, body: { verdict, counts: { high: verdict === 'block' ? 2 : 0, med: 1, low: 3 } } }, null, 2));
 }
 
 const isApproved = (jsonPath: string): boolean =>
-	(JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { approvedAt?: string } }).meta?.approvedAt !== undefined;
+	approvalStateOf((JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: unknown }).meta) === 'approved';
 
 // ---------------------------------------------------------------------------
 // ac1 — the widened epic-batch sweep now covers BUILD
@@ -76,7 +78,7 @@ test('ac1: epic-batch sweep includes a pending BUILD; excludes an already-approv
 		// an already-approved BUILD for s2
 		const doneP = writeArtifact(dir, `BUILD-${HASH}-s2.json`, { workflow: 'build', storyId: 's2' });
 		const j = JSON.parse(readFileSync(doneP, 'utf8')) as { meta: Record<string, unknown> };
-		j.meta['approvedAt'] = new Date(0).toISOString();
+		Object.assign(j.meta, approvedMeta({ at: new Date(0).toISOString() }));
 		writeFileSync(doneP, JSON.stringify(j));
 
 		const out = await approveWorkflowTarget({ repoPath: repo, epicHash: HASH }, { enforce: true });
@@ -105,7 +107,7 @@ test('ac2: single BUILD + enforce ON + CR pass => completes, codeReview[] pass',
 // ac3 — the completion withhold: BUILD + enforce + no CR record
 // ---------------------------------------------------------------------------
 
-test('ac3: BUILD + enforce ON + absent CR => withheld into skipped[], no approvedAt, codeReview[] no-review', async () => {
+test('ac3: BUILD + enforce ON + absent CR => withheld into skipped[], not approved, codeReview[] no-review', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		// no writeCR — the code review never ran

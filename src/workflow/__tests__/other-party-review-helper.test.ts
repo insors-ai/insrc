@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { authorPartyOf, reviewerPartyOf } from '../review/party.js';
+import { readReviewRecordOf } from '../review/report-file.js';
 import { effectiveReviewVerdict } from '../review/resolve.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
@@ -39,13 +40,15 @@ for (const [kind, name, workflow] of DESIGN) {
 				const out = stampOtherPartyReview(f.json);
 				assert.deepEqual(out, { reviewedBy: reviewer, path: f.json });
 				const stored = f.read();
-				const review = stored.meta['review'] as Record<string, unknown>;
+				// the review is the lifecycle's, bound to the revision; its report is the review entry of the log
+				const review = (stored.meta['lifecycle'] as { review: Record<string, unknown> }).review;
 				assert.equal(reviewerPartyOf(review), reviewer);
 				assert.notEqual(reviewerPartyOf(review), authorPartyOf(stored.meta), 'never the party that authored it');
-				assert.equal(review['stage'], workflow);
-				assert.equal(effectiveReviewVerdict(review as never, undefined), 'pass');
+				const record = readReviewRecordOf(f.json);
+				assert.equal(record?.report.stage, workflow);
+				assert.equal(effectiveReviewVerdict(record!.report, record!.resolutions), 'pass');
 				// The model label agrees with the party, so a reader that only has the label says the same.
-				assert.equal(reviewerPartyOf({ model: review['model'] }), reviewer);
+				assert.equal(reviewerPartyOf({ model: record?.report.model }), reviewer);
 				assert.deepEqual(stored.body, { keep: 'me' }, 'the artifact itself is untouched');
 				assert.equal(stored.meta['authoredBy'], author);
 			} finally { f.cleanup(); }
@@ -58,7 +61,7 @@ for (const [kind, name, workflow] of DESIGN) {
 			assert.equal(stampOtherPartyReview(f.json).reviewedBy, 'daemon');
 			const stored = f.read();
 			assert.equal(authorPartyOf(stored.meta), 'unknown');
-			assert.equal(reviewerPartyOf(stored.meta['review']), 'daemon');
+			assert.equal(reviewerPartyOf((stored.meta['lifecycle'] as { review: unknown }).review), 'daemon');
 		} finally { f.cleanup(); }
 	});
 }

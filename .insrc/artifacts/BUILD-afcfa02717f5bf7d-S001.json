@@ -4,7 +4,7 @@
     "epicHash": "afcfa02717f5bf7d",
     "storyId": "S001",
     "createdAt": "2026-10-22T06:26:37.927Z",
-    "updatedAt": "2026-10-22T06:28:21.549Z",
+    "updatedAt": "2026-10-22T06:31:18.142Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-22T05:17:03.574Z",
@@ -15,9 +15,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "Added src/shared/locks/lock-manager.ts: the lock block layout (header capacities, name table, per-name lock/pending-exclusive/version/mutex words, holder and pending tables), createLockBlock, LockManager.resolveName, the four error classes, argument validation and installLockManager/getLockManager. Name slots are claimed by CAS from free to -(claimer threadId + 1), filled and published READY last; a resolver never passes a slot another thread is still claiming, so one name maps to one slot, and reclaim can reset a claim left by a dead thread.",
+    "summary": "Added LockManager.request for grants that need no wait: inside the name's mutex, exclusive is granted only when the lock word is 0 and shared only when it is >= 0 with no exclusive waiting; the holder slot is claimed by CAS (0 -> -(threadId + 1), so the main thread's claim is -1 as the plan states and a worker's claim names it for reclaim), filled and published last; a full holder table gives the lock word back. Release runs in finally. ifAvailable returns callback(null, blockedBy) with holders and pending exclusives. An AsyncLocalStorage set of held names refuses same-name and unbounded nested requests. setLockGrantHookForTests runs at three grant points. A waiting request (not ifAvailable, lock unavailable) throws until t3 adds the waiting path.",
     "testRecord": {
       "md": "docs/standalone/add-cross-thread-named-lock-framework-E20261022afcfa027/S001/TESTS.md"
     },
@@ -27,16 +31,16 @@
           "file": "src/shared/locks/__tests__/lock-manager.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T06:28:21.549Z"
+        "timestamp": "2026-10-22T06:31:18.142Z"
       },
       {
         "target": {
           "file": "src/shared/locks/lock-manager.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T06:28:21.549Z"
+        "timestamp": "2026-10-22T06:31:18.142Z"
       }
     ],
-    "commit": "3d2d982b"
+    "commit": "045e7371"
   }
 }

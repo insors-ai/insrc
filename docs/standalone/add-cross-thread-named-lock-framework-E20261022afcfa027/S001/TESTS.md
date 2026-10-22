@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -39,3 +39,49 @@ Run at 2026-10-22T06:28:21.549Z on commit `3d2d982b`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/locks/__tests__/lock-manager.test.ts` | 0 | 4 | 0.5 s |  |
+
+## t2
+
+Run at 2026-10-22T06:31:18.142Z on commit `045e7371`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: exclusive excludes exclusive and shared, shared admits shared, mode defaults to exclusive**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | exclusive excludes exclusive and shared, shared admits shared, mode defaults to exclusive | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: ifAvailable grants when free and otherwise calls back with null and the holders with metadata, never pending**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ifAvailable grants when free and otherwise calls back with null and the holders with metadata, never pending | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: the lock is released and its holder slot cleared on resolve, reject and synchronous throw**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the lock is released and its holder slot cleared on resolve, reject and synchronous throw | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: same-name nesting and unbounded nested waits fail with LockNestedError; bounded nested requests are allowed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | same-name nesting and unbounded nested waits fail with LockNestedError; bounded nested requests are allowed | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: a full holder table gives LockCapacityError(holders) and leaves no grant behind**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a full holder table gives LockCapacityError(holders) and leaves no grant behind | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: the grant hook fires at its three points in order and is inert when unset**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the grant hook fires at its three points in order and is inert when unset | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/locks/__tests__/lock-manager.test.ts` | 0 | 10 | 0.4 s |  |

@@ -213,6 +213,9 @@ export async function compactEntityVecTable(): Promise<{
 		cleanupOlderThan: new Date(),
 		deleteUnverified: true,
 	});
+	// Since @lancedb/lancedb 0.40 the prune in that call keeps the version the
+	// compaction replaced; a second prune removes it and the files only it used.
+	await table.optimize({ cleanupOlderThan: new Date(), deleteUnverified: true });
 	const compaction = stats.compaction;
 	return {
 		fragmentsRemoved: compaction?.fragmentsRemoved ?? 0,

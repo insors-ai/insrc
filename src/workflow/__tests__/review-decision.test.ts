@@ -16,7 +16,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -433,7 +433,9 @@ test('daemon handlers: \'workflow.reviewDecision\' is registered and delegates t
 // Story E20261013dd277f9c:S001 — a BUILD record is decided from the pane like any record.
 test("handleReviewDecision on a BUILD record: approve goes through the same approve call as any record and a result that call withholds is returned with its reason; reject stamps the record, after which it is not listed and the pane's call refuses a further decision on it", async () => {
 	const { listPendingArtifacts } = await import('../pending.js');
-	const repo = mkdtempSync(join(tmpdir(), 'insrc-review-decision-build-'));
+	// The real path: the handler resolves the record's path (/var is /private/var on macOS) and the
+	// approve call is asserted with it.
+	const repo = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-review-decision-build-')));
 	try {
 		const id = `BUILD-${HASH}-S001`;
 		const mdRel = `${DIR_REL}/BUILD.md`;

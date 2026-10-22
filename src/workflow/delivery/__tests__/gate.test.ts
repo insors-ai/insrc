@@ -7,8 +7,17 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
+import { History } from '../../artifact-core/history.js';
+import { FileSidecarStore } from '../../artifact-core/sidecar-store.js';
+import { resolutionEntryOf } from '../../review/report-log.js';
+import type { ReviewReport } from '../../review/types.js';
+import { blockedMeta, recordReview, reviewedMeta, writeHead } from '../../__tests__/lifecycle-fixtures.js';
 import { deriveGates } from '../gate.js';
+import { loadArtifactRecordSet } from '../load.js';
 import { buildWorkItemGraph } from '../graph.js';
 import { deriveStages } from '../stage.js';
 import type { ArtifactGate, ArtifactRecord, GatePassResult, ItemGates, WorkItemGraph, WorkItemNode } from '../types.js';
@@ -84,9 +93,9 @@ test('approved, rejected and unstamped artifacts read approved, rejected and pen
 		lldRecord(EPIC, 's3'),
 	]);
 	assert.deepEqual(gateOf(result, `LLD-${EPIC}-s1`).approval, { state: 'approved', at: CREATED });
-	assert.deepEqual(gateOf(result, `LLD-${EPIC}-s2`).approval, { state: 'rejected', at: '2026-10-07T12:00:00.000Z' });
+	assert.deepEqual(gateOf(result, `LLD-${EPIC}-s2`).approval, { state: 'rejected', at: null });
 	assert.deepEqual(gateOf(result, `LLD-${EPIC}-s3`).approval, { state: 'pending', at: null });
-	assert.equal(gateOf(result, `LLD-${EPIC}-s3`).review, null, 'no meta.review, no review');
+	assert.equal(gateOf(result, `LLD-${EPIC}-s3`).review, null, 'no lifecycle review, no review');
 	assert.equal(result.artifacts.size, 4, 'every record gets a gate');
 });
 
@@ -95,7 +104,7 @@ test('an approved historical block and an overridden block do not block and stil
 	const { result } = run([
 		defRecord(EPIC, ['s1', 's2', 's3']),
 		lldRecord(EPIC, 's1', { ...APPROVED, review: review('block', [MED('q1')]) }),
-		lldRecord(EPIC, 's2', { review: review('block', [MED('q1')]), reviewOverride: override }),
+		lldRecord(EPIC, 's2', { approvedAt: override.at, review: review('block', [MED('q1')]), reviewOverride: override }),
 		lldRecord(EPIC, 's3', { review: review('block', [MED('q1')]) }),
 	]);
 
@@ -377,5 +386,46 @@ test('a recorded block with no unresolved HIGH/MED finding is effectively pass, 
 		assert.equal(gate?.verdict, 'block', `${s}: the recorded verdict is reported`);
 		assert.equal(gate?.effectiveVerdict, 'pass', `${s}: nothing the approval gate would refuse on`);
 		assert.equal(gate?.blocking, false);
+	}
+});
+
+test('gate.test.ts: blocking comes from the lifecycle review and the review log entry', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'delivery-gate-'));
+	try {
+		const base = { epicHash: EPIC, createdAt: CREATED, epicCreatedAt: CREATED };
+		const report = (id: string, findings: readonly unknown[], verdict: ReviewReport['verdict']): ReviewReport => ({
+			artifact: 'LLD', stage: 'design.story', verdict, findings: findings as ReviewReport['findings'],
+			counts: { high: 0, med: 1, low: 0 }, reviewedAt: REVIEWED, model: 'cli-claude:opus', reviewedBy: 'daemon',
+		});
+		writeHead(repo, `DEF-${EPIC}`, { meta: { ...base, workflow: 'define' }, body: { stories: [{ id: 's1' }, { id: 's2' }, { id: 's3' }] } });
+		const heads: [string, ReviewReport][] = [
+			[`LLD-${EPIC}-s1`, report('s1', [MED('q1')], 'block')],
+			[`LLD-${EPIC}-s2`, report('s2', [MED('q1')], 'block')],
+			// findings that are not objects with a claim id and a severity are dropped before the verdict is worked out
+			[`LLD-${EPIC}-s3`, report('s3', [MED('q1'), 'junk', { claimId: 7 }], 'warn')],
+		];
+		for (const [id, r] of heads) {
+			const ref = await recordReview(repo, id, r);
+			writeHead(repo, id, { meta: { ...base, workflow: 'design.story', storyId: id.slice(-2), ...(r.verdict === 'block' ? blockedMeta({ report: ref }) : reviewedMeta({ verdict: r.verdict, report: ref })) }, body: {} });
+		}
+		// s2's finding is resolved by a later entry of its log
+		await new History(new FileSidecarStore(repo)).appendLog(`LLD-${EPIC}-s2`, resolutionEntryOf({
+			id: 'res-1', actor: { id: 'github:alice', kind: 'person', properties: {} }, timestamp: '2026-10-09T00:00:00.000Z',
+			findingId: 'q1', resolution: { findingId: 'q1', status: 'resolved', resolvedAt: '2026-10-09T00:00:00.000Z' },
+		}));
+
+		const set = loadArtifactRecordSet(repo);
+		const graph = buildWorkItemGraph(set);
+		const result = deriveGates(graph, set);
+
+		const unresolved = gateOf(result, `LLD-${EPIC}-s1`).review;
+		assert.deepEqual([unresolved?.verdict, unresolved?.effectiveVerdict, unresolved?.blocking, unresolved?.reviewedBy], ['block', 'block', true, 'daemon']);
+		const resolved = gateOf(result, `LLD-${EPIC}-s2`).review;
+		assert.deepEqual([resolved?.verdict, resolved?.effectiveVerdict, resolved?.resolvedFindings, resolved?.blocking], ['block', 'pass', 1, false], 'the resolution in the log lifts the block and the recorded verdict stays');
+		const malformed = gateOf(result, `LLD-${EPIC}-s3`).review;
+		assert.deepEqual([malformed?.verdict, malformed?.effectiveVerdict, malformed?.blocking], ['warn', 'block', true], 'the junk findings are dropped and the unresolved MED still blocks');
+		assert.ok(itemOf(result, holder(graph, `LLD-${EPIC}-s1`, 'story').id).attentionReasons.includes('review-blocked'));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
 	}
 });

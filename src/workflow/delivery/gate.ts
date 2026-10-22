@@ -8,11 +8,13 @@
  * task validation, the approved-but-failed conflict and the attention reasons
  * for every epic, story and issue.
  *
- * Approval comes from ArtifactRecord.approval. A design artifact's review is its
- * meta.review: malformed findings are dropped before effectiveReviewVerdict sees
- * them, so a block whose HIGH/MED findings are all resolved is effectively 'pass'
- * and a 'warn' carrying an unresolved MED is effectively 'block', as the approval
- * gate reads it. A CR record is itself a review (body.verdict, body.counts). The
+ * Approval comes from ArtifactRecord.approval. A design artifact's review is the
+ * lifecycle review (verdict, counts, party, time) with the full report the loader
+ * read from the review entry of its log (ArtifactRecord.reviewReport): malformed
+ * findings are dropped before effectiveReviewVerdict sees them, so a block whose
+ * HIGH/MED findings are all resolved is effectively 'pass' and a 'warn' carrying
+ * an unresolved MED is effectively 'block', as the approval gate reads it. A
+ * review whose report cannot be read is taken at its recorded verdict. A CR record is itself a review (body.verdict, body.counts). The
  * reviewer party is read through reviewerPartyOf.
  *
  * A review blocks while its effective verdict is 'block', the gate it guards is
@@ -35,7 +37,6 @@
 import { reviewerPartyOf } from '../review/party.js';
 import { BLOCKING, effectiveReviewVerdict } from '../review/resolve.js';
 import type { Finding, ReviewReport } from '../review/types.js';
-import type { ReviewResolution } from '../types.js';
 import { makeNotice, sortNotices } from './notice.js';
 import { asObject, storyOrdinalOf, taskOrdinalOf } from './read.js';
 import type {
@@ -72,11 +73,12 @@ function countsOf(value: unknown): Review['counts'] {
 	return { high: n('high'), med: n('med'), low: n('low') };
 }
 
-/** meta.reviewOverride when its reason is a string. */
+/** The override the approval of the record carries (lifecycle.approval.override), with the time of the approval. */
 function overrideOf(meta: Readonly<Record<string, unknown>>): Review['override'] {
-	const o = asObject(meta['reviewOverride']);
+	const approval = asObject(asObject(meta['lifecycle'])?.['approval']);
+	const o = asObject(approval?.['override']);
 	if (o === null || typeof o['reason'] !== 'string') return null;
-	return { reason: o['reason'], at: typeof o['at'] === 'string' ? o['at'] : null };
+	return { reason: o['reason'], at: typeof approval?.['at'] === 'string' ? approval['at'] : null };
 }
 
 function partyOf(review: unknown): Review['reviewedBy'] {
@@ -97,21 +99,23 @@ function approvalOf(record: ArtifactRecord): ArtifactGate['approval'] {
 	return { state: record.approval.state, at: record.approval.at };
 }
 
-/** A design artifact's review, read from meta.review; blocking is set by the caller. */
+/** A design artifact's review, read from the lifecycle review and the report in its log; blocking is set by the caller. */
 function designReview(record: ArtifactRecord): Omit<Review, 'blocking'> | null {
-	const review = asObject(record.meta['review']);
+	const review = asObject(asObject(record.meta['lifecycle'])?.['review']);
 	if (review === null) return null;
-	const verdict = asVerdict(review['verdict']);
-	if (verdict === null) return null;
+	// the lifecycle holds the verdict as it stood when the review was bound; the report in the log holds the one the reviewer recorded
+	const bound = asVerdict(review['verdict']);
+	if (bound === null) return null;
+	const loaded = record.reviewReport;
+	const verdict = (loaded === undefined ? null : asVerdict(loaded.report.verdict)) ?? bound;
+	const resolutions = loaded?.resolutions ?? null;
+	const findings = loaded === undefined ? null : wellFormedFindings(loaded.report.findings);
 
-	const resolutionsRaw = asObject(record.meta['reviewResolutions']);
-	const resolutions = resolutionsRaw as Readonly<Record<string, ReviewResolution>> | null;
-	const findings = wellFormedFindings(review['findings']);
-
-	let effectiveVerdict = verdict;
+	// without a readable report the verdict is the lifecycle's; with a report whose findings are malformed it is the recorded one
+	let effectiveVerdict = loaded === undefined ? bound : verdict;
 	let resolvedFindings = 0;
-	if (findings !== null) {
-		const report = { ...review, findings } as unknown as ReviewReport;
+	if (loaded !== undefined && findings !== null) {
+		const report = { ...loaded.report, findings } as unknown as ReviewReport;
 		const effective = effectiveReviewVerdict(report, resolutions ?? undefined);
 		const blockingFindings = findings.filter(f => BLOCKING.has(f.severity));
 		resolvedFindings = blockingFindings.filter(f => resolutions?.[f.claimId] !== undefined).length;
@@ -124,8 +128,8 @@ function designReview(record: ArtifactRecord): Omit<Review, 'blocking'> | null {
 
 	return {
 		verdict,
-		reviewedAt: typeof review['reviewedAt'] === 'string' ? review['reviewedAt'] : record.createdAt ?? '',
-		reviewedBy: partyOf(review),
+		reviewedAt: typeof review['at'] === 'string' ? review['at'] : record.createdAt ?? '',
+		reviewedBy: review['party'] === 'controller' || review['party'] === 'daemon' ? review['party'] : null,
 		counts:     countsOf(review['counts']),
 		override:   overrideOf(record.meta),
 		resolvedFindings,

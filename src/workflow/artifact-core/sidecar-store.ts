@@ -96,11 +96,12 @@ export class FileSidecarStore implements SidecarStore {
 	}
 
 	readRecords<E>(file: SidecarFile, artifactId: string): Promise<E[]> {
-		try { return Promise.resolve(this.read<E>(file, artifactId)); }
+		try { return Promise.resolve(this.readRecordsSync<E>(file, artifactId)); }
 		catch (err) { return Promise.reject(err instanceof Error ? err : new Error(String(err))); }
 	}
 
-	private read<E>(file: SidecarFile, artifactId: string): E[] {
+	/** {@link readRecords} for a reader that cannot wait: the delivery snapshot is built in one synchronous pass. */
+	readRecordsSync<E>(file: SidecarFile, artifactId: string): E[] {
 		const rel = this.filesOf(artifactId)[file];
 		const path = join(this.repoPath, rel);
 		if (!existsSync(path)) return [];

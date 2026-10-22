@@ -18,7 +18,8 @@
  *     of pending.test.ts's pendingLld.
  */
 
-import { asLifecycleFile } from '../../__tests__/lifecycle-fixtures.js';
+import { lifecycleFileOf } from '../../__tests__/lifecycle-fixtures.js';
+import { reviewRecordOf } from '../../review/report-log.js';
 import { liftStoreFile } from '../load.js';
 import type { ArtifactRecord, ArtifactRecordSet, DeliveryArtifactKind, RecordLoadFailure } from '../types.js';
 
@@ -333,9 +334,13 @@ export const REAL_STORE: Readonly<Record<string, RawStoreFile>> = {
 
 /** Lift one store file into an ArtifactRecord exactly as the loader does; throws on a load failure. */
 export function recordFromFile(fileName: string, raw: RawStoreFile): ArtifactRecord {
-	const lifted = liftStoreFile(fileName, asLifecycleFile(fileName, raw));
+	const { file, entries } = lifecycleFileOf(fileName, raw);
+	const lifted = liftStoreFile(fileName, file);
 	if ('reason' in lifted) throw new Error(`fixtures: '${fileName}' does not lift: ${lifted.reason} (${lifted.detail})`);
-	return lifted;
+	// the loader reads the report of a review from the log; the fixture has the entries the conversion would have recorded
+	const report = (lifted.meta['lifecycle'] as { review?: { report?: never } } | undefined)?.review?.report;
+	const loaded = report === undefined ? undefined : reviewRecordOf(entries, lifted.artifactId, { report });
+	return loaded === undefined ? lifted : { ...lifted, reviewReport: loaded };
 }
 
 /** ArtifactRecords for the named REAL_STORE files (all of them when omitted), sorted by artifactId. */

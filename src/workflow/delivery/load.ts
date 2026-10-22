@@ -16,6 +16,9 @@ import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
+import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
+import type { ChangeLogEntry } from '../artifact-core/types.js';
+import { reviewRecordOf } from '../review/report-log.js';
 import { ARTIFACTS_DIR, TESTS_ID_PREFIX } from '../storage.js';
 import { asObject, asString, errorText, storyOrdinalOf } from './read.js';
 import {
@@ -88,6 +91,21 @@ export function liftStoreFile(fileName: string, parsed: unknown): ArtifactRecord
 	};
 }
 
+/** The record with the full report of the review its lifecycle names, read from the review entry of its log. A log that cannot be read leaves the record as it is. */
+function withReviewReport(repoPath: string, record: ArtifactRecord): ArtifactRecord {
+	const review = asObject(asObject(record.meta['lifecycle'])?.['review']);
+	const report = asObject(review?.['report']);
+	if (report === null) return record;
+	try {
+		const entries = new FileSidecarStore(repoPath).readRecordsSync<ChangeLogEntry>('log', record.artifactId);
+		const loaded = reviewRecordOf(entries, record.artifactId, { report: report as unknown as NonNullable<Parameters<typeof reviewRecordOf>[2]['report']> });
+		return loaded === undefined ? record : { ...record, reviewReport: loaded };
+	} catch (err) {
+		log.debug({ artifactId: record.artifactId, err: errorText(err) }, 'delivery: the review report could not be read');
+		return record;
+	}
+}
+
 function isFailure(r: ArtifactRecord | RecordLoadFailure): r is RecordLoadFailure {
 	return 'reason' in r;
 }
@@ -136,7 +154,7 @@ export function loadArtifactRecordSet(
 		}
 		const lifted = liftStoreFile(fileName, parsed);
 		if (isFailure(lifted)) failures.push(lifted);
-		else records.push(lifted);
+		else records.push(withReviewReport(repoPath, lifted));
 	}
 
 	records.sort((a, b) => a.artifactId.localeCompare(b.artifactId));

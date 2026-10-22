@@ -22,7 +22,8 @@ import { History } from '../artifact-core/history.js';
 import { flatToHead } from '../convert/amendments.js';
 import { backfillHead } from '../convert/backfill.js';
 import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
-import type { Actor, Lifecycle, Reference, Review, Status } from '../artifact-core/types.js';
+import { compareEntries } from '../artifact-core/sidecar-store.js';
+import type { Actor, ChangeLogEntry, Lifecycle, Reference, Review, Status } from '../artifact-core/types.js';
 import { reviewEntryOf, reviewReference } from '../review/report-log.js';
 import type { ReviewReport } from '../review/types.js';
 import { artifactJsonPath, writeAtomic } from '../storage.js';
@@ -116,24 +117,36 @@ export async function recordReview(repo: string, artifactId: string, report: Rev
 
 const MIGRATION: Actor = { id: 'insrc:migration', kind: 'system', properties: {} };
 
+export interface LifecycleFile {
+	/** The file as the lifecycle model stores it; the input unchanged when the conversion cannot read it. */
+	readonly file:    unknown;
+	/** The log entries the conversion records for it (the review entry among them), in the order a reader gives them. */
+	readonly entries: readonly ChangeLogEntry[];
+}
+
 /**
  * A store file written in the vocabulary of the legacy stamps (`meta.approvedAt`, `rejectedAt`, a flat amendment) as the file
- * the lifecycle model stores for it, mapped by the conversion's own functions. For a fixture whose captured data predates the
- * model (the delivery tests' real store files). A file that is not a head, or that the conversion cannot read, comes back
- * unchanged, so a test of a load failure still sees one.
+ * the lifecycle model stores for it, mapped by the conversion's own functions, with the log entries that go with it. For a
+ * fixture whose captured data predates the model (the delivery tests' real store files). A file that is not a head, or that
+ * the conversion cannot read, comes back unchanged with no entries, so a test of a load failure still sees one.
  */
-export function asLifecycleFile(fileName: string, raw: unknown, now = '2026-10-07T00:00:00.000Z'): unknown {
-	if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return raw;
+export function lifecycleFileOf(fileName: string, raw: unknown, now = '2026-10-07T00:00:00.000Z'): LifecycleFile {
+	const unchanged: LifecycleFile = { file: raw, entries: [] };
+	if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return unchanged;
 	const artifactId = fileName.replace(/\.json$/, '');
 	let json = raw as Record<string, unknown>;
 	if (artifactId.startsWith('AMD-') && (typeof json['meta'] !== 'object' || json['meta'] === null)) {
 		const proposedAt = typeof json['proposedAt'] === 'string' ? json['proposedAt'] : undefined;
 		const out = flatToHead(json, proposedAt);
-		if ('problem' in out) return raw;
+		if ('problem' in out) return unchanged;
 		json = out.head;
 	}
-	if (typeof json['meta'] !== 'object' || json['meta'] === null || typeof json['body'] !== 'object' || json['body'] === null) return raw;
+	if (typeof json['meta'] !== 'object' || json['meta'] === null || typeof json['body'] !== 'object' || json['body'] === null) return unchanged;
 	try {
-		return JSON.parse(backfillHead({ head: { artifactId, json }, hasLog: false, now, actor: MIGRATION }).converted.bytes);
-	} catch { return raw; }
+		const { converted } = backfillHead({ head: { artifactId, json }, hasLog: false, now, actor: MIGRATION });
+		return { file: JSON.parse(converted.bytes), entries: [...converted.entries].sort(compareEntries) };
+	} catch { return unchanged; }
 }
+
+/** {@link lifecycleFileOf} without the entries. */
+export const asLifecycleFile = (fileName: string, raw: unknown, now?: string): unknown => lifecycleFileOf(fileName, raw, now).file;

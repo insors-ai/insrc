@@ -1,0 +1,3102 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "createdAt": "2026-10-22T06:35:52.447Z",
+    "updatedAt": "2026-10-22T11:24:12.560Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "6b52fdb4",
+        "ranAt": "2026-10-22T06:35:52.447Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-feedback.test.ts: each mapping of convertLegacyFeedback from the s5 hand-off (actor, kind, anchor section, kept fields)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-feedback.test.ts",
+                "title": "convert-feedback.test.ts: each mapping of convertLegacyFeedback from the s5 hand-off (actor, kind, anchor section, kept fields)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/feedback-convert.test.ts",
+                "title": "the legacy feedback conversion maps every field and reports what it cannot map",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/feedback-convert.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 601,
+            "titles": [
+              {
+                "title": "the legacy feedback conversion maps every field and reports what it cannot map",
+                "result": "pass"
+              },
+              {
+                "title": "legacy feedback conversion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/convert/__tests__/convert-feedback.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1519,
+            "titles": [
+              {
+                "title": "convert-feedback.test.ts: each mapping of convertLegacyFeedback from the s5 hand-off (actor, kind, anchor section, kept fields)",
+                "result": "pass"
+              },
+              {
+                "title": "convert-feedback",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "fb134d5b",
+        "ranAt": "2026-10-22T06:37:54.443Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "report-log.test.ts: the review report and its resolutions are read back from the review entry and give the verdict the old stamp gave",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/report-log.test.ts",
+                "title": "report-log.test.ts: the review report and its resolutions are read back from the review entry and give the verdict the old stamp gave",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/__tests__/report-log.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1356,
+            "titles": [
+              {
+                "title": "report-log.test.ts: the review report and its resolutions are read back from the review entry and give the verdict the old stamp gave",
+                "result": "pass"
+              },
+              {
+                "title": "report-log",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "473f31b5",
+        "ranAt": "2026-10-22T06:41:44.215Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "entry-ids.test.ts: migrated entry ids are stable and distinct per part",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/entry-ids.test.ts",
+                "title": "entry-ids.test.ts: migrated entry ids are stable and distinct per part",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "legacy-view.test.ts: legacyDeliveryView reproduces the old delivery reader's approval, review and blocking",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/legacy-view.test.ts",
+                "title": "legacy-view.test.ts: legacyDeliveryView reproduces the old delivery reader's approval, review and blocking",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/convert/__tests__/legacy-view.test.ts",
+                "title": "legacy-view.test.ts: legacyDeliveryView reads no file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/entry-ids.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 997,
+            "titles": [
+              {
+                "title": "entry-ids.test.ts: migrated entry ids are stable and distinct per part",
+                "result": "pass"
+              },
+              {
+                "title": "entry-ids",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/convert/__tests__/legacy-view.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1254,
+            "titles": [
+              {
+                "title": "legacy-view.test.ts: legacyDeliveryView reproduces the old delivery reader's approval, review and blocking",
+                "result": "pass"
+              },
+              {
+                "title": "legacy-view.test.ts: legacyDeliveryView reads no file",
+                "result": "pass"
+              },
+              {
+                "title": "legacy-view",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "ebf3549b",
+        "ranAt": "2026-10-22T06:45:41.742Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-lifecycle-backfill.test.ts: the lifecycle and the migrated entries are computed from the legacy fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-lifecycle-backfill.test.ts",
+                "title": "convert-lifecycle-backfill.test.ts: the lifecycle and the migrated entries are computed from the legacy fields",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/convert/__tests__/convert-lifecycle-backfill.test.ts",
+                "title": "convert-lifecycle-backfill.test.ts: the later stamp decides the status and a review older than the revision is not bound",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/convert/__tests__/convert-lifecycle-backfill.test.ts",
+                "title": "convert-lifecycle-backfill.test.ts: an existing lifecycle keeps its approval actor and an unreadable head is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-lifecycle-backfill.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1243,
+            "titles": [
+              {
+                "title": "convert-lifecycle-backfill.test.ts: the lifecycle and the migrated entries are computed from the legacy fields",
+                "result": "pass"
+              },
+              {
+                "title": "convert-lifecycle-backfill.test.ts: the later stamp decides the status and a review older than the revision is not bound",
+                "result": "pass"
+              },
+              {
+                "title": "convert-lifecycle-backfill.test.ts: an existing lifecycle keeps its approval actor and an unreadable head is refused",
+                "result": "pass"
+              },
+              {
+                "title": "convert-lifecycle-backfill",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "b5ea5f66",
+        "ranAt": "2026-10-22T06:49:13.152Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "migrated-head.test.ts: an approved head keeps its revision number, status and approval and a crash at each step then a rerun leaves one entry per id",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/migrated-head.test.ts",
+                "title": "migrated-head.test.ts: an approved head keeps its revision number, status and approval and a crash at each step then a rerun leaves one entry per id",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/convert/__tests__/migrated-head.test.ts",
+                "title": "migrated-head.test.ts: a write that would change the revision, the status or the approval is refused and nothing is written",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/migrated-head.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1727,
+            "titles": [
+              {
+                "title": "migrated-head.test.ts: an approved head keeps its revision number, status and approval and a crash at each step then a rerun leaves one entry per id",
+                "result": "pass"
+              },
+              {
+                "title": "migrated-head.test.ts: a write that would change the revision, the status or the approval is refused and nothing is written",
+                "result": "pass"
+              },
+              {
+                "title": "migrated-head",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "addd9089",
+        "ranAt": "2026-10-22T06:53:08.129Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-preview.test.ts: a preview writes nothing, refuses a dirty tree and lists unreadable files as problems",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-preview.test.ts",
+                "title": "convert-preview.test.ts: a preview writes nothing, refuses a dirty tree and lists unreadable files as problems",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/convert/__tests__/convert-preview.test.ts",
+                "title": "convert-preview.test.ts: a directory that is not a git repository is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-preview.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3552,
+            "titles": [
+              {
+                "title": "convert-preview.test.ts: a preview writes nothing, refuses a dirty tree and lists unreadable files as problems",
+                "result": "pass"
+              },
+              {
+                "title": "convert-preview.test.ts: a directory that is not a git repository is refused",
+                "result": "pass"
+              },
+              {
+                "title": "convert-preview",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "8a948722",
+        "ranAt": "2026-10-22T06:57:02.482Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-ids.test.ts: uppercase story ids are renamed once with references rewritten and none left as an alias",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-ids.test.ts",
+                "title": "convert-ids.test.ts: uppercase story ids are renamed once with references rewritten and none left as an alias",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/convert/__tests__/convert-ids.test.ts",
+                "title": "convert-ids.test.ts: a collision is a plan problem and no rename is applied",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/convert/__tests__/convert-ids.test.ts",
+                "title": "convert-ids.test.ts: a rerun after a crash that left the renamed twin finishes the rename",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-ids.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1506,
+            "titles": [
+              {
+                "title": "convert-ids.test.ts: uppercase story ids are renamed once with references rewritten and none left as an alias",
+                "result": "pass"
+              },
+              {
+                "title": "convert-ids.test.ts: a collision is a plan problem and no rename is applied",
+                "result": "pass"
+              },
+              {
+                "title": "convert-ids.test.ts: a rerun after a crash that left the renamed twin finishes the rename",
+                "result": "pass"
+              },
+              {
+                "title": "convert-ids",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "eeaf922b",
+        "ranAt": "2026-10-22T07:00:22.174Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-stamps.test.ts: epicCreatedAt is taken from the head of the work item",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-stamps.test.ts",
+                "title": "convert-stamps.test.ts: epicCreatedAt is taken from the head of the work item",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/convert/__tests__/convert-stamps.test.ts",
+                "title": "convert-stamps.test.ts: anchorOf prefers the head of the work item over the records",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "convert-amendments.test.ts: a flat amendment becomes a head with a lifecycle from its stamps",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-amendments.test.ts",
+                "title": "convert-amendments.test.ts: a flat amendment becomes a head with a lifecycle from its stamps",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/convert/__tests__/convert-amendments.test.ts",
+                "title": "convert-amendments.test.ts: flatToHead refuses a record it cannot date or place",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-amendments.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1289,
+            "titles": [
+              {
+                "title": "convert-amendments.test.ts: a flat amendment becomes a head with a lifecycle from its stamps",
+                "result": "pass"
+              },
+              {
+                "title": "convert-amendments.test.ts: flatToHead refuses a record it cannot date or place",
+                "result": "pass"
+              },
+              {
+                "title": "convert-amendments",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/convert/__tests__/convert-stamps.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1306,
+            "titles": [
+              {
+                "title": "convert-stamps.test.ts: epicCreatedAt is taken from the head of the work item",
+                "result": "pass"
+              },
+              {
+                "title": "convert-stamps.test.ts: anchorOf prefers the head of the work item over the records",
+                "result": "pass"
+              },
+              {
+                "title": "convert-stamps",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "5538e623",
+        "ranAt": "2026-10-22T07:04:16.792Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-feedback-rule.test.ts: feedback lines are appended before the head is replaced and a crash loses no feedback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-feedback-rule.test.ts",
+                "title": "convert-feedback-rule.test.ts: feedback lines are appended before the head is replaced and a crash loses no feedback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-feedback-rule.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1378,
+            "titles": [
+              {
+                "title": "convert-feedback-rule.test.ts: feedback lines are appended before the head is replaced and a crash loses no feedback",
+                "result": "pass"
+              },
+              {
+                "title": "convert-feedback-rule.test.ts: the plan lists the heads that hold feedback and the values with no home",
+                "result": "pass"
+              },
+              {
+                "title": "convert-feedback-rule",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "59b16021",
+        "ranAt": "2026-10-22T07:07:56.457Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-units.test.ts: EPIC and STORY heads hold the bindings and attachments moved from the Define and the LLD",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-units.test.ts",
+                "title": "convert-units.test.ts: EPIC and STORY heads hold the bindings and attachments moved from the Define and the LLD",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-units.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1388,
+            "titles": [
+              {
+                "title": "convert-units.test.ts: EPIC and STORY heads hold the bindings and attachments moved from the Define and the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "convert-units",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "1b429140",
+        "ranAt": "2026-10-22T07:10:56.797Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-story-history.test.ts: tracker feedback lines and receipts move to the STORY head and attach comments are listed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-story-history.test.ts",
+                "title": "convert-story-history.test.ts: tracker feedback lines and receipts move to the STORY head and attach comments are listed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-story-history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1205,
+            "titles": [
+              {
+                "title": "convert-story-history.test.ts: tracker feedback lines and receipts move to the STORY head and attach comments are listed",
+                "result": "pass"
+              },
+              {
+                "title": "convert-story-history",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "121107a9",
+        "ranAt": "2026-10-22T07:13:23.797Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-tasks.test.ts: Task heads and passed build rounds are created and createFromPlan alone moves the Task record",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-tasks.test.ts",
+                "title": "convert-tasks.test.ts: Task heads and passed build rounds are created and createFromPlan alone moves the Task record",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-tasks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1303,
+            "titles": [
+              {
+                "title": "convert-tasks.test.ts: Task heads and passed build rounds are created and createFromPlan alone moves the Task record",
+                "result": "pass"
+              },
+              {
+                "title": "convert-tasks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "e469917d",
+        "ranAt": "2026-10-22T07:17:08.416Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-apply.test.ts: apply converts every artifact in the stated order and refuses while the delivery reader reads legacy stamps",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-apply.test.ts",
+                "title": "convert-apply.test.ts: apply converts every artifact in the stated order and refuses while the delivery reader reads legacy stamps",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-apply.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1493,
+            "titles": [
+              {
+                "title": "convert-apply.test.ts: apply converts every artifact in the stated order and refuses while the delivery reader reads legacy stamps",
+                "result": "pass"
+              },
+              {
+                "title": "convert-apply",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "1142f09d",
+        "ranAt": "2026-10-22T07:22:51.550Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-marker.test.ts: the marker is written last and only when every head is clean",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-marker.test.ts",
+                "title": "convert-marker.test.ts: the marker is written last and only when every head is clean",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-marker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3242,
+            "titles": [
+              {
+                "title": "convert-marker.test.ts: the marker is written last and only when every head is clean",
+                "result": "pass"
+              },
+              {
+                "title": "convert-marker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "59103978",
+        "ranAt": "2026-10-22T07:26:57.611Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "persist-review.test.ts: a failure at each step names the step and a rerun repairs the state",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/persist-review.test.ts",
+                "title": "persist-review.test.ts: a failure at each step names the step and a rerun repairs the state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/__tests__/persist-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1435,
+            "titles": [
+              {
+                "title": "persist-review.test.ts: a failure at each step names the step and a rerun repairs the state",
+                "result": "pass"
+              },
+              {
+                "title": "persist-review",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t18",
+        "commit": "70297548",
+        "ranAt": "2026-10-22T07:29:47.128Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "lifecycle-fixtures.test.ts: each helper produces a head the lifecycle readers see in that state",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lifecycle-fixtures.test.ts",
+                "title": "lifecycle-fixtures.test.ts: each helper produces a head the lifecycle readers see in that state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/lifecycle-fixtures.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2812,
+            "titles": [
+              {
+                "title": "lifecycle-fixtures.test.ts: each helper produces a head the lifecycle readers see in that state",
+                "result": "pass"
+              },
+              {
+                "title": "lifecycle-fixtures",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t19",
+        "commit": "4615a47f",
+        "ranAt": "2026-10-22T07:34:59.691Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "load.test.ts: approval state comes from the lifecycle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/load.test.ts",
+                "title": "load.test.ts: approval state comes from the lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/delivery/__tests__/load.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 690,
+            "titles": [
+              {
+                "title": "every kind in a temporary store is lifted, an amendment like the others",
+                "result": "pass"
+              },
+              {
+                "title": "invalid JSON, missing meta, unknown prefix and an unreadable file each become a load failure and the load continues",
+                "result": "pass"
+              },
+              {
+                "title": "an absent store yields an empty record set",
+                "result": "pass"
+              },
+              {
+                "title": "a store whose listDir throws raises DeliveryStoreUnreadableError",
+                "result": "pass"
+              },
+              {
+                "title": "the store is byte-identical after a load",
+                "result": "pass"
+              },
+              {
+                "title": "an unparseable storyId keeps storyIdRaw with storyOrdinal null",
+                "result": "pass"
+              },
+              {
+                "title": "load.test.ts: approval state comes from the lifecycle",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t20",
+        "commit": "e90a6a7c",
+        "ranAt": "2026-10-22T07:40:50.130Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "gate.test.ts: blocking comes from the lifecycle review and the review log entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/gate.test.ts",
+                "title": "gate.test.ts: blocking comes from the lifecycle review and the review log entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/delivery/__tests__/gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1190,
+            "titles": [
+              {
+                "title": "approved, rejected and unstamped artifacts read approved, rejected and pending",
+                "result": "pass"
+              },
+              {
+                "title": "an approved historical block and an overridden block do not block and still show the verdict and the override",
+                "result": "pass"
+              },
+              {
+                "title": "a block whose blocking findings are all resolved has effective verdict pass, and a warn with an unresolved MED is effectively a block",
+                "result": "pass"
+              },
+              {
+                "title": "a code review blocks only while its story has no approved build",
+                "result": "pass"
+              },
+              {
+                "title": "the reviewer party is read through reviewerPartyOf, and a code review's own approval stamp is reported but does not lift its block",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed review, finding, code-review body, task entry or unparseable task id never throws and reports nothing invented",
+                "result": "pass"
+              },
+              {
+                "title": "an unapproved block with no override is blocking and puts the item in Needs attention, and deriveStages over the same fixture gives the same stage as without the review",
+                "result": "pass"
+              },
+              {
+                "title": "an approved build with a failed task is a validation conflict and keeps both facts, and deriveStages over the same fixture still reads complete",
+                "result": "pass"
+              },
+              {
+                "title": "a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-s1 shape)",
+                "result": "pass"
+              },
+              {
+                "title": "a planned task with no recorded result is unrecorded and counted as neither passed nor failed",
+                "result": "pass"
+              },
+              {
+                "title": "a build task with no planned task keeps its result and is marked unplanned",
+                "result": "pass"
+              },
+              {
+                "title": "a pending artifact superseded by an approved later gate on the same item stops counting, even with a blocked review or as a SPEC on a story, and the rule is stated",
+                "result": "pass"
+              },
+              {
+                "title": "every epic, story and issue in the real-shape fixtures gets item gates, deterministically",
+                "result": "pass"
+              },
+              {
+                "title": "a story built without a plan marks its tasks unplanned, and the notice says the story has no plan",
+                "result": "pass"
+              },
+              {
+                "title": "a recorded block with no unresolved HIGH/MED finding is effectively pass, as the approval gate reads it, and still reports the block",
+                "result": "pass"
+              },
+              {
+                "title": "gate.test.ts: blocking comes from the lifecycle review and the review log entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t21",
+        "commit": "b46e5274",
+        "ranAt": "2026-10-22T07:49:59.214Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "snapshot.test.ts: the delivery snapshot of a lifecycle fixture equals the old snapshot of the same unit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/snapshot.test.ts",
+                "title": "snapshot.test.ts: the delivery snapshot of a lifecycle fixture equals the old snapshot of the same unit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/delivery/__tests__/snapshot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 577,
+            "titles": [
+              {
+                "title": "every work item is joined with its stage, evidence, gates, currency and notices",
+                "result": "pass"
+              },
+              {
+                "title": "two snapshots of the same store, with equal timestamps, are identical in order and counts",
+                "result": "pass"
+              },
+              {
+                "title": "needsAttention comes from a gate reason or an attention notice, each reason listed once, and store-level notices stay off items",
+                "result": "pass"
+              },
+              {
+                "title": "a full-chain, feature or sized-bugfix story with a build and no plan gets incomplete-evidence, and small, small-bugfix and trivial stories do not",
+                "result": "pass"
+              },
+              {
+                "title": "an epic's problem and summary, a story's purpose and size, and an issue's reproduction, root cause and fix intent are published from their records",
+                "result": "pass"
+              },
+              {
+                "title": "missing, blank or wrongly typed values read not recorded, and a value that does not apply to a kind is absent",
+                "result": "pass"
+              },
+              {
+                "title": "a story added by an extension takes its purpose from the EXT, and a standalone story reads not recorded",
+                "result": "pass"
+              },
+              {
+                "title": "feedback from an item's own design records is listed read-only, in order, and malformed entries are noticed",
+                "result": "pass"
+              },
+              {
+                "title": "snapshot.test.ts: the delivery snapshot of a lifecycle fixture equals the old snapshot of the same unit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "90640f37",
+        "ranAt": "2026-10-22T07:53:16.752Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-verify.test.ts: an approved legacy head verifies with no difference and a planted difference is reported",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-verify.test.ts",
+                "title": "convert-verify.test.ts: an approved legacy head verifies with no difference and a planted difference is reported",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-verify.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1399,
+            "titles": [
+              {
+                "title": "convert-verify.test.ts: an approved legacy head verifies with no difference and a planted difference is reported",
+                "result": "pass"
+              },
+              {
+                "title": "convert-verify",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "0a8b65e0",
+        "ranAt": "2026-10-22T07:57:07.723Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-repeat.test.ts: a second apply and an apply crashed at each step then rerun write nothing more",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-repeat.test.ts",
+                "title": "convert-repeat.test.ts: a second apply and an apply crashed at each step then rerun write nothing more",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-repeat.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2817,
+            "titles": [
+              {
+                "title": "convert-repeat.test.ts: a second apply and an apply crashed at each step then rerun write nothing more",
+                "result": "pass"
+              },
+              {
+                "title": "convert-repeat",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t22",
+        "commit": "702bcec3",
+        "ranAt": "2026-10-22T08:01:02.593Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "pending.test.ts: pending approvals read the lifecycle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/pending.test.ts",
+                "title": "pending.test.ts: pending approvals read the lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/pending.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1423,
+            "titles": [
+              {
+                "title": "listPendingArtifacts returns ONLY pending artifacts (an approved or rejected lifecycle excluded) — ac1",
+                "result": "pass"
+              },
+              {
+                "title": "listPendingArtifacts maps each descriptor field (kind/title/mdPath/workItemId/openQuestionCount/state)",
+                "result": "pass"
+              },
+              {
+                "title": "listPendingArtifacts lists a pending BUILD record whose Story has a code review record, with kind BUILD, its work item id and the path of its BUILD.md",
+                "result": "pass"
+              },
+              {
+                "title": "listPendingArtifacts leaves out a BUILD record with no code review record, an approved or a rejected one, and EXT, STUB and AMD records as before",
+                "result": "pass"
+              },
+              {
+                "title": "listPendingArtifacts gives a BUILD record an empty path when the BUILD.md its fields derive does not exist or does not carry this record's artifact marker, and lists the records in file-name order",
+                "result": "pass"
+              },
+              {
+                "title": "listPendingArtifacts returns [] for an absent .insrc/artifacts dir (not a throw)",
+                "result": "pass"
+              },
+              {
+                "title": "listPendingArtifacts skips a single malformed JSON file and still returns the rest",
+                "result": "pass"
+              },
+              {
+                "title": "listPendingArtifacts defaults: no openQuestions -> 0; no derivable workItemId -> omitted",
+                "result": "pass"
+              },
+              {
+                "title": "listPendingArtifacts falls back title to workItemId then artifactId when body has none",
+                "result": "pass"
+              },
+              {
+                "title": "handleWorkflowPending: fixture repo with pending artifacts -> { artifacts } (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "handleWorkflowPending: all-approved / absent store -> { artifacts: [] } (ac3, distinct from error)",
+                "result": "pass"
+              },
+              {
+                "title": "handleWorkflowPending: repo-unresolved (no param, no env) -> { error }, NOT { artifacts: [] } (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "handleWorkflowPending: store-unreadable (artifacts path is a file) -> { error } (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "pending.test.ts: pending approvals read the lifecycle",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t23",
+        "commit": "fdbcbdfe",
+        "ranAt": "2026-10-22T08:05:36.149Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "completion-evidence.test.ts: completion evidence reads the lifecycle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts",
+                "title": "completion-evidence.test.ts: completion evidence reads the lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1327,
+            "titles": [
+              {
+                "title": "storyCodeReview maps the gate, an explicit override wins over a stored one and an advisory warn is blocked without an override",
+                "result": "pass"
+              },
+              {
+                "title": "completion-evidence.test.ts: completion evidence reads the lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "createCompletionEvidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t24",
+        "commit": "cb259ff6",
+        "ranAt": "2026-10-22T08:10:57.173Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "resolve.test.ts: the review report is read from the review log entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/resolve.test.ts",
+                "title": "resolve.test.ts: the review report is read from the review log entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/__tests__/resolve.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1455,
+            "titles": [
+              {
+                "title": "listPendingReviewFindings returns non-LOW unresolved findings; effective verdict blocks",
+                "result": "pass"
+              },
+              {
+                "title": "resolve apply mutates the artifact + records resolution; override clears the rest",
+                "result": "pass"
+              },
+              {
+                "title": "resolve apply refuses a finding with no edits",
+                "result": "pass"
+              },
+              {
+                "title": "resolve.test.ts: the review report is read from the review log entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t25",
+        "commit": "e874e1ad",
+        "ranAt": "2026-10-22T08:16:35.779Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "workflow-approve-dispatch.test.ts: the MCP approve dispatch reads the lifecycle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/workflow-approve-dispatch.test.ts",
+                "title": "workflow-approve-dispatch.test.ts: the MCP approve dispatch reads the lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/workflow-approve-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1516,
+            "titles": [
+              {
+                "title": "handleWorkflowApprove: NEITHER artifactPath nor epicHash → InvalidTarget error, no IPC",
+                "result": "pass"
+              },
+              {
+                "title": "handleWorkflowApprove: BOTH artifactPath and epicHash → InvalidTarget error, no IPC",
+                "result": "pass"
+              },
+              {
+                "title": "handleWorkflowApprove: empty-string target fields count as absent (neither) → error",
+                "result": "pass"
+              },
+              {
+                "title": "handleWorkflowApprove: the daemon result (incl. codeReview[]) is relayed verbatim in the JSON response",
+                "result": "pass"
+              },
+              {
+                "title": "workflow-approve-dispatch.test.ts: the MCP approve dispatch reads the lifecycle",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t26",
+        "commit": "6201b388",
+        "ranAt": "2026-10-22T08:28:57.991Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "gates.test.ts: approval goes through LifecycleService and stamps none of the removed fields",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/gates.test.ts",
+                "title": "gates.test.ts: approval goes through LifecycleService and stamps none of the removed fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/gates.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2429,
+            "titles": [
+              {
+                "title": "jsonPathForMd resolves a nested epic DEF md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested epic HLD md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested story-scoped LLD md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd leaves docs/stub layout untouched",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd returns json paths unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested standalone SPEC md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested story-scoped CR md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd recognises both docs/epics and docs/standalone top-levels, stub stays the side-by-side exception",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd rejects unknown extensions",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd throws for a nested md with no insrc:artifact marker (path no longer encodes the id)",
+                "result": "pass"
+              },
+              {
+                "title": "gates.test.ts: approval goes through LifecycleService and stamps none of the removed fields",
+                "result": "pass"
+              },
+              {
+                "title": "rejectArtifactByJsonPath sets meta.rejectedAt + reason",
+                "result": "pass"
+              },
+              {
+                "title": "rejectArtifactByJsonPath refuses empty reason",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic throws ArtifactMissingError when no Define exists",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic throws ArtifactNotApprovedError when Define is not approved",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic returns the Define artifact after approval",
+                "result": "pass"
+              },
+              {
+                "title": "t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside the lifecycle approval",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT",
+                "result": "pass"
+              },
+              {
+                "title": "t5: an UNREADABLE HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never an empty string",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not resolve yet)",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: re-approving after the work has landed does NOT move rangeBase forward — the FIRST stamp wins",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved, so the stamp is write-once rather than approve-once",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real base — write-once must not preserve a useless value forever",
+                "result": "pass"
+              },
+              {
+                "title": "t5: rangeBase SURVIVES a write-read-write round trip",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t27",
+        "commit": "86f50f1d",
+        "ranAt": "2026-10-22T08:35:25.723Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "gates-lifecycle-service.test.ts: rejection and stale acknowledgement go through LifecycleService",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/gates-lifecycle-service.test.ts",
+                "title": "gates-lifecycle-service.test.ts: rejection and stale acknowledgement go through LifecycleService",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/gates-lifecycle-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 770,
+            "titles": [
+              {
+                "title": "with a service, an explicit override over an advisory-blocked code review completes the Story through a real approval and the reason is on the complete entry",
+                "result": "pass"
+              },
+              {
+                "title": "with a service, a review auto-fix or BUILD hook rewrite keeps the log in step so the next approval is not head-ahead-of-log",
+                "result": "pass"
+              },
+              {
+                "title": "without a service one is built over the repository files, and the approval is the lifecycle's",
+                "result": "pass"
+              },
+              {
+                "title": "with a service, an approval the service refuses leaves the head as it was, and a review bound to the revision lets it through",
+                "result": "pass"
+              },
+              {
+                "title": "with a service, an artifact in a status the table has no approval from is refused and left as it is",
+                "result": "pass"
+              },
+              {
+                "title": "gates-lifecycle-service.test.ts: rejection and stale acknowledgement go through LifecycleService",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t28",
+        "commit": "ea08e1f8",
+        "ranAt": "2026-10-22T08:40:38.194Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review-gate.test.ts: a blocking lifecycle review withholds approval",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/review-gate.test.ts",
+                "title": "review-gate.test.ts: a blocking lifecycle review withholds approval",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/review-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1412,
+            "titles": [
+              {
+                "title": "approve is refused when the review verdict is block and no override",
+                "result": "pass"
+              },
+              {
+                "title": "approve proceeds with an override reason and records it on the approval",
+                "result": "pass"
+              },
+              {
+                "title": "approve proceeds normally when the verdict is not block",
+                "result": "pass"
+              },
+              {
+                "title": "review-gate.test.ts: a blocking lifecycle review withholds approval",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t29",
+        "commit": "ad920d67",
+        "ranAt": "2026-10-22T08:49:02.245Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review-step-findings.test.ts: the findings phase binds the review to the lifecycle through persistReview",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts",
+                "title": "review-step-findings.test.ts: the findings phase binds the review to the lifecycle through persistReview",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4054,
+            "titles": [
+              {
+                "title": "T13 start on a design returns the review template with next emit_findings",
+                "result": "pass"
+              },
+              {
+                "title": "T13 a design that answers an ISSUE gets the ISSUE template; an HLD is a design too",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the findings phase records the review and does not edit the design",
+                "result": "pass"
+              },
+              {
+                "title": "T13 an answer the session path rejects is rejected by the findings phase with the same errors, and nothing is recorded",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the two paths do not cross: no claims on a design run, no findings on a non-design run",
+                "result": "pass"
+              },
+              {
+                "title": "T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt",
+                "result": "pass"
+              },
+              {
+                "title": "T4 the findings phase records the controller on an HLD too",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the registered tool accepts phase `findings` and its phase list names it",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the ISSUE template is validated against its own items",
+                "result": "pass"
+              },
+              {
+                "title": "review-step-findings.test.ts: the findings phase binds the review to the lifecycle through persistReview",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t30",
+        "commit": "cf1076b6",
+        "ranAt": "2026-10-22T08:53:25.262Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review-decision.test.ts: a review decision records its resolution as a log entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/review-decision.test.ts",
+                "title": "review-decision.test.ts: a review decision records its resolution as a log entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/review-decision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5372,
+            "titles": [
+              {
+                "title": "review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: a decision with no comments writes no feedback entry",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: a failing comment write after the decision took effect reports the outcome with commentsError",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: the author is the one resolveReviewer gives and is never taken from the request",
+                "result": "pass"
+              },
+              {
+                "title": "handleReviewDecision stores its comments as Feedback entries by the request's actor or the current actor, with kind revision-request for send-feedback and one batchId, and still reports commentsError when saving fails after the decision",
+                "result": "pass"
+              },
+              {
+                "title": "daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "handleReviewDecision on a BUILD record: approve goes through the same approve call as any record and a result that call withholds is returned with its reason; reject stamps the record, after which it is not listed and the pane's call refuses a further decision on it",
+                "result": "pass"
+              },
+              {
+                "title": "review-decision.test.ts: a review decision records its resolution as a log entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t31",
+        "commit": "b126882d",
+        "ranAt": "2026-10-22T08:57:48.987Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "bugfix-orchestration.test.ts: the bugfix chain advances from a lifecycle approval",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "bugfix-orchestration.test.ts: the bugfix chain advances from a lifecycle approval",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2000,
+            "titles": [
+              {
+                "title": "nextAfterIssue: magnitude='small' -> standalone insrc_build_step (issue->build)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_step design.story (START)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: the small build routes through the build-step NO-LLD path (sizeClass=trivial, consumable)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: the sized design.story spec carries the full defect body, not just the title",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: emitted stage matches routeForSizeClass (small->build has no design.story)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef WorkItemRef -> admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef ABSENT -> not admitted",
+                "result": "pass"
+              },
+              {
+                "title": "bugfix-orchestration.test.ts: the bugfix chain advances from a lifecycle approval",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: not approved -> not admitted",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: WorkItemRef -> writeParentRef(ref); returns the ParentLocation",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: standalone (null) -> writeParentRef(null)",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: readIssue null -> throws issue-not-found, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: not approved -> throws not-approved, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: locateParent rejects -> propagates, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: defectDescription is built from the issue body; touchedPaths empty",
+                "result": "pass"
+              },
+              {
+                "title": "defaultStampDeps: writeParentRef patches meta.parentRef only, body byte-unchanged (k4)",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: bugfix issue -> stamps, admits, returns nextCall",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: non-issue artifact -> skipped, nothing routed",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: bugfixCategory flag off -> skipped",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t32",
+        "commit": "1cb89af1",
+        "ranAt": "2026-10-22T09:07:45.170Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "build-record.test.ts: the completion record needs no legacy stamp",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/build-record.test.ts",
+                "title": "build-record.test.ts: the completion record needs no legacy stamp",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/runners/build/__tests__/build-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3066,
+            "titles": [
+              {
+                "title": "persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists",
+                "result": "pass"
+              },
+              {
+                "title": "a second validate UNIONS tasks by id, preserves createdAt, refreshes updatedAt (one record, not N)",
+                "result": "pass"
+              },
+              {
+                "title": "re-validating the same task refreshes its passed without duplicating the row",
+                "result": "pass"
+              },
+              {
+                "title": "an existing lifecycle approval (+ its override) is PRESERVED across an upsert (never un-complete a story)",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed prior record is treated as absent (fail-open fresh write), not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)",
+                "result": "pass"
+              },
+              {
+                "title": "approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)",
+                "result": "pass"
+              },
+              {
+                "title": "build-record.test.ts: the completion record needs no legacy stamp",
+                "result": "pass"
+              },
+              {
+                "title": "S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps the SAME md folder (folder anchored on the PRESERVED createdAt, so BUILD + CR never split)",
+                "result": "pass"
+              },
+              {
+                "title": "a prior-only meta field SURVIVES a later write that omits it (sizeClass + triageRationale were silently deleted)",
+                "result": "pass"
+              },
+              {
+                "title": "the new write still WINS on a meta field it DOES supply (preservation must not become prior-always-wins)",
+                "result": "pass"
+              },
+              {
+                "title": "t9: a write that OMITS standalone keeps the prior true (the carry-forward the shared validate persist now relies on)",
+                "result": "pass"
+              },
+              {
+                "title": "the PRIOR-wins exceptions are untouched: createdAt and the lifecycle still beat the new write",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY: a new write that supplies every field the record already carried produces the SAME json and md as a fresh write",
+                "result": "pass"
+              },
+              {
+                "title": "a meta field can no longer be cleared by OMITTING it — the documented trade-off, pinned so it is a decision and not a surprise",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 1: a real pre-fix well-formed standalone record renders exactly its captured markdown",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 3 (PATHOLOGICAL): REPAIRED at t8 — every defect t2 catalogued is gone, and nothing else moved",
+                "result": "pass"
+              },
+              {
+                "title": "FORWARD COMPAT: a record written entirely before this Story still parses, merges via mergeWithPrior and renders without error",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: body.commit is populated from HEAD on BOTH routes, identically",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD cannot be read",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist REFRESHES to HEAD (the specified \"at persist time\" semantics)",
+                "result": "pass"
+              },
+              {
+                "title": "t7 RENDER (PLAN-DRIVEN only): body.commit renders as `**Commit:**` and body.summary as `## Summary`",
+                "result": "pass"
+              },
+              {
+                "title": "t7 RENDER: an absent commit/summary renders NEITHER section (omit-slots intact)",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the three hand-filled records prove the gap was real — and are now what the producer writes automatically",
+                "result": "pass"
+              },
+              {
+                "title": "t8: the TWO unconditional parts always render, even on a record carrying nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "t8: each of the SIX omit-slots renders when populated — one assertion per section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: each of the SIX omit-slots is ABSENT when its content is — one assertion per section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: the title derives from meta.sizeClass, NOT meta.standalone — the FLIPPED state still renders a standalone title",
+                "result": "pass"
+              },
+              {
+                "title": "t8: a record carrying BOTH focus and tasks renders BOTH sections — neither route's content is lost",
+                "result": "pass"
+              },
+              {
+                "title": "t8: STANDALONE-route rendering of body.summary and body.commit now works — the half deferred from t7",
+                "result": "pass"
+              },
+              {
+                "title": "t8: an empty or absent changeLog still renders NO `## Changes` section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: renderStandaloneBuildRecordMd still exports and DELEGATES — identical output, not a second implementation",
+                "result": "pass"
+              },
+              {
+                "title": "t8: NO code path selects a renderer on meta.standalone — the same record renders the same regardless of the flag, except for its honest \"Standalone:\" bit",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a record carrying standalone true is placed under docs/standalone",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the flag, and the markdown does not move",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — an omitted flag on a FIRST write still reads as epic, so nothing is manufactured",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — a standalone record renders the standalone heading and \"Standalone: yes\", not the plan-driven title",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the render keys on sizeClass, so it survives a record whose flag is absent",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — persistBuildRecord files an UNFLAGGED record beside its standalone story, not under docs/epics/",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — an epic-parented record is still filed under docs/epics/ (the story says nothing, so nothing widens)",
+                "result": "pass"
+              },
+              {
+                "title": "a build record with testRecord renders a line that links to TESTS.md, carries it forward when a later write omits it, and without it renders byte for byte as before",
+                "result": "pass"
+              },
+              {
+                "title": "with a test record on disk and no build record, a first build record written by each of its three writers takes the test record's createdAt and lands in its folder",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t33",
+        "commit": "200f6041",
+        "ranAt": "2026-10-22T09:10:09.636Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "range-base.test.ts: a Story's build range still resolves from meta.rangeBase",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/range-base.test.ts",
+                "title": "range-base.test.ts: a Story's build range still resolves from meta.rangeBase",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/runners/build/__tests__/range-base.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7121,
+            "titles": [
+              {
+                "title": "t6: the STAMPED base on the PLAN is used, without needing the artifact committed",
+                "result": "pass"
+              },
+              {
+                "title": "range-base.test.ts: a Story's build range still resolves from meta.rangeBase",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a STANDALONE story resolves from its LLD stamp when there is no PLAN",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the PLAN stamp takes PRECEDENCE over the LLD stamp — one chain, one base",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a LEGACY record with NO stamp resolves via the PLAN-INTRODUCING COMMIT — the bfe98ff7 s4 repair method",
+                "result": "pass"
+              },
+              {
+                "title": "t6: an APPROVED-BUT-UNCOMMITTED plan with no stamp yields UNDEFINED, not an error — the state this Story's own LLD was in",
+                "result": "pass"
+              },
+              {
+                "title": "t6: NO upstream at all (the TRIVIAL route) yields undefined — the specified outcome, not a failure",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the resolver NEVER substitutes HEAD^ or the empty-tree object — the divergence from the code-review chain",
+                "result": "pass"
+              },
+              {
+                "title": "t6: git UNAVAILABLE / a non-git directory yields undefined without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "t6: an EMPTY-STRING stamp is treated as absent and falls through to the commit lookup",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a MALFORMED artifact json is treated as absent rather than throwing",
+                "result": "pass"
+              },
+              {
+                "title": "t6: an empty epicHash or storyId yields undefined without touching the filesystem or git",
+                "result": "pass"
+              },
+              {
+                "title": "T18: buildStartRelPath is the one path, outside the artifact store",
+                "result": "pass"
+              },
+              {
+                "title": "T18: a VALID build-start file wins over a different approval-time stamp on the PLAN",
+                "result": "pass"
+              },
+              {
+                "title": "T18: a HAND-WRITTEN file with the four fields is accepted — compact json, extra keys, any key order",
+                "result": "pass"
+              },
+              {
+                "title": "T18: one Story's build-start file does not answer for another Story of the same epic",
+                "result": "pass"
+              },
+              {
+                "title": "T19: an invalid build-start file is IGNORED and the approval-time stamp is returned",
+                "result": "pass"
+              },
+              {
+                "title": "T19: a build-start file naming a TREE or BLOB object, not a commit, is invalid",
+                "result": "pass"
+              },
+              {
+                "title": "T19/T20: with an invalid file and NOTHING else to resolve from, the answer is still undefined — no substituted range",
+                "result": "pass"
+              },
+              {
+                "title": "T20: with NO build-start file the read is `absent` and resolution is exactly the pre-existing chain",
+                "result": "pass"
+              },
+              {
+                "title": "T1: no stamp and no BUILD record -> stamped; the file holds HEAD's full sha and the Story's ids",
+                "result": "pass"
+              },
+              {
+                "title": "T2: a valid stamp, HEAD moved, no BUILD record -> kept; file bytes unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "T3: mid-build approval — plan t1,t2,t3, record has t1 passed and was approved AFTER the stamp -> kept",
+                "result": "pass"
+              },
+              {
+                "title": "T4: a record approved after the stamp whose one task has passed FALSE, or passed ABSENT -> kept",
+                "result": "pass"
+              },
+              {
+                "title": "T4 (mixed): EVERY task must have passed — one passed and one failed, plan covered, approved after the stamp -> kept",
+                "result": "pass"
+              },
+              {
+                "title": "T5: a record approved after the stamp but TASK-LESS -> kept",
+                "result": "pass"
+              },
+              {
+                "title": "T6: a FINISHED plan-driven build (plan t1,t2; both passed; approved after the stamp) -> stamped at the new HEAD",
+                "result": "pass"
+              },
+              {
+                "title": "T7: a FINISHED standalone build (no PLAN; one passed task; approved after the stamp) -> stamped",
+                "result": "pass"
+              },
+              {
+                "title": "T8: a planned Story validated as a WHOLE (plan t1,t2; record holds a passed task whose id is the storyId) -> stamped",
+                "result": "pass"
+              },
+              {
+                "title": "T8 (contrast): a passed task that is neither a plan task nor the storyId does NOT cover the plan -> kept",
+                "result": "pass"
+              },
+              {
+                "title": "T9: a finished record approved BEFORE the stamp (or at the same instant, or with no approval, or an unparseable one) -> kept",
+                "result": "pass"
+              },
+              {
+                "title": "T10: a PLAN json that is present but malformed makes an otherwise finished record NOT finished -> kept",
+                "result": "pass"
+              },
+              {
+                "title": "T11: no stamp and an UNAPPROVED record with one task -> skipped-work-exists, no file",
+                "result": "pass"
+              },
+              {
+                "title": "T12: no stamp and an APPROVED record covering one of three plan tasks -> skipped-work-exists, no file",
+                "result": "pass"
+              },
+              {
+                "title": "T13: no stamp and an APPROVED record whose one task has passed false -> skipped-work-exists, no file",
+                "result": "pass"
+              },
+              {
+                "title": "T13 (unreadable record): no stamp and a BUILD record that cannot be parsed -> skipped-work-exists",
+                "result": "pass"
+              },
+              {
+                "title": "T14: no stamp and a FINISHED record -> stamped",
+                "result": "pass"
+              },
+              {
+                "title": "T15: no stamp and a TASK-LESS record, approved or not -> stamped",
+                "result": "pass"
+              },
+              {
+                "title": "T16: a repo with no commits -> not-written, no file",
+                "result": "pass"
+              },
+              {
+                "title": "T16: a directory that is not a git repo -> not-written, without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "T16: the build-start directory cannot be created -> not-written, without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "T16: an empty epicHash or storyId -> not-written, nothing created",
+                "result": "pass"
+              },
+              {
+                "title": "T17: an INVALID stamp with no recorded task is replaced by a fresh one; with an unfinished record it is left alone",
+                "result": "pass"
+              },
+              {
+                "title": "T1/T2 together: a second call after the first stamp keeps it, even after HEAD moves on",
+                "result": "pass"
+              },
+              {
+                "title": "stampBuildStart never writes or changes an artifact record",
+                "result": "pass"
+              },
+              {
+                "title": "T21: range-base.ts has no RUNTIME import of gates.ts (type-only imports excluded)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t34",
+        "commit": "a0a448c7",
+        "ranAt": "2026-10-22T09:15:44.465Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "task-set-approve.test.ts: plan approval syncs Task heads from the lifecycle approval",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tasks/__tests__/task-set-approve.test.ts",
+                "title": "task-set-approve.test.ts: plan approval syncs Task heads from the lifecycle approval",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tasks/__tests__/task-set-approve.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1855,
+            "titles": [
+              {
+                "title": "approving a plan creates the Task set and each Task's issue is bound on its Task head under the Story's issue, through the cli approve flow and the daemon seam, and a failed sync never fails the approval",
+                "result": "pass"
+              },
+              {
+                "title": "task-set-approve.test.ts: plan approval syncs Task heads from the lifecycle approval",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t35",
+        "commit": "b1d8ba1b",
+        "ranAt": "2026-10-22T09:26:59.397Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store.test.ts: amendments are heads with a lifecycle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/amendments/__tests__/store.test.ts",
+                "title": "store.test.ts: amendments are heads with a lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/amendments/__tests__/store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2088,
+            "titles": [
+              {
+                "title": "nextAmendmentId starts at 1 in an empty repo",
+                "result": "pass"
+              },
+              {
+                "title": "nextAmendmentId advances past existing entries",
+                "result": "pass"
+              },
+              {
+                "title": "proposeAmendment writes a record then readAmendment returns it",
+                "result": "pass"
+              },
+              {
+                "title": "proposeAmendment refuses duplicate ids",
+                "result": "pass"
+              },
+              {
+                "title": "proposeAmendment refuses non-pending status at write time",
+                "result": "pass"
+              },
+              {
+                "title": "approveAmendment sets status + approvedAt + approvedBy",
+                "result": "pass"
+              },
+              {
+                "title": "approveAmendment refuses double-approve",
+                "result": "pass"
+              },
+              {
+                "title": "rejectAmendment refuses missing reason",
+                "result": "pass"
+              },
+              {
+                "title": "rejectAmendment refuses on approved records",
+                "result": "pass"
+              },
+              {
+                "title": "listAmendments returns records in id-suffix order",
+                "result": "pass"
+              },
+              {
+                "title": "listAmendments filters by Epic hash prefix",
+                "result": "pass"
+              },
+              {
+                "title": "listApprovedAmendments filters + sorts by approvedAt",
+                "result": "pass"
+              },
+              {
+                "title": "readAmendment throws when record is missing",
+                "result": "pass"
+              },
+              {
+                "title": "store.test.ts: amendments are heads with a lifecycle",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t36",
+        "commit": "5d35bace",
+        "ranAt": "2026-10-22T09:37:28.612Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "round-recording.test.ts: round recording runs with a mandatory lifecycle service",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+                "title": "round-recording.test.ts: round recording runs with a mandatory lifecycle service",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 864,
+            "titles": [
+              {
+                "title": "persistBuildRecord and persistTestRecordTask with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log",
+                "result": "pass"
+              },
+              {
+                "title": "a TESTS persist whose markdown fails after the content was stored keeps the committed content and entry, and the next persist renders the markdown",
+                "result": "pass"
+              },
+              {
+                "title": "a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so the next approval is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview with a RoundWriter stores the content through the service and logs the round on the daemon route and the controller route, and a failed store replaces no record",
+                "result": "pass"
+              },
+              {
+                "title": "the first BUILD round of a Trivial standalone build, with no earlier record in the work item, is created through the registry store on the record's own time",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable BUILD head is replaced by a round that keeps the time the build gave it, not the store's clock",
+                "result": "pass"
+              },
+              {
+                "title": "a round head with merge conflict markers or a meta the store cannot read is refused untouched, and one with nothing in it is replaced",
+                "result": "pass"
+              },
+              {
+                "title": "round-recording.test.ts: round recording runs with a mandatory lifecycle service",
+                "result": "pass"
+              },
+              {
+                "title": "round-recording",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t37",
+        "commit": "0d740d52",
+        "ranAt": "2026-10-22T09:41:51.338Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "artifact-writer.test.ts: the writer tests run on lifecycle fixtures",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-writer.test.ts",
+                "title": "artifact-writer.test.ts: the writer tests run on lifecycle fixtures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-writer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1119,
+            "titles": [
+              {
+                "title": "writeArtifact mints and keeps revisions, carries the whole tracker block, and rejects a value without meta",
+                "result": "pass"
+              },
+              {
+                "title": "readRevision reads 0 for bad values; patchTrackerMeta keeps every field, merges units and preserves the tracker kind",
+                "result": "pass"
+              },
+              {
+                "title": "artifact-writer.test.ts: the writer tests run on lifecycle fixtures",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t38",
+        "commit": "29fd165f",
+        "ranAt": "2026-10-22T09:44:27.792Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "questions.test.ts: the question tests run on lifecycle fixtures",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/questions.test.ts",
+                "title": "questions.test.ts: the question tests run on lifecycle fixtures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/questions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1333,
+            "titles": [
+              {
+                "title": "questionId: parses a leading [id / verdict] tag; falls back to a stable sha",
+                "result": "pass"
+              },
+              {
+                "title": "openQuestions / unresolvedOpen reflect recorded resolutions",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution persists a resolved choice to HLD meta + renders section",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution ignore + defer persist the right status to DEF meta",
+                "result": "pass"
+              },
+              {
+                "title": "questions.test.ts: the question tests run on lifecycle fixtures",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution throws on an unknown questionId",
+                "result": "pass"
+              },
+              {
+                "title": "listDeferred enumerates deferred questions across DEF + HLD + LLDs",
+                "result": "pass"
+              },
+              {
+                "title": "the comment goes through the adapter with the same argv and a failure is logged in the existing catch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t39",
+        "commit": "22e8028c",
+        "ranAt": "2026-10-22T09:55:36.561Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "body-fields.test.ts: no body.feedback field is declared or written",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/provenance/__tests__/body-fields.test.ts",
+                "title": "body-fields.test.ts: no body.feedback field is declared or written",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/provenance/__tests__/body-fields.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1686,
+            "titles": [
+              {
+                "title": "the body guards accept a body, and ignore a stray key a stored legacy body may still carry",
+                "result": "pass"
+              },
+              {
+                "title": "body-fields.test.ts: no body.feedback field is declared or written",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t40",
+        "commit": "e8401077",
+        "ranAt": "2026-10-22T10:11:17.185Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "unit-issue.test.ts: the unit issue resolves from the binding with no Plan Task record",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+                "title": "unit-issue.test.ts: the unit issue resolves from the binding with no Plan Task record",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1867,
+            "titles": [
+              {
+                "title": "ensureUnitIssue takes a unit and a port and returns a PortResult without a phase",
+                "result": "pass"
+              },
+              {
+                "title": "resolveUnitIssueLocal resolves from records and legacy refs, reconciles locally and runs no command",
+                "result": "pass"
+              },
+              {
+                "title": "a legacy LLD with only storyRef creates no second Story issue",
+                "result": "pass"
+              },
+              {
+                "title": "team mode creates only when everything misses and reports phase before-create or create on failure",
+                "result": "pass"
+              },
+              {
+                "title": "a create that times out after the remote committed is adopted by its label on the next call",
+                "result": "pass"
+              },
+              {
+                "title": "unitLabel gives the three forms, lower-cases ids, stays within 50 characters and rejects a malformed id",
+                "result": "pass"
+              },
+              {
+                "title": "a lower-numbered issue is adopted and the call's own is commented on and closed, even when the close fails",
+                "result": "pass"
+              },
+              {
+                "title": "two simulated daemons that both create converge on the lowest issue",
+                "result": "pass"
+              },
+              {
+                "title": "a failed findIssues listing keeps the recorded issue and a following call makes no tracker call",
+                "result": "pass"
+              },
+              {
+                "title": "a link under the parent that failed at creation is retried on the next ensure and then cleared",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed plan is a before-create failure, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "a Story or Task issue adopted by its label after a timed-out create is resolved and linked under its parent, a failed resolve records pendingLink with child and a failed link records childId, the next ensure completes either, an Epic adoption makes no call, and an old pendingLink with childId still links without a resolve",
+                "result": "pass"
+              },
+              {
+                "title": "unit-issue.test.ts: the unit issue resolves from the binding with no Plan Task record",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t41",
+        "commit": "a281d3d5",
+        "ranAt": "2026-10-22T10:47:18.161Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "tracker-artifact.test.ts: the tracker lines read the binding, not the older refs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/tracker-artifact.test.ts",
+                "title": "tracker-artifact.test.ts: the tracker lines read the binding, not the older refs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/tracker-artifact.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1246,
+            "titles": [
+              {
+                "title": "isTrackerPushRefs accepts valid push refs",
+                "result": "pass"
+              },
+              {
+                "title": "isTrackerPushRefs rejects missing epicRef",
+                "result": "pass"
+              },
+              {
+                "title": "isTrackerSyncRefs accepts valid sync refs",
+                "result": "pass"
+              },
+              {
+                "title": "isTrackerPostRefs accepts valid post refs",
+                "result": "pass"
+              },
+              {
+                "title": "isTrackerChecklistResult validates shape",
+                "result": "pass"
+              },
+              {
+                "title": "renderTrackerMarkdown for push shows refs + labels + all-passed checklist",
+                "result": "pass"
+              },
+              {
+                "title": "renderTrackerMarkdown for sync shows per-story status",
+                "result": "pass"
+              },
+              {
+                "title": "renderTrackerMarkdown surfaces failed checklist items with notes",
+                "result": "pass"
+              },
+              {
+                "title": "tracker-artifact.test.ts: the tracker lines read the binding, not the older refs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t42",
+        "commit": "50c9a57a",
+        "ranAt": "2026-10-22T10:53:13.220Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "comment-sync-inbound.test.ts: comment sync reads and posts on the STORY head",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/comment-sync-inbound.test.ts",
+                "title": "comment-sync-inbound.test.ts: comment sync reads and posts on the STORY head",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "plan-artifact.test.ts: the PLAN task table shows each Task's status and revision from its head",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/plan-artifact.test.ts",
+                "title": "plan-artifact.test.ts: the PLAN task table shows each Task's status and revision from its head",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/plan-artifact.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1417,
+            "titles": [
+              {
+                "title": "checkPlanTaskGraph: accepts a valid single-task graph",
+                "result": "pass"
+              },
+              {
+                "title": "checkPlanTaskGraph: accepts a valid multi-task ordered graph",
+                "result": "pass"
+              },
+              {
+                "title": "checkPlanTaskGraph: rejects a dependency cycle",
+                "result": "pass"
+              },
+              {
+                "title": "checkPlanTaskGraph: rejects a dangling dependsOn id",
+                "result": "pass"
+              },
+              {
+                "title": "checkPlanTaskGraph: rejects order that is not a valid topological order",
+                "result": "pass"
+              },
+              {
+                "title": "checkPlanTaskGraph: rejects a non-t\\d id and empty derivedFrom",
+                "result": "pass"
+              },
+              {
+                "title": "checkPlanTaskGraph: rejects design under-coverage (a citation no Task derives from)",
+                "result": "pass"
+              },
+              {
+                "title": "checkPlanTaskGraph: rejects a derivedFrom id with no matching citation",
+                "result": "pass"
+              },
+              {
+                "title": "checkTestStrategyCoverage: returns [] for a total coverage map",
+                "result": "pass"
+              },
+              {
+                "title": "checkTestStrategyCoverage: flags an uncovered LLD strategy item",
+                "result": "pass"
+              },
+              {
+                "title": "checkTestStrategyCoverage: flags a coverage row with an unknown task id",
+                "result": "pass"
+              },
+              {
+                "title": "checkTestStrategyCoverage: flags a Task with an empty tests[]",
+                "result": "pass"
+              },
+              {
+                "title": "checkTestStrategyCoverage: flags a coverage claim whose Task names no tests",
+                "result": "pass"
+              },
+              {
+                "title": "checkTestStrategyCoverage: accepts one-to-many and many-to-one mappings",
+                "result": "pass"
+              },
+              {
+                "title": "renderPlanMarkdown: leads with the PLAN- marker, renders the ordered task table + [[cN]]",
+                "result": "pass"
+              },
+              {
+                "title": "renderPlanMarkdown output passes validateCitations (every citation grounded)",
+                "result": "pass"
+              },
+              {
+                "title": "planArtifactPaths: nested story-scoped md under docs/epics + hash-json under .insrc/artifacts; hash fallback",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a rendered plan md back to its canonical json; approve approves its lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "isPlanBody guards the tasks + testStrategyCoverage shape",
+                "result": "pass"
+              },
+              {
+                "title": "plan-artifact.test.ts: the PLAN task table shows each Task's status and revision from its head",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/comment-sync-inbound.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1343,
+            "titles": [
+              {
+                "title": "a human comment is recorded once as feedback with the tracker user as author, framework comments are never recorded, an edited comment is not mirrored, and a tracker failure is reported without failing the call",
+                "result": "pass"
+              },
+              {
+                "title": "a comment that failed to record is picked up on the next sync, and a unit with no binding or no artifact says so",
+                "result": "pass"
+              },
+              {
+                "title": "comment-sync-inbound.test.ts: comment sync reads and posts on the STORY head",
+                "result": "pass"
+              },
+              {
+                "title": "comment-sync-inbound",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t43",
+        "commit": "4fd99bb2",
+        "ranAt": "2026-10-22T10:56:57.150Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repo-convert.test.ts: a bare repo.convert call runs a preview and writes nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-convert.test.ts",
+                "title": "repo-convert.test.ts: a bare repo.convert call runs a preview and writes nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/repo-convert.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1067,
+            "titles": [
+              {
+                "title": "repo-convert.test.ts: a bare repo.convert call runs a preview and writes nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t44",
+        "commit": "c187bca9",
+        "ranAt": "2026-10-22T11:12:51.318Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repo-schema-entry-points.test.ts: each daemon entry point refuses an unconverted repository with the conversion message",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-schema-entry-points.test.ts",
+                "title": "repo-schema-entry-points.test.ts: each daemon entry point refuses an unconverted repository with the conversion message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/repo-schema-entry-points.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1369,
+            "titles": [
+              {
+                "title": "repo-schema-entry-points.test.ts: each daemon entry point refuses an unconverted repository with the conversion message",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t45",
+        "commit": "af81cbbf",
+        "ranAt": "2026-10-22T11:15:32.895Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repo-schema-guard.test.ts: the MCP artifact tools refuse an unconverted repository",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/repo-schema-guard.test.ts",
+                "title": "repo-schema-guard.test.ts: the MCP artifact tools refuse an unconverted repository",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/repo-schema-guard.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1584,
+            "titles": [
+              {
+                "title": "repo-schema-guard.test.ts: the MCP artifact tools refuse an unconverted repository",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t46",
+        "commit": "05355f6a",
+        "ranAt": "2026-10-22T11:24:12.560Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s9-handoffs.test.ts: the plans document names each s9 hand-off and no production file outside the conversion names a removed stamp",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/s9-handoffs.test.ts",
+                "title": "s9-handoffs.test.ts: the plans document names each s9 hand-off and no production file outside the conversion names a removed stamp",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "smoke: preview on a copy of this repository lists the expected 444 renames and 56 flat amendments",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/core-data-model.md, section 's9 build: hand-offs', item 1. Preview (handleRepoConvert, mode preview) on a git clone of this repository listed 453 renamed head files, equal to a direct count of S0nn head files in .insrc/artifacts; the 444 in the plan was an earlier analyzer figure. It listed 56 flat amendments (convert-amendment) and 0 problems. The same preview at the LLD-approval commit gave 453 too. The run also found PLAN-dfc0371b7200f5b5-s001 (a lowercase zero-padded id), now renamed by the conversion."
+            }
+          },
+          {
+            "name": "smoke: apply on the copy reports no unexplained difference and every approved artifact keeps its revision number",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Apply on a fresh clone of this repository (3m29s): 3532 files written, marker written, 0 problems, verification differences [] (the verifier compares approval, revision, review and open feedback per unit before and after). Output is in the t46 session; summary in docs/plans/core-data-model.md, s9 build: hand-offs, item 1."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/s9-handoffs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 941,
+            "titles": [
+              {
+                "title": "s9-handoffs.test.ts: the plans document names each s9 hand-off and no production file outside the conversion names a removed stamp",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

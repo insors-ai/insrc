@@ -65,7 +65,7 @@ export interface WorkflowReviewDeps {
 	/** The provider for the `review` role and its label. */
 	readonly resolveProvider?: ((repoPath: string) => { provider: LLMProvider; model: string }) | undefined;
 	readonly review?: typeof reviewArtifactFile | undefined;
-	/** The repository's durable LifecycleService; the daemon passes its registry. Without it the review runs head-only. */
+	/** The repository's durable LifecycleService; the daemon's registry by default. */
 	readonly lifecycleFor?: ((repoPath: string) => LifecycleService) | undefined;
 }
 

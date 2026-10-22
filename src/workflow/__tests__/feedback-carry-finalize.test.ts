@@ -22,7 +22,6 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { finalizeArtifact } from '../orchestrator.js';
-import { approveArtifactByJsonPath } from '../gates.js';
 import {
 	artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths,
 	lldArtifactId, planArtifactId,
@@ -30,7 +29,7 @@ import {
 import { appendFeedbackBatch } from '../artifacts/provenance/writer.js';
 import type { FeedbackEntry } from '../artifacts/provenance/types.js';
 import type { WorkflowIntent } from '../types.js';
-import { stampOtherPartyReview } from './helpers/other-party-review.js';
+import { approvedMeta, markApprovedSync } from './lifecycle-fixtures.js';
 
 const HASH    = 'f1e2d3c4b5a69788';
 const CREATED = '2026-07-17T07:42:28.275Z';
@@ -116,7 +115,7 @@ function seedEpic(repo: string): void {
 	const dp = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'carry-epic');
 	mkdirSync(dirname(dp.json), { recursive: true });
 	writeFileSync(dp.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-carry', schemaVersion: 1, epicHash: HASH, epicSlug: 'carry-epic', createdAt: CREATED },
+		meta: { workflow: 'define', runId: 'def-carry', schemaVersion: 1, epicHash: HASH, epicSlug: 'carry-epic', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			flavor: 'new-capability', problem: 'x', nonGoals: [], assumptions: [], constraints: [],
 			stories: [{ id: 's1', title: 'The story', userValue: 'v', acceptanceCriteria: [], dependsOn: [] }],
@@ -124,20 +123,18 @@ function seedEpic(repo: string): void {
 		},
 		citations: [],
 	}, null, 2));
-	stampOtherPartyReview(dp.json);
-	approveArtifactByJsonPath(dp.json);
+	markApprovedSync(dp.json);
 }
 
 /** An approved HLD for the seeded Epic, the upstream an epic Story's LLD needs. */
 function seedHld(repo: string): void {
 	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'carry-epic');
 	writeFileSync(hp.json, JSON.stringify({
-		meta: { workflow: 'design.epic', runId: 'hld-carry', schemaVersion: 1, epicHash: HASH, epicSlug: 'carry-epic', createdAt: CREATED },
+		meta: { workflow: 'design.epic', runId: 'hld-carry', schemaVersion: 1, epicHash: HASH, epicSlug: 'carry-epic', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: hldBody(),
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
 	}, null, 2));
-	stampOtherPartyReview(hp.json);
-	approveArtifactByJsonPath(hp.json);
+	markApprovedSync(hp.json);
 }
 
 /** An approved standalone LLD, the upstream a PLAN needs. */
@@ -146,7 +143,7 @@ function seedStandaloneLld(repo: string): void {
 	writeFileSync(artifactJsonPath(repo, lldArtifactId(HASH, 's1')), JSON.stringify({
 		meta: {
 			workflow: 'design.story', epicHash: HASH, storyId: 's1', epicSlug: 'carry-item', standalone: true,
-			createdAt: CREATED, epicCreatedAt: CREATED, approvedAt: '2026-07-17T09:00:00.000Z', runId: 'wf-seed-lld',
+			createdAt: CREATED, epicCreatedAt: CREATED, ...approvedMeta({ at: '2026-07-17T09:00:00.000Z' }), runId: 'wf-seed-lld',
 		},
 		body: lldBody('s1'),
 	}));

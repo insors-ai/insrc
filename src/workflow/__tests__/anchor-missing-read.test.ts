@@ -25,6 +25,7 @@ import { buildChainReport } from '../chain.js';
 import { codeReviewSubjectPathArgs } from '../code-review/subject-paths.js';
 import { appendStoryToDefine, requireApprovedEpic } from '../gates.js';
 import { questionId, recordResolution } from '../questions.js';
+import { approvedMeta } from './lifecycle-fixtures.js';
 
 const HASH = 'c0ffee00d15ea5e5';
 const CREATED = '2026-10-01T10:00:00.000Z';
@@ -116,7 +117,7 @@ function seedUnstampedStandaloneLld(repo: string): void {
 	writeFileSync(join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`), JSON.stringify({
 		meta: {
 			workflow: 'design.story', runId: 'l1', schemaVersion: 1, epicHash: HASH, epicSlug: 'a-small-fix', storyId: 's1',
-			createdAt: CREATED, standalone: true, approvedAt: CREATED,
+			createdAt: CREATED, standalone: true, ...approvedMeta({ at: CREATED }),
 		},
 		body: { openQuestions: [] }, citations: [],
 	}));

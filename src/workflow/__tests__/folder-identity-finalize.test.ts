@@ -35,6 +35,9 @@ import { resolveArtifactMdPath } from '../path-scheme.js';
 import { workItemKindOf } from '../storage.js';
 import type { WorkflowIntent } from '../types.js';
 import type { LldArtifact } from '../artifacts/lld.js';
+import { approvedMeta } from './lifecycle-fixtures.js';
+import { ackStaleArtifact } from '../gates.js';
+import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 
 /** The folder the REAL path builder composes from an artifact's own PERSISTED
  *  metadata. Nothing here is re-typed from the implementation: the metadata is
@@ -232,7 +235,7 @@ function seedApprovedLld(repo: string, over: Record<string, unknown> = {}): void
 		workflow: 'design.story', epicHash: HASH, storyId: 's1',
 		epicSlug: HEAD_SLUG, standalone: true,
 		createdAt: ISSUE_MADE, epicCreatedAt: ISSUE_MADE,
-		approvedAt: '2026-04-09T09:00:00.000Z',
+		...approvedMeta({ at: '2026-04-09T09:00:00.000Z' }),
 		runId: 'wf-seed-lld',
 		...over,
 	};
@@ -240,6 +243,11 @@ function seedApprovedLld(repo: string, over: Record<string, unknown> = {}): void
 		join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`),
 		JSON.stringify({ meta, body: minimalLldBody() }),
 	);
+}
+
+/** Acknowledge the seeded LLD's staleness, as the gate does: the acknowledgement is an entry of its log. */
+async function ackLldStaleness(repo: string): Promise<void> {
+	await ackStaleArtifact(join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`), 'known; scheduled to re-run', { lifecycle: createRepoLifecycle(repo).service });
 }
 
 test('t8/t4a CALL SITE: a finalized PLAN for a standalone work item PERSISTS the placement flag', async () => {
@@ -271,9 +279,10 @@ test('t8/t4a CALL SITE: an epic-parented PLAN still writes NO placement key at a
 		// A DEF head that is explicitly NOT standalone, and an LLD to match.
 		writeFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HASH}.json`),
 			JSON.stringify({ meta: { epicHash: HASH, epicSlug: HEAD_SLUG, createdAt: ISSUE_MADE, epicCreatedAt: ISSUE_MADE, standalone: false }, body: {} }));
-		// staleAckedAt short-circuits the HLD-staleness branch, so this test needs no
+		// an acknowledged staleness (an entry of the LLD's log) short-circuits the HLD-staleness branch, so this test needs no
 		// parent HLD on disk — HLD staleness is orthogonal to placement.
-		seedApprovedLld(repo, { standalone: false, staleAckedAt: '2026-04-09T09:30:00.000Z' });
+		seedApprovedLld(repo, { standalone: false });
+		await ackLldStaleness(repo);
 		const emit = { body: minimalPlanBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
 		const result = await finalizeArtifact(planIntent(repo), {}, 'wf-t8-plan-epic', 5, emit, 'client');
 		assert.equal(result.ok, true, `finalize failed: ${JSON.stringify((result as { failure?: unknown }).failure)}`);
@@ -364,8 +373,9 @@ test('c00559b7 — a PLAN for a legacy UNFLAGGED LLD-only item is still placed u
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-c005-legacy-'));
 	try {
 		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-		// staleAckedAt short-circuits the HLD-staleness branch an unflagged LLD would take.
-		seedApprovedLld(repo, { epicSlug: LLD_OWN_SLUG, standalone: undefined, staleAckedAt: '2026-04-09T09:30:00.000Z' });
+		// an acknowledged staleness short-circuits the HLD-staleness branch an unflagged LLD would take.
+		seedApprovedLld(repo, { epicSlug: LLD_OWN_SLUG, standalone: undefined });
+		await ackLldStaleness(repo);
 		const emit = { body: minimalPlanBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
 		const result = await finalizeArtifact(planIntent(repo), {}, 'wf-c005-legacy', 5, emit, 'client');
 		assert.equal(result.ok, true, `finalize failed: ${JSON.stringify((result as { failure?: unknown }).failure)}`);

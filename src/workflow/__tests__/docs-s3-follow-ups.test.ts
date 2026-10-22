@@ -19,7 +19,6 @@ test('the plans doc lists the four hand-offs from the lifecycle Story', () => {
 		assert.match(items[i] ?? '', topic);
 	}
 	assert.match(items[0] ?? '', /AMD-8/);
-	assert.match(items[1] ?? '', /approvedAt/);
 	assert.match(items[2] ?? '', /s7/);
 	assert.match(items[3] ?? '', /s7/);
 });

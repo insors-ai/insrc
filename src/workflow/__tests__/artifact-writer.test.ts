@@ -18,6 +18,8 @@ import { join } from 'node:path';
 
 import { readRevision, writeArtifact } from '../storage.js';
 import { patchTrackerMeta } from '../tracker/refs.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
+import { approvedMeta } from './lifecycle-fixtures.js';
 
 type Json = Record<string, any>;
 
@@ -45,9 +47,9 @@ test('writeArtifact mints and keeps revisions, carries the whole tracker block, 
 		assert.equal(read(p).meta.revision, 2);
 
 		// meta-only keeps the on-disk revision, even if next claims another
-		assert.equal(writeArtifact(p, art({ revision: 99, approvedAt: 'now' }), 'meta-only'), 2);
+		assert.equal(writeArtifact(p, art({ revision: 99, rangeBase: 'abc' }), 'meta-only'), 2);
 		assert.equal(read(p).meta.revision, 2);
-		assert.equal(read(p).meta.approvedAt, 'now');
+		assert.equal(read(p).meta.rangeBase, 'abc');
 
 		// a meta-only write to a file with no revision leaves it absent
 		const q = join(dir, 'B.json');
@@ -57,11 +59,10 @@ test('writeArtifact mints and keeps revisions, carries the whole tracker block, 
 
 		// content write over a file carrying a full tracker block + approval + review
 		const r = join(dir, 'C.json');
-		writeFileSync(r, JSON.stringify(art({ revision: 3, approvedAt: 'old', review: { verdict: 'pass' }, tracker: FULL_TRACKER })));
+		writeFileSync(r, JSON.stringify(art({ ...approvedMeta({ revision: 3 }), tracker: FULL_TRACKER })));
 		assert.equal(writeArtifact(r, art({ tracker: { storyRefs: { s2: 'o/r#9' }, units: { 'story:s2': { unit: 'story', unitId: 's2', issue: 'o/r#9', createdAtRevision: 4 } } } }), 'content'), 4);
 		const m = read(r).meta;
-		assert.equal(m.approvedAt, undefined, 'approvedAt is not carried');
-		assert.equal(m.review, undefined, 'review is not carried');
+		assert.equal(m.lifecycle, undefined, 'the lifecycle is not carried by a write that names none');
 		assert.equal(m.tracker.epicRef, 'o/r#1');
 		assert.equal(m.tracker.pushedAt, 'p');
 		assert.deepEqual(m.tracker.storyRefs, { s2: 'o/r#9' }, 'next wins per key');
@@ -108,5 +109,25 @@ test('readRevision reads 0 for bad values; patchTrackerMeta keeps every field, m
 		assert.equal(patchTrackerMeta(q, { epicRef: 'o/r#1' }).adapter, 'github');
 		assert.equal('units' in (read(q).meta.tracker as Json), false);
 		assert.equal('revision' in read(q).meta, false);
+	});
+});
+
+test('artifact-writer.test.ts: the writer tests run on lifecycle fixtures', () => {
+	withDir(dir => {
+		const p = join(dir, 'A.json');
+		// an approved head: a meta-only write keeps its revision and its approval, with no stamp written beside the lifecycle
+		writeFileSync(p, JSON.stringify(art({ ...approvedMeta({ revision: 4 }), revision: 4 })));
+		assert.equal(writeArtifact(p, { ...art({ ...approvedMeta({ revision: 4 }), revision: 99, rangeBase: 'abc' }) }, 'meta-only'), 4);
+		let m = read(p).meta;
+		assert.equal(approvalStateOf(m), 'approved');
+		assert.equal(m.revision, 4);
+		assert.equal(m.rangeBase, 'abc');
+		assert.deepEqual(Object.keys(m).sort(), ['envelope', 'lifecycle', 'rangeBase', 'revision', 'workflow'], 'the approval is the lifecycle alone, with no stamp beside it');
+
+		// a content write over it mints the next revision and returns the head to draft
+		assert.equal(writeArtifact(p, art({ ...approvedMeta({ revision: 4 }) }, { v: 2 }), 'content'), 5);
+		m = read(p).meta;
+		assert.equal(m.revision, 5);
+		assert.equal(approvalStateOf(m), 'pending', 'a change of content returns the head to draft');
 	});
 });

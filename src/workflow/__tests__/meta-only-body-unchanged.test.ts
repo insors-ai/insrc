@@ -26,6 +26,9 @@ import { ARTIFACTS_DIR, defineArtifactId, hldArtifactId, artifactJsonPath, issue
 import { handleReviewStep } from '../../daemon/steps/review-step/handler.js';
 import { _clearReviewStateStoreForTests } from '../../daemon/steps/review-step/state-store.js';
 import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../review/template.js';
+import { lifecycleReviewOf } from '../artifact-core/approval-view.js';
+import { approvedMeta, draftMeta } from './lifecycle-fixtures.js';
+import { idOfWorkflow, writeDesign } from '../../daemon/steps/review-step/__tests__/review-fixture.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED_AT = '2026-07-19T00:00:00.000Z';
@@ -85,7 +88,7 @@ test('every meta-only writer leaves the body byte-identical and the revision unc
 
 	// bugfix stamp
 	{
-		const doc: Doc = { meta: { workflow: 'issue', revision: 5, approvedAt: 'a' }, body: { title: 'Fix', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] };
+		const doc: Doc = { meta: { workflow: 'issue', ...approvedMeta({ revision: 5 }), revision: 5 }, body: { title: 'Fix', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] };
 		const fx = repoWith(issueArtifactId('abc123def4567890'), doc);
 		try {
 			defaultStampDeps(async () => { throw new Error('unused'); }).writeParentRef(fx.repo, 'abc123def4567890', { slug: 'owner', storyId: 's2' });
@@ -117,13 +120,8 @@ test('every meta-only writer leaves the body byte-identical and the revision unc
 		_clearReviewStateStoreForTests();
 		const repo = mkdtempSync(join(tmpdir(), 'insrc-metaonly-find-'));
 		try {
-			mkdirSync(join(repo, 'docs', 'stub'), { recursive: true });
-			mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-			const mdPath = join(repo, 'docs', 'stub', 's1.md');
-			const jsonPath = join(repo, 'docs', 'stub', 's1.json');
-			writeFileSync(mdPath, '# LLD\n\nThe design body.\n');
-			const doc: Doc = { meta: { workflow: 'design.story', epicHash: 'abcd', storyId: 'S001', authoredBy: 'daemon', revision: 9 }, body: { note: 'untouched' } };
-			writeFileSync(jsonPath, JSON.stringify(doc, null, 2) + '\n');
+			const doc: Doc = { meta: { workflow: 'design.story', storyId: 's1', authoredBy: 'daemon', ...draftMeta({ revision: 9 }), revision: 9 }, body: { note: 'untouched' }, citations: [] };
+			const { mdPath, jsonPath } = writeDesign(repo, idOfWorkflow('design.story'), { meta: doc.meta, body: doc.body }, '# LLD\n\nThe design body.\n');
 			const started = JSON.parse((await handleReviewStep({ phase: 'start', artifact: mdPath, repo })).content[0]!.text) as { state: string };
 			const spec = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
 			const findings = { items: spec.items.map(it => ({ item: it.id, premises: [{ premise: `claim under ${it.id}`, outcome: 'holds', evidence: 'read the code', action: '' }] })) };
@@ -131,7 +129,7 @@ test('every meta-only writer leaves the body byte-identical and the revision unc
 			assert.equal(out.next, 'done');
 			const after = read(jsonPath);
 			sameBodyAndRevision(doc, after, 9);
-			assert.ok(after.meta['review']);
+			assert.ok(lifecycleReviewOf(after.meta), 'the review is recorded on the lifecycle');
 		} finally { rmSync(repo, { recursive: true, force: true }); }
 	}
 });

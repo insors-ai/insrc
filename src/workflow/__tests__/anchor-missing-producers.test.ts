@@ -18,8 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { MissingAnchorError } from '../artifact-ids.js';
-import { approveArtifactByJsonPath } from '../gates.js';
-import { stampOtherPartyReview } from './helpers/other-party-review.js';
+import { approvedMeta, markApprovedSync } from './lifecycle-fixtures.js';
 import { finalizeArtifact } from '../orchestrator.js';
 import { pathsForWorkflow, requireEpicAnchor } from '../storage.js';
 import { _setAutoPushDepsForTests, autoPushEpicOnHld, autoPushStoryOnLld } from '../tracker-auto.js';
@@ -40,7 +39,7 @@ function tempRepo(): { repo: string; done: () => void } {
 /** A Define whose head carries a label but no creation time: nothing anchors the Epic. */
 function seedTimelessDefine(repo: string): void {
 	writeFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HASH}.json`), JSON.stringify({
-		meta: { workflow: 'define', runId: 'd1', schemaVersion: 1, epicHash: HASH, epicSlug: SLUG, repoPath: repo, approvedAt: '2026-07-17T00:00:00.000Z' },
+		meta: { workflow: 'define', runId: 'd1', schemaVersion: 1, epicHash: HASH, epicSlug: SLUG, repoPath: repo, ...approvedMeta({ at: '2026-07-17T00:00:00.000Z' }) },
 		body: {
 			flavor: 'new-capability', problem: 'x', nonGoals: [], assumptions: [], constraints: [],
 			stories: [{ id: 's1', title: 'A story', userValue: 'v', acceptanceCriteria: [], dependsOn: [] }],
@@ -136,8 +135,7 @@ test('the finalizers, tracker-auto, tracker/link, workflow-rpc and synthesize ea
 			},
 			citations: [],
 		});
-		stampOtherPartyReview(defJson);
-		approveArtifactByJsonPath(defJson);
+		markApprovedSync(defJson);
 		const hldJson = art(`HLD-${HASH}`, {
 			meta: { workflow: 'design.epic', runId: 'hld-x', schemaVersion: 1, epicHash: HASH, epicSlug: SLUG },
 			body: {
@@ -154,8 +152,7 @@ test('the finalizers, tracker-auto, tracker/link, workflow-rpc and synthesize ea
 			},
 			citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
 		});
-		stampOtherPartyReview(hldJson);
-		approveArtifactByJsonPath(hldJson);
+		markApprovedSync(hldJson);
 		const before = listing(story.repo);
 		const lldBody = {
 			hldContextSlice: { frameworkSummary: 'x', ownedContracts: [], consumedContracts: [], boundary: { storyId: 's2', owns: [], depends: ['sc1'], internal: 'x' }, adjacentBoundaries: [], rolloutPhase: 'A', nonFunctional: {} },

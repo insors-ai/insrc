@@ -13,7 +13,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -29,8 +29,10 @@ import {
 import type { TestStrategy } from '../artifacts/lld.js';
 import type { Citation } from '../types.js';
 import { planArtifactPaths, ARTIFACT_ID_MARKER_RE, writeAtomic } from '../storage.js';
-import { approveArtifactByJsonPath, jsonPathForMd } from '../gates.js';
+import { jsonPathForMd } from '../gates.js';
 import { validateCitations } from '../synthesizer.js';
+import { approveJson } from './helpers/approve.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';   // → E20260717a3f4b8c9
@@ -210,16 +212,16 @@ test('planArtifactPaths: nested story-scoped md under docs/epics + hash-json und
 	assert.equal(noSlug.md, `/repo/docs/epics/${HASH}-${EPIC_SEGMENT}/S001/PLAN.md`);
 });
 
-test('jsonPathForMd resolves a rendered plan md back to its canonical json; approve sets approvedAt', () => {
+test('jsonPathForMd resolves a rendered plan md back to its canonical json; approve approves its lifecycle', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-art-'));
 	try {
 		const paths = planArtifactPaths(repo, HASH, 's1', CREATED, 'epic', 'tag-filtering');
 		writeAtomic(paths.md, renderPlanMarkdown(fixtureArtifact()));
 		writeAtomic(paths.json, JSON.stringify(fixtureArtifact(), null, 2) + '\n');
 		assert.equal(jsonPathForMd(paths.md), paths.json);
-		const res = approveArtifactByJsonPath(paths.json);
+		const res = await approveJson(paths.json);
 		assert.equal(res.workflow, 'plan');
-		assert.ok(res.approvedAt.length > 0);
+		assert.equal(approvalStateOf(JSON.parse(readFileSync(paths.json, 'utf8')).meta), 'approved');
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}

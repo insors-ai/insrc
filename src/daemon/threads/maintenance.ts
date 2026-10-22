@@ -67,6 +67,8 @@ export interface MaintenanceDeps {
 	readonly reclaimable: () => Reclaimable | undefined;
 	readonly workers: MaintenanceWorkers;
 	readonly compact: (opts: { readonly beforeRename: () => Promise<boolean> }) => Promise<CompactResult>;
+	/** How long a worker is given to acknowledge graph.close (default GRAPH_CLOSE_ACK_MS). */
+	readonly ackMs?: number | undefined;
 	/** Tests only: runs once the lock is granted, before the workers are asked to close. */
 	readonly onGranted?: (() => Promise<void>) | undefined;
 }
@@ -225,7 +227,7 @@ export class MaintenanceController {
 		for (const w of workers) {
 			const { port1, port2 } = new MessageChannel();
 			const closed = new Promise<boolean>(resolve => {
-				const timer = setTimeout(() => resolve(false), GRAPH_CLOSE_ACK_MS);
+				const timer = setTimeout(() => resolve(false), this.deps.ackMs ?? GRAPH_CLOSE_ACK_MS);
 				port1.once('message', m => { clearTimeout(timer); resolve(m === 'closed'); });
 			});
 			pushToWorker(w.port, GRAPH_CLOSE_OP, port2, [port2]);

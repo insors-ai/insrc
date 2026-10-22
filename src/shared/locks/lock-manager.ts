@@ -121,12 +121,17 @@ const S_ACT        = 6;
 const S_REASON     = S_ACT + LOCK_ACTIVITY_MAX_BYTES / 4;
 const HOLDER_WORDS = S_REASON + LOCK_REASON_MAX_BYTES / 4;
 
-// Pending slot. Same state protocol as a holder slot.
-const P_STATE  = 0;
-const P_MODE   = 1;
-const P_THREAD = 2;
-const P_ID     = 3;   // a request id (from the acquisition counter), so a reused slot is told apart
-const PENDING_WORDS = 4;
+// Pending slot. Same state protocol as a holder slot; its metadata is laid out
+// as a holder's, so a request it blocks can say what it waits behind.
+const P_STATE      = 0;
+const P_MODE       = 1;
+const P_THREAD     = 2;
+const P_ID         = 3;   // a request id (from the acquisition counter), so a reused slot is told apart
+const P_ACT_LEN    = 4;   // -1 when the request has no metadata
+const P_REASON_LEN = 5;
+const P_ACT        = 6;
+const P_REASON     = P_ACT + LOCK_ACTIVITY_MAX_BYTES / 4;
+const PENDING_WORDS = P_REASON + LOCK_REASON_MAX_BYTES / 4;
 
 const MODE_SHARED = 1;
 const MODE_EXCLUSIVE = 2;
@@ -565,7 +570,7 @@ export class LockManager {
 					const blockedBy = [...this.holdersOf(index), ...(exclusive ? [] : this.pendingOf(index).filter(p => p.mode === 'exclusive'))];
 					return { slot: -1, blockedBy, version: 0, pending };
 				}
-				const p = pending >= 0 ? pending : this.registerPending(index, req.mode);
+				const p = pending >= 0 ? pending : this.registerPending(index, req);
 				return { slot: -1, blockedBy: [], version: Atomics.load(this.words, base + N_VERSION), pending: p };
 			}
 			Atomics.store(this.words, base + N_LOCK, exclusive ? -1 : word + 1);
@@ -601,12 +606,22 @@ export class LockManager {
 	}
 
 	/** Inside the name's mutex: claim, fill and publish a pending record; an exclusive one is counted. */
-	private registerPending(index: number, mode: LockMode): number {
+	private registerPending(index: number, req: ValidatedRequest): number {
+		const mode = req.mode;
 		const claim = -(this.threadId + 1);
 		for (let slot = 0; slot < this.layout.capacity.pending; slot++) {
 			const p = this.pendingBase(slot);
 			if (Atomics.compareExchange(this.words, p + P_STATE, 0, claim) !== 0) continue;
 			Atomics.store(this.words, p + P_MODE, mode === 'exclusive' ? MODE_EXCLUSIVE : MODE_SHARED);
+			if (req.activity !== undefined && req.reason !== undefined) {
+				this.bytes.set(req.activity, (p + P_ACT) * 4);
+				this.bytes.set(req.reason, (p + P_REASON) * 4);
+				Atomics.store(this.words, p + P_ACT_LEN, req.activity.length);
+				Atomics.store(this.words, p + P_REASON_LEN, req.reason.length);
+			} else {
+				Atomics.store(this.words, p + P_ACT_LEN, -1);
+				Atomics.store(this.words, p + P_REASON_LEN, 0);
+			}
 			Atomics.store(this.words, p + P_THREAD, this.threadId);
 			Atomics.store(this.words, p + P_ID, Atomics.add(this.words, H_ACQ, 1) + 1);
 			this.times[this.layout.capacity.holders + slot] = this.now();
@@ -714,11 +729,14 @@ export class LockManager {
 		const state = Atomics.load(this.words, p + P_STATE);
 		if (state <= 0) return null;
 		const id = Atomics.load(this.words, p + P_ID);
+		const actLen = Atomics.load(this.words, p + P_ACT_LEN);
+		const at = (w: number, len: number): string => decoder.decode(this.bytes.slice(w * 4, w * 4 + len));
 		const info: LockInfo = {
 			name: this.nameAt(state - 1),
 			mode: Atomics.load(this.words, p + P_MODE) === MODE_EXCLUSIVE ? 'exclusive' : 'shared',
 			threadId: Atomics.load(this.words, p + P_THREAD),
 			since: this.times[this.layout.capacity.holders + slot]!,
+			...(actLen >= 0 ? { metadata: { activity: at(p + P_ACT, actLen), reason: at(p + P_REASON, Atomics.load(this.words, p + P_REASON_LEN)) } } : {}),
 		};
 		if (Atomics.load(this.words, p + P_STATE) !== state || Atomics.load(this.words, p + P_ID) !== id) return null;
 		return { index: state - 1, info };

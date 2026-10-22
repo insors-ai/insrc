@@ -91,11 +91,14 @@ export function startWorker(services: ThreadServices, name: string, script: stri
 		};
 		worker.on('error', onError);
 		worker.once('exit', onExit);
-		worker.once('message', (m: unknown) => {
+		// Ready at its 'worker-ready', whatever it posted before.
+		const onMessage = (m: unknown): void => {
 			if (m !== 'worker-ready') return;
+			worker.off('message', onMessage);
 			worker.off('error', onError);
 			worker.off('exit', onExit);
 			resolve({ worker, threadId, port: conn.port, reclaimed, disconnect: conn.disconnect });
-		});
+		};
+		worker.on('message', onMessage);
 	});
 }

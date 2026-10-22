@@ -419,9 +419,24 @@ function offsets(capacity: { names: number; holders: number }): {
 	const pending = holders + capacity.holders * 278;
 	return {
 		nameState: i => names + i * 23, lock: i => names + i * 23 + 3, pendx: i => names + i * 23 + 4, mutex: i => names + i * 23 + 6,
-		holderState: slot => holders + slot * 278, pendingState: slot => pending + slot * 4,
+		holderState: slot => holders + slot * 278, pendingState: slot => pending + slot * 278,
 	};
 }
+
+test("a waiting exclusive request's metadata is in query().pending and in the blockedBy of a shared request it refuses", async () => {
+	const block = createLockBlock();
+	const [a, b, c] = [1, 2, 3].map(threadId => new LockManager(block, { threadId })) as [LockManager, LockManager, LockManager];
+	const ha = await hold(a, 'p', { mode: 'shared' });
+	const metadata = { activity: 'compaction', reason: '31 min idle, 40% / 300 MB reclaimable' };
+	const waiting = b.request('p', { mode: 'exclusive', timeoutMs: 5_000, metadata }, () => 'granted');
+	await tick();
+	assert.deepEqual(a.query().pending.map(p => ({ mode: p.mode, threadId: p.threadId, metadata: p.metadata })), [{ mode: 'exclusive', threadId: 2, metadata }]);
+	const blockedBy = await c.request('p', { mode: 'shared', ifAvailable: true }, (lock, by) => { assert.equal(lock, null); return by; });
+	assert.deepEqual(blockedBy.filter(l => l.mode === 'exclusive').map(l => l.metadata), [metadata], 'refused by writer preference, it is told what it waits behind');
+	await ha.release();
+	assert.equal(await waiting, 'granted');
+	assert.deepEqual(a.query(), { held: [], pending: [] });
+});
 
 test('query lists held and pending entries with mode, threadId, since and metadata', async () => {
 	const block = createLockBlock();

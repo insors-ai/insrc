@@ -107,3 +107,5 @@ parentPort!.on('message', async (m: Op) => {
 	}
 });
 parentPort!.postMessage({ op: 'ready', ok: true });
+// Started by a supervisor (maintenance.test.ts), which waits for this.
+if ((workerData as { supervised?: boolean }).supervised === true) parentPort!.postMessage('worker-ready');

@@ -32,7 +32,8 @@ import { getLogger } from '../shared/logger.js';
 import { handleDocgen } from './docgen/handler.js';
 import { stepClientOf } from '../shared/step-context.js';
 import type { StepToolName } from '../shared/step-context.js';
-import { forwardStep } from './forward-step.js';
+import { repoSchemaRefusal, repoSchemaRefusalOfInput } from '../daemon/repo-schema-guard.js';
+import { errorEnvelope, forwardStep } from './forward-step.js';
 import type { StepMcpEnvelope } from './forward-step.js';
 import { mcpProgressSink } from './progress-forward.js';
 import type { ProgressEvent } from '../shared/types.js';
@@ -213,6 +214,9 @@ export function buildInsrcMcpServerWithRegistry(): {
 		rawArgs: unknown,
 		extra:   { _meta?: { progressToken?: string | number | undefined } | undefined; sendNotification: (n: never) => Promise<void> },
 	): Promise<StepMcpEnvelope> => {
+		// an artifact tool refuses an unconverted repository here; insrc_analyze reads no artifact and goes on
+		const refusal = tool === 'insrc_analyze' ? undefined : repoSchemaRefusalOfInput(rawArgs);
+		if (refusal !== undefined) return Promise.resolve(errorEnvelope('repo-schema-unconverted', 'RepoSchemaError', refusal, false));
 		const client = stepClientOf(detectClientProvider(server.server.getClientVersion()?.name));
 		const token  = extra._meta?.progressToken;
 		const sink   = token !== undefined
@@ -1157,6 +1161,8 @@ export async function handleWorkflowApprove(
 	if (hasEpic && (repo === undefined || repo.length === 0)) {
 		return err('insrc_workflow_approve: no repo (pass `repo`, or run in a registered repo) — required for an epicHash batch.');
 	}
+	const refusal = repoSchemaRefusal(repo);
+	if (refusal !== undefined) return err(`insrc_workflow_approve: ${refusal}`);
 	try {
 		const result = await approveWorkflow({
 			repo: repo ?? '',
@@ -1217,6 +1223,8 @@ export async function handleInsrcPresent(
 	if (repo === undefined || repo.length === 0) {
 		return err('insrc_present: no repo (pass `repo`, or run in a registered repo) — the pending list cannot be read.');
 	}
+	const refusal = repoSchemaRefusal(repo);
+	if (refusal !== undefined) return err(`insrc_present: ${refusal}`);
 	try {
 		const pending = await pendingWorkflow({ repo }, deps);
 		if ('error' in pending) return err(`insrc_present: ${pending.error}`);

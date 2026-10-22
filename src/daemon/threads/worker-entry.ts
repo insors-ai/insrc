@@ -21,6 +21,7 @@ import { installStoreGuard } from '../../db/store-guard.js';
 import { setActiveEmbedderBackend } from '../../indexer/embedder.js';
 import type { EmbedderBackend } from '../../indexer/embedder.js';
 import { installLockManager } from '../../shared/locks/lock-manager.js';
+import { enableMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import { HubClient } from './channel.js';
 import { HubStepStateStore, installStepStateStore } from './step-state.js';
 import { wireWorkerStoreHealth } from './store-health-hub.js';
@@ -47,6 +48,7 @@ export function startDaemonWorker(init: DaemonWorkerInit): HubClient {
 	declareLiveStoreOwner();
 	installStoreGuard(init.guardBlock);
 	installLockManager(init.lockBlock);
+	enableMaintenanceLock();
 	const hub = new HubClient(init.hubPort);
 	wireWorkerStoreHealth(hub);
 	// The embedder's backend is per thread: take the one the main thread decided (Epic 86197ac6 s2).

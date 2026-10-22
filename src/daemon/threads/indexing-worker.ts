@@ -21,6 +21,7 @@ import { listRepos } from '../../db/repos.js';
 import { IndexerService } from '../../indexer/index.js';
 import { Watcher } from '../../indexer/watcher.js';
 import { getLogger } from '../../shared/logger.js';
+import { withBackgroundHold } from '../../shared/locks/maintenance-lock.js';
 import type { IndexJob } from '../../shared/types.js';
 import { buildHandlerRuntime } from '../handler-runtime.js';
 import { IndexQueue } from '../queue.js';
@@ -128,10 +129,13 @@ await publishStore();
 await service.start(await listRepos(db));
 // Summary jobs run on the document-summary worker, handed over by the summary lane.
 const isSummaryJob = (job: IndexJob): boolean => job.kind === 'doc-summarise-repo' || job.kind === 'doc-summarise-entity';
+// Each job runs under the maintenance lock's shared hold, waiting for maintenance rather than failing.
 const queueDone = queue.start(async job => {
 	try {
-		if (summaries !== undefined && isSummaryJob(job)) await summaries.run(job);
-		else await service.processJob(job);
+		await withBackgroundHold(async () => {
+			if (summaries !== undefined && isSummaryJob(job)) await summaries.run(job);
+			else await service.processJob(job);
+		});
 	} finally { void publishStore(); }
 });
 

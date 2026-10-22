@@ -61,6 +61,7 @@ import { open, type Database, type RootDatabase } from 'lmdb';
 import { getLogger } from '../../shared/logger.js';
 import { getStoreGuard, HEALTH_LOCKS_LOST } from '../store-guard.js';
 import { PATHS } from '../../shared/paths.js';
+import { assertNotCompactingElsewhere } from '../../shared/locks/maintenance-lock.js';
 
 const log = getLogger('graph-store');
 
@@ -564,6 +565,8 @@ export function resetStoreHealthForTests(): void {
 export async function getGraphStore(): Promise<GraphStore> {
 	const health = currentHealth();
 	if (health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`opening the store (failed earlier during: ${health.operation})`);
+	// While daemon maintenance compacts on another thread, this thread neither uses nor reopens the store.
+	assertNotCompactingElsewhere();
 	if (_instance !== null) return _instance;
 	if (_initPromise !== null) return _initPromise;
 	// Before anything touches the path: no directory, no lock file, no open.

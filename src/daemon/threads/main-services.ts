@@ -21,6 +21,7 @@ import type { MessagePort } from 'node:worker_threads';
 import { createStoreGuardBlock, installStoreGuard } from '../../db/store-guard.js';
 import type { EmbedderBackend } from '../../indexer/embedder.js';
 import { createLockBlock, installLockManager } from '../../shared/locks/lock-manager.js';
+import { enableMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import { PATHS } from '../../shared/paths.js';
 import type { DaemonStatus } from '../../shared/types.js';
 import { pushToWorker, serveHub } from './channel.js';
@@ -96,6 +97,7 @@ export class ThreadServices {
 		// The main thread joins the same blocks it hands to every worker.
 		installStoreGuard(this.guardBlock);
 		installLockManager(this.lockBlock);
+		enableMaintenanceLock();
 		installStepStateStore(steps);
 		this.handlers = {
 			...statusBoardHubHandlers(this.board),

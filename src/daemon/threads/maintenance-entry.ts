@@ -1,0 +1,63 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * The maintenance lock at a request's entry (Epic 86197ac6, Story s2): the
+ * router's forward for the requests this thread serves, and a worker's request
+ * entry. A request takes 'daemon.maintenance' shared with no wait and holds it
+ * until it ends (its reply, or its stream's last frame); refused, it is
+ * answered "daemon busy: ..." and nothing runs.
+ *
+ * Not held: daemon.status (answered during maintenance), daemon.compact (it
+ * starts maintenance), the subscription streams (they hold it per refresh,
+ * so an open stream never blocks maintenance), a request made under the
+ * caller's hold (underHold, or this context already holds it).
+ */
+
+import type { IpcStreamMessage } from '../../shared/types.js';
+import { holdsMaintenanceLock, maintenanceLockEnabled, withRequestHold } from '../../shared/locks/maintenance-lock.js';
+import type { DeliverEnvelope, ForwardRequest } from '../server.js';
+
+/** Methods that run without the request hold. */
+export const UNHELD_METHODS: ReadonlySet<string> = new Set(['daemon.status', 'daemon.compact', 'understanding.watch', 'todos.subscribe']);
+
+/** `forward`, with each request run under the maintenance lock's shared hold. */
+export function holdingForward(forward: ForwardRequest): ForwardRequest {
+	return (request, deliver) => {
+		if (!maintenanceLockEnabled() || UNHELD_METHODS.has(request.method) || request.underHold === true || holdsMaintenanceLock()) {
+			return forward(request, deliver);
+		}
+		let cancel: (() => void) | undefined;
+		let cancelled = false;
+		let release: () => void = () => {};
+		void withRequestHold(() => new Promise<void>(resolve => {
+			release = resolve;
+			if (cancelled) { resolve(); return; }
+			const ending: DeliverEnvelope = envelope => {
+				deliver(envelope);
+				if (envelope.kind === 'reply') resolve();
+				else {
+					const stream = (envelope.frame as IpcStreamMessage).stream;
+					if (stream === 'done' || stream === 'error') resolve();
+				}
+			};
+			cancel = forward(request, ending);
+		})).then(
+			outcome => {
+				if (outcome.ran) return;
+				deliver(request.stream
+					? { kind: 'frame', requestId: request.requestId, frame: { id: 0, stream: 'error', data: { error: outcome.busy, recoverable: true } } }
+					: { kind: 'reply', requestId: request.requestId, error: outcome.busy });
+			},
+			(err: unknown) => deliver({ kind: 'reply', requestId: request.requestId, error: err instanceof Error ? err.message : String(err) }),
+		);
+		return () => {
+			cancelled = true;
+			cancel?.();
+			// A cancelled stream ends here; a unary request runs on and releases with its reply.
+			if (request.stream) release();
+		};
+	};
+}

@@ -8,7 +8,8 @@
  * thread. Each request is classified with the method-class registry; a routed
  * class (admin, indexing) goes as a request envelope to the worker registered
  * for it, and its replies and frames come back over that worker's channel;
- * every other request runs in this thread, as before.
+ * every other request runs in this thread, as before, under the maintenance
+ * lock's request hold (a routed request takes it on its worker).
  *
  * A request whose worker is not registered (it is starting or being replaced)
  * is held until one registers, at most holdMs, then answered with an error.
@@ -17,9 +18,11 @@
 import type { MessagePort } from 'node:worker_threads';
 
 import { getLogger } from '../../shared/logger.js';
+import { holdsMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import type { IpcStreamMessage } from '../../shared/types.js';
 import type { DeliverEnvelope, ForwardRequest } from '../server.js';
 import type { CancelEnvelope, FrameEnvelope, MethodClass, ReplyEnvelope, RequestEnvelope } from './channel.js';
+import { holdingForward } from './maintenance-entry.js';
 import type { TargetRegistry } from './registry.js';
 
 const log = getLogger('router');
@@ -75,16 +78,19 @@ export class Router {
 	private readonly pending = new Map<string, Pending>();
 	private readonly held = new Set<Held>();
 	private readonly holdMs: number;
+	/** opts.local, each request under the maintenance lock's request hold. */
+	private readonly local: ForwardRequest;
 	private seq = 0;
 
 	constructor(private readonly opts: RouterOptions) {
 		this.holdMs = opts.holdMs ?? DEFAULT_HOLD_MS;
+		this.local = holdingForward(opts.local);
 	}
 
 	/** The forward the IpcServer uses. */
 	readonly forward: ForwardRequest = (request, deliver) => {
 		const cls = this.opts.classOf(request.method);
-		if (cls === undefined || !this.opts.routed.has(cls)) return this.opts.local(request, deliver);
+		if (cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
 		const target = this.opts.registry.targetFor(cls);
 		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);
 		return this.hold(cls, request, deliver);
@@ -93,12 +99,13 @@ export class Router {
 	/**
 	 * Ask the worker of `cls` directly (not through classOf): the indexing port
 	 * and in-daemon calls. Held like a socket request while no worker is
-	 * registered. underHold marks a call made under the caller's maintenance hold.
+	 * registered. underHold marks a call made under the caller's maintenance
+	 * hold; by default, whether this context holds it (a nested call).
 	 */
 	request(cls: MethodClass, method: string, params: unknown, opts: { readonly underHold?: boolean | undefined } = {}): Promise<unknown> {
 		const request: RequestEnvelope = {
 			kind: 'request', requestId: `internal-${++this.seq}`, method, params, stream: false,
-			...(opts.underHold === true ? { underHold: true } : {}),
+			...((opts.underHold ?? holdsMaintenanceLock()) ? { underHold: true } : {}),
 		};
 		return new Promise((resolve, reject) => {
 			const deliver: DeliverEnvelope = (envelope) => {
@@ -156,7 +163,7 @@ export class Router {
 			if (h.cancelled) { this.release(h); continue; }
 			if (!this.opts.routed.has(h.cls)) {
 				this.release(h);
-				h.localCancel = this.opts.local(h.request, h.deliver);
+				h.localCancel = this.local(h.request, h.deliver);
 				continue;
 			}
 			const target = this.opts.registry.targetFor(h.cls);

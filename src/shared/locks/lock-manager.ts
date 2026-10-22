@@ -340,6 +340,11 @@ export class LockManager {
 		throw new LockCapacityError('names', this.layout.capacity.names);
 	}
 
+	/** Whether this async context runs inside a callback holding `name` (a nested request would be refused). */
+	holds(name: string): boolean {
+		return this.held.getStore()?.has(name) === true;
+	}
+
 	/**
 	 * Run `callback` under the named lock, as navigator.locks.request does; the
 	 * lock is released when the callback settles, whatever it does.

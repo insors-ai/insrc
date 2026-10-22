@@ -63,9 +63,8 @@ import type { ForwardRequest } from './server.js';
 import { Supervisor } from './threads/supervisor.js';
 import { startIndexingWorkers } from './threads/indexing-workers.js';
 import type { MethodClass } from './threads/channel.js';
-import { embedQuery, getActiveEmbedderBackend } from '../indexer/embedder.js';
-import { pruneConversations } from '../db/conversations.js';
-import { compactConversations } from '../db/compaction.js';
+import { getActiveEmbedderBackend } from '../indexer/embedder.js';
+import { schedulePruneTimer } from './prune-timer.js';
 // Cleanup: plan-store + Plan / PlanStepStatus dropped with the legacy planner.
 import { ConfigStore } from '../config/store.js';
 import { reconcileConfigFile } from '../config/reconcile-io.js';
@@ -426,24 +425,8 @@ async function main(): Promise<void> {
 	// Phase 1 cleanup: orphan-handoff worktree scan stripped along with
 	// handoff/orphan-cleanup. Daemon no longer manages handoffs.
 
-	// 8. Nightly pruning job — runs every 24 hours
-	const PRUNE_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
-	const pruneTimer = setInterval(async () => {
-		try {
-			const result = await pruneConversations(db);
-			if (result.expired > 0 || result.capped > 0) {
-				log.info(`pruned ${result.expired} expired + ${result.capped} capped sessions`);
-			}
-			// Also run conversation compaction
-			const compactResult = await compactConversations(db, async (text) => embedQuery(text));
-			const totalCompacted = compactResult.warmCompressed + compactResult.coldMerged + compactResult.archived;
-			if (totalCompacted > 0 || compactResult.directives > 0) {
-				log.info({ ...compactResult }, 'conversation compaction');
-			}
-		} catch (err) {
-			log.error({ err }, 'pruning/compaction error');
-		}
-	}, PRUNE_INTERVAL);
+	// 8. Nightly pruning job — runs every 24 hours (under the maintenance lock with daemon threads)
+	const pruneTimer = schedulePruneTimer(db);
 
 	// 8b. Todos retention sweep (plans/todo-framework.md Phase 2).
 	// Fires once at boot and every 24 h; drops archived todo lists

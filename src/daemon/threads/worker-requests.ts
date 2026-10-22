@@ -20,6 +20,7 @@ import { getLogger } from '../../shared/logger.js';
 import type { IpcStreamMessage } from '../../shared/types.js';
 import type { DeliverEnvelope, ForwardRequest } from '../server.js';
 import type { CancelEnvelope, FrameEnvelope, ReplyEnvelope, RequestEnvelope } from './channel.js';
+import { holdingForward } from './maintenance-entry.js';
 
 const log = getLogger('worker-requests');
 
@@ -39,7 +40,9 @@ const isRequest = (m: unknown): m is RequestEnvelope => (m as { kind?: unknown }
 const isCancel = (m: unknown): m is CancelEnvelope => (m as { kind?: unknown } | null)?.kind === 'cancel';
 
 /** Serve request envelopes arriving on `port` with `forward`; returns a function that stops serving. */
-export function serveRequests(port: Port, forward: ForwardRequest, opts: ServeRequestsOptions = {}): () => void {
+export function serveRequests(port: Port, unheld: ForwardRequest, opts: ServeRequestsOptions = {}): () => void {
+	// Each request under the maintenance lock's request hold.
+	const forward = holdingForward(unheld);
 	const inflight = new Map<string, () => void>();
 	const testHooks = process.env['INSRC_TEST_HOOKS'] === '1';
 

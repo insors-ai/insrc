@@ -120,6 +120,9 @@ const PENDING_WORDS = 3;
 const MODE_SHARED = 1;
 const MODE_EXCLUSIVE = 2;
 
+/** A waiting request re-arms its wait at least this often, so every wait and its keep-alive timer is finite. */
+const WAIT_SLICE_MS = 60_000;
+
 interface Layout {
 	readonly capacity: LockCapacity;
 	readonly names: number;      // first word of the name table
@@ -274,6 +277,8 @@ export class LockManager {
 	private readonly now: () => number;
 	/** Names held by the current async call chain. */
 	private readonly held = new AsyncLocalStorage<ReadonlySet<string>>();
+	/** Arrival-order queue per name for this thread's waiting requests. */
+	private readonly tails = new Map<string, Promise<void>>();
 
 	constructor(readonly block: SharedArrayBuffer, deps: LockManagerDeps = {}) {
 		const header = new Int32Array(block, 0, HEADER_WORDS);
@@ -330,32 +335,99 @@ export class LockManager {
 	 */
 	async request<T>(name: string, options: LockOptions, callback: LockCallback<T>): Promise<T> {
 		const req = validateLockRequest(name, options);
+		options.signal?.throwIfAborted();
 		const outer = this.held.getStore();
 		if (outer !== undefined && outer.size > 0) {
 			if (outer.has(name)) throw new LockNestedError(name, name, 'same-name');
 			if (options.ifAvailable !== true && options.timeoutMs === undefined) throw new LockNestedError(name, [...outer][0]!, 'unbounded-wait');
 		}
 		const index = await this.resolveName(req.nameBytes);
-		const granted = await this.tryGrant(index, name, req);
-		if (granted.slot < 0) {
-			if (options.ifAvailable === true) return callback(null, granted.blockedBy);
-			throw new Error(`lock '${name}': waiting requests are not supported yet`);
+		let slot: number;
+		if (options.ifAvailable === true) {
+			const now = await this.attempt(index, name, req, -1, false);
+			if (now.slot < 0) return callback(null, now.blockedBy);
+			slot = now.slot;
+		} else {
+			slot = await this.acquire(index, name, req, options);
 		}
 		const lock: Lock = { name, mode: req.mode, ...(options.metadata !== undefined ? { metadata: options.metadata } : {}) };
 		try {
 			return await this.held.run(new Set([...(outer ?? []), name]), () => callback(lock, []));
 		} finally {
-			await this.release(index, granted.slot, req.mode);
+			await this.release(index, slot, req.mode);
 		}
 	}
 
 	// -- internals ----------------------------------------------------------
 
 	/**
-	 * Grant the lock now if its mode allows, recording the holder before
-	 * returning; otherwise report what blocks it. Runs inside the name's mutex.
+	 * Wait for the lock: behind this thread's earlier requests for the name, then
+	 * as a pending request until a grant, the deadline or an abort. Returns the
+	 * holder slot; on any failure the pending record is withdrawn.
 	 */
-	private async tryGrant(index: number, name: string, req: ValidatedRequest): Promise<{ readonly slot: number; readonly blockedBy: readonly LockInfo[] }> {
+	private async acquire(index: number, name: string, req: ValidatedRequest, options: LockOptions): Promise<number> {
+		const start = this.now();
+		const deadline = options.timeoutMs !== undefined ? start + options.timeoutMs : Infinity;
+		const signal = options.signal;
+		const timedOut = (): LockTimeoutError => new LockTimeoutError(name, this.now() - start, this.holdersOf(index));
+
+		const before = this.tails.get(name) ?? Promise.resolve();
+		let turnDone!: () => void;
+		const turn = new Promise<void>(r => { turnDone = r; });
+		this.tails.set(name, turn);
+		let pending = -1;
+		try {
+			if (await settleWithin(before, signal, deadline - this.now()) === TIMED_OUT) throw timedOut();
+			for (;;) {
+				const attempt = await this.attempt(index, name, req, pending, true);
+				pending = attempt.pending;
+				if (attempt.slot >= 0) return attempt.slot;
+				const left = deadline - this.now();
+				if (left <= 0) throw timedOut();
+				await this.waitForChange(index, attempt.version, Math.min(left, WAIT_SLICE_MS), signal);
+			}
+		} catch (err) {
+			if (pending >= 0) await this.withdraw(index, pending, req.mode);
+			throw err;
+		} finally {
+			turnDone();
+			if (this.tails.get(name) === turn) this.tails.delete(name);
+		}
+	}
+
+	/** Wait (without blocking the event loop) until the name's version moves from `version`, `ms` passes or `signal` aborts. */
+	private async waitForChange(index: number, version: number, ms: number, signal: AbortSignal | undefined): Promise<void> {
+		const wait = waitAsync(this.words, this.nameBase(index) + N_VERSION, version, ms);
+		if (!wait.async) return;
+		// A pending waitAsync does not keep a thread alive; a timer for its length does.
+		const keepAlive = setTimeout(() => {}, ms);
+		try {
+			await waitOrAbort(wait.value, signal);
+		} finally {
+			clearTimeout(keepAlive);
+		}
+	}
+
+	/** Remove a pending record that will not be granted (timeout, abort, error). */
+	private async withdraw(index: number, pending: number, mode: LockMode): Promise<void> {
+		const base = this.nameBase(index);
+		await this.lockMutex(base + N_MUTEX);
+		try {
+			this.clearPending(index, pending, mode);
+			this.bumpVersion(index);
+		} finally {
+			this.unlockMutex(base + N_MUTEX);
+		}
+	}
+
+	/**
+	 * Inside the name's mutex: grant the lock if its mode allows, recording the
+	 * holder before returning (and retiring this request's pending record);
+	 * otherwise, with `register`, record the request as pending, and report the
+	 * version seen and what blocks it.
+	 */
+	private async attempt(index: number, name: string, req: ValidatedRequest, pending: number, register: boolean):
+		Promise<{ readonly slot: number; readonly blockedBy: readonly LockInfo[]; readonly version: number; readonly pending: number }> {
 		const base = this.nameBase(index);
 		await this.lockMutex(base + N_MUTEX);
 		try {
@@ -365,7 +437,12 @@ export class LockManager {
 			// Writer preference: a waiting exclusive request stops new shared grants.
 			const free = exclusive ? word === 0 : word >= 0 && Atomics.load(this.words, base + N_PENDX) === 0;
 			if (!free) {
-				return { slot: -1, blockedBy: [...this.holdersOf(index), ...(exclusive ? [] : this.pendingOf(index).filter(p => p.mode === 'exclusive'))] };
+				if (!register) {
+					const blockedBy = [...this.holdersOf(index), ...(exclusive ? [] : this.pendingOf(index).filter(p => p.mode === 'exclusive'))];
+					return { slot: -1, blockedBy, version: 0, pending };
+				}
+				const p = pending >= 0 ? pending : this.registerPending(index, req.mode);
+				return { slot: -1, blockedBy: [], version: Atomics.load(this.words, base + N_VERSION), pending: p };
 			}
 			Atomics.store(this.words, base + N_LOCK, exclusive ? -1 : word + 1);
 			grantHook?.('after-lock-word', name);
@@ -391,11 +468,39 @@ export class LockManager {
 			}
 			grantHook?.('before-publish', name);
 			Atomics.store(this.words, h + S_STATE, index + 1);
+			if (pending >= 0) this.clearPending(index, pending, req.mode);
 			this.bumpVersion(index);
-			return { slot, blockedBy: [] };
+			return { slot, blockedBy: [], version: 0, pending: -1 };
 		} finally {
 			this.unlockMutex(base + N_MUTEX);
 		}
+	}
+
+	/** Inside the name's mutex: claim, fill and publish a pending record; an exclusive one is counted. */
+	private registerPending(index: number, mode: LockMode): number {
+		const claim = -(this.threadId + 1);
+		for (let slot = 0; slot < this.layout.capacity.pending; slot++) {
+			const p = this.pendingBase(slot);
+			if (Atomics.compareExchange(this.words, p + P_STATE, 0, claim) !== 0) continue;
+			Atomics.store(this.words, p + P_MODE, mode === 'exclusive' ? MODE_EXCLUSIVE : MODE_SHARED);
+			Atomics.store(this.words, p + P_THREAD, this.threadId);
+			this.times[this.layout.capacity.holders + slot] = this.now();
+			Atomics.store(this.words, p + P_STATE, index + 1);
+			if (mode === 'exclusive') Atomics.add(this.words, this.nameBase(index) + N_PENDX, 1);
+			this.bumpVersion(index);
+			return slot;
+		}
+		throw new LockCapacityError('pending', this.layout.capacity.pending);
+	}
+
+	/** Inside the name's mutex: clear a pending record and uncount it. */
+	private clearPending(index: number, slot: number, mode: LockMode): void {
+		const p = this.pendingBase(slot);
+		Atomics.store(this.words, p + P_MODE, 0);
+		Atomics.store(this.words, p + P_THREAD, 0);
+		this.times[this.layout.capacity.holders + slot] = 0;
+		Atomics.store(this.words, p + P_STATE, 0);
+		if (mode === 'exclusive') Atomics.sub(this.words, this.nameBase(index) + N_PENDX, 1);
 	}
 
 	private async release(index: number, slot: number, mode: LockMode): Promise<void> {
@@ -526,6 +631,32 @@ export class LockManager {
 		Atomics.store(this.words, index, 0);
 		Atomics.notify(this.words, index);
 	}
+}
+
+const TIMED_OUT = Symbol('timed-out');
+
+/** Wait for `p`, rejecting with the signal's reason on abort; TIMED_OUT after `ms`. */
+async function settleWithin<T>(p: Promise<T>, signal: AbortSignal | undefined, ms: number): Promise<T | typeof TIMED_OUT> {
+	if (ms === Infinity) return waitOrAbort(p, signal);
+	// A promise that has already settled wins the race even at ms <= 0: the timer fires a macrotask later.
+	let timer: NodeJS.Timeout | undefined;
+	const expired = new Promise<typeof TIMED_OUT>(r => { timer = setTimeout(() => r(TIMED_OUT), Math.min(Math.max(ms, 0), 2 ** 31 - 1)); });
+	try {
+		return await Promise.race([waitOrAbort(p, signal), expired]);
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
+async function waitOrAbort<T>(p: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+	if (signal === undefined) return p;
+	signal.throwIfAborted();
+	return new Promise<T>((resolve, reject) => {
+		const onAbort = (): void => reject(signal.reason);
+		signal.addEventListener('abort', onAbort, { once: true });
+		p.then(v => { signal.removeEventListener('abort', onAbort); resolve(v); },
+		       e => { signal.removeEventListener('abort', onAbort); reject(e); });
+	});
 }
 
 // ---------------------------------------------------------------------------

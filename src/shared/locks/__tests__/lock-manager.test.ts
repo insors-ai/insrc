@@ -13,14 +13,19 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { Worker } from 'node:worker_threads';
 
 import {
 	createLockBlock, DEFAULT_LOCK_CAPACITY, getLockManager, installLockManager, LockArgumentError, LockCapacityError, LockManager,
-	LockNestedError, setLockGrantHookForTests, validateLockRequest,
+	LockNestedError, LockTimeoutError, setLockGrantHookForTests, validateLockRequest,
 } from '../lock-manager.js';
 import type { Lock, LockGrantPoint, LockInfo, LockOptions } from '../lock-manager.js';
 
 const enc = (s: string): Uint8Array => new TextEncoder().encode(s);
+const HERE = dirname(fileURLToPath(import.meta.url));
+const tick = (ms = 20): Promise<void> => new Promise(res => setTimeout(res, ms));
 
 test('createLockBlock stores capacities in the header and two managers over one block read the same layout', async () => {
 	assert.deepEqual(new LockManager(createLockBlock()).capacity, DEFAULT_LOCK_CAPACITY);
@@ -275,4 +280,125 @@ test('the grant hook fires at its three points in order and is inert when unset'
 	seen.length = 0;
 	assert.equal(await a.request('hooked', {}, l => l?.mode), 'exclusive');
 	assert.deepEqual(seen, []);
+});
+
+test('writer preference: a waiting exclusive blocks ifAvailable shared and runs before a waiting shared', async () => {
+	const block = createLockBlock();
+	const [a, b, c] = [1, 2, 3].map(threadId => new LockManager(block, { threadId })) as [LockManager, LockManager, LockManager];
+	const order: string[] = [];
+	const shared = await hold(a, 'w', { mode: 'shared' });
+
+	const writer = b.request('w', { mode: 'exclusive' }, () => { order.push('exclusive'); });
+	await tick();
+	const refused = await probe(c, 'w', 'shared');
+	assert.equal(refused.lock, null, 'a waiting exclusive stops new shared grants');
+	assert.deepEqual(refused.blockedBy.map(i => [i.mode, i.threadId]), [['shared', 1], ['exclusive', 2]], 'the shared holder and the waiting exclusive block it');
+	// An ifAvailable exclusive does not register as pending, so it blocks nothing.
+	assert.equal((await probe(c, 'w', 'exclusive')).lock, null);
+
+	const reader = c.request('w', { mode: 'shared' }, () => { order.push('shared'); });
+	await tick();
+	assert.deepEqual(order, [], 'both wait while the shared holder holds');
+	await shared.release();
+	await Promise.all([writer, reader]);
+	assert.deepEqual(order, ['exclusive', 'shared'], 'the exclusive ran first, then the shared waiter');
+	assert.equal((await probe(c, 'w', 'shared')).lock?.mode, 'shared', 'the pending-exclusive count is back to zero');
+});
+
+test('timeoutMs rejects with LockTimeoutError naming the holders and leaves no pending entry or count', async () => {
+	const [a, b] = pair({ pending: 1 });
+	const metadata = { activity: 'maintenance', reason: 'compact' };
+	const shared = await hold(a, 't', { mode: 'shared', metadata });
+	const started = Date.now();
+	await assert.rejects(b.request('t', { timeoutMs: 60 }, () => 0), (e: unknown) => {
+		assert.ok(e instanceof LockTimeoutError, String(e));
+		assert.equal(e.lockName, 't');
+		assert.ok(e.waitedMs >= 60, `waited ${e.waitedMs} ms`);
+		assert.deepEqual(e.holders.map(h => [h.mode, h.threadId, h.metadata]), [['shared', 1, metadata]]);
+		assert.match(e.message, /lock 't': not granted within \d+ ms \(held by shared on thread 1 since .*\(maintenance: compact\)\)/);
+		return true;
+	});
+	assert.ok(Date.now() - started < 2_000, 'it did not wait past its timeout');
+	// The pending-exclusive count is gone: a new shared request is granted at once.
+	assert.equal((await probe(b, 't', 'shared')).lock?.mode, 'shared');
+	// The pending entry is gone: the one-slot pending table takes a new waiter.
+	const waiter = b.request('t', { timeoutMs: 5_000 }, l => l?.mode);
+	await tick();
+	await shared.release();
+	assert.equal(await waiter, 'exclusive');
+	// timeoutMs 0 on a free lock is granted, not timed out.
+	assert.equal(await b.request('t', { timeoutMs: 0 }, l => l?.mode), 'exclusive');
+});
+
+test('an already-aborted signal refuses before queuing; an abort while waiting rejects with signal.reason and cleans up', async () => {
+	const [a, b, block] = pair({ pending: 1 });
+	const reason = new Error('caller gave up');
+	const pre = new AbortController();
+	pre.abort(reason);
+	const untouched = Buffer.from(new Uint8Array(block)).toString('hex');
+	await assert.rejects(b.request('s', { signal: pre.signal }, () => 0), (e: unknown) => e === reason);
+	assert.equal(Buffer.from(new Uint8Array(block)).toString('hex'), untouched, 'refused before touching shared state (the name was not even claimed)');
+
+	const held = await hold(a, 's', { mode: 'shared' });
+	const ctl = new AbortController();
+	const waiting = b.request('s', { signal: ctl.signal }, () => 0);
+	await tick();
+	assert.equal((await probe(a, 's', 'shared')).lock, null, 'the waiting exclusive is counted');
+	const why = new Error('stop waiting');
+	ctl.abort(why);
+	await assert.rejects(waiting, (e: unknown) => e === why);
+	assert.equal((await probe(a, 's', 'shared')).lock?.mode, 'shared', 'the count is withdrawn');
+	const next = b.request('s', { timeoutMs: 5_000 }, l => l?.mode);
+	await tick();
+	await held.release();
+	assert.equal(await next, 'exclusive', 'the pending slot was freed for the next waiter');
+});
+
+test('requests for one name from one thread are served in arrival order', async () => {
+	const [a, b] = pair();
+	const blocker = await hold(a, 'q');
+	const order: string[] = [];
+	// A shared request queued first is granted first, even though the exclusive
+	// queued after it would otherwise win by writer preference.
+	const first = b.request('q', { mode: 'shared' }, async () => { order.push('1 shared'); await tick(); });
+	const second = b.request('q', { mode: 'exclusive' }, () => { order.push('2 exclusive'); });
+	const third = b.request('q', { mode: 'shared' }, () => { order.push('3 shared'); });
+	await tick();
+	await blocker.release();
+	await Promise.all([first, second, third]);
+	assert.deepEqual(order, ['1 shared', '2 exclusive', '3 shared']);
+});
+
+test('a full pending table gives LockCapacityError(pending) and queues nothing', async () => {
+	const block = createLockBlock({ pending: 1 });
+	const [a, b, c] = [1, 2, 3].map(threadId => new LockManager(block, { threadId })) as [LockManager, LockManager, LockManager];
+	const held = await hold(a, 'p', { mode: 'shared' });
+	// b's exclusive waits behind the shared holder and takes the one pending slot.
+	const waiter = b.request('p', { timeoutMs: 5_000 }, l => l?.mode);
+	await tick();
+	await assert.rejects(c.request('p', { timeoutMs: 5_000 }, () => 0), (e: unknown) => {
+		assert.ok(e instanceof LockCapacityError, String(e));
+		assert.equal(e.table, 'pending');
+		assert.equal(e.capacity, 1);
+		return true;
+	});
+	await held.release();
+	assert.equal(await waiter, 'exclusive');
+	// The refused exclusive left no count behind: once b's is retired, a shared request is granted.
+	assert.equal((await probe(c, 'p', 'shared')).lock?.mode, 'shared');
+});
+
+test('a lock wait keeps its thread alive until it completes', async () => {
+	const block = createLockBlock();
+	const main = new LockManager(block, { threadId: 0 });
+	const held = await hold(main, 'alive');
+	const worker = new Worker(join(HERE, 'helpers', 'lock-wait-worker.ts'), { workerData: { block, name: 'alive' } });
+	let exited = false;
+	const exit = new Promise<number>(res => worker.once('exit', code => { exited = true; res(code); }));
+	const granted = new Promise<unknown>(res => worker.once('message', m => res(m)));
+	await tick(300);
+	assert.equal(exited, false, 'the worker is still waiting, not exited');
+	await held.release();
+	assert.deepEqual(await granted, { granted: 'exclusive' });
+	assert.equal(await exit, 0, 'and exits on its own once its wait is done');
 });

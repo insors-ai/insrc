@@ -54,7 +54,8 @@ import { createInDaemonClient, installStepDaemonClient } from './steps/daemon-cl
 
 import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
 import { readInstalledCommit } from './installed-commit.js';
-import { ThreadServices, currentLmdbFileSizeMb, threadsEnabled } from './threads/main-services.js';
+import { ThreadServices, currentLmdbFileSizeMb, maintenanceConfig, threadsEnabled } from './threads/main-services.js';
+import { MaintenanceController } from './threads/maintenance.js';
 import { methodClasses } from './threads/method-class.js';
 import { Router } from './threads/router.js';
 import { IndexingPortClient } from './threads/indexing-port.js';
@@ -195,12 +196,15 @@ async function main(): Promise<void> {
 	// 2d. With daemon.threads.enabled, the main thread's services for its
 	//     workers (Epic 86197ac6 s2): the shared blocks, installed here before
 	//     any store is used, and the hub each worker is served over.
+	// Idle maintenance (graph compaction), made once the workers are (below).
+	let maintenance: MaintenanceController | undefined;
 	const threadServices = threadsEnabled()
 		? new ThreadServices(() => ({
 			startedAt,
 			modelState: getModelState(),
 			installedCommit: readInstalledCommit(),
 			lmdbFileSizeMb: currentLmdbFileSizeMb(),
+			maintenance: maintenance?.status(),
 		}))
 		: undefined;
 	if (threadServices !== undefined) log.info('daemon threads enabled');
@@ -217,7 +221,7 @@ async function main(): Promise<void> {
 	//     bloats the file until the slot is released. mdb_reader_check
 	//     drops slots whose PID no longer exists. Cheap; non-fatal if
 	//     it finds anything.
-	const { getGraphStore, runReaderCheck, startPeriodicReaderCheck } = await import('../db/graph/store.js');
+	const { compactGraphStore, getGraphStore, getStoreHealth, graphStoreReclaimable, runReaderCheck, startPeriodicReaderCheck } = await import('../db/graph/store.js');
 	await getGraphStore();   // ensure env is open
 	runReaderCheck('startup');
 
@@ -234,7 +238,11 @@ async function main(): Promise<void> {
 	const routed = new Set<MethodClass>();
 	let localForward: ForwardRequest | undefined;
 	const router = threadServices !== undefined
-		? new Router({ classOf: methodClasses.classOf, registry: threadServices.registry, routed, local: (request, deliver) => localForward!(request, deliver) })
+		? new Router({
+			classOf: methodClasses.classOf, registry: threadServices.registry, routed, local: (request, deliver) => localForward!(request, deliver),
+			// Every request is activity for idle maintenance (admin polls and subscriptions excepted).
+			onRequest: (method, cls) => maintenance?.requestArrived(method, cls) ?? (() => {}),
+		})
 		: undefined;
 	let queue: RuntimeQueue;
 	let indexer: RuntimeIndexer;
@@ -250,6 +258,20 @@ async function main(): Promise<void> {
 		routed.add('indexing');
 		const workers = new Supervisor({ services: threadServices, router, shutdown: reason => shutdownDaemon(reason) });
 		supervisor = workers;
+		const testHoldMs = process.env['INSRC_TEST_HOOKS'] === '1' ? Number(process.env['INSRC_TEST_MAINTENANCE_HOLD_MS'] ?? 0) : 0;
+		maintenance = new MaintenanceController({
+			config: maintenanceConfig(),
+			lanesIdle: () => threadServices.board.snapshot().indexing.idle,
+			healthy: () => getStoreHealth().state === 'ok',
+			reclaimable: graphStoreReclaimable,
+			workers: { live: () => workers.liveWorkers(), created: () => workers.createdCount() },
+			compact: opts => compactGraphStore(opts),
+			// Test-only (INSRC_TEST_HOOKS=1): hold the lock a while before compacting.
+			...(testHoldMs > 0 ? { onGranted: () => new Promise<void>(r => setTimeout(r, testHoldMs)) } : {}),
+		});
+		const controller = maintenance;
+		threadServices.onMaintenance(() => controller.runNow());
+		controller.start();
 		// Code indexing and document summaries, each on a worker of its own.
 		const indexingWorkers = startIndexingWorkers(workers, threadServices.indexingBlock);
 		// The queue lives on the code-indexing worker: "done" is the current one's
@@ -471,6 +493,8 @@ async function main(): Promise<void> {
 			clearInterval(pruneTimer);
 			clearInterval(readerCheckTimer);
 			stopTodosRetention();
+			// No new maintenance; one still waiting for its lock gives up (one compacting is waited for below).
+			void maintenance?.stop();
 			stopIndexing();
 			void disposeChatHandlers();
 			void server.close();
@@ -489,6 +513,8 @@ async function main(): Promise<void> {
 			// With daemon threads the workers exit before this thread closes the
 			// stores (the code-indexing worker has drained by now).
 			if (supervisor !== undefined) {
+				// A compaction under way finishes first (or the hard-exit backstop ends the process; the next open recovers).
+				await maintenance?.stop();
 				await supervisor.terminateAll();
 				log.info('shutdown: the daemon\'s workers exited');
 			}

@@ -29,7 +29,7 @@ import { unattributedUnwritable, withCompleteness } from '../repo-completeness.j
 import { directDispatch } from '../server.js';
 import type { RpcHandlers } from '../server.js';
 import { INDEXING_DRAINED, INDEXING_PORT, INDEXING_STOP_OP } from './indexing-port.js';
-import { SHUTDOWN_OP } from './main-services.js';
+import { MAINTENANCE_RUN_OP, SHUTDOWN_OP } from './main-services.js';
 import type { WorkerConnection } from './main-services.js';
 import { methodClasses } from './method-class.js';
 import { StatusBoardClient } from './status-board.js';
@@ -99,8 +99,8 @@ for (const entry of methodClasses.entries()) {
 	};
 }
 // Compaction closes the graph environment, which every daemon thread holds
-// open; it is run by the main thread's maintenance (Epic 86197ac6 s2/t16). The
-// busy refusal is today's.
+// open: the main thread's maintenance runs it, now (Epic 86197ac6 s2). The
+// busy refusal is today's; daemon.compact holds no maintenance lock itself.
 table['daemon.compact'] = async () => {
 	if (queue.depth > 0 || queue.isProcessing) {
 		throw new Error(
@@ -109,7 +109,7 @@ table['daemon.compact'] = async () => {
 			`drain before compacting.`,
 		);
 	}
-	throw new Error('daemon.compact: compaction with daemon threads runs through maintenance, which is not available yet');
+	return hub.request(MAINTENANCE_RUN_OP, null);
 };
 
 // The indexing port: what the main thread and the summary worker ask of this worker.

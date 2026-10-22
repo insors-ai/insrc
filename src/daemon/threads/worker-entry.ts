@@ -16,7 +16,7 @@
 import { isMainThread } from 'node:worker_threads';
 import type { MessagePort } from 'node:worker_threads';
 
-import { declareLiveStoreOwner } from '../../db/graph/store.js';
+import { closeGraphStore, declareLiveStoreOwner } from '../../db/graph/store.js';
 import { installStoreGuard } from '../../db/store-guard.js';
 import { setActiveEmbedderBackend } from '../../indexer/embedder.js';
 import type { EmbedderBackend } from '../../indexer/embedder.js';
@@ -42,6 +42,13 @@ export class NotADaemonWorkerError extends Error {
 	}
 }
 
+/**
+ * Daemon maintenance asks every worker to close its graph store handle before
+ * it compacts: the worker closes it and answers 'closed' on the port it was
+ * given. Its next use reopens it, once maintenance has released its lock.
+ */
+export const GRAPH_CLOSE_OP = 'graph.close';
+
 /** Prepare this worker thread; returns its hub client. */
 export function startDaemonWorker(init: DaemonWorkerInit): HubClient {
 	if (isMainThread) throw new NotADaemonWorkerError();
@@ -54,5 +61,10 @@ export function startDaemonWorker(init: DaemonWorkerInit): HubClient {
 	// The embedder's backend is per thread: take the one the main thread decided (Epic 86197ac6 s2).
 	hub.onPush('embedder.backend', backend => setActiveEmbedderBackend(backend as EmbedderBackend));
 	installStepStateStore(new HubStepStateStore(hub));
+	hub.onPush(GRAPH_CLOSE_OP, async ack => {
+		await closeGraphStore();
+		(ack as MessagePort).postMessage('closed');
+		(ack as MessagePort).close();
+	});
 	return hub;
 }

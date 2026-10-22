@@ -38,6 +38,8 @@ export interface RouterOptions {
 	/** Serves the requests that run in this thread (directDispatch over the main thread's tables). */
 	readonly local: ForwardRequest;
 	readonly holdMs?: number | undefined;
+	/** Told of every request as it arrives; the call it returns is made when the request ends (idle detection). */
+	readonly onRequest?: ((method: string, cls: MethodClass | undefined) => () => void) | undefined;
 }
 
 interface Pending {
@@ -90,11 +92,27 @@ export class Router {
 	/** The forward the IpcServer uses. */
 	readonly forward: ForwardRequest = (request, deliver) => {
 		const cls = this.opts.classOf(request.method);
+		const ended = this.opts.onRequest?.(request.method, cls);
+		if (ended !== undefined) {
+			const cancel = this.dispatch(cls, request, envelope => {
+				if (envelope.kind === 'reply') ended();
+				else {
+					const stream = (envelope.frame as IpcStreamMessage).stream;
+					if (stream === 'done' || stream === 'error') ended();
+				}
+				deliver(envelope);
+			});
+			return () => { if (request.stream) ended(); cancel(); };
+		}
+		return this.dispatch(cls, request, deliver);
+	};
+
+	private dispatch(cls: MethodClass | undefined, request: RequestEnvelope, deliver: DeliverEnvelope): () => void {
 		if (cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
 		const target = this.opts.registry.targetFor(cls);
 		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);
 		return this.hold(cls, request, deliver);
-	};
+	}
 
 	/**
 	 * Ask the worker of `cls` directly (not through classOf): the indexing port

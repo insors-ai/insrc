@@ -32,6 +32,8 @@ import { StatusBoard, statusBoardHubHandlers } from './status-board.js';
 import { LocalStepStateStore, installStepStateStore, stepStateHubHandlers } from './step-state.js';
 import type { SharedStepStateStore } from './step-state.js';
 import { wireMainStoreHealth } from './store-health-hub.js';
+import { DEFAULT_MAINTENANCE_CONFIG } from './maintenance.js';
+import type { MaintenanceConfig } from './maintenance.js';
 
 /** Read daemon.threads.enabled from ~/.insrc/config.json. Fail-safe: off when absent, unreadable or not true. */
 export function threadsEnabled(): boolean {
@@ -42,6 +44,22 @@ export function threadsEnabled(): boolean {
 	} catch {
 		return false;
 	}
+}
+
+/** daemon.maintenance.* from ~/.insrc/config.json, each falling back to its default when absent or not a non-negative number. */
+export function maintenanceConfig(): MaintenanceConfig {
+	let raw: Record<string, unknown> = {};
+	try {
+		if (existsSync(PATHS.config)) {
+			const parsed = JSON.parse(readFileSync(PATHS.config, 'utf8')) as { daemon?: { maintenance?: Record<string, unknown> } };
+			raw = parsed.daemon?.maintenance ?? {};
+		}
+	} catch { /* defaults */ }
+	const num = (key: keyof MaintenanceConfig): number => {
+		const v = raw[key];
+		return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : DEFAULT_MAINTENANCE_CONFIG[key];
+	};
+	return { idleMs: num('idleMs'), minReclaimablePct: num('minReclaimablePct'), minReclaimableMb: num('minReclaimableMb'), pauseLimitMs: num('pauseLimitMs') };
 }
 
 /** The LMDB file's size in MiB, best-effort (undefined when absent or unreadable), as daemon.status reports it. */
@@ -66,6 +84,8 @@ export const DAEMON_INFO_OP = 'daemon.info';
 export const EMBEDDER_BACKEND_OP = 'embedder.backend';
 /** A worker asks the main thread to shut the daemon down (daemon.shutdown and daemon.update served on the admin worker). */
 export const SHUTDOWN_OP = 'daemon.shutdown';
+/** The code-indexing worker's daemon.compact asks the main thread to run maintenance now; answers its CompactResult. */
+export const MAINTENANCE_RUN_OP = 'maintenance.run';
 
 /** A worker's connection: what its workerData carries, the port to transfer, and the main thread's end. */
 export interface WorkerConnection {
@@ -92,6 +112,7 @@ export class ThreadServices {
 	private readonly handlers: HubHandlers;
 	private embedderBackend: EmbedderBackend | undefined;
 	private shutdown: ((reason: string) => void) | undefined;
+	private maintenance: (() => Promise<unknown>) | undefined;
 
 	constructor(private readonly info: () => DaemonInfo, steps: SharedStepStateStore = new LocalStepStateStore()) {
 		// The main thread joins the same blocks it hands to every worker.
@@ -105,12 +126,21 @@ export class ThreadServices {
 			...wireMainStoreHealth(() => this.ports),
 			[DAEMON_INFO_OP]: () => this.info(),
 			[SHUTDOWN_OP]: reason => { this.shutdown?.(String(reason)); },
+			[MAINTENANCE_RUN_OP]: () => {
+				if (this.maintenance === undefined) throw new Error('daemon.compact: maintenance is not available yet');
+				return this.maintenance();
+			},
 		};
 	}
 
 	/** The daemon's shutdown, which a worker's SHUTDOWN_OP starts with its reason. */
 	onShutdown(shutdown: (reason: string) => void): void {
 		this.shutdown = shutdown;
+	}
+
+	/** What MAINTENANCE_RUN_OP runs: maintenance now. */
+	onMaintenance(run: () => Promise<unknown>): void {
+		this.maintenance = run;
 	}
 
 	/** Open a channel for a new worker and serve the hub on the main thread's end. */

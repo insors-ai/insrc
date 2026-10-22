@@ -955,6 +955,54 @@ export async function compactGraphStore(opts: { readonly beforeRename?: () => Pr
 }
 
 // ---------------------------------------------------------------------------
+// Reclaimable space (daemon maintenance, Epic 86197ac6 s2)
+// ---------------------------------------------------------------------------
+
+/** One B-tree's page counts, as getStats() reports them. */
+export interface TreePages {
+	readonly treeBranchPageCount: number;
+	readonly treeLeafPageCount: number;
+	readonly overflowPages: number;
+}
+
+export interface Reclaimable {
+	readonly fileBytes: number;
+	readonly usedBytes: number;
+	readonly reclaimableBytes: number;
+	/** reclaimableBytes as a % of fileBytes. */
+	readonly reclaimablePct: number;
+}
+
+/** What compaction would give back: the file size less the pages the trees use (branch + leaf + overflow). */
+export function reclaimableFrom(trees: readonly TreePages[], pageSize: number, fileBytes: number): Reclaimable {
+	const pages = trees.reduce((n, t) => n + t.treeBranchPageCount + t.treeLeafPageCount + t.overflowPages, 0);
+	const usedBytes = Math.min(fileBytes, pages * pageSize);
+	const reclaimableBytes = fileBytes - usedBytes;
+	return { fileBytes, usedBytes, reclaimableBytes, reclaimablePct: fileBytes > 0 ? (reclaimableBytes / fileBytes) * 100 : 0 };
+}
+
+/** Whether `r` is worth a compaction: both thresholds must be met. */
+export function worthCompacting(r: Reclaimable, minPct: number, minMb: number): boolean {
+	return r.reclaimablePct >= minPct && r.reclaimableBytes >= minMb * 1024 * 1024;
+}
+
+/**
+ * The open store's reclaimable space: pages in use summed over every named
+ * database, plus the main and free-list trees, against the file size.
+ * Undefined when the store is not open on this thread.
+ */
+export function graphStoreReclaimable(): Reclaimable | undefined {
+	const inst = _instance;
+	if (inst === null) return undefined;
+	const root = inst.root.getStats() as TreePages & { pageSize: number; free?: TreePages };
+	const trees: TreePages[] = [root, ...(root.free !== undefined ? [root.free] : [])];
+	for (const [name, db] of Object.entries(inst)) {
+		if (name !== 'root') trees.push((db as AnyDb).getStats() as TreePages);
+	}
+	return reclaimableFrom(trees, root.pageSize, statSync(_path).size);
+}
+
+// ---------------------------------------------------------------------------
 // Compaction safety: the manifest, the check on open, crash recovery
 // ---------------------------------------------------------------------------
 

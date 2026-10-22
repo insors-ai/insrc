@@ -84,6 +84,16 @@ export class Supervisor {
 		return started;
 	}
 
+	/** Every ready worker now. */
+	liveWorkers(): StartedWorker[] {
+		return [...this.live.values()];
+	}
+
+	/** Workers created and not yet exited, ready or not. */
+	createdCount(): number {
+		return this.created.size;
+	}
+
 	/** The ready worker of `name`, if there is one now. */
 	current(name: string): StartedWorker | undefined {
 		return this.live.get(name);

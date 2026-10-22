@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T09:33:13.695Z",
+    "updatedAt": "2026-10-22T09:52:45.302Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -1518,6 +1518,106 @@
               },
               {
                 "title": "waitForIndexIdle on the summary worker reflects the code-indexing worker's real state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "9b2deef7",
+        "ranAt": "2026-10-22T09:52:45.302Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+                "title": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a sixth restart within 60 s shuts the daemon down",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+                "title": "a sixth restart within 60 s shuts the daemon down",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a dead worker's store-guard permits and named locks are reclaimed before its replacement starts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+                "title": "a dead worker's store-guard permits and named locks are reclaimed before its replacement starts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9484,
+            "titles": [
+              {
+                "title": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+                "result": "pass"
+              },
+              {
+                "title": "a sixth restart within 60 s shuts the daemon down",
+                "result": "pass"
+              },
+              {
+                "title": "a dead worker's store-guard permits and named locks are reclaimed before its replacement starts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10601,
+            "titles": [
+              {
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              },
+              {
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 67 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 71 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -389,3 +389,38 @@ Run at 2026-10-22T09:33:13.695Z on commit `96671195`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/summary-worker.test.ts` | 0 | 2 | 3.5 s |  |
+
+## t14
+
+Run at 2026-10-22T09:52:45.302Z on commit `9b2deef7`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving | `src/daemon/threads/__tests__/supervisor.test.ts` |
+
+**integration: a sixth restart within 60 s shuts the daemon down**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a sixth restart within 60 s shuts the daemon down | `src/daemon/threads/__tests__/supervisor.test.ts` |
+
+**integration: a dead worker's store-guard permits and named locks are reclaimed before its replacement starts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a dead worker's store-guard permits and named locks are reclaimed before its replacement starts | `src/daemon/threads/__tests__/supervisor.test.ts` |
+
+**smoke: SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged | `src/daemon/threads/__tests__/threads-boot.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/supervisor.test.ts` | 0 | 3 | 9.5 s |  |
+| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 2 | 10.6 s |  |

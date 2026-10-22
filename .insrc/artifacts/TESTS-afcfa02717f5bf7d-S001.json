@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "afcfa02717f5bf7d",
+    "storyId": "S001",
+    "createdAt": "2026-10-22T06:26:37.927Z",
+    "updatedAt": "2026-10-22T06:28:21.549Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-22T05:17:03.574Z",
+    "epicSlug": "add-cross-thread-named-lock-framework"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "3d2d982b",
+        "ranAt": "2026-10-22T06:28:21.549Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "createLockBlock stores capacities in the header and two managers over one block read the same layout",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager.test.ts",
+                "title": "createLockBlock stores capacities in the header and two managers over one block read the same layout",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "invalid arguments are refused with LockArgumentError and nothing is truncated",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager.test.ts",
+                "title": "invalid arguments are refused with LockArgumentError and nothing is truncated",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a name resolves to one slot and a full name table gives LockCapacityError(names)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager.test.ts",
+                "title": "a name resolves to one slot and a full name table gives LockCapacityError(names)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "getLockManager without an install uses a private block",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager.test.ts",
+                "title": "getLockManager without an install uses a private block",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/locks/__tests__/lock-manager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 475,
+            "titles": [
+              {
+                "title": "createLockBlock stores capacities in the header and two managers over one block read the same layout",
+                "result": "pass"
+              },
+              {
+                "title": "invalid arguments are refused with LockArgumentError and nothing is truncated",
+                "result": "pass"
+              },
+              {
+                "title": "a name resolves to one slot and a full name table gives LockCapacityError(names)",
+                "result": "pass"
+              },
+              {
+                "title": "getLockManager without an install uses a private block",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

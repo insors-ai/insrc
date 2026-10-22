@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "afcfa02717f5bf7d",
+    "storyId": "S001",
+    "createdAt": "2026-10-22T06:26:37.927Z",
+    "updatedAt": "2026-10-22T06:28:21.549Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-22T05:17:03.574Z",
+    "epicSlug": "add-cross-thread-named-lock-framework"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Added src/shared/locks/lock-manager.ts: the lock block layout (header capacities, name table, per-name lock/pending-exclusive/version/mutex words, holder and pending tables), createLockBlock, LockManager.resolveName, the four error classes, argument validation and installLockManager/getLockManager. Name slots are claimed by CAS from free to -(claimer threadId + 1), filled and published READY last; a resolver never passes a slot another thread is still claiming, so one name maps to one slot, and reclaim can reset a claim left by a dead thread.",
+    "testRecord": {
+      "md": "docs/standalone/add-cross-thread-named-lock-framework-E20261022afcfa027/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/shared/locks/__tests__/lock-manager.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T06:28:21.549Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/locks/lock-manager.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T06:28:21.549Z"
+      }
+    ],
+    "commit": "3d2d982b"
+  }
+}

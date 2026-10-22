@@ -1,0 +1,1012 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792693404411-z8469p",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T18:28:44.223Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 318503,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "storyId": "s8",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "hldEffectiveHash": "6ec084af5823ec5c507c17625cc0d350f0eb342459655dc40ccf6c97a9499225",
+    "hldAmendmentsApplied": [
+      "AMD-315d510cb28100e2-1",
+      "AMD-315d510cb28100e2-4",
+      "AMD-315d510cb28100e2-8",
+      "AMD-315d510cb28100e2-10",
+      "AMD-315d510cb28100e2-12",
+      "AMD-315d510cb28100e2-13",
+      "AMD-315d510cb28100e2-11",
+      "AMD-315d510cb28100e2-16",
+      "AMD-315d510cb28100e2-17"
+    ],
+    "authoredBy": "controller",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 6,
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 6,
+        "contentHash": "4feef4e3b4ef5eebd7b7db3bed2855ccb9ec9467fd444a1eb3f63182a8e69587",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 6,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 14
+        },
+        "at": "2026-10-22T18:30:27.488Z",
+        "report": {
+          "entityId": "LLD-315d510cb28100e2-s8",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-3f736d448940185faa9fa439537b69bf"
+        }
+      },
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T20:01:38.195Z"
+      }
+    },
+    "questionResolutions": {
+      "q3aaa4bf0": {
+        "question": "The lifecycle table has no way back from changes-requested for an unchanged artifact, so an artifact the reviewers did not object to must still change before it can rejoin a changes-requested request; should the common artifact model allow open-signoff also from changes-requested at an unchanged approved revision? The table belongs to the common artifact model, not to this Story, so it is not designed here.",
+        "status": "resolved",
+        "choice": "Allow re-signoff at unchanged revision",
+        "rationale": "Decided by the user: handle the model change now, in s8, to avoid extra work later. Add a lifecycle step so open-signoff is also allowed from changes-requested when the artifact's approval and other-party review are still of its current revision (unchanged content); prerequisiteFailure and openSignoff accept such a head; the revise-together rule then no longer applies, because an artifact nobody objected to rejoins the request unchanged. Includes the lifecycle.ts table change, its tests, and the changes to the s8 tests that assumed an unchanged changes-requested artifact is refused.",
+        "resolvedAt": "2026-10-22T20:24:58.121Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "When reviewers ask for changes, the claim holder revises the artifacts of that request, reviews and approves each again locally, and submits them again; the submission goes to the same pull request, so the reviewers keep one thread, and the new signoff covers only the revisions that were pushed. Because a request with changes requested sends all of its artifacts back together, every artifact that is to stay in it must be revised before it can be resubmitted. A request for changes made on an earlier push is not mistaken for one on the new push, and re-authoring an artifact keeps its Signoff history so the earlier request can be found; an identical re-author of an artifact in signoff changes nothing. Re-authoring an artifact that is in signoff (the design.epic and design.story runs) is allowed only for the holder, and a unit nobody holds must be claimed first; other writers of the same artifacts are not gated here. It builds on the s7 submission and adds two optional tracker additions and a careful rule in the content write; no lifecycle or record type changes."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-s1) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc3",
+          "name": "Per-unit tracker record and revision",
+          "purpose": "Adds data next to the artifact's existing meta.tracker without changing any existing field: a per-stage-unit issue map in a new key, and an optional meta.revision (default 0 when absent), minted on content writes and not on meta-only writes. A review that applies auto-fixes, whether through verdicts.ts or run-artifact.ts, is a content write; a report-only review is meta-only. Owned by s4, which also owns the inventory of artifact write paths and the shared issue-creation code.",
+          "interfaceSketch": "interface ExistingTrackerMeta { // unchanged; today's TrackerMeta\n  adapter?: TrackerKind; epicRef?: string; storyRef?: string; issueRef?: string;\n  storyRefs?: Readonly<Record<string, string>>; taskRefs?: Readonly<Record<string, string>>;\n  milestoneRef?: string; labelsCreated?: readonly string[];\n  epicStatus?: string; storyStatus?: Readonly<Record<string, string>>;\n  pushedAt?: string; lastSyncedAt?: string;\n}\ninterface UnitIssue { unit: 'epic' | 'story' | 'task'; unitId: string; issue: IssueRef; createdAtRevision: number; }\ninterface ArtifactTrackerRecord extends ExistingTrackerMeta { units?: Readonly<Record<string, UnitIssue>>; }\ninterface ArtifactMetaAdditions { revision?: number; /* absent reads as 0 */ tracker?: ArtifactTrackerRecord; }\ntype WriteKind = 'content' | 'meta-only';\ninterface ArtifactWriter { (path: string, next: unknown, kind: WriteKind): void; }\ninterface EnsureIssue { (unit: UnitRef, port: TrackerPort): PortResult<IssueRef>; }",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc4",
+          "name": "Team gate, claim state, gate outcome, refusal error and completion hook",
+          "purpose": "The single gate for guarded actions in the daemon-owned workflow library, the claim state read live from the tracker, the outcome type, the typed refusal error that leaves approval, the review-fix decision that both review paths (verdicts.ts and run-artifact.ts) consult, and a completion hook that s5 ships unregistered and s7 registers. The gate derives the acting user itself through the port, so no caller signature changes. Owned by s5; s4 supplies issue creation which the gate calls for the no-issue outcome.",
+          "interfaceSketch": "type GuardedAction = 'author' | 'build' | 'approve-local' | 'open-signoff' | 'revise' | 'release' | 'claim' | 'review-fix';\ntype GateOutcome =\n  | { kind: 'allowed'; implicitClaim: boolean }\n  | { kind: 'held-by-other'; holder: string; offerPark: boolean }\n  | { kind: 'awaiting-signoff'; request: SignoffRequestRef }\n  | { kind: 'no-issue'; allowFirstAuthor: boolean; creationFailure?: string }\n  | { kind: 'refused'; reason: string };\ninterface ClaimState { unit: UnitRef; holder: string | null; readAt: string; }\ninterface TeamGate { (repo: string, unit: UnitRef, action: GuardedAction): GateOutcome; } // who = port.whoAmI(), read inside\ninterface TeamGateRefusedError extends Error { readonly outcome: Exclude<GateOutcome, { kind: 'allowed' }>; readonly reason: string; }\ntype ReviewFixMode = 'apply-auto-fixes' | 'report-only';\ninterface ReviewFixDecision { (repo: string, unit: UnitRef): ReviewFixMode; }\ninterface CompletionHook { (repo: string, unit: UnitRef, port: TrackerPort): GateOutcome | 'continue'; }\ninterface RegisterCompletionHook { (hook: CompletionHook): void; }\ninterface ReleaseRule { holderMayRelease: true; administratorsMayRelease: true; othersRefused: true; }\n  // + registerParkOfferProvider(provider: (repo: string, unit: UnitRef, actor: string) => boolean): void;  // Lets the handoff module say whether the acting user has unparked local work for a unit, so the gate can set offerPark on a held-by-other outcome without importing the handoff module (same shape as registerCompletionHook; shipped with no provider, so offerPark stays false). (amend:AMD-315d510cb28100e2-13)\n  // + CompletionHook.{action, authoring}: (repo: string, unit: UnitRef, port: TrackerPort, action: GuardedAction, authoring?: string) => GateOutcome | 'continue';  // The completion hook must know which guarded action is attempted and, for author, which workflow is authoring (design.epic, design.story or plan), because author-gate maps design.story and plan to the same story unit and the two follow different signed-off stages (the HLD and the LLD). consultHook already holds both and passes them as trailing arguments, so a hook written without them keeps working. (amend:AMD-315d510cb28100e2-17)",
+          "ownedByStory": "s5",
+          "consumedByStories": [
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc5",
+          "name": "SignoffRecord",
+          "purpose": "A record separate from meta.review and approvedAt, stating that a signoff request completed and which artifacts and revisions it covered. The revision is the binding; a content hash is later hardening. Owned by s7.",
+          "interfaceSketch": "interface SignoffRecord {\n  request: SignoffRequestRef;\n  artifacts: Array<{ artifactId: string; revision: number }>;\n  completedAt: string;\n  grandfathered?: boolean;\n}\ninterface ArtifactSignoffMeta { signoffs?: SignoffRecord[]; }",
+          "ownedByStory": "s7",
+          "consumedByStories": [
+            "s8"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s8",
+        "owns": [],
+        "depends": [
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "Revision of an open request: re-run of local approval, push to the same request, discarding an earlier completion, refusing non-holders."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The GitHub adapter built by extracting src/workflow/tracker (including the existing signed-in-user read, ghCurrentLogin, behind whoAmI), the issue calls in tracker-auto.ts and the create and close calls in src/workflow/bugfix/tracker.ts behind the port; the gh command wrapper with its 10-second timeout; contract tests; detection of a missing tool or sign-in. The port receives the needed capabilities as an argument, so s1 does not read the policy. Reconciliation: the unbuilt tracker-tool design LLD-38436e90625a83a2-s1 (docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md) is not built as a second abstraction; sc1 is the one tracker abstraction and s1's LLD supersedes or amends that LLD, once its conflicting approval status is settled. Syncing tracker status on git pull and push, and an issue-status read on the port, are deferred to the define extend."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Reading the policy file from the remote default branch ref, the cached last-fetched copy and the offline rule, finding the first default-branch commit that carried the policy file, the starter policy and the team setup command."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc2"
+          ],
+          "internal": "The repo-scoped kind of row in the shared settings catalog whose reads and writes go to the per-repo map in github.json read by resolveGithubConfig; its rendering in VS Code, JetBrains and the terminal client; read-only display of policy values. Shares the single store with s1's target resolution."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Shared issue-creation code refactored out of autoPushEpicOnHld, autoPushStoryOnLld and autoPushTasksOnPlan, find-by-label dedupe for Story and Task issues, forcing Task issues on in team mode, daemon-side triggering when a draft is first written, the terminal approve path kept as manual fallback, the inventory and classification of artifact write paths (including the two writeFileSync writers, and both verdicts.ts and run-artifact.ts as content writes when auto-fixes change the body), the single content-write helper and the revision minting, the bypass test that also detects raw writeFileSync on artifact paths, and the rule that an artifact without meta.revision reads as revision 0."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The team gate and its call sites (daemon step entry points and approveArtifactByJsonPath), the acting-user read through the port, claim and release commands, live assignee reads, the guarded-action list (code-review and analyze are never guarded; review is never refused), the report-only review for a non-holder through the review-fix decision on both review paths (verdicts.ts and run-artifact.ts), the typed TeamGateRefusedError, its handling beside ReviewBlockedError in approveWorkflowTarget and its formatting in the terminal client's approve case in src/cli/command.ts, the no-issue outcome handling, administrator release, and the declaration of the completion hook, shipped unregistered."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc4"
+          ],
+          "internal": "Parking a draft on a handoff branch, the issue note, resuming from committed files, and reconstructing in-flight workflow state from committed artifacts instead of the opaque token."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Opening the signoff request with the chosen artifacts, prerequisite checks for model review and local approval, registering the completion hook to produce the awaiting-signoff outcome, the on-demand completion check, automatic release of the claim on completion, recording sign-off together, grandfathering of artifacts approved before the policy anchor, and the separate display of signoff."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s9: Keep tracker issues and status in step with the work without a manual step"
+        }
+      ],
+      "rolloutPhase": "Phase D — signoff",
+      "nonFunctional": {
+        "performance": "Each guarded action makes at most two live reads through the port (the signed-in user and the assignee); every tracker command has a 10-second timeout, after which the action is refused with the reason. A repo without a policy makes no tracker call.",
+        "security": "Policy is read only from the remote default branch ref and is not locally overridable; enforcement lives in the daemon-owned workflow library (k1); no tracker secrets are stored by insrc, sign-in stays with the tracker's CLI; administrators come only from the policy.",
+        "observability": "Every gate outcome other than allowed is logged with unit, action and reason; port failures carry their kind (missing-tool, missing-signin, unreachable, rejected).",
+        "durability": "Claim, issue and signoff state live in the tracker and in committed artifact files; the in-memory step state stores (100 entries, 1 hour) are not relied on for handoff. Artifact writes stay atomic through the existing helper."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "openSignoff",
+          "signature": "openSignoff(repo: string, unit: UnitRef, artifactIds: readonly string[], deps?: SignoffDeps): Promise<PortResult<SignoffRequestRef>>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "The repository path.",
+              "optional": false
+            },
+            {
+              "name": "unit",
+              "type": "UnitRef",
+              "purpose": "The Epic or Story unit that holds the artifacts.",
+              "optional": false
+            },
+            {
+              "name": "artifactIds",
+              "type": "readonly string[]",
+              "purpose": "The artifacts to submit; a revised artifact is submitted the same way as a first one.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "SignoffDeps",
+              "purpose": "Test seams, as in s7.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<PortResult<SignoffRequestRef>>",
+            "meaning": "The request the artifacts are now recorded against: the earlier request when this was a revision of one that is still open, otherwise a new one."
+          },
+          "errors": [
+            {
+              "type": "PortResult rejected",
+              "condition": "Not the holder, nobody holds the issue, an artifact is not approved at its current revision (including one still in changes-requested because it was not revised) or its review is not of the current revision or not by the other party, the current branch is not the request's branch, or the chosen artifacts belong to different earlier requests."
+            },
+            {
+              "type": "PortResult failure kinds",
+              "condition": "The tracker could not be loaded or read (missing-tool, missing-signin, unreachable, rejected); a failed read of the earlier request never falls back to opening a new one."
+            }
+          ],
+          "preconditions": [
+            "Team mode with signoff stages listed; the caller holds the unit's issue.",
+            "Each artifact is approved at its current revision with a review of that revision by the other party."
+          ],
+          "postconditions": [
+            "The earlier request of an artifact is the one named by the LAST entry of signoffsOfMeta(meta) whatever its revision (signoffViewOf shows only the current revision, so it is not used for this).",
+            "When that entry is open or changes-requested and readSignoffRequest says the request is still open, the artifact files are pushed to the request's branch, no second request is created and every artifact is recorded open-signoff with the same Reference at its current revision.",
+            "When the earlier request is merged or closed, the tracker has no readSignoffRequest, or there is no earlier entry, a new request is opened as in s7.",
+            "An entry of an earlier revision is never edited, so an earlier completion cannot cover the new revision.",
+            "Every artifact of a request that had changes requested is in changes-requested and can rejoin only after a content change, a review and an approve; an artifact that was not revised is refused and may be left out of the submission, in which case it stays changes-requested under the old request."
+          ]
+        },
+        {
+          "name": "prerequisiteFailure",
+          "signature": "prerequisiteFailure(repo: string, unit: UnitRef, artifactId: string, stage: SignoffStage, meta: unknown, d: SignoffDeps): string | undefined",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "The repository path.",
+              "optional": false
+            },
+            {
+              "name": "unit",
+              "type": "UnitRef",
+              "purpose": "The unit that holds the artifact.",
+              "optional": false
+            },
+            {
+              "name": "artifactId",
+              "type": "string",
+              "purpose": "The artifact being checked.",
+              "optional": false
+            },
+            {
+              "name": "stage",
+              "type": "SignoffStage",
+              "purpose": "The artifact's signoff stage.",
+              "optional": false
+            },
+            {
+              "name": "meta",
+              "type": "unknown",
+              "purpose": "The head's stored meta, read through accessors.",
+              "optional": false
+            },
+            {
+              "name": "d",
+              "type": "SignoffDeps",
+              "purpose": "Test seams.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | undefined",
+            "meaning": "The reason the artifact cannot be submitted, or undefined when it can."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "For a DEF, HLD or LLD the review must exist, be by the other party and be of the head's current revision; before, only the first two were checked and the third was left to 'approve', which an override reason skips. A BUILD still uses the Story's code-review record.",
+            "A head in changes-requested is refused with its status named and a hint that it must be revised (content changed, reviewed and approved again) or left out of the submission."
+          ]
+        },
+        {
+          "name": "readSignoffRequest",
+          "signature": "readSignoffRequest?(ref: SignoffRequestRef): PortResult<{ branch: string; open: boolean }>",
+          "parameters": [
+            {
+              "name": "ref",
+              "type": "SignoffRequestRef",
+              "purpose": "The request whose head branch and openness are wanted.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PortResult<{ branch: string; open: boolean }>",
+            "meaning": "The branch the request was opened from and whether it can still take pushes (open, not merged and not closed)."
+          },
+          "errors": [
+            {
+              "type": "PortResult failure kinds",
+              "condition": "gh missing, not signed in, unreachable, or the request not found (rejected)."
+            }
+          ],
+          "preconditions": [
+            "The ref is well formed (owner/repo#N)."
+          ],
+          "postconditions": [
+            "Reads only; nothing is changed in the tracker."
+          ]
+        },
+        {
+          "name": "readSignoffState",
+          "signature": "readSignoffState(ref: SignoffRequestRef, since?: string): PortResult<'open' | 'changes-requested' | 'completed'>",
+          "parameters": [
+            {
+              "name": "ref",
+              "type": "SignoffRequestRef",
+              "purpose": "The request to read.",
+              "optional": false
+            },
+            {
+              "name": "since",
+              "type": "string",
+              "purpose": "ISO time the latest submission was recorded; a changes-requested decision counts only when made after it.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "PortResult<'open' | 'changes-requested' | 'completed'>",
+            "meaning": "completed when merged; changes-requested when closed unmerged, or when, among each reviewer's latest decisive review (APPROVED, CHANGES_REQUESTED or DISMISSED; COMMENTED ignored), one requests changes and was submitted after `since`; otherwise open."
+          },
+          "errors": [
+            {
+              "type": "PortResult failure kinds",
+              "condition": "gh missing, not signed in, unreachable, malformed ref or unreadable output (rejected)."
+            }
+          ],
+          "preconditions": [
+            "The ref is well formed (owner/repo#N)."
+          ],
+          "postconditions": [
+            "With no `since` the answer is as in s7.",
+            "A lingering CHANGES_REQUESTED decision older than `since` does not make the request changes-requested, and a plain comment after it does not clear one made after `since`."
+          ]
+        },
+        {
+          "name": "settleSignoff",
+          "signature": "settleSignoff(repo: string, unit: UnitRef, deps?: SignoffDeps): Promise<readonly string[]>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "The repository path.",
+              "optional": false
+            },
+            {
+              "name": "unit",
+              "type": "UnitRef",
+              "purpose": "The unit whose open requests are read.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "SignoffDeps",
+              "purpose": "Test seams.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<readonly string[]>",
+            "meaning": "The problems met (unchanged from s7)."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "For each open request it reads, it passes the `at` of the last Signoff entry of the waiting heads as `since`, so only a request for changes made after the latest submission is recorded.",
+            "As in s7, a request with changes requested moves every waiting head of the request to changes-requested together."
+          ]
+        },
+        {
+          "name": "settleBeforeAuthor",
+          "signature": "settleBeforeAuthor(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>): Promise<void>",
+          "parameters": [
+            {
+              "name": "intent",
+              "type": "Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>",
+              "purpose": "The authoring run: its workflow, repo and params.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Returns when signoff no longer blocks the stage the run follows; otherwise throws."
+          },
+          "errors": [
+            {
+              "type": "TeamGateRefusedError",
+              "condition": "blockedBySignoff still blocks the followed stage after settling its signoff."
+            }
+          ],
+          "preconditions": [
+            "Awaited before assertMayAuthor at every authoring entry (src/daemon/steps/workflow-step/phases/start.ts, src/daemon/workflow-rpc.ts)."
+          ],
+          "postconditions": [
+            "Unchanged from s7: it settles the followed unit and refuses with the action 'author' and the workflow, whatever action assertMayAuthor later asks the gate. The upstream signoff block therefore still applies to a run that is a revise: a design.story run on an LLD whose HLD is no longer signed off is refused here before the gate is asked."
+          ]
+        },
+        {
+          "name": "assertMayAuthor",
+          "signature": "assertMayAuthor(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>): void",
+          "parameters": [
+            {
+              "name": "intent",
+              "type": "Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>",
+              "purpose": "The authoring run: its workflow, repo and params.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Returns when the run may change the stage; otherwise throws."
+          },
+          "errors": [
+            {
+              "type": "TeamGateRefusedError",
+              "condition": "The gate refuses the action (held by another user), or the artifact the run would write is in signoff and nobody holds the unit."
+            }
+          ],
+          "preconditions": [
+            "The run is a design.epic run (it writes the HLD) or a design.story run (it writes the LLD) on an existing unit."
+          ],
+          "postconditions": [
+            "When the artifact the run would write is in-signoff or changes-requested the gate is asked with 'revise', and when the gate allows it the entry reads the holder itself (teamContext and readHolder, both exported by the gate) and refuses with a claim-first outcome if nobody holds the unit; no claim is taken. Otherwise the gate is asked with 'author' as before. 'revise' only changes the claim handling: the upstream signoff block is enforced earlier by settleBeforeAuthor.",
+            "Scope: this gates the authoring runs only. Other writers that change a DEF, HLD or LLD body with writeArtifact 'content' (resolveComment, appendStoryToDefine and any other caller outside the authoring runs) are not gated by this Story and are raised as an open question. A define run is not a claim unit (authorUnitOf gives it none), so DEF is not covered here; a plan run writes the PLAN, which is not a signoff stage."
+          ]
+        },
+        {
+          "name": "writeArtifact",
+          "signature": "writeArtifact(path: string, next: unknown, kind: WriteKind, opts?: { replaceUnreadable?: boolean }): number",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "purpose": "The artifact file.",
+              "optional": false
+            },
+            {
+              "name": "next",
+              "type": "unknown",
+              "purpose": "The next head; an object with a meta object.",
+              "optional": false
+            },
+            {
+              "name": "kind",
+              "type": "WriteKind",
+              "purpose": "'content' or 'meta-only'.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ replaceUnreadable?: boolean }",
+              "purpose": "As today.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "number",
+            "meaning": "The revision the file carries."
+          },
+          "errors": [
+            {
+              "type": "TypeError",
+              "condition": "As today: next is not an object with a meta object."
+            }
+          ],
+          "preconditions": [
+            "None beyond today's."
+          ],
+          "postconditions": [
+            "On a content write whose prior head has at least one entry in meta.lifecycle.signoffs and whose next head has no lifecycle or a lifecycle with no signoffs: when the content CHANGED, the stored lifecycle is the default draft with the prior Signoff entries carried and the revision minted as today (approval and review are not carried); when the content is UNCHANGED and the next head has NO lifecycle, the prior lifecycle is kept exactly as it is (status, approval, review, Signoff entries) and no draft lifecycle is synthesized, so no illegal transition is attempted and no error is thrown.",
+            "When the content is unchanged and the next head carries a lifecycle, behaviour is as today and is not changed here.",
+            "A prior head with no Signoff entry is written exactly as today."
+          ]
+        },
+        {
+          "name": "signoffViewOf",
+          "signature": "signoffViewOf(meta: unknown): SignoffView",
+          "parameters": [
+            {
+              "name": "meta",
+              "type": "unknown",
+              "purpose": "A head's meta.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SignoffView",
+            "meaning": "The Signoff entry at the head's current revision, or none."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "Unchanged: for a revised, re-approved head it shows no signoff until it is submitted again, and then shows the new entry; the earlier request is read from signoffsOfMeta, not from this view."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Signoff (meta.lifecycle.signoffs entry)",
+        "change": "invariant-change",
+        "details": "No field changes. A request may now be named by more than one Signoff entry of the same artifact, one per submitted revision, newest last; an entry's `at` is the time that submission was recorded. An entry is never edited after its request is recorded signed-off or changes-requested, and signed-off and signoff-changes move only the last entry when it is open (lifecycle.ts:255-262), so a completion of revision n cannot cover revision n+1. A content write now carries the entries forward instead of resetting them.",
+        "callSites": [
+          "src/workflow/artifact-core/lifecycle.ts:250-262",
+          "src/workflow/team/signoff.ts:141-148",
+          "src/workflow/storage.ts:175-266"
+        ]
+      },
+      {
+        "entity": "meta.lifecycle on a content write",
+        "change": "invariant-change",
+        "details": "Today a content write stores the next head's lifecycle (or none), so a re-authored artifact in signoff loses its Signoff history (no meta.lifecycle, or signoffs reset to []), and an unchanged re-author with a freshly synthesized lifecycle would throw. The write now keeps the prior history in two cases only: changed content with no next lifecycle (or one with no signoffs) stores the default draft with the prior Signoff entries; unchanged content with no next lifecycle keeps the prior lifecycle as it is. Approval and review are never carried through a change: a changed artifact is a draft that needs both again.",
+        "callSites": [
+          "src/workflow/storage.ts:186-213",
+          "src/workflow/storage.ts:245-266",
+          "src/workflow/artifact-core/lifecycle.ts:156-172",
+          "src/daemon/workflow-rpc.ts:332-347"
+        ]
+      },
+      {
+        "entity": "TrackerPort",
+        "change": "field-add",
+        "details": "Optional readSignoffRequest(ref) returning { branch, open }, and an optional `since` argument on readSignoffState. The GitHub adapter implements them with gh pr view --json headRefName,state and gh pr view --json state,mergedAt,reviews, and declares nothing new: the existing signoff-request capability covers both.",
+        "callSites": [
+          "src/workflow/team/signoff.ts:432",
+          "src/workflow/tracker/port.ts:100-120",
+          "src/workflow/tracker/github-adapter.ts:176-195"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Relies on content writes minting a new meta.revision and returning the artifact to draft, so a revised artifact must be reviewed and approved again at the new revision before openSignoff accepts it; and needs the content write to keep the prior Signoff history (changed content) and the whole prior lifecycle (unchanged content, no next lifecycle), which is one amendment to sc3 proposed in the error paths (the helper belongs to s4). Other content writers outside the authoring runs are not changed here."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Calls the existing 'revise' guarded action from the authoring runs (design.epic and design.story) on an artifact in signoff, and reads the holder through the gate's exported teamContext and readHolder to refuse an unassigned unit; 'revise' never takes a claim. The hook returns 'continue' for 'revise' (signoff.ts:311-313), so the upstream block comes from settleBeforeAuthor, which refuses with 'author' before the gate is asked. No outcome or hook type changes and no amendment to sc4 is needed."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Records the new Signoff entry through the s7 open-signoff path; the SignoffRecord derived from heads groups entries by request and revision, so a resubmitted request shows its latest revision."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A revised artifact is submitted without being reviewed and approved again",
+          "detection": "prerequisiteFailure finds the head is draft, or approved at an earlier revision than its current one, or without a review that exists, is by the other party and is of the current revision",
+          "response": "openSignoff returns a rejected result naming the artifact and what is missing; nothing is pushed",
+          "userImpact": "The holder is told to review and approve the revision first (ac36); an override-approved revision with a stale review is told to be reviewed again",
+          "recoverable": true
+        },
+        {
+          "scenario": "An artifact of a request that had changes requested is submitted without having been revised",
+          "detection": "prerequisiteFailure reads the head's lifecycle status as changes-requested (the status settleSignoff gave every waiting head of the request together) and refuses it, because open-signoff needs approved and the lifecycle table has no step out of changes-requested except a content change",
+          "response": "openSignoff returns a rejected result naming the artifact, its status changes-requested, and that it must be revised (content changed, reviewed and approved again) or left out of the submission; nothing is pushed or recorded for any artifact of the submission",
+          "userImpact": "The holder revises that artifact too, or resubmits without it; the stage it belongs to stays blocked until it is revised",
+          "recoverable": true
+        },
+        {
+          "scenario": "Someone who does not hold the claim re-authors an artifact that is in signoff through the design.epic or design.story run",
+          "detection": "assertMayAuthor finds the artifact in-signoff or changes-requested and asks the gate with 'revise'; the gate reads the assignee and it is another user",
+          "response": "TeamGateRefusedError with held-by-other and the holder; the authoring run does not start",
+          "userImpact": "The refusal names the holder (ac38, for the authoring runs)",
+          "recoverable": true
+        },
+        {
+          "scenario": "A user tries to re-author an artifact in signoff on a unit nobody holds",
+          "detection": "The gate allows 'revise' for an unassigned unit; assertMayAuthor then reads the holder through teamContext and readHolder and finds nobody",
+          "response": "TeamGateRefusedError with a refused outcome saying the unit must be claimed first; the claim is not taken",
+          "userImpact": "They claim the unit, then revise (ac38)",
+          "recoverable": true
+        },
+        {
+          "scenario": "A run re-authors an artifact in signoff while the stage it follows is no longer signed off",
+          "detection": "settleBeforeAuthor (awaited before assertMayAuthor at every authoring entry) calls settleForAttempt with 'author' and the workflow, and blockedBySignoff still blocks the followed stage, for example an HLD returned to draft or changes-requested after the LLD was submitted",
+          "response": "TeamGateRefusedError awaiting-signoff naming the request; the run does not reach assertMayAuthor, so the 'revise' choice cannot bypass the upstream block, which signoffCompletionHook does not check for 'revise'",
+          "userImpact": "The holder gets the upstream stage signed off first",
+          "recoverable": true
+        },
+        {
+          "scenario": "The earlier request cannot be read from the tracker (offline, not signed in, request not found)",
+          "detection": "readSignoffRequest returns a failed PortResult",
+          "response": "openSignoff returns that failure; it does not fall back to opening a new request, so the thread is never split by an outage",
+          "userImpact": "Submission is refused with the tracker's reason; retry when reachable",
+          "recoverable": true
+        },
+        {
+          "scenario": "The current branch is not the branch the request was opened from",
+          "detection": "The branch publishBranch returns differs from the branch readSignoffRequest reports",
+          "response": "openSignoff returns a rejected result naming both branches; nothing is recorded",
+          "userImpact": "The holder checks out the request's branch and submits again",
+          "recoverable": true
+        },
+        {
+          "scenario": "The chosen artifacts name different earlier open requests",
+          "detection": "More than one distinct request Reference among the last Signoff entries (any revision) that are open or changes-requested",
+          "response": "Rejected, asking for separate submissions, as for in-signoff heads in s7",
+          "userImpact": "Submit the artifacts separately",
+          "recoverable": true
+        },
+        {
+          "scenario": "The push to the request branch succeeds but recording an artifact fails",
+          "detection": "service.apply throws for an artifact",
+          "response": "The result names the artifact and the request; no new pull request exists. A repeat finds the earlier request again (still open) and records the rest",
+          "userImpact": "Submit again to finish",
+          "recoverable": true
+        },
+        {
+          "scenario": "The tracker has no readSignoffRequest",
+          "detection": "The port method is undefined",
+          "response": "A resubmission is treated as a first submission: a new request is opened as in s7, and openSignoffRequest reuses an open pull request on the branch",
+          "userImpact": "No worse than s7; the thread may be split on such a tracker",
+          "recoverable": true
+        },
+        {
+          "scenario": "A changes-requested decision is stale: made on an earlier push",
+          "detection": "readSignoffState is given `since` (the last Signoff entry's `at`) and each reviewer's latest decisive review that requests changes was submitted at or before it",
+          "response": "The request is read as open, not changes-requested; the head stays in-signoff and a later merge is recorded signed-off",
+          "userImpact": "A resubmission is not cancelled by feedback on the old push",
+          "recoverable": true
+        },
+        {
+          "scenario": "A re-authored artifact in signoff loses its Signoff history",
+          "detection": "writeArtifact reads the prior head's meta.lifecycle.signoffs and the next head's lifecycle is missing or has none",
+          "response": "For changed content the default draft lifecycle is stored with the prior entries carried, so the last entry still names the earlier request; without the carry, openSignoff finds no earlier entry and would open a second request",
+          "userImpact": "The revision goes to the same request",
+          "recoverable": true
+        },
+        {
+          "scenario": "An identical re-author of an artifact in signoff would be routed through an illegal transition to draft",
+          "detection": "writeArtifact finds the content unchanged (same hash as the prior head), a prior lifecycle with Signoff entries and a next head with no lifecycle; a synthesized draft would make reconcileLifecycle call assertLegalStatusChange(in-signoff or changes-requested, draft), which is not in the lifecycle table",
+          "response": "The prior lifecycle is kept exactly as it is and no draft is synthesized, so nothing throws and the status, approval, review and Signoff entries are untouched",
+          "userImpact": "Re-running a stage with identical output does not fail or move the artifact",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The reviewer merges the request while the author's revision is still a local draft",
+          "expected": "The head is not in-signoff so settle does not record it; the merged content is of an earlier revision and is not carried over. The artifact needs its own request at the new revision, and because the earlier request is merged a new one is opened"
+        },
+        {
+          "input": "A resubmission whose earlier request was merged or closed",
+          "expected": "readSignoffRequest reports not open, so a new request is opened; the old Signoff entry is left as it is"
+        },
+        {
+          "input": "A reviewer who asked for changes on the old push approves the new push",
+          "expected": "The latest decisive review of that reviewer is an approval, so the request is not changes-requested; it is recorded signed-off when merged"
+        },
+        {
+          "input": "A reviewer requests changes after the latest submission and then leaves a plain comment",
+          "expected": "COMMENTED reviews are ignored, so the latest decisive review is still the request for changes made after `since`: the request is changes-requested and the head moves to changes-requested"
+        },
+        {
+          "input": "A reviewer requested changes before the latest submission and has only commented since",
+          "expected": "The decisive review is older than `since`, so the request is open and the resubmission stands"
+        },
+        {
+          "input": "A request of two artifacts that is still in-signoff, and only one is revised",
+          "expected": "The revised one is draft until approved again; the other stays in-signoff under the same request. Submitting the revised one alone records it against the same request"
+        },
+        {
+          "input": "A request of two artifacts on which changes were requested, and the reviewers only objected to one of them",
+          "expected": "settleSignoff moved both to changes-requested together. The holder revises the objected one and also has to change the other before it can be resubmitted; if it is left out, it stays changes-requested under the old request and its stage stays blocked until it is revised. A changes-requested request means its artifacts change together or not at all"
+        },
+        {
+          "input": "An artifact of a changes-requested request is re-authored with identical content",
+          "expected": "The write keeps the prior lifecycle as it is; the artifact stays changes-requested at the same revision and cannot be resubmitted until its content changes"
+        },
+        {
+          "input": "A holder re-authors the stage while its artifact is in-signoff and the output changed",
+          "expected": "The gate is asked with 'revise' and allows the holder; the content write returns the artifact to draft at a new revision and keeps the Signoff entries, and the request stays open"
+        },
+        {
+          "input": "A holder re-authors the stage while its artifact is in-signoff and the output is identical to the prior head",
+          "expected": "The write keeps the prior lifecycle as it is; the artifact stays in-signoff at the same revision and nothing throws"
+        },
+        {
+          "input": "Another writer changes an artifact in signoff outside the authoring runs (resolveComment appends to body.openQuestions; appendStoryToDefine appends to the Define's stories)",
+          "expected": "Not gated by this Story: the content write returns the head to draft, whoever the caller is. It is raised as an open question and deferred; the Signoff entries survive the write through the sc3 carry"
+        },
+        {
+          "input": "A re-authored artifact whose prior head has no Signoff entry",
+          "expected": "The content write behaves as today: nothing is carried and no lifecycle is created that the next head did not have"
+        },
+        {
+          "input": "Unchanged content and a next head that carries a fresh draft lifecycle",
+          "expected": "Behaviour is as today and is not changed by this Story; the case is out of scope and unchanged"
+        },
+        {
+          "input": "A define run",
+          "expected": "Not a claim unit (authorUnitOf gives it none), so no revise gate applies to a DEF. Re-running define on an existing Epic is an open question, not designed here"
+        },
+        {
+          "input": "A solo repo or a repo with no policy",
+          "expected": "No gate call changes: assertMayAuthor returns before any tracker call and openSignoff is rejected as not using team signoff"
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testFramework": "node:test run through tsx, co-located in __tests__ (npx tsx --test), with the s7 injected SignoffDeps world, the store-backed lifecycle kit, temporary files for writeArtifact and the fake gh through _setTrackerExecForTests",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The decision between revising the same request and opening a new one, the prerequisite, branch and stale-decision checks, the review-revision check, the revise-together rule, the revise gate, the upstream block under a revise and the content-write rules for changed and unchanged content.",
+          "subjects": [
+            "openSignoff resubmission: an earlier open or changes-requested request that is still open (read from the last Signoff entry of any revision), one merged or closed, none, tracker without readSignoffRequest, different earlier requests, branch mismatch, tracker read failure never opening a new request",
+            "prerequisiteFailure refuses a head whose review is of an earlier revision, including one approved with an override reason, and still accepts a review of the current revision",
+            "prerequisiteFailure refuses a head in changes-requested, names its status and says it must be revised or left out of the submission; openSignoff with one revised artifact and one unrevised artifact of a changes-requested request is refused as a whole and records nothing, and with the unrevised one left out is accepted for the revised one",
+            "assertMayAuthor action choice for design.epic and design.story over an artifact in-signoff, changes-requested and any other status, no gate call for a define run, and the claim-first refusal for an unassigned unit without taking the claim",
+            "a design.story run on an LLD that is in changes-requested whose HLD is no longer signed off is refused by settleBeforeAuthor before assertMayAuthor is reached, as a run under 'author' is",
+            "teamGate 'revise' by the holder and by another user",
+            "settleSignoff passes the last entry's `at` as `since` and records signoff-changes only for a request made after it",
+            "writeArtifact changed rewrite of an in-signoff head with no next lifecycle: the stored lifecycle is the default draft, the Signoff entries are carried, approval and review are not carried and the revision is minted",
+            "writeArtifact changed rewrite with a fresh draft lifecycle carrying no signoffs: the prior Signoff entries are carried; entries the next head carries are kept",
+            "writeArtifact identical rewrite of an in-signoff head with no next lifecycle: nothing throws and the lifecycle (status, approval, review, Signoff entries) is untouched",
+            "writeArtifact identical rewrite of a changes-requested head with no next lifecycle: nothing throws and the lifecycle is untouched, and the head is still refused for resubmission",
+            "writeArtifact over a prior head with no Signoff entry behaves exactly as today"
+          ],
+          "fixturesNeeded": [
+            "SignoffDeps world from signoff.test.ts with readSignoffRequest, a current-branch answer and a readSignoffState that records its `since`",
+            "heads in each lifecycle status with entries at two revisions",
+            "temporary artifact files for writeArtifact with an in-signoff and a changes-requested prior head"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The GitHub adapter's readSignoffRequest and the `since` argument of readSignoffState through a fake gh.",
+          "subjects": [
+            "readSignoffRequest maps headRefName and OPEN, MERGED and CLOSED to { branch, open }; malformed ref and unreadable output are rejected; failure kinds map to port kinds",
+            "readSignoffState with `since`: a CHANGES_REQUESTED review at or before it is open, one after it is changes-requested, a reviewer's later approval clears an earlier request, a plain COMMENTED review after a request for changes does not clear it, a COMMENTED review after an old request for changes does not make it current, a closed unmerged request is changes-requested, and with no `since` the answer is as in s7"
+          ],
+          "fixturesNeeded": [
+            "fake gh through _setTrackerExecForTests returning gh pr view JSON with reviews (author, state, submittedAt)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The whole revision flow over the real gate, lifecycle and content write with an in-memory tracker.",
+          "subjects": [
+            "changes requested on a request of two artifacts, both revised through writeArtifact with a freshly synthesized head, their Signoff entries survive, review and approve again, resubmit to the same request, settle records signed-off for the new revisions only",
+            "changes requested on a request of two artifacts and only one revised: the other stays changes-requested, the resubmission of both is refused and its stage stays blocked",
+            "a lingering changes-requested decision on the old push does not cancel the resubmission and a later merge is recorded",
+            "a non-holder and an unassigned user refused at the author entry for an artifact in signoff",
+            "a merged request is not carried over to a later revision"
+          ],
+          "fixturesNeeded": [
+            "store-backed kit, in-memory tracker with readSignoffRequest and timed reviews, signoff-e2e world"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "A real pull request revised and merged on a sandbox repo.",
+          "subjects": [
+            "Open a signoff pull request on a sandbox repo, push a revision to the same pull request, merge it, then start the next stage"
+          ],
+          "fixturesNeeded": [
+            "a sandbox GitHub repo and a signed-in gh; reported by the builder, who with no second account cannot make a real changes-requested review (that part is covered by the contract and integration tests)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac36",
+          "provingTests": [
+            "openSignoff refuses a revised artifact that is draft, approved at an earlier revision, or reviewed at an earlier revision (including an override-approved one), and pushes nothing",
+            "openSignoff refuses an artifact of a changes-requested request that was not revised and accepts the revised ones when it is left out (unit)",
+            "revise flow: changes requested, re-author, review and approve again, submit again to the same request (integration)"
+          ]
+        },
+        {
+          "criterionId": "ac37",
+          "provingTests": [
+            "openSignoff on a revision pushes to the request's branch, opens no second pull request and records a new Signoff entry with the same Reference (unit)",
+            "writeArtifact content write carries the prior Signoff entries so the earlier request is still found after a re-author, and an identical re-author of an in-signoff or changes-requested head keeps its lifecycle without throwing (unit)",
+            "readSignoffState with `since` ignores a changes-requested decision older than the latest submission and keeps one made after it through a later comment (contract)",
+            "settle records signed-off for the resubmitted revisions only; a merged request is not carried over to a later revision; a lingering old decision does not cancel the resubmission (integration)"
+          ]
+        },
+        {
+          "criterionId": "ac38",
+          "provingTests": [
+            "assertMayAuthor asks 'revise' for an artifact in signoff, refuses a non-holder with held-by-other and an unassigned user with a claim-first refusal without taking the claim, for the design.epic and design.story runs (unit)",
+            "a design.story run whose followed stage is no longer signed off is refused by settleBeforeAuthor before the gate is asked (unit)",
+            "a non-holder and an unassigned user are refused at the author entry for an artifact in signoff (integration)"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Resubmit through openSignoff to the request the earlier Signoff entry names, with a stale-decision guard, a content write that keeps the Signoff history, revise-together for a changes-requested request, and a revise gate on the authoring runs",
+        "oneLineSummary": "A repeat submission of revised artifacts finds the request named by the last Signoff entry of their heads, pushes to that request's branch and records new open entries with the same Reference; a content write keeps the Signoff history; every artifact of a changes-requested request that stays in it must be revised and approved again; the authoring runs ask the gate with 'revise'; settle ignores a changes-requested decision older than the entry.",
+        "approach": "No new lifecycle operation: a content change already returns an artifact to draft at a new revision. The content write (writeArtifact, owned by s4 under sc3) keeps the prior head's lifecycle history the way it already keeps meta.tracker and meta.envelope, in two cases only. When the content CHANGED and the next head's lifecycle is missing or has none, the stored lifecycle is the default draft with the prior Signoff entries carried (approval and review are not carried). When the content is UNCHANGED and the next head has no lifecycle, the prior lifecycle is kept exactly as it is, so an identical re-author of an in-signoff or changes-requested head neither throws nor changes status. openSignoff then reads the LAST entry of signoffsOfMeta(meta) of each chosen head whatever its revision (signoffViewOf shows only the current revision). When that entry is open or changes-requested and the tracker's readSignoffRequest says the request is still open, the submission is a revision of that request: the files are committed and pushed to the request's branch (the current branch must be that branch) and open-signoff is recorded with the same Reference, which appends a new entry at the new revision. When the earlier request is merged or closed, or there is none, a new request is opened as in s7. When changes are requested, settleSignoff moves EVERY waiting head of the request to changes-requested together, and the lifecycle table has no step back from changes-requested except a content change, so every artifact that is to stay in that request must be revised (content changed), reviewed and approved again, and resubmitted with the others; an artifact re-authored with identical content stays changes-requested and prerequisiteFailure refuses it, naming that it must be revised or left out of the submission. An artifact left out stays changes-requested under the old request and its stage stays blocked until it is revised. prerequisiteFailure also requires the review's revision to equal the current revision. readSignoffState takes an optional `since` (the `at` of the last Signoff entry) and counts a changes-requested decision only when each reviewer's latest decisive review (APPROVED, CHANGES_REQUESTED or DISMISSED; COMMENTED ignored) is a request for changes submitted after `since`; a closed unmerged request stays changes-requested. The authoring runs (design.epic for the HLD, design.story for the LLD) ask the gate with 'revise' when their artifact is in-signoff or changes-requested; the entry itself refuses when nobody holds the unit. The upstream signoff block is unchanged: the entries await settleBeforeAuthor first, which settles the followed stage and refuses with the action 'author' whatever action assertMayAuthor then asks. The gate covers the authoring runs only; other writers of the same artifacts (resolveComment, appendStoryToDefine) are not gated by this Story and are raised as an open question. A define run is not a claim unit and is not covered.",
+        "pros": [
+          "Smallest change that meets ac36 to ac38 for the authoring runs: no lifecycle operation or record type change; reuses the s7 submission and the revision binding",
+          "One review thread: every Signoff entry of the request carries the same Reference, and a re-author keeps them",
+          "An identical re-author of an artifact in signoff is safe: it neither throws nor loses the lifecycle",
+          "The stale-decision guard stops a lingering CHANGES_REQUESTED from cancelling a good resubmission",
+          "A completed entry of an earlier revision cannot cover a later one",
+          "The meaning of a changes-requested request is explicit: its artifacts change together or not at all",
+          "The upstream signoff block holds for a revise because the entries settle with 'author' first"
+        ],
+        "cons": [
+          "Two additive amendments to contracts other stories own: sc1 (port read and `since`) and sc3 (content write keeps the Signoff history)",
+          "An artifact the reviewers did not object to still has to change before it can rejoin the request, because the lifecycle table has no way back from changes-requested",
+          "Other writers of the same artifacts are not gated, so a non-holder can still move an artifact in signoff to draft through them until a follow-up gates them",
+          "The author must be on the request's branch to resubmit; a mismatch is refused with the branch name",
+          "A reviewer's re-review of a new push is still needed on GitHub, so the guard can only avoid a false cancel, not force a re-review"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Keep the request reference outside the lifecycle",
+        "oneLineSummary": "Record the request a unit's artifacts were submitted under in the unit's tracker record, so a re-author cannot lose it, and read it from there on a resubmission.",
+        "approach": "Store the request Reference for each stage in meta.tracker.units (or a new key beside it), written by openSignoff, which a content write already carries forward (carryTracker). A resubmission reads the Reference from there instead of from the Signoff entries, and the Signoff entries are recorded as in s7. No change to the content write. The 'revise' gate, the `since` guard, the review-revision check and the port read are as in a1.",
+        "pros": [
+          "No change to the content-write helper",
+          "The thread link survives a re-author through an existing carry"
+        ],
+        "cons": [
+          "Two places record the same fact (the Signoff entry and the tracker record), which can disagree",
+          "Changes the shape of meta.tracker, which sc3 keeps exactly as it is, so it needs a different amendment to sc3",
+          "A Signoff entry that names a request is still lost on a re-author, so the display and the next-stage block still read a reset history"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Records one fact twice, changes the shape of meta.tracker that sc3 keeps as it is, and still resets the Signoff entries that display and the next-stage block read (partial on ac37, sc3 and sc5)."
+      },
+      {
+        "id": "a3",
+        "name": "An explicit lifecycle revise step, a separate reviseSignoff function and a gate on every content writer",
+        "oneLineSummary": "Add a lifecycle operation that takes changes-requested back to draft or approved, a separate reviseSignoff that pushes to the existing request, and gate every writeArtifact content caller with 'revise'.",
+        "approach": "Add a 'revise' lifecycle operation (changes-requested back to draft) and a reviseSignoff(repo, unit, artifactIds) function next to openSignoff. It asks the gate with 'revise', requires each artifact approved at its current revision with a current review, pushes to the request's branch and records open-signoff against the same Reference. openSignoff refuses artifacts that already have an earlier request. This would also let an unchanged artifact rejoin without a content change. Every content writer of an artifact in signoff (the authoring runs, resolveComment, appendStoryToDefine and any other writeArtifact 'content' caller) would ask the gate with 'revise'. The history still has to survive a re-author, so the content write change is needed here too.",
+        "pros": [
+          "Revision is a named step in the lifecycle and the history",
+          "A clean split between first submission and resubmission",
+          "An artifact no one objected to could rejoin the request unchanged",
+          "No writer could move an artifact in signoff to draft without the holder"
+        ],
+        "cons": [
+          "Changes the lifecycle table of the common artifact model, which this Story does not own",
+          "Touches write paths owned by other stories and by the s4 inventory",
+          "Duplicates most of openSignoff; a content write already returns the artifact to draft",
+          "A second entry point for a user to choose between"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Would close every content writer and let an unchanged artifact rejoin, but changes the lifecycle table that this Story does not own (partial on k3 and sc3), touches write paths owned elsewhere and adds a second entry point; it still needs the content-write change. Its two advantages are kept as open questions."
+      },
+      {
+        "id": "a4",
+        "name": "Open a new request and close the old one",
+        "oneLineSummary": "A revision opens a fresh signoff request and closes the earlier one with a pointer to it.",
+        "approach": "openSignoff always opens a new request; when an earlier request exists for an artifact in changes-requested, the tracker closes it with a comment linking to the new one. No branch read, stale-decision guard or Signoff history is needed because each request is its own pull request.",
+        "pros": [
+          "No branch matching, no stale-decision problem and no history to carry",
+          "Each pull request is a clean diff of one revision"
+        ],
+        "cons": [
+          "Breaks ac37: the reviewers' thread is lost, so it is no longer the single review thread",
+          "A reviewer who approves the old pull request after the author moved on completes a request nothing records",
+          "Needs a close-request operation on the port, another amendment"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "A new request per revision loses the single review thread ac37 requires and strands an approval on the old pull request."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Re-running define on an existing Epic is not a claim unit, so a DEF in signoff is not gated against changes by non-holders; should define on an existing Epic be gated, and if so with which unit?",
+      "The lifecycle table has no way back from changes-requested for an unchanged artifact, so an artifact the reviewers did not object to must still change before it can rejoin a changes-requested request; should the common artifact model allow open-signoff also from changes-requested at an unchanged approved revision? The table belongs to the common artifact model, not to this Story, so it is not designed here.",
+      "Writers other than the authoring runs also change a DEF, HLD or LLD body without a team gate: resolveComment (src/workflow/resolve-comment.ts:248-251, reached from the workflow.resolveComment handler at src/daemon/index.ts:739-745) and appendStoryToDefine (src/workflow/gates.ts:209-220). A content change returns the artifact to draft, so a non-holder can move an artifact in signoff to draft through them. Should every content writer of an artifact in signoff or changes-requested ask the gate with 'revise'? This Story gates the authoring runs only; gating the other writers is deferred to a follow-up."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1: lifecycle behaviour when an artifact is changed after a request opens (src/workflow/artifact-core/lifecycle.ts:38-52, 156-172, 228-262)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1: what a content write of a re-authored artifact keeps of the prior head, changed and unchanged (src/workflow/storage.ts:175-266, 186-213; src/daemon/workflow-rpc.ts:332-347)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1: how s7 opens, reads and settles a signoff request (src/workflow/team/signoff.ts:141-148, 397-420, 432, 540, 593-598; src/workflow/tracker/github-adapter.ts:176-195; src/workflow/tracker/port.ts:100-120)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1: where the 'revise' guarded action and the claim holder rule are used, and what the hook does for it (src/workflow/team/gate.ts:30,121-139,208-232,277-280; src/workflow/team/signoff.ts:311-313; src/workflow/team/author-gate.ts:25-50)"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1: how the authoring entries order the signoff settle and the team gate (src/daemon/steps/workflow-step/phases/start.ts:61-62; src/daemon/workflow-rpc.ts:183-184, 343, 484-485)"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1: other writers that change a stage artifact's content outside the authoring runs (src/workflow/resolve-comment.ts:248-251; src/daemon/index.ts:739-745; src/workflow/gates.ts:209-220)"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s3 alternatives.judge: winner a1"
+    },
+    {
+      "id": "c8",
+      "kind": "stakeholder",
+      "ref": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md: sc3, sc4, sc5 consumed by s8"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD-315d510cb28100e2-s8 daemon review rounds (block): revise for an unassigned unit, define not a claim unit, stale CHANGES_REQUESTED, signoffViewOf current-revision filter, prerequisiteFailure review revision, COMMENTED reviews, the Signoff history lost on a re-author (confirmed by running writeArtifact), the unchanged-content case, the changes-requested resubmission rule, the scope of the revise gate and the upstream block under a revise"
+    }
+  ]
+}

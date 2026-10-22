@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-22T06:26:37.927Z  ·  **Updated:** 2026-10-22T06:56:52.979Z
+**Standalone:** yes  ·  **Created:** 2026-10-22T06:26:37.927Z  ·  **Updated:** 2026-10-22T07:14:55.332Z
 
-**Commit:** 0d068449
+**Commit:** 5a3bb0f6
 
 ## Summary
 
@@ -23,11 +23,13 @@ Added src/shared/locks/__tests__/lock-manager-threads.test.ts and helper worker 
 
 ## Changes
 
-- `src/shared/locks/__tests__/lock-manager.test.ts` — **insrc-build** (2026-10-22T06:56:52.979Z)
-- `src/shared/locks/lock-manager.ts` — **insrc-build** (2026-10-22T06:56:52.979Z)
-- `src/shared/locks/__tests__/helpers/lock-wait-worker.ts` — **insrc-build** (2026-10-22T06:56:52.979Z)
-- `src/daemon/threads/__tests__/helpers/store-worker.ts` — **insrc-build** (2026-10-22T06:56:52.979Z)
-- `src/daemon/threads/__tests__/worker-stores.test.ts` — **insrc-build** (2026-10-22T06:56:52.979Z)
-- `src/daemon/threads/worker-entry.ts` — **insrc-build** (2026-10-22T06:56:52.979Z)
-- `src/shared/locks/__tests__/helpers/lock-ops-worker.ts` — **insrc-build** (2026-10-22T06:56:52.979Z)
-- `src/shared/locks/__tests__/lock-manager-threads.test.ts` — **insrc-build** (2026-10-22T06:56:52.979Z)
+- `src/shared/locks/__tests__/lock-manager.test.ts` — **insrc-build** (2026-10-22T07:14:55.332Z)
+- `src/shared/locks/lock-manager.ts` — **insrc-build** (2026-10-22T07:14:55.332Z)
+- `src/shared/locks/__tests__/helpers/lock-wait-worker.ts` — **insrc-build** (2026-10-22T07:14:55.332Z)
+- `src/daemon/threads/__tests__/helpers/store-worker.ts` — **insrc-build** (2026-10-22T07:14:55.332Z)
+- `src/daemon/threads/__tests__/worker-stores.test.ts` — **insrc-build** (2026-10-22T07:14:55.332Z)
+- `src/daemon/threads/worker-entry.ts` — **insrc-build** (2026-10-22T07:14:55.332Z)
+- `src/shared/locks/__tests__/helpers/lock-ops-worker.ts` — **insrc-build** (2026-10-22T07:14:55.332Z)
+- `src/shared/locks/__tests__/lock-manager-threads.test.ts` — **insrc-build** (2026-10-22T07:14:55.332Z)
+- `.insrc/artifacts/CR-afcfa02717f5bf7d-S001.json` — **insrc-build** (2026-10-22T07:14:55.332Z)
+- `docs/standalone/add-cross-thread-named-lock-framework-E20261022afcfa027/S001/CR.md` — **insrc-build** (2026-10-22T07:14:55.332Z)

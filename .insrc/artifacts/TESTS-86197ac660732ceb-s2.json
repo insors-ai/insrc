@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:24:16.622Z",
+    "updatedAt": "2026-10-22T08:26:15.345Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -629,6 +629,93 @@
               },
               {
                 "title": "a status published from a worker appears in a main-thread snapshot",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "7fb004d7",
+        "ranAt": "2026-10-22T08:26:15.345Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/compact.test.ts",
+                "title": "compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "compactGraphStore with a hook returning true or no hook returns today's CompactResult",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/compact.test.ts",
+                "title": "compactGraphStore with a hook returning true or no hook returns today's CompactResult",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/compact.test.ts",
+                "title": "compactGraphStore reclaims space after large deletes",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/compact.test.ts",
+                "title": "compactGraphStore re-opens the env so subsequent writes go through",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/compact.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1851,
+            "titles": [
+              {
+                "title": "compactGraphStore reclaims space after large deletes",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore preserves all rows when nothing has been freed",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore cleans up .bak after success",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore re-opens the env so subsequent writes go through",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore throws when env is not open",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore pre-clears stale .compact / .bak from a prior aborted run",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore with a hook returning true or no hook returns today's CompactResult",
                 "result": "pass"
               }
             ],

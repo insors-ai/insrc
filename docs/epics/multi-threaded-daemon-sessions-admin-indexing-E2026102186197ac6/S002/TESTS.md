@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 30 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 34 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -132,3 +132,27 @@ Run at 2026-10-22T08:24:16.622Z on commit `021748c3`. Tests check: **passed**. 5
 | `src/daemon/__tests__/daemon-status-lanes.test.ts` | 0 | 2 | 0.6 s |  |
 | `src/daemon/threads/__tests__/board-amendments.test.ts` | 0 | 2 | 0.5 s |  |
 | `src/daemon/threads/__tests__/registry-board.test.ts` | 0 | 5 | 0.5 s |  |
+
+## t5
+
+Run at 2026-10-22T08:26:15.345Z on commit `7fb004d7`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data | `src/db/graph/__tests__/compact.test.ts` |
+
+**unit: compactGraphStore with a hook returning true or no hook returns today's CompactResult**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | compactGraphStore with a hook returning true or no hook returns today's CompactResult | `src/db/graph/__tests__/compact.test.ts` |
+| pass | compactGraphStore reclaims space after large deletes | `src/db/graph/__tests__/compact.test.ts` |
+| pass | compactGraphStore re-opens the env so subsequent writes go through | `src/db/graph/__tests__/compact.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/graph/__tests__/compact.test.ts` | 0 | 8 | 1.9 s |  |
